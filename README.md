@@ -11,7 +11,7 @@ pip install bsm-ui
 ## Usage
 
 ```python
-from bsm_ui import get_static_dir
+from bsm_frontend import get_static_dir
 
 static_files_path = get_static_dir()
 print(f"Static files are located at: {static_files_path}")

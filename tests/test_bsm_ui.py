@@ -1,4 +1,4 @@
-from bsm_ui import get_static_dir
+from bsm_frontend import get_static_dir
 
 
 def test_get_static_dir():

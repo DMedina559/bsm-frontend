@@ -38,7 +38,7 @@ dev = [
 where = ["src"]
 
 [tool.setuptools.package-data]
-bsm_ui = ["static/**/*"]
+bsm_frontend = ["static/**/*"]
 
 [tool.setuptools_scm]
 local_scheme = "no-local-version"

@@ -189,4 +189,4 @@ test.db-journal
 **/node_modules/
 frontend/dist/
 frontend/build/
-src/bsm_ui/static
+src/bsm_frontend/static

@@ -31,7 +31,7 @@ export default defineConfig(({ mode }) => {
     plugins: [react(), redirectApp()],
     base: "/app/",
     build: {
-      outDir: "../src/bsm_ui/static",
+      outDir: "../src/bsm_frontend/static",
       emptyOutDir: true,
     },
     server: {
