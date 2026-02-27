@@ -9,18 +9,18 @@
       "permanent": false
     },
     {
-      "source": "/app/(?<path>[^.]*)",
+      "source": "/app",
       "missing": [
         {
           "type": "query",
           "key": "hidden"
         }
       ],
-      "destination": "/app/$path?hidden=true",
+      "destination": "/app/?hidden=true",
       "permanent": false
     },
     {
-      "source": "/app",
+      "source": "/app/",
       "missing": [
         {
           "type": "query",
