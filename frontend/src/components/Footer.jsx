@@ -45,7 +45,6 @@ const Footer = () => {
         <br />
         {appVersion} © MIT 2025-2026
       </p>
-      <a href="/legacy/">Legacy UI (DEPRECATED)</a>
     </footer>
   );
 };
