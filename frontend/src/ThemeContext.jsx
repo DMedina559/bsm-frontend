@@ -36,7 +36,11 @@ export const ThemeProvider = ({ children }) => {
 
     let href;
     if (standardThemes.includes(theme)) {
-      href = `${getApiBaseUrl()}/static/css/themes/${theme}.css`;
+      // Use Vite's base URL (import.meta.env.BASE_URL) to handle deployment paths
+      const baseUrl = import.meta.env.BASE_URL;
+      // Ensure no double slash if baseUrl ends with /
+      const safeBase = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
+      href = `${safeBase}/css/themes/${theme}.css`;
     } else {
       // Custom themes mounted at /themes
       href = `${getApiBaseUrl()}/themes/${theme}.css`;

@@ -1,0 +1,98 @@
+:root {
+  --background-image: url("/api/panorama");
+  --background-overlay-color: rgba(255, 255, 255, 0.25);
+  --text-color: #000;
+  --container-background-color: rgba(255, 255, 255, 0.92);
+  --border-color: #ccc;
+  --header-text-color: #000;
+  --monitor-output-background-color: #eee;
+  --monitor-output-text-color: #333;
+  --monitor-output-border-color: #ccc;
+  --splash-text-color: #ff0000;
+
+  /* Buttons */
+  --button-background-color: #f0f0f0;
+  --button-border-color: #ccc;
+  --button-text-color: #333;
+  --button-hover-background-color: #e0e0e0;
+  --button-hover-border-color: #bbb;
+  --button-hover-text-color: #333;
+  --button-active-background-color: #d0d0d0;
+  --button-active-border-color: #aaa;
+
+  --primary-button-background-color: #4caf50;
+  --primary-button-border-color: #66bb6a;
+  --primary-button-text-color: #fff;
+  --primary-button-hover-background-color: #6fcf97;
+  --primary-button-hover-border-color: #81e0aa;
+  --primary-button-active-background-color: #388e3c;
+  --primary-button-active-border-color: #4caf50;
+
+  --danger-button-background-color: #d32f2f;
+  --danger-button-border-color: #e57373;
+  --danger-button-text-color: #fff;
+  --danger-button-hover-background-color: #e53935;
+  --danger-button-hover-border-color: #ef9a9a;
+  --danger-button-active-background-color: #b71c1c;
+  --danger-button-active-border-color: #d32f2f;
+
+  /* Forms */
+  --form-input-background-color: #fff;
+  --form-input-border-color: #ccc;
+  --form-input-text-color: #333;
+  --form-input-focus-border-color: #aaa;
+  --form-label-text-color: #333;
+  --validation-error-text-color: #d32f2f;
+  --form-input-invalid-border-color: #d32f2f;
+  --form-input-invalid-background-color: #ffebee;
+
+  /* Tables */
+  --table-header-background-color: #f0f0f0;
+  --table-header-text-color: #333;
+  --table-border-color: #ccc;
+  --table-row-hover-background-color: #f5f5f5;
+
+  /* Tabs */
+  --tab-background-color: #f0f0f0;
+  --tab-border-color: #ccc;
+  --tab-text-color: #333;
+  --tab-hover-background-color: #e0e0e0;
+  --tab-hover-text-color: #333;
+  --tab-active-background-color: #fff;
+  --tab-active-text-color: #333;
+
+  /* Messages */
+  --message-success-background-color: #e8f5e9;
+  --message-success-border-color: #4caf50;
+  --message-success-text-color: #388e3c;
+  --message-error-background-color: #ffebee;
+  --message-error-border-color: #d32f2f;
+  --message-error-text-color: #b71c1c;
+  --message-warning-background-color: #fff8e1;
+  --message-warning-border-color: #ffa000;
+  --message-warning-text-color: #212121;
+
+  /* Layout */
+  --sidebar-background-color: #f5f5f5;
+  --sidebar-border-color: #ccc;
+  --sidebar-link-text-color: #333;
+  --sidebar-link-hover-background-color: #e0e0e0;
+  --sidebar-link-hover-text-color: #333;
+  --sidebar-link-active-background-color: #e0e0e0;
+  --sidebar-link-active-border-color: #4caf50;
+  --server-card-background-color: #fff;
+  --server-card-border-color: #ccc;
+  --server-card-hover-background-color: #f5f5f5;
+  --server-card-info-text-color: #000;
+  --server-card-info-label-color: #000;
+
+  /* Controls */
+  --toggle-switch-off-background-color: #ccc;
+  --toggle-switch-off-border-color: #bbb;
+  --toggle-switch-off-handle-background-color: #fff;
+  --toggle-switch-off-handle-border-color: #ccc;
+  --toggle-switch-on-background-color: #4caf50;
+  --toggle-switch-on-border-color: #66bb6a;
+  --toggle-switch-on-handle-background-color: #fff;
+  --toggle-switch-on-handle-border-color: #eee;
+}
