@@ -1,0 +1,52 @@
+{
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "src/bsm_frontend/static",
+  "framework": "vite",
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/app/?hidden=true",
+      "permanent": false
+    },
+    {
+      "source": "/app/(?<path>[^.]*)",
+      "missing": [
+        {
+          "type": "query",
+          "key": "hidden"
+        }
+      ],
+      "destination": "/app/$path?hidden=true",
+      "permanent": false
+    },
+    {
+      "source": "/app",
+      "missing": [
+        {
+          "type": "query",
+          "key": "hidden"
+        }
+      ],
+      "destination": "/app/?hidden=true",
+      "permanent": false
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/app/assets/(?<path>.*)",
+      "destination": "/assets/$path"
+    },
+    {
+      "source": "/app/css/(?<path>.*)",
+      "destination": "/css/$path"
+    },
+    {
+      "source": "/app/image/(?<path>.*)",
+      "destination": "/image/$path"
+    },
+    {
+      "source": "/app/(?<path>.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
