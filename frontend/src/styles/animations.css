@@ -13,18 +13,27 @@
 }
 
 @keyframes marquee {
-  0% {
+  0%,
+  15% {
     transform: translateX(0%);
   }
 
-  100% {
+  50% {
     transform: translateX(-100%);
+  }
+
+  50.001% {
+    transform: translateX(100%);
+  }
+
+  100% {
+    transform: translateX(0%);
   }
 }
 
 .scrolling-text {
   display: inline-block;
-  padding-left: 220px; /* Use fixed width (Sidebar width) to ensure consistent start pos */
+  padding-left: 0; /* Start at the left edge */
   animation: marquee 15s linear infinite;
 }
 
