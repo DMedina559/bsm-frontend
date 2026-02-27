@@ -1,7 +1,6 @@
 {
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "src/bsm_frontend/static",
-  "framework": "vite",
   "redirects": [
     {
       "source": "/",
