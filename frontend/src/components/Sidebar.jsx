@@ -3,7 +3,7 @@ import { NavLink, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
-import { get, getApiBaseUrl } from "../api";
+import { get } from "../api";
 import SidebarLabel from "./SidebarLabel";
 import {
   LayoutDashboard,
@@ -228,7 +228,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
                 }}
               >
                 <img
-                  src={`${getApiBaseUrl()}/static/image/icon/favicon-96x96.png`}
+                  src="/app/image/icon/favicon-96x96.png"
                   alt="Icon"
                   style={{ width: "64px", height: "64px" }}
                 />
@@ -290,7 +290,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
         ) : (
           <>
             <img
-              src={`${getApiBaseUrl()}/static/image/icon/favicon-96x96.png`}
+              src="/app/image/icon/favicon-96x96.png"
               alt="Icon"
               style={{ width: "30px", height: "30px" }}
             />

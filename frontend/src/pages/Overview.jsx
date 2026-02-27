@@ -219,7 +219,7 @@ const Overview = () => {
                   }}
                   onError={(e) => {
                     e.target.onerror = null; // Prevent infinite loop
-                    e.target.src = `${getApiBaseUrl()}/static/image/icon/favicon-96x96.png`;
+                    e.target.src = "/app/image/icon/favicon-96x96.png";
                   }}
                 />
                 <div style={{ flexGrow: 1, overflow: "hidden" }}>

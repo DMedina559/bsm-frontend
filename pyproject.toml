@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=61.0", "setuptools_scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bsm-frontend"
+dynamic = ["version"]
+description = "The React frontend for Bedrock Server Manager, packaged as a Python library."
+readme = "README.md"
+authors = [
+  { name="DMedina559", email="dmedina559-github@outlook.com" },
+]
+license = { file = "LICENSE" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.11"
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/dmedina559/bsm-frontend.git"
+"Bug Tracker" = "https://github.com/DMedina559/bsm-frontend/issues"
+Changelog = "https://bedrock-server-manager.readthedocs.io/en/latest/changelog.html"
+
+[project.optional-dependencies]
+dev = [
+    "pytest >=8.4.0,<9.1",
+    "black >=25.1.0,<26.2",
+    "flake8 >=7.3.0,<7.4",
+    "isort >=5.13.0,<8.1",
+    "mypy >=1.10.0,<1.20",
+    "pre-commit >=4.5.0,<5.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+bsm_ui = ["static/**/*"]
+
+[tool.setuptools_scm]
+local_scheme = "no-local-version"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.black]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true

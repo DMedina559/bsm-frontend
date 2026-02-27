@@ -31,7 +31,7 @@ export default defineConfig(({ mode }) => {
     plugins: [react(), redirectApp()],
     base: "/app/",
     build: {
-      outDir: "../../src/bedrock_server_manager/web/static/v2",
+      outDir: "../src/bsm_ui/static",
       emptyOutDir: true,
     },
     server: {

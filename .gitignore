@@ -187,6 +187,6 @@ test.db-journal
 
 # Frontend
 **/node_modules/
-frontend/v2/dist/
-frontend/v2/build/
-src/bedrock_server_manager/web/static/v2/
+frontend/dist/
+frontend/build/
+src/bsm_ui/static

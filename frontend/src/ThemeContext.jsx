@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect } from "react";
 import { useAuth } from "./AuthContext";
-import { request } from "./api";
+import { request, getApiBaseUrl } from "./api";
 
 const ThemeContext = createContext();
 
@@ -36,10 +36,10 @@ export const ThemeProvider = ({ children }) => {
 
     let href;
     if (standardThemes.includes(theme)) {
-      href = `/static/css/themes/${theme}.css`;
+      href = `${getApiBaseUrl()}/static/css/themes/${theme}.css`;
     } else {
       // Custom themes mounted at /themes
-      href = `/themes/${theme}.css`;
+      href = `${getApiBaseUrl()}/themes/${theme}.css`;
     }
 
     link.href = href;
