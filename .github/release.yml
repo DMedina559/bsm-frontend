@@ -1,0 +1,63 @@
+changelog:
+  categories:
+    - title: ⚠️ Breaking Changes
+      labels:
+        - breaking
+    - title: 🚀 Features
+      labels:
+        - feat
+      exclude:
+        labels:
+          - breaking
+    - title: 🐛 Bug Fixes
+      labels:
+        - fix
+      exclude:
+        labels:
+          - breaking
+    - title: 📚 Documentation
+      labels:
+        - docs
+      exclude:
+        labels:
+          - breaking
+    - title: 💄 Style & Refactoring
+      labels:
+        - style
+        - refactor
+        - remove
+      exclude:
+        labels:
+          - breaking
+    - title: ⚡ Performance
+      labels:
+        - perf
+      exclude:
+        labels:
+          - breaking
+    - title: 🧪 Tests
+      labels:
+        - test
+      exclude:
+        labels:
+          - breaking
+    - title: 📦 Build & CI
+      labels:
+        - build
+        - ci
+      exclude:
+        labels:
+          - breaking
+    - title: ⬆️ Dependencies
+      labels:
+        - dependencies
+      exclude:
+        labels:
+          - breaking
+    - title: 🧹 Chore
+      labels:
+        - chore
+        - misc
+      exclude:
+        labels:
+          - breaking
