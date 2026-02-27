@@ -33,19 +33,19 @@
   ],
   "rewrites": [
     {
-      "source": "/app/assets/",
-      "destination": "/assets/$path"
+      "source": "/app/assets/:path*",
+      "destination": "/assets/:path*"
     },
     {
-      "source": "/app/css/",
-      "destination": "/css/$path"
+      "source": "/app/css/:path*",
+      "destination": "/css/:path*"
     },
     {
-      "source": "/app/image/",
-      "destination": "/image/$path"
+      "source": "/app/image/:path*",
+      "destination": "/image/:path*"
     },
     {
-      "source": "/app/",
+      "source": "/app/:path*",
       "destination": "/index.html"
     }
   ]
