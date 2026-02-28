@@ -1,7 +1,7 @@
 {
+  "framework": "vite",
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "src/bsm_frontend/static",
-  "framework": "vite",
   "redirects": [
     {
       "source": "/",
@@ -31,22 +31,26 @@
       "permanent": false
     }
   ],
-  "rewrites": [
-    {
-      "source": "/app/assets/:path*",
-      "destination": "/assets/:path*"
-    },
-    {
-      "source": "/app/css/:path*",
-      "destination": "/css/:path*"
-    },
-    {
-      "source": "/app/image/:path*",
-      "destination": "/image/:path*"
-    },
-    {
-      "source": "/app/:path*",
-      "destination": "/index.html"
-    }
-  ]
+  "rewrites": {
+    "beforeFiles": [
+      {
+        "source": "/app/assets/:path*",
+        "destination": "/assets/:path*"
+      },
+      {
+        "source": "/app/css/:path*",
+        "destination": "/css/:path*"
+      },
+      {
+        "source": "/app/image/:path*",
+        "destination": "/image/:path*"
+      }
+    ],
+    "fallback": [
+      {
+        "source": "/app/:path*",
+        "destination": "/index.html"
+      }
+    ]
+  }
 }
