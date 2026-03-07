@@ -550,7 +550,7 @@ const ComponentRegistry = {
   ),
 };
 
-const DynamicPage = () => {
+const DynamicPage = ({ schemaJson }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const dataUrl = searchParams.get("url");
   const [schema, setSchema] = useState(null);
@@ -612,13 +612,23 @@ const DynamicPage = () => {
   ); // Dependent on searchParams
 
   useEffect(() => {
-    if (dataUrl) {
+    if (schemaJson) {
+      setFormState({});
+      setActiveModalId(null);
+      setSocketData({});
+      setSchema(schemaJson);
+      setLoading(false);
+      setError(null);
+    } else if (dataUrl) {
       setFormState({}); // Clear state on URL change
       setActiveModalId(null);
       setSocketData({}); // Clear socket data on page change
       fetchSchema(dataUrl, selectedServer);
+    } else {
+      setError("No schema URL provided");
+      setLoading(false);
     }
-  }, [dataUrl, selectedServer, fetchSchema]);
+  }, [dataUrl, selectedServer, fetchSchema, schemaJson]);
 
   // Handle WebSocket subscriptions defined in schema
   useEffect(() => {
@@ -684,7 +694,9 @@ const DynamicPage = () => {
           // Refresh logic if needed
           if (actionDef.refresh) {
             // Trigger re-fetch logic if extracted
-            fetchSchema(dataUrl, selectedServer);
+            if (dataUrl) {
+              fetchSchema(dataUrl, selectedServer);
+            }
           }
           if (actionDef.closeModal) setActiveModalId(null);
         } else {
@@ -788,8 +800,9 @@ const DynamicPage = () => {
       node.type === "Switch" ||
       node.type === "Checkbox"
     ) {
-      if (props.id) {
-        const stateValue = formState[props.id];
+      const formKey = props.id || props.name;
+      if (formKey) {
+        const stateValue = formState[formKey];
 
         // For Switch and Checkbox, value is boolean
         if (node.type === "Switch" || node.type === "Checkbox") {
@@ -805,7 +818,7 @@ const DynamicPage = () => {
         }
 
         props.onChange = (val) => {
-          handleInputChange(props.id, val);
+          handleInputChange(formKey, val);
           if (props.onChangeAction) {
             const action = { ...props.onChangeAction };
 
@@ -824,8 +837,9 @@ const DynamicPage = () => {
     }
 
     if (node.type === "FileUpload") {
-      if (props.id) {
-        props.onChange = (file) => handleInputChange(props.id, file);
+      const formKey = props.id || props.name;
+      if (formKey) {
+        props.onChange = (file) => handleInputChange(formKey, file);
       }
     }
 
