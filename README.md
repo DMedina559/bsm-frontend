@@ -5,7 +5,7 @@ This is the React frontend for Bedrock Server Manager, packaged as a Python libr
 ## Installation
 
 ```bash
-pip install bsm-ui
+pip install bsm-frontend
 ```
 
 ## Usage
