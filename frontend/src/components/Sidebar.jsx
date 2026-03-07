@@ -26,6 +26,7 @@ import {
   ChevronRight,
   Palette,
   X,
+  Code,
 } from "lucide-react";
 import "../styles/SidebarEnhanced.css"; // Import enhanced styles
 
@@ -163,6 +164,14 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
     },
     { path: "/audit-log", label: "Logs", icon: <ScrollText size={20} /> },
   ];
+
+  if (sessionStorage.getItem("show_remote_config") === "true") {
+    globalNavItems.push({
+      path: "/playground",
+      label: "Playground",
+      icon: <Code size={20} />,
+    });
+  }
 
   return (
     <aside

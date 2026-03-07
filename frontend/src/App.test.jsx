@@ -11,6 +11,8 @@ vi.mock("./api", () => ({
   put: vi.fn(),
   del: vi.fn(),
   request: vi.fn(),
+  getApiBaseUrl: vi.fn(),
+  getJwtToken: vi.fn(),
 }));
 
 describe("App", () => {

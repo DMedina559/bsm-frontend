@@ -1,5 +1,8 @@
 import { render, screen, fireEvent, waitFor } from "../test/utils";
 import DynamicPage from "../components/DynamicPage";
+import { ToastProvider } from "../ToastContext";
+import { ServerProvider } from "../ServerContext";
+import { WebSocketProvider } from "../WebSocketContext";
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 import * as api from "../api";
 
@@ -45,6 +48,10 @@ describe("DynamicPage", () => {
           {
             type: "Input",
             props: { id: "testInput", placeholder: "Enter text" },
+          },
+          {
+            type: "Input",
+            props: { name: "nameInput", placeholder: "Enter text by name" },
           },
           {
             type: "Button",
@@ -154,10 +161,17 @@ describe("DynamicPage", () => {
 
     await waitFor(() => {
       expect(screen.getByPlaceholderText("Enter text")).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText("Enter text by name"),
+      ).toBeInTheDocument();
     });
 
     fireEvent.change(screen.getByPlaceholderText("Enter text"), {
       target: { value: "test value" },
+    });
+
+    fireEvent.change(screen.getByPlaceholderText("Enter text by name"), {
+      target: { value: "name value" },
     });
 
     fireEvent.click(screen.getByText("Submit"));
@@ -272,5 +286,25 @@ describe("DynamicPage", () => {
         }),
       );
     });
+  });
+
+  it("should render provided schemaJson prop without fetching", async () => {
+    // Clear out any previous fetches from other tests
+    api.get.mockClear();
+
+    // Create a new container instead of appending to body
+    // to avoid bleeding components
+    const mockSchema = {
+      type: "Card",
+      props: { title: "Schema Prop Test" },
+      children: [{ type: "Text", props: { content: "Loaded from Prop" } }],
+    };
+
+    const { unmount } = render(<DynamicPage schemaJson={mockSchema} />);
+
+    // Ensure api.get was NOT called
+    expect(api.get).not.toHaveBeenCalledWith("/test-url");
+
+    unmount();
   });
 });

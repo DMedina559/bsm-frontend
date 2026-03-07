@@ -26,6 +26,7 @@ import ServerInstall from "./pages/ServerInstall";
 import GlobalPlayers from "./pages/GlobalPlayers";
 import PluginViewer from "./pages/PluginViewer";
 import DynamicPage from "./components/DynamicPage";
+import Playground from "./pages/Playground";
 
 const PrivateRoute = ({ children }) => {
   const { user, loading, needsSetup } = useAuth();
@@ -89,6 +90,7 @@ const AppRoutes = () => {
         <Route path="server-install" element={<ServerInstall />} />
         <Route path="plugin-view" element={<PluginViewer />} />
         <Route path="plugin-native-view" element={<DynamicPage />} />
+        <Route path="playground" element={<Playground />} />
       </Route>
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>

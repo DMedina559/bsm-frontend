@@ -14,8 +14,7 @@ const Login = () => {
   const { login, user } = useAuth();
   const navigate = useNavigate();
   const showConfigButton =
-    sessionStorage.getItem("show_remote_config") === "true" ||
-    !!getApiBaseUrl();
+    sessionStorage.getItem("show_hidden_flag") === "true" || !!getApiBaseUrl();
   const location = useLocation();
 
   // Where to redirect after login
