@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import JSON5 from "json5";
 import DynamicPage from "../components/DynamicPage";
 import { useToast } from "../ToastContext";
 import { Play } from "lucide-react";
@@ -43,11 +44,10 @@ const Playground = () => {
           .replace(/\bFalse\b/g, "false")
           .replace(/\bNone\b/g, "null");
 
-        // Use Function to safely evaluate the object (handles single quotes and trailing commas)
-        // Since this is a developer tool and the input is purely local to the dev's browser,
-        // new Function is an acceptable way to parse lenient JSON/JS objects.
+        // Use JSON5 to safely evaluate the object (handles single quotes and trailing commas)
+        // This avoids Cross-Site Scripting (XSS) vulnerabilities associated with new Function
 
-        const parsed = new Function("return (" + sanitized + ")")();
+        const parsed = JSON5.parse(sanitized);
         setSchemaJson(parsed);
         addToast("Schema (Python/JS format) rendered successfully", "success");
       } catch (fallbackErr) {

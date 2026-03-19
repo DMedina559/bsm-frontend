@@ -81,4 +81,31 @@ describe("Playground", () => {
       expect(screen.getByTestId("mock-dynamic-page")).toBeInTheDocument();
     });
   });
+
+  it("prevents arbitrary code execution (XSS)", async () => {
+    render(<Playground />);
+
+    const textarea = screen.getByRole("textbox");
+
+    // Attempt to execute code by using an immediately invoked function expression (IIFE)
+    // or injecting malicious code. In a vulnerable 'new Function' scenario, this could execute.
+    const maliciousPayload = `
+    {
+      "type": "Card",
+      "props": {
+        "title": (function() { throw new Error("XSS Executed"); return "Exploit"; })()
+      }
+    }
+    `;
+    fireEvent.change(textarea, { target: { value: maliciousPayload } });
+
+    // Click render
+    const renderButton = screen.getByRole("button", { name: /Render Page/i });
+    fireEvent.click(renderButton);
+
+    // If json5 is used, it should throw a parsing error instead of executing the function
+    await waitFor(() => {
+      expect(screen.getByText(/Invalid JSON or Object:/i)).toBeInTheDocument();
+    });
+  });
 });
