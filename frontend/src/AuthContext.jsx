@@ -13,7 +13,7 @@ export const AuthProvider = ({ children }) => {
   const checkUser = async () => {
     // Always check setup status first if not logged in or to ensure correctness
     try {
-      const setupData = await get("/setup/status");
+      const setupData = await get("/api/setup/status");
       setNeedsSetup(setupData.needs_setup);
       if (setupData.needs_setup) {
         setLoading(false);

@@ -6,7 +6,7 @@ describe("Setup", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     globalThis.fetch.mockImplementation((url) => {
-      if (url === "/setup/status") {
+      if (url === "/api/setup/status") {
         return Promise.resolve({
           ok: true,
           json: async () => ({ needs_setup: true }),
@@ -32,13 +32,13 @@ describe("Setup", () => {
 
   it("handles successful setup", async () => {
     globalThis.fetch.mockImplementation((url) => {
-      if (url === "/setup/status") {
+      if (url === "/api/setup/status") {
         return Promise.resolve({
           ok: true,
           json: async () => ({ needs_setup: true }),
         });
       }
-      if (url === "/setup/create-first-user") {
+      if (url === "/api/setup/create-first-user") {
         return Promise.resolve({
           ok: true,
           json: async () => ({}),
@@ -69,7 +69,7 @@ describe("Setup", () => {
 
     await waitFor(() => {
       expect(globalThis.fetch).toHaveBeenCalledWith(
-        "/setup/create-first-user",
+        "/api/setup/create-first-user",
         expect.anything(),
       );
     });

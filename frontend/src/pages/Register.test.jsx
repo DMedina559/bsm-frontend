@@ -11,7 +11,7 @@ describe("Register", () => {
   it("validates token on mount and renders form", async () => {
     // Mock validation
     globalThis.fetch.mockImplementation((url) => {
-      if (url.includes("/setup/status"))
+      if (url.includes("/api/setup/status"))
         return Promise.resolve({
           ok: true,
           json: async () => ({ needs_setup: false }),
@@ -39,7 +39,7 @@ describe("Register", () => {
 
   it("shows error for invalid token", async () => {
     globalThis.fetch.mockImplementation((url) => {
-      if (url.includes("/setup/status"))
+      if (url.includes("/api/setup/status"))
         return Promise.resolve({
           ok: true,
           json: async () => ({ needs_setup: false }),

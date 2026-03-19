@@ -7,7 +7,7 @@ describe("Login", () => {
     vi.clearAllMocks();
     // Default fetch mock (success setup status)
     globalThis.fetch.mockImplementation((url) => {
-      if (url === "/setup/status")
+      if (url === "/api/setup/status")
         return Promise.resolve({
           ok: true,
           json: async () => ({ needs_setup: false }),
@@ -31,7 +31,7 @@ describe("Login", () => {
   it("handles successful login", async () => {
     // Mock successful login response
     globalThis.fetch.mockImplementation((url) => {
-      if (url === "/setup/status")
+      if (url === "/api/setup/status")
         return Promise.resolve({
           ok: true,
           json: async () => ({ needs_setup: false }),
@@ -74,7 +74,7 @@ describe("Login", () => {
 
   it("handles login failure", async () => {
     globalThis.fetch.mockImplementation((url) => {
-      if (url === "/setup/status")
+      if (url === "/api/setup/status")
         return Promise.resolve({
           ok: true,
           json: async () => ({ needs_setup: false }),
