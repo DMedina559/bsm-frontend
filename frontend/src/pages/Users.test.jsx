@@ -54,14 +54,14 @@ describe("Users", () => {
 
     // Mock invite response
     api.post.mockResolvedValueOnce({
-      redirect_url: "http://test/register/123",
+      redirect_url: "http://test/api/register/123",
     });
 
     fireEvent.click(screen.getByText("Generate Link"));
 
     await waitFor(() => {
       expect(api.post).toHaveBeenCalledWith(
-        "/register/generate-token",
+        "/api/register/generate-token",
         expect.anything(),
       );
     });

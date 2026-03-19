@@ -105,7 +105,7 @@ const Users = () => {
     e.preventDefault();
     setActionLoading(true);
     try {
-      const response = await post("/register/generate-token", {
+      const response = await post("/api/register/generate-token", {
         role: inviteRole,
       });
 

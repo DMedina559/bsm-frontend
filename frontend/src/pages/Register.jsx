@@ -18,7 +18,7 @@ const Register = () => {
     const validateToken = async () => {
       if (!token) return;
       try {
-        await get(`/register/validate/${token}`);
+        await get(`/api/register/validate/${token}`);
         setTokenValid(true);
       } catch {
         setTokenValid(false);
@@ -46,7 +46,7 @@ const Register = () => {
 
     setLoading(true);
     try {
-      await post(`/register/${token}`, { username, password });
+      await post(`/api/register/${token}`, { username, password });
       addToast("Registration successful! Please login.", "success");
       navigate("/login");
     } catch (error) {
