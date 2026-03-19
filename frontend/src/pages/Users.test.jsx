@@ -11,7 +11,7 @@ describe("Users", () => {
     api.request.mockResolvedValue({ username: "admin", role: "admin", id: 1 });
 
     api.get.mockImplementation((url) => {
-      if (url === "/users/list") {
+      if (url === "/api/users/list") {
         return Promise.resolve([
           { id: 1, username: "admin", role: "admin", is_active: true },
           { id: 2, username: "user1", role: "user", is_active: true },
