@@ -16,7 +16,7 @@ describe("DynamicPage", () => {
 
     // Mock global fetch for download test and setup status
     fetchSpy = vi.spyOn(window, "fetch").mockImplementation((url) => {
-      if (url === "/setup/status") {
+      if (url === "/api/setup/status") {
         return Promise.resolve({
           ok: true,
           json: async () => ({ needs_setup: false }),

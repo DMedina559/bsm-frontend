@@ -11,21 +11,21 @@ describe("Register", () => {
   it("validates token on mount and renders form", async () => {
     // Mock validation
     globalThis.fetch.mockImplementation((url) => {
-      if (url.includes("/setup/status"))
+      if (url.includes("/api/setup/status"))
         return Promise.resolve({
           ok: true,
           json: async () => ({ needs_setup: false }),
         });
-      if (url === "/register/validate/valid-token")
+      if (url === "/api/register/validate/valid-token")
         return Promise.resolve({ ok: true, json: async () => ({}) });
       return Promise.resolve({ ok: false });
     });
 
-    window.history.pushState({}, "Test", "/register/valid-token");
+    window.history.pushState({}, "Test", "/api/register/valid-token");
 
     render(
       <Routes>
-        <Route path="/register/:token" element={<Register />} />
+        <Route path="/api/register/:token" element={<Register />} />
       </Routes>,
     );
 
@@ -39,21 +39,21 @@ describe("Register", () => {
 
   it("shows error for invalid token", async () => {
     globalThis.fetch.mockImplementation((url) => {
-      if (url.includes("/setup/status"))
+      if (url.includes("/api/setup/status"))
         return Promise.resolve({
           ok: true,
           json: async () => ({ needs_setup: false }),
         });
-      if (url === "/register/validate/invalid-token")
+      if (url === "/api/register/validate/invalid-token")
         return Promise.resolve({ ok: false });
       return Promise.resolve({ ok: false });
     });
 
-    window.history.pushState({}, "Test", "/register/invalid-token");
+    window.history.pushState({}, "Test", "/api/register/invalid-token");
 
     render(
       <Routes>
-        <Route path="/register/:token" element={<Register />} />
+        <Route path="/api/register/:token" element={<Register />} />
       </Routes>,
     );
 

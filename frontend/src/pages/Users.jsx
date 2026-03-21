@@ -40,7 +40,7 @@ const Users = () => {
     try {
       // Small delay to ensure the spinner is visible for feedback
       await new Promise((resolve) => setTimeout(resolve, 300));
-      const data = await get("/users/list");
+      const data = await get("/api/users/list");
       if (Array.isArray(data)) {
         setUsers(data);
         return true;
@@ -90,7 +90,7 @@ const Users = () => {
 
     setActionLoading(true);
     try {
-      await post(`/users/${userToDelete.id}/delete`);
+      await post(`/api/users/${userToDelete.id}/delete`);
       addToast(`User ${userToDelete.username} deleted.`, "success");
       await fetchUsers();
     } catch (error) {
@@ -105,7 +105,7 @@ const Users = () => {
     e.preventDefault();
     setActionLoading(true);
     try {
-      const response = await post("/register/generate-token", {
+      const response = await post("/api/register/generate-token", {
         role: inviteRole,
       });
 
@@ -154,14 +154,14 @@ const Users = () => {
 
       // Update Role if changed
       if (editRole !== editingUser.role) {
-        await post(`/users/${editingUser.id}/role`, { role: editRole });
+        await post(`/api/users/${editingUser.id}/role`, { role: editRole });
         updated = true;
       }
 
       // Update Status if changed
       if (editActive !== editingUser.is_active) {
         const endpoint = editActive ? "enable" : "disable";
-        await post(`/users/${editingUser.id}/${endpoint}`);
+        await post(`/api/users/${editingUser.id}/${endpoint}`);
         updated = true;
       }
 
