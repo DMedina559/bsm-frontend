@@ -130,20 +130,25 @@ const ServerConfig = () => {
   };
 
   const handleChange = (path, value) => {
-    setSettings((prev) => {
-      const newSettings = JSON.parse(JSON.stringify(prev));
-      let current = newSettings;
-      const keys = path.split(".");
-      const lastKey = keys.pop();
+    const updatePath = (obj, keys, val) => {
+      const [first, ...rest] = keys;
+      if (
+        first === "__proto__" ||
+        first === "constructor" ||
+        first === "prototype"
+      ) {
+        return obj;
+      }
+      if (rest.length === 0) {
+        return { ...obj, [first]: val };
+      }
+      return {
+        ...obj,
+        [first]: updatePath(obj[first] || {}, rest, val),
+      };
+    };
 
-      keys.forEach((key) => {
-        if (!current[key]) current[key] = {};
-        current = current[key];
-      });
-
-      current[lastKey] = value;
-      return newSettings;
-    });
+    setSettings((prev) => updatePath(prev, path.split("."), value));
   };
 
   const handleAddCustom = (e) => {

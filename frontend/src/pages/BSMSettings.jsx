@@ -86,36 +86,25 @@ const BSMSettings = () => {
   };
 
   const handleChange = (path, value) => {
-    setSettings((prev) => {
-      const newSettings = JSON.parse(JSON.stringify(prev)); // Deep copy
-      const keys = path.split(".");
-      let current = newSettings;
-
-      for (let i = 0; i < keys.length - 1; i++) {
-        const key = keys[i];
-        if (
-          key === "__proto__" ||
-          key === "constructor" ||
-          key === "prototype"
-        ) {
-          return prev;
-        }
-        if (!current[key]) current[key] = {};
-        current = current[key];
-      }
-
-      const lastKey = keys[keys.length - 1];
+    const updatePath = (obj, keys, val) => {
+      const [first, ...rest] = keys;
       if (
-        lastKey === "__proto__" ||
-        lastKey === "constructor" ||
-        lastKey === "prototype"
+        first === "__proto__" ||
+        first === "constructor" ||
+        first === "prototype"
       ) {
-        return prev;
+        return obj;
       }
+      if (rest.length === 0) {
+        return { ...obj, [first]: val };
+      }
+      return {
+        ...obj,
+        [first]: updatePath(obj[first] || {}, rest, val),
+      };
+    };
 
-      current[lastKey] = value;
-      return newSettings;
-    });
+    setSettings((prev) => updatePath(prev, path.split("."), value));
   };
 
   const handleAddCustom = (e) => {
