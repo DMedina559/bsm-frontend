@@ -109,13 +109,10 @@ const Backups = () => {
   const handleRestore = async (type, filename) => {
     if (!selectedServer) return;
 
-    let confirmMessage = "";
-    if (type === "all") {
-      confirmMessage =
-        "WARNING: EXTREMELY DESTRUCTIVE ACTION!\n\nThis will OVERWRITE your current world and ALL configuration files with the LATEST available backups.\n\nAny unsaved progress since the last backup will be LOST FOREVER.\n\nThe server will be restarted if the restore is successful.\n\nAre you absolutely sure?";
-    } else {
-      confirmMessage = `WARNING: This will overwrite your current ${type} with backup '${filename}'.\nThe server may restart. Are you sure?`;
-    }
+    const confirmMessage =
+      type === "all"
+        ? "WARNING: EXTREMELY DESTRUCTIVE ACTION!\n\nThis will OVERWRITE your current world and ALL configuration files with the LATEST available backups.\n\nAny unsaved progress since the last backup will be LOST FOREVER.\n\nThe server will be restarted if the restore is successful.\n\nAre you absolutely sure?"
+        : `WARNING: This will overwrite your current ${type} with backup '${filename}'.\nThe server may restart. Are you sure?`;
 
     if (!confirm(confirmMessage)) return;
 

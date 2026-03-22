@@ -132,8 +132,8 @@ describe("Sidebar", () => {
     const logoutBtn = screen.getByText("Logout").closest("button");
     fireEvent.click(logoutBtn);
 
-    // Expect fetch to be called with /auth/logout
-    expect(globalThis.fetch).toHaveBeenCalledWith("/auth/logout");
+    const api = await import("../api");
+    expect(api.request).toHaveBeenCalledWith("/auth/logout");
   });
 
   it("highlights the active plugin page based on URL", async () => {

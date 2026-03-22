@@ -500,27 +500,17 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
               <div className="nav-section-label">From Plugins</div>
             )}
             {pluginPages.map((page) => {
-              const targetPath =
-                page.type === "native"
-                  ? `/plugin-native-view?url=${encodeURIComponent(page.path)}`
-                  : `/plugin-view?url=${encodeURIComponent(page.path)}`;
+              const targetPath = `/plugin-native-view?url=${encodeURIComponent(page.path)}`;
 
               const isPluginActive = () => {
                 const currentPath = location.pathname;
                 const searchParams = new URLSearchParams(location.search);
                 const currentUrlParam = searchParams.get("url");
 
-                if (page.type === "native") {
-                  return (
-                    currentPath === "/plugin-native-view" &&
-                    currentUrlParam === page.path
-                  );
-                } else {
-                  return (
-                    currentPath === "/plugin-view" &&
-                    currentUrlParam === page.path
-                  );
-                }
+                return (
+                  currentPath === "/plugin-native-view" &&
+                  currentUrlParam === page.path
+                );
               };
 
               return (

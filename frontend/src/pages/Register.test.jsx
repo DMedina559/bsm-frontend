@@ -3,22 +3,24 @@ import Register from "./Register";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { Routes, Route } from "react-router-dom";
 
+vi.mock("../api");
+
 describe("Register", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("validates token on mount and renders form", async () => {
-    // Mock validation
-    globalThis.fetch.mockImplementation((url) => {
-      if (url.includes("/api/setup/status"))
-        return Promise.resolve({
-          ok: true,
-          json: async () => ({ needs_setup: false }),
-        });
-      if (url === "/api/register/validate/valid-token")
-        return Promise.resolve({ ok: true, json: async () => ({}) });
-      return Promise.resolve({ ok: false });
+    // Mock validation via api.get
+    const api = await import("../api");
+    api.get.mockImplementation(async (url) => {
+      if (url.includes("/api/setup/status")) {
+        return { needs_setup: false };
+      }
+      if (url.includes("/api/register/validate/valid-token")) {
+        return { status: "success" };
+      }
+      throw new Error("Invalid route");
     });
 
     window.history.pushState({}, "Test", "/api/register/valid-token");
@@ -38,15 +40,15 @@ describe("Register", () => {
   });
 
   it("shows error for invalid token", async () => {
-    globalThis.fetch.mockImplementation((url) => {
-      if (url.includes("/api/setup/status"))
-        return Promise.resolve({
-          ok: true,
-          json: async () => ({ needs_setup: false }),
-        });
-      if (url === "/api/register/validate/invalid-token")
-        return Promise.resolve({ ok: false });
-      return Promise.resolve({ ok: false });
+    const api = await import("../api");
+    api.get.mockImplementation(async (url) => {
+      if (url.includes("/api/setup/status")) {
+        return { needs_setup: false };
+      }
+      if (url.includes("/api/register/validate/invalid-token")) {
+        throw new Error("Invalid link");
+      }
+      return {};
     });
 
     window.history.pushState({}, "Test", "/api/register/invalid-token");
