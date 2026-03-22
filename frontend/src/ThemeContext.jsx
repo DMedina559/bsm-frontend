@@ -40,7 +40,7 @@ export const ThemeProvider = ({ children }) => {
       const baseUrl = import.meta.env.BASE_URL;
       // Ensure no double slash if baseUrl ends with /
       const safeBase = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
-      href = `${safeBase}/css/themes/${theme}.css`;
+      href = `${safeBase}/assets/css/themes/${theme}.css`;
     } else {
       // Custom themes mounted at /themes
       href = `${getApiBaseUrl()}/themes/${theme}.css`;
