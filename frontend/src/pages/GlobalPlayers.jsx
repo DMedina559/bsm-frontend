@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { get, post } from "../api";
 import { useToast } from "../ToastContext";
 import { RefreshCw, Plus, Scan } from "lucide-react";
+import { logger } from "../utils/logger";
 
 const GlobalPlayers = () => {
   const [players, setPlayers] = useState([]);
@@ -26,7 +27,7 @@ const GlobalPlayers = () => {
         return false;
       }
     } catch (error) {
-      console.error("Error fetching players:", error);
+      logger.error("Error fetching players:", error);
       addToast("Error fetching players.", "error");
       return false;
     } finally {

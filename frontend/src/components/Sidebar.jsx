@@ -28,6 +28,7 @@ import {
   X,
   Code,
 } from "lucide-react";
+import { logger } from "../utils/logger";
 import "../styles/SidebarEnhanced.css"; // Import enhanced styles
 
 const Sidebar = ({ mobileOpen, setMobileOpen }) => {
@@ -64,7 +65,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
           setPluginPages(response.data || []);
         }
       } catch (error) {
-        console.warn("Failed to fetch plugin pages", error);
+        logger.warn("Failed to fetch plugin pages", error);
       }
     };
 
@@ -79,7 +80,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
           setSplashText(response.data.splash_text);
         }
       } catch (error) {
-        console.warn("Failed to fetch splash text", error);
+        logger.warn("Failed to fetch splash text", error);
       }
     };
 

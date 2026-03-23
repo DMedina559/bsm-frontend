@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { request, get } from "./api";
+import { logger } from "./utils/logger";
 
 const AuthContext = createContext();
 
@@ -13,23 +14,28 @@ export const AuthProvider = ({ children }) => {
   const checkUser = async () => {
     // Always check setup status first if not logged in or to ensure correctness
     try {
+      logger.debug("[Auth] Checking setup status");
       const setupData = await get("/api/setup/status");
       setNeedsSetup(setupData.needs_setup);
       if (setupData.needs_setup) {
+        logger.info("[Auth] System needs setup");
         setLoading(false);
         return; // Stop if setup is needed
       }
     } catch (e) {
-      console.warn("Failed to check setup status", e);
+      logger.warn("[Auth] Failed to check setup status", e);
     }
 
     try {
+      logger.debug("[Auth] Checking user status");
       // Check if we have a token in either storage (api.js handles retrieval)
       const userData = await request("/api/account", { method: "GET" });
+      logger.debug(`[Auth] User authenticated: ${userData?.username}`);
       setUser(userData);
     } catch (error) {
-      console.error("Failed to check user status", error);
+      logger.error("[Auth] Failed to check user status", error);
       if (error.status === 401) {
+        logger.info("[Auth] Unauthorized, clearing tokens");
         // Clear both storages on auth failure to be safe
         localStorage.removeItem("jwt_token");
         sessionStorage.removeItem("jwt_token");
@@ -60,6 +66,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (username, password, rememberMe = false) => {
+    logger.debug(`[Auth] Attempting login for user: ${username}`);
     const formData = new URLSearchParams();
     formData.append("username", username);
     formData.append("password", password);
@@ -73,6 +80,7 @@ export const AuthProvider = ({ children }) => {
     });
 
     if (data.access_token) {
+      logger.info(`[Auth] Login successful for user: ${username}`);
       if (rememberMe) {
         localStorage.setItem("jwt_token", data.access_token);
         sessionStorage.removeItem("jwt_token"); // Clean up other storage
@@ -80,6 +88,8 @@ export const AuthProvider = ({ children }) => {
         sessionStorage.setItem("jwt_token", data.access_token);
         localStorage.removeItem("jwt_token"); // Clean up other storage
       }
+    } else {
+      logger.warn(`[Auth] Login failed or token missing for user: ${username}`);
     }
 
     await checkUser();
@@ -88,9 +98,10 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
+      logger.info("[Auth] Logging out user");
       await request("/auth/logout");
     } catch (e) {
-      console.warn("Logout failed", e);
+      logger.warn("[Auth] Logout failed on server", e);
     }
     localStorage.removeItem("jwt_token");
     sessionStorage.removeItem("jwt_token");

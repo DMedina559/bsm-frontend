@@ -4,6 +4,7 @@ import { useTheme } from "../ThemeContext";
 import { useToast } from "../ToastContext";
 import { get, post } from "../api";
 import { Save, User } from "lucide-react";
+import { logger } from "../utils/logger";
 
 const Account = () => {
   const { user } = useAuth();
@@ -33,7 +34,7 @@ const Account = () => {
           setAvailableThemes(["default"]);
         }
       } catch (error) {
-        console.warn("Failed to fetch themes", error);
+        logger.warn("Failed to fetch themes", error);
         setAvailableThemes(["default"]);
       }
     };
@@ -45,7 +46,7 @@ const Account = () => {
     try {
       post("/api/account/theme", { theme: newTheme });
     } catch {
-      console.error("Failed to save theme preference");
+      logger.error("Failed to save theme preference");
     }
     addToast(`Theme changed to ${newTheme}`, "info");
   };

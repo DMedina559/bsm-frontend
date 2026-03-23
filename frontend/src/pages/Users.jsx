@@ -14,6 +14,7 @@ import {
   Unlock,
 } from "lucide-react";
 import { useAuth } from "../AuthContext";
+import { logger } from "../utils/logger";
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -50,7 +51,7 @@ const Users = () => {
         return false;
       }
     } catch (error) {
-      console.error("Error fetching users:", error);
+      logger.error("Error fetching users:", error);
       addToast(error.message || "Error fetching users", "error");
       return false;
     } finally {
@@ -94,7 +95,7 @@ const Users = () => {
       addToast(`User ${userToDelete.username} deleted.`, "success");
       await fetchUsers();
     } catch (error) {
-      console.error("Delete failed:", error);
+      logger.error("Delete failed:", error);
       addToast(error.message || "Failed to delete user.", "error");
     } finally {
       setActionLoading(false);
@@ -178,7 +179,7 @@ const Users = () => {
         setShowEditModal(false);
       }
     } catch (error) {
-      console.error("Update failed:", error);
+      logger.error("Update failed:", error);
       addToast(error.message || "Failed to update user.", "error");
     } finally {
       setActionLoading(false);

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect } from "react";
 import { useAuth } from "./AuthContext";
 import { request, getApiBaseUrl } from "./api";
+import { logger } from "./utils/logger";
 
 const ThemeContext = createContext();
 
@@ -58,7 +59,7 @@ export const ThemeProvider = ({ children }) => {
       // Refresh user data to get the new theme applied
       await checkUser();
     } catch (error) {
-      console.error("Failed to update theme:", error);
+      logger.error("Failed to update theme:", error);
     }
   };
 

@@ -40,6 +40,7 @@ import {
 
 import "../styles/DynamicPage.css";
 import { isSafeUrl } from "../utils/urlValidation";
+import { logger } from "../utils/logger";
 
 // --- Component Registry ---
 const ComponentRegistry = {
@@ -268,7 +269,7 @@ const ComponentRegistry = {
   ),
   iframe: ({ src, title, height = "400px", className = "" }) => {
     if (!isSafeUrl(src)) {
-      console.warn(`Blocked unsafe iframe src: ${src}`);
+      logger.warn(`Blocked unsafe iframe src: ${src}`);
       return (
         <div
           className={`dynamic-iframe ${className}`}
@@ -625,7 +626,7 @@ const DynamicPage = ({ schemaJson }) => {
           setError("Invalid page definition.");
         }
       } catch (err) {
-        console.error("DynamicPage Error:", err);
+        logger.error("DynamicPage Error:", err);
         setError(err.message || "Error loading page.");
       } finally {
         setLoading(false);
@@ -780,7 +781,7 @@ const DynamicPage = ({ schemaJson }) => {
 
     const Component = ComponentRegistry[node.type];
     if (!Component) {
-      console.warn(`Unknown component type: ${node.type}`);
+      logger.warn(`Unknown component type: ${node.type}`);
       return (
         <div
           key={key}

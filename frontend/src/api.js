@@ -3,6 +3,8 @@
  * Handles fetch logic, headers, authentication, and response parsing.
  */
 
+import { logger } from "./utils/logger";
+
 export class ApiError extends Error {
   constructor(message, status, data) {
     super(message);
@@ -90,9 +92,14 @@ export async function request(url, options = {}) {
     const baseUrl = getApiBaseUrl();
     const finalUrl = url.startsWith("/") && baseUrl ? `${baseUrl}${url}` : url;
 
+    logger.debug(`[API Request] ${config.method} ${finalUrl}`);
+
     const response = await fetch(finalUrl, config);
 
     if (response.status === 204) {
+      logger.debug(
+        `[API Response] ${response.status} ${finalUrl} (No Content)`,
+      );
       return null;
     }
 
@@ -104,6 +111,7 @@ export async function request(url, options = {}) {
         data = await response.json();
       } catch {
         // Fallback if JSON parsing fails but header said JSON
+        logger.error(`[API Error] Invalid JSON response for ${finalUrl}`);
         throw new ApiError(
           "Invalid JSON response from server",
           response.status,
@@ -117,6 +125,9 @@ export async function request(url, options = {}) {
       // If we expected JSON (based on Accept header) but got HTML (e.g. 404 page, 500 error page, or Login page redirect)
       // we should probably treat it as an error unless the caller explicitly handles it.
       if (!response.ok) {
+        logger.error(
+          `[API Error] Request failed: ${response.status} (Non-JSON response) for ${finalUrl}`,
+        );
         throw new ApiError(
           `Request failed with status ${response.status} (Non-JSON response)`,
           response.status,
@@ -135,6 +146,9 @@ export async function request(url, options = {}) {
         text.includes("<!DOCTYPE html>") &&
         text.includes("Login")
       ) {
+        logger.warn(
+          `[API Response] Detected HTML Login redirect for ${finalUrl}, forcing 401 error`,
+        );
         // Force a 401 style error so AuthContext can handle logout
         throw new ApiError("Session expired (Redirected to Login)", 401, null);
       }
@@ -151,6 +165,9 @@ export async function request(url, options = {}) {
         errorMessage = data.substring(0, 200);
       }
 
+      logger.error(
+        `[API Error] ${response.status} ${finalUrl}: ${errorMessage}`,
+      );
       throw new ApiError(errorMessage, response.status, data);
     }
 
@@ -161,6 +178,9 @@ export async function request(url, options = {}) {
       data.status &&
       data.status === "error"
     ) {
+      logger.error(
+        `[API Error] Application error in 200 OK for ${finalUrl}: ${data.message}`,
+      );
       throw new ApiError(
         data.message || "Application error",
         response.status,
@@ -168,12 +188,14 @@ export async function request(url, options = {}) {
       );
     }
 
+    logger.debug(`[API Response] ${response.status} ${finalUrl}`);
     return data;
   } catch (error) {
     if (error instanceof ApiError) {
       throw error;
     }
     // Network errors
+    logger.error(`[API Network Error] ${url}: ${error.message}`);
     throw new ApiError(error.message, 0, null);
   }
 }

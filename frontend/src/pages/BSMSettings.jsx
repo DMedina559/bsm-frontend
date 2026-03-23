@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { RefreshCw, Save } from "lucide-react";
 import { useToast } from "../ToastContext";
 import { get, post } from "../api";
+import { logger } from "../utils/logger";
 
 const BSMSettings = () => {
   const [settings, setSettings] = useState({});
@@ -59,14 +60,14 @@ const BSMSettings = () => {
         try {
           await post("/api/settings", { key: key, value: value });
         } catch (err) {
-          console.error(`Failed to save setting ${key}:`, err);
+          logger.error(`Failed to save setting ${key}:`, err);
           throw err; // Re-throw to be caught by outer block
         }
       }
 
       addToast("Settings saved successfully.", "success");
     } catch (error) {
-      console.error("Save settings error:", error);
+      logger.error("Save settings error:", error);
       addToast(error.message || "Failed to save settings.", "error");
     } finally {
       setLoading(false);
