@@ -154,6 +154,17 @@ const Account = () => {
             className="form-group"
             style={{ maxWidth: "400px" }}
           >
+            {/* Hidden username field for accessibility (a11y) */}
+            <input
+              type="text"
+              name="username"
+              value={user?.username || ""}
+              autoComplete="username"
+              style={{ display: "none" }}
+              readOnly
+              aria-hidden="true"
+            />
+
             <div>
               <label htmlFor="current-password" className="form-label">
                 Current Password
