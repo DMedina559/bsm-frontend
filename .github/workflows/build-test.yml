@@ -1,0 +1,45 @@
+# .github/workflows/build-test.yml
+
+name: Build Lint Test
+
+on:
+  push:
+    branches-ignore:
+      - 'main'
+    paths:
+      - 'frontend/**'
+  pull_request:
+    paths:
+      - 'frontend/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: '20'
+
+    - name: Install dependencies and build
+      run: |
+        cd frontend
+        npm install
+        npm run build
+
+    - name: Run Frontend Lint
+      working-directory: ./frontend
+      run: npm run lint
+
+    - name: Run Frontend Tests
+      working-directory: ./frontend
+      run: npm run test:run

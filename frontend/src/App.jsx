@@ -24,7 +24,6 @@ import ServerConfig from "./pages/ServerConfig";
 import AccessControl from "./pages/AccessControl";
 import ServerInstall from "./pages/ServerInstall";
 import GlobalPlayers from "./pages/GlobalPlayers";
-import PluginViewer from "./pages/PluginViewer";
 import DynamicPage from "./components/DynamicPage";
 import Playground from "./pages/Playground";
 
@@ -88,7 +87,6 @@ const AppRoutes = () => {
         <Route path="audit-log" element={<AuditLog />} />
         <Route path="account" element={<Account />} />
         <Route path="server-install" element={<ServerInstall />} />
-        <Route path="plugin-view" element={<PluginViewer />} />
         <Route path="plugin-native-view" element={<DynamicPage />} />
         <Route path="playground" element={<Playground />} />
       </Route>

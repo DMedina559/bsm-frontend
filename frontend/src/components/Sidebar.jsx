@@ -28,6 +28,7 @@ import {
   X,
   Code,
 } from "lucide-react";
+import { logger } from "../utils/logger";
 import "../styles/SidebarEnhanced.css"; // Import enhanced styles
 
 const Sidebar = ({ mobileOpen, setMobileOpen }) => {
@@ -64,7 +65,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
           setPluginPages(response.data || []);
         }
       } catch (error) {
-        console.warn("Failed to fetch plugin pages", error);
+        logger.warn("Failed to fetch plugin pages", error);
       }
     };
 
@@ -79,7 +80,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
           setSplashText(response.data.splash_text);
         }
       } catch (error) {
-        console.warn("Failed to fetch splash text", error);
+        logger.warn("Failed to fetch splash text", error);
       }
     };
 
@@ -500,27 +501,17 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
               <div className="nav-section-label">From Plugins</div>
             )}
             {pluginPages.map((page) => {
-              const targetPath =
-                page.type === "native"
-                  ? `/plugin-native-view?url=${encodeURIComponent(page.path)}`
-                  : `/plugin-view?url=${encodeURIComponent(page.path)}`;
+              const targetPath = `/plugin-native-view?url=${encodeURIComponent(page.path)}`;
 
               const isPluginActive = () => {
                 const currentPath = location.pathname;
                 const searchParams = new URLSearchParams(location.search);
                 const currentUrlParam = searchParams.get("url");
 
-                if (page.type === "native") {
-                  return (
-                    currentPath === "/plugin-native-view" &&
-                    currentUrlParam === page.path
-                  );
-                } else {
-                  return (
-                    currentPath === "/plugin-view" &&
-                    currentUrlParam === page.path
-                  );
-                }
+                return (
+                  currentPath === "/plugin-native-view" &&
+                  currentUrlParam === page.path
+                );
               };
 
               return (

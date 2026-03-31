@@ -8,6 +8,7 @@ import React, {
 import { request } from "./api";
 import { useAuth } from "./AuthContext";
 import { useWebSocket } from "./WebSocketContext";
+import { logger } from "./utils/logger";
 
 const ServerContext = createContext();
 
@@ -27,6 +28,7 @@ export const ServerProvider = ({ children }) => {
 
   // Wrapper for setting selected server to also persist to localStorage
   const setSelectedServer = useCallback((serverName) => {
+    logger.debug(`[ServerContext] Setting selected server: ${serverName}`);
     setSelectedServerState(serverName);
     if (serverName) {
       localStorage.setItem("selectedServer", serverName);
@@ -47,10 +49,14 @@ export const ServerProvider = ({ children }) => {
       }
       setError(null);
       try {
+        logger.debug(
+          `[ServerContext] Fetching servers list (background: ${isBackground})`,
+        );
         // Use the API client we just created
         const data = await request("/api/servers", { method: "GET" });
 
         if (data && data.status === "success" && Array.isArray(data.servers)) {
+          logger.info(`[ServerContext] Loaded ${data.servers.length} servers`);
           setServers(data.servers);
 
           const serverList = data.servers;
@@ -61,22 +67,27 @@ export const ServerProvider = ({ children }) => {
             );
 
             if (!selectedServer || !currentSelectionExists) {
+              logger.debug(
+                `[ServerContext] Auto-selecting first server: ${serverList[0].name}`,
+              );
               // Default to the first server if selection is invalid or missing
               setSelectedServer(serverList[0].name);
             }
           } else {
+            logger.debug("[ServerContext] No servers available to select");
             // No servers available
             setSelectedServer(null);
           }
           return true;
         } else {
           setServers([]);
+          logger.error("[ServerContext] Invalid server data received", data);
           // If data.servers is missing, something is wrong.
           setError("Invalid server data received.");
           return false;
         }
       } catch (err) {
-        console.error("Error fetching servers:", err);
+        logger.error("[ServerContext] Error fetching servers:", err);
         setError(err.message || "Failed to fetch servers");
         return false;
       } finally {
@@ -122,7 +133,9 @@ export const ServerProvider = ({ children }) => {
   useEffect(() => {
     let intervalId = null;
     if (isFallback && user) {
-      console.log("WebSocket fallback active: polling servers every 60s");
+      logger.info(
+        "[ServerContext] WebSocket fallback active: polling servers every 60s",
+      );
       // Initial poll
       fetchServers(true);
       intervalId = setInterval(() => {
@@ -147,13 +160,16 @@ export const ServerProvider = ({ children }) => {
       ];
 
       if (refreshTopics.includes(lastMessage.topic)) {
-        console.log("Refreshing servers due to WS event:", lastMessage.topic);
+        logger.info(
+          `[ServerContext] Refreshing servers due to WS event: ${lastMessage.topic}`,
+        );
         fetchServers(true); // Treat WS updates as background updates to avoid flicker
       }
     }
   }, [lastMessage, fetchServers]);
 
   const refreshServers = () => {
+    logger.debug("[ServerContext] Manually refreshing servers list");
     return fetchServers();
   };
 

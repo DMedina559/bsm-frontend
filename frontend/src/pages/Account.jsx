@@ -4,6 +4,7 @@ import { useTheme } from "../ThemeContext";
 import { useToast } from "../ToastContext";
 import { get, post } from "../api";
 import { Save, User } from "lucide-react";
+import { logger } from "../utils/logger";
 
 const Account = () => {
   const { user } = useAuth();
@@ -33,7 +34,7 @@ const Account = () => {
           setAvailableThemes(["default"]);
         }
       } catch (error) {
-        console.warn("Failed to fetch themes", error);
+        logger.warn("Failed to fetch themes", error);
         setAvailableThemes(["default"]);
       }
     };
@@ -45,7 +46,7 @@ const Account = () => {
     try {
       post("/api/account/theme", { theme: newTheme });
     } catch {
-      console.error("Failed to save theme preference");
+      logger.error("Failed to save theme preference");
     }
     addToast(`Theme changed to ${newTheme}`, "info");
   };
@@ -153,6 +154,17 @@ const Account = () => {
             className="form-group"
             style={{ maxWidth: "400px" }}
           >
+            {/* Hidden username field for accessibility (a11y) */}
+            <input
+              type="text"
+              name="username"
+              value={user?.username || ""}
+              autoComplete="username"
+              style={{ display: "none" }}
+              readOnly
+              aria-hidden="true"
+            />
+
             <div>
               <label htmlFor="current-password" className="form-label">
                 Current Password
