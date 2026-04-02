@@ -51,8 +51,8 @@ const AccessControl = () => {
         if (activeTab === "allowlist") {
           setItems(data.players || []);
         } else {
-          // Permissions data is nested in data.data.permissions
-          setItems(data.data?.permissions || []);
+          // Permissions data is nested in data.permissions
+          setItems(data.permissions || []);
         }
       } else {
         addToast(
