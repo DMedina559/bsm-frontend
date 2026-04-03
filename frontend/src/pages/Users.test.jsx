@@ -11,7 +11,7 @@ describe("Users", () => {
     api.request.mockResolvedValue({ username: "admin", role: "admin", id: 1 });
 
     api.get.mockImplementation((url) => {
-      if (url === "/users/list") {
+      if (url === "/api/users/list") {
         return Promise.resolve([
           { id: 1, username: "admin", role: "admin", is_active: true },
           { id: 2, username: "user1", role: "user", is_active: true },
@@ -54,14 +54,14 @@ describe("Users", () => {
 
     // Mock invite response
     api.post.mockResolvedValueOnce({
-      redirect_url: "http://test/register/123",
+      redirect_url: "http://test/api/register/123",
     });
 
     fireEvent.click(screen.getByText("Generate Link"));
 
     await waitFor(() => {
       expect(api.post).toHaveBeenCalledWith(
-        "/register/generate-token",
+        "/api/register/generate-token",
         expect.anything(),
       );
     });

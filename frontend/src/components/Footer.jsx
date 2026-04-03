@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { get } from "../api";
 import "./Footer.css";
+import { logger } from "../utils/logger";
 
 const Footer = () => {
   const [appVersion, setAppVersion] = useState("Unknown");
@@ -13,7 +14,7 @@ const Footer = () => {
           setAppVersion(data.info.app_version);
         }
       } catch (error) {
-        console.error("Failed to fetch app info for footer:", error);
+        logger.error("Failed to fetch app info for footer:", error);
       }
     };
 

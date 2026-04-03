@@ -14,6 +14,7 @@ import {
   Unlock,
 } from "lucide-react";
 import { useAuth } from "../AuthContext";
+import { logger } from "../utils/logger";
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -40,7 +41,7 @@ const Users = () => {
     try {
       // Small delay to ensure the spinner is visible for feedback
       await new Promise((resolve) => setTimeout(resolve, 300));
-      const data = await get("/users/list");
+      const data = await get("/api/users/list");
       if (Array.isArray(data)) {
         setUsers(data);
         return true;
@@ -50,7 +51,7 @@ const Users = () => {
         return false;
       }
     } catch (error) {
-      console.error("Error fetching users:", error);
+      logger.error("Error fetching users:", error);
       addToast(error.message || "Error fetching users", "error");
       return false;
     } finally {
@@ -90,11 +91,11 @@ const Users = () => {
 
     setActionLoading(true);
     try {
-      await post(`/users/${userToDelete.id}/delete`);
+      await post(`/api/users/${userToDelete.id}/delete`);
       addToast(`User ${userToDelete.username} deleted.`, "success");
       await fetchUsers();
     } catch (error) {
-      console.error("Delete failed:", error);
+      logger.error("Delete failed:", error);
       addToast(error.message || "Failed to delete user.", "error");
     } finally {
       setActionLoading(false);
@@ -105,7 +106,7 @@ const Users = () => {
     e.preventDefault();
     setActionLoading(true);
     try {
-      const response = await post("/register/generate-token", {
+      const response = await post("/api/register/generate-token", {
         role: inviteRole,
       });
 
@@ -154,14 +155,14 @@ const Users = () => {
 
       // Update Role if changed
       if (editRole !== editingUser.role) {
-        await post(`/users/${editingUser.id}/role`, { role: editRole });
+        await post(`/api/users/${editingUser.id}/role`, { role: editRole });
         updated = true;
       }
 
       // Update Status if changed
       if (editActive !== editingUser.is_active) {
         const endpoint = editActive ? "enable" : "disable";
-        await post(`/users/${editingUser.id}/${endpoint}`);
+        await post(`/api/users/${editingUser.id}/${endpoint}`);
         updated = true;
       }
 
@@ -178,7 +179,7 @@ const Users = () => {
         setShowEditModal(false);
       }
     } catch (error) {
-      console.error("Update failed:", error);
+      logger.error("Update failed:", error);
       addToast(error.message || "Failed to update user.", "error");
     } finally {
       setActionLoading(false);

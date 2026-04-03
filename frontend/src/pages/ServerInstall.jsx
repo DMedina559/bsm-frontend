@@ -5,6 +5,7 @@ import { useServer } from "../ServerContext";
 import { useNavigate } from "react-router-dom";
 import { PlusSquare, RefreshCw } from "lucide-react";
 import { useWebSocket } from "../WebSocketContext";
+import { logger } from "../utils/logger";
 
 const ServerInstall = () => {
   const [formData, setFormData] = useState({
@@ -49,7 +50,7 @@ const ServerInstall = () => {
           setCustomZips(data.custom_zips || []);
         }
       } catch (error) {
-        console.warn("Failed to fetch custom zips", error);
+        logger.warn("Failed to fetch custom zips", error);
       }
     };
     fetchCustomZips();
@@ -82,7 +83,7 @@ const ServerInstall = () => {
     let intervalId = null;
 
     if (isFallback && installTaskId) {
-      console.log(
+      logger.debug(
         `WebSocket fallback active: polling status for task ${installTaskId}`,
       );
 
@@ -104,7 +105,7 @@ const ServerInstall = () => {
             }
           }
         } catch (error) {
-          console.warn("Polling task status failed", error);
+          logger.warn("Polling task status failed", error);
           // If 404, maybe task is gone? Or error?
           if (error.status === 404) {
             // Treat as failure if task not found during install

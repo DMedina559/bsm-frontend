@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
 import { get, post, del, request } from "../api";
+import { logger } from "../utils/logger";
 import {
   Upload,
   Trash2,
@@ -33,7 +34,7 @@ const Content = () => {
         }
       }
     } catch (error) {
-      console.warn("Failed to check upload plugin status:", error);
+      logger.warn("Failed to check upload plugin status:", error);
       setIsUploadEnabled(false);
     }
   };
@@ -69,7 +70,7 @@ const Content = () => {
         return false;
       }
     } catch (error) {
-      console.error(`Error fetching ${activeTab}:`, error);
+      logger.error(`Error fetching ${activeTab}:`, error);
       addToast(`Error fetching ${activeTab}`, "error");
       setItems([]);
       return false;

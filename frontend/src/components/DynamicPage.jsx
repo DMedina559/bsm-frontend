@@ -39,6 +39,8 @@ import {
 } from "recharts";
 
 import "../styles/DynamicPage.css";
+import { isSafeUrl } from "../utils/urlValidation";
+import { logger } from "../utils/logger";
 
 // --- Component Registry ---
 const ComponentRegistry = {
@@ -265,14 +267,36 @@ const ComponentRegistry = {
       className={`dynamic-image ${className}`}
     />
   ),
-  iframe: ({ src, title, height = "400px", className = "" }) => (
-    <iframe
-      src={src}
-      title={title}
-      height={height}
-      className={`dynamic-iframe ${className}`}
-    />
-  ),
+  iframe: ({ src, title, height = "400px", className = "" }) => {
+    if (!isSafeUrl(src)) {
+      logger.warn(`Blocked unsafe iframe src: ${src}`);
+      return (
+        <div
+          className={`dynamic-iframe ${className}`}
+          style={{
+            height,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(255,0,0,0.1)",
+            border: "1px solid red",
+            color: "red",
+          }}
+        >
+          Blocked unsafe iframe content
+        </div>
+      );
+    }
+    return (
+      <iframe
+        src={src}
+        title={title}
+        height={height}
+        className={`dynamic-iframe ${className}`}
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+      />
+    );
+  },
   Link: ({ href, label, target = "_self", className = "", icon }) => {
     const Icon = icon
       ? ComponentRegistry.Icon({ name: icon, size: 14 })
@@ -602,7 +626,7 @@ const DynamicPage = ({ schemaJson }) => {
           setError("Invalid page definition.");
         }
       } catch (err) {
-        console.error("DynamicPage Error:", err);
+        logger.error("DynamicPage Error:", err);
         setError(err.message || "Error loading page.");
       } finally {
         setLoading(false);
@@ -757,7 +781,7 @@ const DynamicPage = ({ schemaJson }) => {
 
     const Component = ComponentRegistry[node.type];
     if (!Component) {
-      console.warn(`Unknown component type: ${node.type}`);
+      logger.warn(`Unknown component type: ${node.type}`);
       return (
         <div
           key={key}

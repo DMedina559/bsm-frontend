@@ -103,12 +103,11 @@ const AuditLog = () => {
   }, [activeTab, fetchLogs, fetchTasks]);
 
   const handleRefresh = async () => {
-    let success = false;
     if (activeTab === "users") {
-      success = await fetchLogs();
+      const success = await fetchLogs();
       if (success) addToast("Audit logs refreshed", "success");
     } else if (activeTab === "tasks") {
-      success = await fetchTasks();
+      const success = await fetchTasks();
       if (success) addToast("Tasks list refreshed", "success");
     } else if (activeTab === "app_log") {
       setAppLogLines([]); // Clear logs on refresh? Or maybe just re-subscribe?

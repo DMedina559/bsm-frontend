@@ -21,9 +21,10 @@ describe("App", () => {
     globalThis.fetch = vi.fn();
   });
 
-  it("renders loading state initially", () => {
-    // Mock fetch to return pending promise or just be called
-    globalThis.fetch.mockImplementation(() => new Promise(() => {}));
+  it("renders loading state initially", async () => {
+    // Return an unresolved promise for api.get so it stays in loading state
+    const api = await import("./api");
+    api.get.mockImplementation(() => new Promise(() => {}));
 
     render(
       <BrowserRouter>
@@ -36,19 +37,13 @@ describe("App", () => {
   });
 
   it("redirects to setup if setup is needed", async () => {
-    // Mock setup status
-    globalThis.fetch.mockImplementation((url) => {
-      if (url === "/setup/status") {
-        return Promise.resolve({
-          ok: true,
-          json: async () => ({ needs_setup: true }),
-        });
+    // Mock setup status via the api.get mock
+    const api = await import("./api");
+    api.get.mockImplementation(async (url) => {
+      if (url === "/api/setup/status") {
+        return { needs_setup: true };
       }
-      return Promise.resolve({
-        ok: false,
-        status: 404,
-        json: async () => ({}),
-      });
+      return {};
     });
 
     render(

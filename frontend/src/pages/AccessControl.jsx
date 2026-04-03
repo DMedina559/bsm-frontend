@@ -11,6 +11,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
 import { del, get, post, put } from "../api";
+import { logger } from "../utils/logger";
 
 const AccessControl = () => {
   const { selectedServer } = useServer();
@@ -50,8 +51,8 @@ const AccessControl = () => {
         if (activeTab === "allowlist") {
           setItems(data.players || []);
         } else {
-          // Permissions data is nested in data.data.permissions
-          setItems(data.data?.permissions || []);
+          // Permissions data is nested in data.permissions
+          setItems(data.permissions || []);
         }
       } else {
         addToast(
@@ -61,7 +62,7 @@ const AccessControl = () => {
         setItems([]);
       }
     } catch (error) {
-      console.error(`Error fetching ${activeTab}:`, error);
+      logger.error(`Error fetching ${activeTab}:`, error);
       addToast(error.message || `Error fetching ${activeTab}`, "error");
       setItems([]);
     } finally {

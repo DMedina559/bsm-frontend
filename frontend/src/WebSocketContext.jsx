@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import { useAuth } from "./AuthContext";
 import { getApiBaseUrl, get } from "./api";
+import { logger } from "./utils/logger";
 
 const WebSocketContext = createContext(null);
 
@@ -55,7 +56,7 @@ export const WebSocketProvider = ({ children }) => {
 
     // Check if we should fallback
     if (reconnectAttempts.current >= MAX_RECONNECT_ATTEMPTS) {
-      console.warn(
+      logger.warn(
         "Max reconnect attempts reached. Switching to polling fallback.",
       );
       // Yield to avoid synchronous state update in effect
@@ -88,7 +89,7 @@ export const WebSocketProvider = ({ children }) => {
     // Attempt to refresh token only if we have a user (logic implies we should have a token)
     // or if we are retrying.
     if ((!token && user) || reconnectAttempts.current > 0) {
-      console.log("Refreshing token for WebSocket...");
+      logger.debug("Refreshing token for WebSocket...");
       try {
         const data = await get("/auth/refresh-token");
         if (data.access_token) {
@@ -96,17 +97,17 @@ export const WebSocketProvider = ({ children }) => {
           sessionStorage.setItem("jwt_token", token);
         }
       } catch (e) {
-        console.error("Failed to refresh token", e);
+        logger.error("Failed to refresh token", e);
       }
     }
 
     if (!token) {
-      console.warn("No token found for WebSocket, skipping connection.");
+      logger.warn("No token found for WebSocket, skipping connection.");
       isConnecting.current = false;
       return;
     }
 
-    console.log(`Connecting to WebSocket at ${wsUrl}`);
+    logger.debug(`Connecting to WebSocket at ${wsUrl}`);
 
     try {
       const socket = new WebSocket(
@@ -115,14 +116,14 @@ export const WebSocketProvider = ({ children }) => {
       ws.current = socket;
 
       socket.onopen = () => {
-        console.log("WebSocket Connected");
+        logger.debug("WebSocket Connected");
         setIsConnected(true);
         setIsFallback(false);
         reconnectAttempts.current = 0; // Reset attempts on success
         isConnecting.current = false;
 
         if (pendingSubscriptions.current.size > 0) {
-          console.log(
+          logger.debug(
             `Flushing ${pendingSubscriptions.current.size} pending subscriptions`,
           );
           pendingSubscriptions.current.forEach((topic) => {
@@ -134,14 +135,15 @@ export const WebSocketProvider = ({ children }) => {
       socket.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
+          logger.debug(`[WebSocket Message] Topic: ${data.topic || "unknown"}`);
           setLastMessage(data);
         } catch (e) {
-          console.error("Failed to parse WS message", e);
+          logger.error("[WebSocket Error] Failed to parse message", e);
         }
       };
 
       socket.onclose = (event) => {
-        console.log(
+        logger.debug(
           `WebSocket Disconnected. Code: ${event.code}, Reason: ${event.reason}`,
         );
         setIsConnected(false);
@@ -150,7 +152,7 @@ export const WebSocketProvider = ({ children }) => {
 
         // If closed because of auth error (1008), we might retry with refresh
         if (event.code === 1008) {
-          console.error("WebSocket authentication failed.");
+          logger.error("WebSocket authentication failed.");
         }
 
         reconnectAttempts.current += 1;
@@ -162,7 +164,7 @@ export const WebSocketProvider = ({ children }) => {
           1000 * Math.pow(2, reconnectAttempts.current - 1),
           30000,
         );
-        console.log(`Reconnecting in ${delay}ms...`);
+        logger.debug(`Reconnecting in ${delay}ms...`);
 
         // Use the ref to call the function recursively
         if (connectRef.current) {
@@ -171,12 +173,12 @@ export const WebSocketProvider = ({ children }) => {
       };
 
       socket.onerror = (error) => {
-        console.error("WebSocket Error:", error);
+        logger.error("WebSocket Error:", error);
         // onError usually followed by onClose, so we handle reconnect there
         isConnecting.current = false;
       };
     } catch (error) {
-      console.error("WebSocket Connection Initialization Failed:", error);
+      logger.error("WebSocket Connection Initialization Failed:", error);
       isConnecting.current = false;
       reconnectAttempts.current += 1;
       const delay = Math.min(
@@ -200,7 +202,7 @@ export const WebSocketProvider = ({ children }) => {
     } else {
       // If user logs out, close connection
       if (ws.current) {
-        console.log("User logged out, closing WebSocket.");
+        logger.debug("User logged out, closing WebSocket.");
         // Prevent reconnect loop
         ws.current.onopen = null;
         ws.current.onmessage = null;
@@ -239,13 +241,15 @@ export const WebSocketProvider = ({ children }) => {
 
   const sendMessage = useCallback((msg) => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      logger.debug(`[WebSocket Send] Message action: ${msg.action}`);
       ws.current.send(JSON.stringify(msg));
     } else {
-      console.warn("WebSocket not open, message not sent:", msg);
+      logger.warn("[WebSocket] Not open, message not sent:", msg);
     }
   }, []);
 
   const subscribe = useCallback((topic) => {
+    logger.debug(`[WebSocket Subscribe] Topic: ${topic}`);
     pendingSubscriptions.current.add(topic);
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
       ws.current.send(JSON.stringify({ action: "subscribe", topic }));
@@ -253,6 +257,7 @@ export const WebSocketProvider = ({ children }) => {
   }, []);
 
   const unsubscribe = useCallback((topic) => {
+    logger.debug(`[WebSocket Unsubscribe] Topic: ${topic}`);
     pendingSubscriptions.current.delete(topic);
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
       ws.current.send(JSON.stringify({ action: "unsubscribe", topic }));

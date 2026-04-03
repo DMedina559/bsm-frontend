@@ -11,7 +11,7 @@ describe("Sidebar", () => {
 
     // Mock global fetch for setup status and auth
     globalThis.fetch.mockImplementation((url) => {
-      if (url === "/setup/status") {
+      if (url === "/api/setup/status") {
         return Promise.resolve({
           ok: true,
           json: async () => ({ needs_setup: false }),
@@ -44,7 +44,7 @@ describe("Sidebar", () => {
 
     api.get.mockImplementation((url) => {
       if (url === "/api/plugins/pages")
-        return Promise.resolve({ status: "success", data: [] });
+        return Promise.resolve({ status: "success", pages: [] });
       if (url === "/api/info")
         return Promise.resolve({
           status: "success",
@@ -132,8 +132,8 @@ describe("Sidebar", () => {
     const logoutBtn = screen.getByText("Logout").closest("button");
     fireEvent.click(logoutBtn);
 
-    // Expect fetch to be called with /auth/logout
-    expect(globalThis.fetch).toHaveBeenCalledWith("/auth/logout");
+    const api = await import("../api");
+    expect(api.request).toHaveBeenCalledWith("/auth/logout");
   });
 
   it("highlights the active plugin page based on URL", async () => {
@@ -142,7 +142,7 @@ describe("Sidebar", () => {
       if (url === "/api/plugins/pages")
         return Promise.resolve({
           status: "success",
-          data: [
+          pages: [
             { name: "Plugin A", path: "/plugin/a", type: "native" },
             { name: "Plugin B", path: "/plugin/b", type: "native" },
           ],

@@ -23,7 +23,7 @@ const Setup = () => {
 
     setLoading(true);
     try {
-      await post("/setup/create-first-user", { username, password });
+      await post("/api/setup/create-first-user", { username, password });
       // Setup successful
       // Refresh auth state since the backend logs us in
       await checkUser();
