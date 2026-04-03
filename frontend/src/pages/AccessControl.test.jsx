@@ -31,11 +31,9 @@ describe("AccessControl", () => {
       if (url.includes("/permissions/get")) {
         return Promise.resolve({
           status: "success",
-          data: {
-            permissions: [
-              { xuid: "123", name: "AdminPlayer", permission: "operator" },
-            ],
-          },
+          permissions: [
+            { xuid: "123", name: "AdminPlayer", permission: "operator" },
+          ],
         });
       }
       return Promise.resolve({});
