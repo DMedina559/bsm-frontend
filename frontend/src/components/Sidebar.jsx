@@ -62,7 +62,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
       try {
         const response = await get("/api/plugins/pages");
         if (response && response.status === "success") {
-          setPluginPages(response.data || []);
+          setPluginPages(response.pages || []);
         }
       } catch (error) {
         logger.warn("Failed to fetch plugin pages", error);
