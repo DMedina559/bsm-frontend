@@ -12,8 +12,8 @@ const Plugins = () => {
     setLoading(true);
     try {
       const data = await get("/api/plugins");
-      if (data && data.status === "success" && data.data) {
-        const pluginsArray = Object.entries(data.data).map(
+      if (data && data.status === "success" && data.plugins) {
+        const pluginsArray = Object.entries(data.plugins).map(
           ([name, details]) => ({
             name,
             ...details,

@@ -44,7 +44,7 @@ describe("Sidebar", () => {
 
     api.get.mockImplementation((url) => {
       if (url === "/api/plugins/pages")
-        return Promise.resolve({ status: "success", data: [] });
+        return Promise.resolve({ status: "success", pages: [] });
       if (url === "/api/info")
         return Promise.resolve({
           status: "success",
@@ -142,7 +142,7 @@ describe("Sidebar", () => {
       if (url === "/api/plugins/pages")
         return Promise.resolve({
           status: "success",
-          data: [
+          pages: [
             { name: "Plugin A", path: "/plugin/a", type: "native" },
             { name: "Plugin B", path: "/plugin/b", type: "native" },
           ],

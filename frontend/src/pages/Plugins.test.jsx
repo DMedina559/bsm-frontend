@@ -13,7 +13,7 @@ describe("Plugins", () => {
       if (url === "/api/plugins") {
         return Promise.resolve({
           status: "success",
-          data: {
+          plugins: {
             "Test Plugin": {
               version: "1.0",
               author: "Tester",
