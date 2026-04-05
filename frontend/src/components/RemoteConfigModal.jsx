@@ -13,9 +13,7 @@ const RemoteConfigModal = ({ isOpen, onClose }) => {
   const handleSave = () => {
     setIsSaving(true);
     setApiBaseUrl(remoteUrl);
-    // Clear tokens to force re-authentication against the new server
-    localStorage.removeItem("jwt_token");
-    sessionStorage.removeItem("jwt_token");
+    // Reload to force re-authentication against the new server
     window.location.reload();
   };
 
@@ -23,9 +21,7 @@ const RemoteConfigModal = ({ isOpen, onClose }) => {
     if (window.confirm("Reset to default (local) backend?")) {
       setIsSaving(true);
       setApiBaseUrl("");
-      // Clear tokens to force re-authentication
-      localStorage.removeItem("jwt_token");
-      sessionStorage.removeItem("jwt_token");
+      // Reload to force re-authentication
       window.location.reload();
     }
   };
