@@ -4,6 +4,7 @@ import {
   closestCenter,
   KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -47,7 +48,12 @@ const SortableItem = ({ id, children, itemClassName }) => {
       <div
         {...attributes}
         {...listeners}
-        style={{ cursor: "grab", display: "flex", alignItems: "center" }}
+        style={{
+          cursor: "grab",
+          display: "flex",
+          alignItems: "center",
+          touchAction: "none",
+        }}
         className="drag-handle"
       >
         <GripVertical size={20} color="#888" />
@@ -68,6 +74,12 @@ const DraggableList = ({
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 5,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5,
       },
     }),
     useSensor(KeyboardSensor, {
