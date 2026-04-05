@@ -81,8 +81,16 @@ export const WebSocketProvider = ({ children }) => {
       wsUrl = `${protocol}//${host}/ws`;
     }
 
-    // Rely on cookies for authentication automatically sent by the browser.
-    logger.debug(`Connecting to WebSocket at ${wsUrl}`);
+    // Append access token if available
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      wsUrl += `?token=${encodeURIComponent(token)}`;
+    }
+
+    // Rely on token in query param or cookies for authentication
+    logger.debug(
+      `Connecting to WebSocket at ${wsUrl.replace(/\?token=.*$/, "?token=***")}`,
+    );
 
     try {
       const socket = new WebSocket(wsUrl);
