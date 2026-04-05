@@ -7,7 +7,7 @@ import React, {
   useCallback,
 } from "react";
 import { useAuth } from "./AuthContext";
-import { getApiBaseUrl, get } from "./api";
+import { getApiBaseUrl } from "./api";
 import { logger } from "./utils/logger";
 
 const WebSocketContext = createContext(null);
@@ -81,38 +81,11 @@ export const WebSocketProvider = ({ children }) => {
       wsUrl = `${protocol}//${host}/ws`;
     }
 
-    let token = sessionStorage.getItem("jwt_token");
-    if (!token) {
-      token = localStorage.getItem("jwt_token");
-    }
-
-    // Attempt to refresh token only if we have a user (logic implies we should have a token)
-    // or if we are retrying.
-    if ((!token && user) || reconnectAttempts.current > 0) {
-      logger.debug("Refreshing token for WebSocket...");
-      try {
-        const data = await get("/auth/refresh-token");
-        if (data.access_token) {
-          token = data.access_token;
-          sessionStorage.setItem("jwt_token", token);
-        }
-      } catch (e) {
-        logger.error("Failed to refresh token", e);
-      }
-    }
-
-    if (!token) {
-      logger.warn("No token found for WebSocket, skipping connection.");
-      isConnecting.current = false;
-      return;
-    }
-
+    // Rely on cookies for authentication automatically sent by the browser.
     logger.debug(`Connecting to WebSocket at ${wsUrl}`);
 
     try {
-      const socket = new WebSocket(
-        `${wsUrl}?token=${encodeURIComponent(token)}`,
-      );
+      const socket = new WebSocket(wsUrl);
       ws.current = socket;
 
       socket.onopen = () => {
