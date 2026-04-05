@@ -98,23 +98,30 @@ const AppRoutes = () => {
 const App = () => {
   // Check for hidden trigger (?hidden=true/false)
   React.useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const hidden = params.get("hidden");
+    const checkHiddenFlag = () => {
+      const params = new URLSearchParams(window.location.search);
+      const hidden = params.get("hidden");
 
-    if (hidden === "true") {
-      sessionStorage.setItem("show_remote_config", "true");
-      // Clean URL without reloading
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, "", newUrl);
-      // Force a re-render to ensure components pick up the change immediately
-      window.location.reload();
-    } else if (hidden === "false") {
-      sessionStorage.removeItem("show_remote_config");
-      localStorage.removeItem("api_base_url");
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, "", newUrl);
-      window.location.reload();
-    }
+      if (hidden === "true") {
+        sessionStorage.setItem("show_hidden_flag", "true");
+        // Clean URL without reloading
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, "", newUrl);
+        // Force a re-render to ensure components pick up the change immediately
+        window.location.reload();
+      } else if (hidden === "false") {
+        sessionStorage.removeItem("show_hidden_flag");
+        localStorage.removeItem("api_base_url");
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, "", newUrl);
+        window.location.reload();
+      }
+    };
+
+    checkHiddenFlag();
+    // Also check on popstate in case URL changes without full reload
+    window.addEventListener("popstate", checkHiddenFlag);
+    return () => window.removeEventListener("popstate", checkHiddenFlag);
   }, []);
 
   // Set custom CSS variable for panorama if remote URL is set

@@ -166,7 +166,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
     { path: "/audit-log", label: "Logs", icon: <ScrollText size={20} /> },
   ];
 
-  if (sessionStorage.getItem("show_remote_config") === "true") {
+  if (sessionStorage.getItem("show_hidden_flag") === "true") {
     globalNavItems.push({
       path: "/playground",
       label: "Playground",
