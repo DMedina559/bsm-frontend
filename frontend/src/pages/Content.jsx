@@ -214,28 +214,30 @@ const Content = () => {
     if (!selectedServer) return;
     setActionLoading(true);
     try {
-      // Save behavior packs order
-      const behaviorUuids = installedAddons.behavior_packs
-        .filter((p) => p.status === "ACTIVE" && p.uuid)
-        .map((p) => p.uuid);
+      if (addonModalTab === "behavior") {
+        // Save behavior packs order
+        const behaviorUuids = installedAddons.behavior_packs
+          .filter((p) => p.status === "ACTIVE" && p.uuid)
+          .map((p) => p.uuid);
 
-      if (behaviorUuids.length > 0) {
-        await post(`/api/server/${selectedServer}/addon/reorder`, {
-          pack_type: "behavior",
-          uuids: behaviorUuids,
-        });
-      }
+        if (behaviorUuids.length > 0) {
+          await post(`/api/server/${selectedServer}/addon/reorder`, {
+            pack_type: "behavior",
+            uuids: behaviorUuids,
+          });
+        }
+      } else if (addonModalTab === "resource") {
+        // Save resource packs order
+        const resourceUuids = installedAddons.resource_packs
+          .filter((p) => p.status === "ACTIVE" && p.uuid)
+          .map((p) => p.uuid);
 
-      // Save resource packs order
-      const resourceUuids = installedAddons.resource_packs
-        .filter((p) => p.status === "ACTIVE" && p.uuid)
-        .map((p) => p.uuid);
-
-      if (resourceUuids.length > 0) {
-        await post(`/api/server/${selectedServer}/addon/reorder`, {
-          pack_type: "resource",
-          uuids: resourceUuids,
-        });
+        if (resourceUuids.length > 0) {
+          await post(`/api/server/${selectedServer}/addon/reorder`, {
+            pack_type: "resource",
+            uuids: resourceUuids,
+          });
+        }
       }
 
       addToast("Addon order saved.", "success");
