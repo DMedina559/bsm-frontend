@@ -36,18 +36,6 @@ export function setApiBaseUrl(url) {
 }
 
 /**
- * Retrieves the JWT token from storage (Session first, then Local).
- * @returns {string|null} The token or null if not found.
- */
-export function getJwtToken() {
-  let token = sessionStorage.getItem("jwt_token");
-  if (!token) {
-    token = localStorage.getItem("jwt_token");
-  }
-  return token;
-}
-
-/**
  * Sends an HTTP request to the API.
  *
  * @param {string} url - The URL to request. relative URLs are supported.
@@ -62,15 +50,10 @@ export async function request(url, options = {}) {
     Accept: "application/json",
   };
 
-  const jwtToken = getJwtToken();
-
-  if (jwtToken) {
-    defaultHeaders["Authorization"] = `Bearer ${jwtToken}`;
-  }
-
   const config = {
     method: method.toUpperCase(),
     headers: { ...defaultHeaders, ...headers },
+    credentials: "include",
     ...restOptions,
   };
 
