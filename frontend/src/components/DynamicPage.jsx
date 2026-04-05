@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { get, post } from "../api";
+import { get, post, getJwtToken } from "../api";
 import { useToast } from "../ToastContext";
 import { useSearchParams } from "react-router-dom";
 import { useServer } from "../ServerContext";
@@ -41,7 +41,6 @@ import {
 import "../styles/DynamicPage.css";
 import { isSafeUrl } from "../utils/urlValidation";
 import { logger } from "../utils/logger";
-import DraggableList from "./DraggableList";
 
 // --- Component Registry ---
 const ComponentRegistry = {
@@ -573,21 +572,6 @@ const ComponentRegistry = {
   Tab: ({ children, className = "" }) => (
     <div className={`tab-panel ${className}`}>{children}</div>
   ),
-  DraggableList: ({
-    items,
-    onReorder,
-    renderItem,
-    className,
-    itemClassName,
-  }) => (
-    <DraggableList
-      items={items}
-      onReorder={onReorder}
-      renderItem={renderItem}
-      className={className}
-      itemClassName={itemClassName}
-    />
-  ),
 };
 
 const DynamicPage = ({ schemaJson }) => {
@@ -747,9 +731,10 @@ const DynamicPage = ({ schemaJson }) => {
       }
     } else if (actionDef.type === "download_file") {
       try {
-        const response = await fetch(actionDef.endpoint, {
-          credentials: "include",
-        });
+        const jwtToken = getJwtToken();
+        const headers = jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {};
+
+        const response = await fetch(actionDef.endpoint, { headers });
         if (!response.ok) throw new Error("Download failed");
 
         const blob = await response.blob();
@@ -895,26 +880,6 @@ const DynamicPage = ({ schemaJson }) => {
     if (node.type === "Modal") {
       props.isOpen = activeModalId === props.id;
       props.onClose = () => setActiveModalId(null);
-    }
-
-    if (node.type === "DraggableList") {
-      props.onReorder = (newItems) => {
-        if (props.onReorderAction) {
-          const action = { ...props.onReorderAction };
-          action.payload = { ...action.payload, items: newItems };
-          handleAction(action);
-        }
-      };
-      props.renderItem = (item, index) => {
-        // Expect props.itemTemplate to be a function that takes an item and returns a node
-        if (props.itemTemplate && typeof props.itemTemplate === "function") {
-          return renderNode(
-            props.itemTemplate(item, index),
-            `draggable-item-${item.id}`,
-          );
-        }
-        return <div>{item.name || item.id}</div>;
-      };
     }
 
     // Special handling for Table rows to recursively render cells

@@ -62,7 +62,7 @@ describe("ServerConfig", () => {
     const select = screen.getByLabelText("enabled");
     fireEvent.change(select, { target: { value: "false" } });
 
-    const saveBtn = screen.getByText(/Save Settings/i).closest("button");
+    const saveBtn = screen.getByText("Save Settings").closest("button");
     fireEvent.click(saveBtn);
 
     await waitFor(() => {
