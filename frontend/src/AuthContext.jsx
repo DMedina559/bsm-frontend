@@ -50,16 +50,12 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password, rememberMe = false) => {
     logger.debug(`[Auth] Attempting login for user: ${username}`);
-    const formData = new URLSearchParams();
-    formData.append("username", username);
-    formData.append("password", password);
-    formData.append("remember_me", rememberMe);
-
     const data = await request("/auth/token", {
       method: "POST",
-      body: formData,
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
+      body: {
+        username,
+        password,
+        remember_me: rememberMe,
       },
     });
 
