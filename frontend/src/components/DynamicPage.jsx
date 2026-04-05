@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { get, post, getJwtToken } from "../api";
+import { get, post } from "../api";
 import { useToast } from "../ToastContext";
 import { useSearchParams } from "react-router-dom";
 import { useServer } from "../ServerContext";
@@ -747,10 +747,9 @@ const DynamicPage = ({ schemaJson }) => {
       }
     } else if (actionDef.type === "download_file") {
       try {
-        const jwtToken = getJwtToken();
-        const headers = jwtToken ? { Authorization: `Bearer ${jwtToken}` } : {};
-
-        const response = await fetch(actionDef.endpoint, { headers });
+        const response = await fetch(actionDef.endpoint, {
+          credentials: "include",
+        });
         if (!response.ok) throw new Error("Download failed");
 
         const blob = await response.blob();

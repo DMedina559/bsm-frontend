@@ -35,10 +35,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       logger.error("[Auth] Failed to check user status", error);
       if (error.status === 401) {
-        logger.info("[Auth] Unauthorized, clearing tokens");
-        // Clear both storages on auth failure to be safe
-        localStorage.removeItem("jwt_token");
-        sessionStorage.removeItem("jwt_token");
+        logger.info("[Auth] Unauthorized");
         setUser(null);
       }
       setUser(null);
@@ -49,45 +46,21 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     checkUser();
-
-    // Listen for storage events (logout in another tab/legacy frontend)
-    const handleStorageChange = (e) => {
-      if (e.key === "jwt_token" && e.newValue === null) {
-        setUser(null); // Logout detected
-      } else if (e.key === "jwt_token" && e.newValue) {
-        checkUser(); // Login detected
-      }
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-    };
   }, []);
 
   const login = async (username, password, rememberMe = false) => {
     logger.debug(`[Auth] Attempting login for user: ${username}`);
-    const formData = new URLSearchParams();
-    formData.append("username", username);
-    formData.append("password", password);
-
     const data = await request("/auth/token", {
       method: "POST",
-      body: formData,
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
+      body: {
+        username,
+        password,
+        remember_me: rememberMe,
       },
     });
 
     if (data.access_token) {
       logger.info(`[Auth] Login successful for user: ${username}`);
-      if (rememberMe) {
-        localStorage.setItem("jwt_token", data.access_token);
-        sessionStorage.removeItem("jwt_token"); // Clean up other storage
-      } else {
-        sessionStorage.setItem("jwt_token", data.access_token);
-        localStorage.removeItem("jwt_token"); // Clean up other storage
-      }
     } else {
       logger.warn(`[Auth] Login failed or token missing for user: ${username}`);
     }
@@ -103,8 +76,6 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {
       logger.warn("[Auth] Logout failed on server", e);
     }
-    localStorage.removeItem("jwt_token");
-    sessionStorage.removeItem("jwt_token");
     setUser(null);
   };
 
