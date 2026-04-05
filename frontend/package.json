@@ -1,8 +1,8 @@
 {
-  "name": "Bedrock Server Manager",
+  "name": "bsm-frontend",
   "description": "UI for the python package Bedrock Server Manager V3.8.0+",
   "private": true,
-  "version": "0.0.1",
+  "version": "1.1.4",
   "type": "module",
   "scripts": {
     "dev": "vite",
