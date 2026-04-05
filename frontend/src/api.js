@@ -57,6 +57,11 @@ export async function request(url, options = {}) {
     ...restOptions,
   };
 
+  const token = localStorage.getItem("access_token");
+  if (token) {
+    config.headers["Authorization"] = `Bearer ${token}`;
+  }
+
   if (body) {
     if (
       !config.headers["Content-Type"] &&
@@ -126,14 +131,13 @@ export async function request(url, options = {}) {
       // Check if it looks like the login page (common issue when session expires and backend redirects instead of 401)
       if (
         typeof text === "string" &&
-        text.includes("<!DOCTYPE html>") &&
-        text.includes("Login")
+        text.toLowerCase().includes("<!doctype html>")
       ) {
         logger.warn(
-          `[API Response] Detected HTML Login redirect for ${finalUrl}, forcing 401 error`,
+          `[API Response] Detected HTML redirect for ${finalUrl}, forcing 401 error`,
         );
         // Force a 401 style error so AuthContext can handle logout
-        throw new ApiError("Session expired (Redirected to Login)", 401, null);
+        throw new ApiError("Session expired (Redirected to App)", 401, null);
       }
     }
 

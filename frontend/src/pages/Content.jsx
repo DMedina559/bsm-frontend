@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
+import { getApiBaseUrl } from "../api";
 import { get, post, del, request } from "../api";
 import { logger } from "../utils/logger";
 import {
@@ -343,7 +344,7 @@ const Content = () => {
         >
           {item.icon ? (
             <img
-              src={`/api/server/${selectedServer}/addon/icon?pack_type=${packType}&uuid=${item.uuid}`}
+              src={`${getApiBaseUrl()}/api/server/${selectedServer}/addon/icon?pack_type=${packType}&uuid=${item.uuid}`}
               alt={`${item.name} icon`}
               style={{
                 width: "48px",
