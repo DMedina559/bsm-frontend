@@ -747,8 +747,14 @@ const DynamicPage = ({ schemaJson }) => {
       }
     } else if (actionDef.type === "download_file") {
       try {
+        const headers = {};
+        const token = localStorage.getItem("access_token");
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+
         const response = await fetch(actionDef.endpoint, {
-          credentials: "include",
+          headers,
         });
         if (!response.ok) throw new Error("Download failed");
 
