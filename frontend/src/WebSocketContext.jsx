@@ -87,7 +87,7 @@ export const WebSocketProvider = ({ children }) => {
       wsUrl += `?token=${encodeURIComponent(token)}`;
     }
 
-    // Rely on token in query param or cookies for authentication
+    // Rely on token in query param for authentication
     logger.debug(
       `Connecting to WebSocket at ${wsUrl.replace(/\?token=.*$/, "?token=***")}`,
     );

@@ -53,7 +53,6 @@ export async function request(url, options = {}) {
   const config = {
     method: method.toUpperCase(),
     headers: { ...defaultHeaders, ...headers },
-    credentials: "include",
     ...restOptions,
   };
 
