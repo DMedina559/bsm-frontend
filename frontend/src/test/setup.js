@@ -58,3 +58,6 @@ globalThis.console = {
   // warn: vi.fn(),
   // error: vi.fn(),
 };
+
+// Mock vite define globals
+globalThis.__APP_VERSION__ = "test-version";

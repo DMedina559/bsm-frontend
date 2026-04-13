@@ -1,26 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { get } from "../api";
+import React from "react";
 import "./Footer.css";
-import { logger } from "../utils/logger";
 
 const Footer = () => {
-  const [appVersion, setAppVersion] = useState("Unknown");
-
-  useEffect(() => {
-    const fetchInfo = async () => {
-      try {
-        const data = await get("/api/info");
-        if (data && data.status === "success" && data.info) {
-          setAppVersion(data.info.app_version);
-        }
-      } catch (error) {
-        logger.error("Failed to fetch app info for footer:", error);
-      }
-    };
-
-    fetchInfo();
-  }, []);
-
   return (
     <footer className="footer">
       <p>
@@ -43,8 +24,6 @@ const Footer = () => {
         >
           GitHub
         </a>
-        <br />
-        {appVersion} © MIT 2025-2026
       </p>
     </footer>
   );
