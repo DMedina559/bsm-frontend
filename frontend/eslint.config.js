@@ -15,6 +15,7 @@ export default [
       globals: {
         ...globals.browser,
         ...globals.jest, // For tests if we use Jest/Vitest globals
+        __APP_VERSION__: "readonly",
       },
       parserOptions: {
         ecmaVersion: "latest",
