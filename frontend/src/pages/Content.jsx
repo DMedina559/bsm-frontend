@@ -328,11 +328,12 @@ const Content = () => {
         className="server-card"
         style={{
           width: "100%",
+          height: "115px",
           background: "var(--container-background-color)",
           border: "1px solid var(--border-color)",
           borderRadius: "4px",
           display: "flex",
-          flexDirection: "column",
+          alignItems: "stretch",
           overflow: "hidden",
         }}
       >
@@ -342,6 +343,8 @@ const Content = () => {
             padding: "10px",
             alignItems: "center",
             gap: "10px",
+            flex: 1,
+            overflow: "hidden",
           }}
         >
           {item.icon ? (
@@ -353,6 +356,7 @@ const Content = () => {
                 height: "48px",
                 objectFit: "cover",
                 borderRadius: "4px",
+                flexShrink: 0,
               }}
               onError={(e) => {
                 e.target.style.display = "none";
@@ -368,22 +372,35 @@ const Content = () => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                flexShrink: 0,
               }}
             >
               <Layers size={24} color="#666" />
             </div>
           )}
-          <div style={{ flex: 1, overflow: "hidden" }}>
+          <div
+            style={{
+              flex: 1,
+              overflow: "hidden",
+              display: "flex",
+              flexDirection: "column",
+              height: "100%",
+              justifyContent: "center",
+              gap: "6px",
+            }}
+          >
             <h4
               style={{
-                margin: "0 0 4px 0",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
+                margin: "0",
+                overflowY: "auto",
+                wordWrap: "break-word",
+                maxHeight: "45px",
+                lineHeight: "1.2",
               }}
             >
               {item.name || "Unknown Pack"}
             </h4>
+
             <div
               style={{
                 fontSize: "0.85em",
@@ -415,61 +432,65 @@ const Content = () => {
                 {item.status || "UNKNOWN"}
               </span>
             </div>
+
+            {isActive && hasSubpacks && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  marginTop: "auto",
+                }}
+              >
+                <select
+                  className="form-input"
+                  style={{
+                    flex: 1,
+                    padding: "2px 6px",
+                    fontSize: "0.8em",
+                    height: "24px",
+                    maxWidth: "200px",
+                  }}
+                  value={activeSubpack}
+                  onChange={(e) =>
+                    handleSubpackChange(item, packType, e.target.value)
+                  }
+                  disabled={actionLoading}
+                  title="Active Subpack"
+                >
+                  {subpacks.map((sp) => (
+                    <option key={sp.folder_name} value={sp.folder_name}>
+                      {sp.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </div>
 
-        {isActive && hasSubpacks && (
-          <div
-            style={{
-              padding: "8px 10px",
-              background: "var(--input-background-color)",
-              borderTop: "1px solid var(--border-color)",
-              borderBottom: "1px solid var(--border-color)",
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-            }}
-          >
-            <label
-              style={{
-                fontSize: "0.85em",
-                color: "var(--text-color-secondary)",
-                flexShrink: 0,
-              }}
-            >
-              Active Subpack:
-            </label>
-            <select
-              className="form-input"
-              style={{ flex: 1, padding: "4px 8px", fontSize: "0.85em" }}
-              value={activeSubpack}
-              onChange={(e) =>
-                handleSubpackChange(item, packType, e.target.value)
-              }
-              disabled={actionLoading}
-            >
-              {subpacks.map((sp) => (
-                <option key={sp.folder_name} value={sp.folder_name}>
-                  {sp.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
         <div
           style={{
-            padding: "8px 10px",
-            background: "rgba(0,0,0,0.2)",
+            padding: "10px",
+            background: "rgba(0,0,0,0.1)",
+            borderLeft: "1px solid var(--border-color)",
             display: "flex",
-            gap: "10px",
-            justifyContent: "flex-end",
+            flexDirection: "column",
+            gap: "8px",
+            justifyContent: "center",
+            width: "90px",
+            flexShrink: 0,
           }}
         >
           {isActive ? (
             <button
               className="action-button warning-button"
-              style={{ padding: "4px 8px", fontSize: "0.85em" }}
+              style={{
+                padding: "6px 8px",
+                fontSize: "0.85em",
+                width: "100%",
+                justifyContent: "center",
+              }}
               onClick={() => handleAddonAction(item, packType, "disable")}
               disabled={actionLoading}
             >
@@ -479,10 +500,12 @@ const Content = () => {
             <button
               className="action-button success-button"
               style={{
-                padding: "4px 8px",
+                padding: "6px 8px",
                 fontSize: "0.85em",
                 background: "#4CAF50",
                 color: "#fff",
+                width: "100%",
+                justifyContent: "center",
               }}
               onClick={() => handleAddonAction(item, packType, "enable")}
               disabled={actionLoading}
@@ -492,7 +515,12 @@ const Content = () => {
           )}
           <button
             className="action-button danger-button"
-            style={{ padding: "4px 8px", fontSize: "0.85em" }}
+            style={{
+              padding: "6px 8px",
+              fontSize: "0.85em",
+              width: "100%",
+              justifyContent: "center",
+            }}
             onClick={() => handleAddonAction(item, packType, "uninstall")}
             disabled={actionLoading}
           >
