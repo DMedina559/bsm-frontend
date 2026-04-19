@@ -46,6 +46,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
   const [isCollapsed, setIsCollapsed] = useState(
     () => localStorage.getItem("sidebarCollapsed") === "true",
   );
+  const [appVersion, setAppVersion] = useState("Unknown");
   const [splashText, setSplashText] = useState("");
 
   // Customization State
@@ -58,6 +59,18 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
   );
 
   useEffect(() => {
+    const fetchInfo = async () => {
+      try {
+        const data = await get("/api/info");
+        if (data && data.status === "success" && data.info) {
+          setAppVersion(data.info.app_version);
+        }
+      } catch (error) {
+        console.error("Failed to fetch app info for sidebar:", error);
+      }
+    };
+
+    fetchInfo();
     const fetchPluginPages = async () => {
       try {
         const response = await get("/api/plugins/pages");
@@ -643,6 +656,31 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
           </span>
           {!effectiveCollapsed && <SidebarLabel>Logout</SidebarLabel>}
         </button>
+
+        {/* App Version */}
+        <div
+          style={{
+            padding: "10px",
+            textAlign: "center",
+            fontSize: "0.75em",
+            color: "var(--text-color)",
+            opacity: 0.6,
+            marginTop: "auto",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+          title={`bsm-frontend: ${__APP_VERSION__}\nbedrock-server-manager: ${appVersion}\nMIT 2025-2026 ©`}
+        >
+          {effectiveCollapsed ? (
+            "v"
+          ) : (
+            <>
+              <div>Frontend: {__APP_VERSION__}</div>
+              <div>Backend: {appVersion}</div>
+            </>
+          )}
+        </div>
       </div>
     </aside>
   );

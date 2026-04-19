@@ -1,6 +1,7 @@
 /* global process */
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
+import { execSync } from "child_process";
 
 // Custom plugin to redirect /app to /app/
 const redirectApp = () => ({
@@ -27,8 +28,20 @@ export default defineConfig(({ mode }) => {
     ? target.replace("https", "wss")
     : target.replace("http", "ws");
 
+  let appVersion = "unknown";
+  try {
+    appVersion = execSync("git describe --tags --always --dirty")
+      .toString()
+      .trim();
+  } catch (e) {
+    console.warn("Failed to get git version", e);
+  }
+
   return {
     plugins: [react(), redirectApp()],
+    define: {
+      __APP_VERSION__: JSON.stringify(appVersion),
+    },
     base: "/app/",
     build: {
       outDir: "../src/bsm_frontend/static",
