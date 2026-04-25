@@ -6,6 +6,15 @@ import { AuthProvider } from "../AuthContext";
 import { ServerProvider } from "../ServerContext";
 import { ThemeProvider } from "../ThemeContext";
 import { WebSocketProvider } from "../WebSocketContext";
+import { vi } from "vitest";
+
+// Common fetch mock for testing providers
+globalThis.fetch = vi.fn(() =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve({ needs_setup: false }),
+  }),
+);
 
 const AllTheProviders = ({ children }) => {
   return (

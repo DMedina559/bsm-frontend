@@ -1,4 +1,4 @@
-import { render, screen, waitFor, fireEvent } from "../test/utils";
+import { render, screen, waitFor, fireEvent, act } from "../test/utils";
 import Sidebar from "./Sidebar";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import * as api from "../api";
@@ -63,7 +63,9 @@ describe("Sidebar", () => {
   });
 
   it("renders navigation items", async () => {
-    render(<Sidebar />);
+    await act(async () => {
+      render(<Sidebar />);
+    });
 
     // Wait for user and servers to load (splash text is a good indicator or overview link)
     await waitFor(() => {
@@ -77,14 +79,18 @@ describe("Sidebar", () => {
   });
 
   it("displays splash text", async () => {
-    render(<Sidebar />);
+    await act(async () => {
+      render(<Sidebar />);
+    });
     await waitFor(() => {
       expect(screen.getByText("Splash!")).toBeInTheDocument();
     });
   });
 
   it("handles server selection", async () => {
-    render(<Sidebar />);
+    await act(async () => {
+      render(<Sidebar />);
+    });
 
     await waitFor(() => {
       // Find select
@@ -95,7 +101,9 @@ describe("Sidebar", () => {
     });
 
     const select = screen.getByRole("combobox");
-    fireEvent.change(select, { target: { value: "TestServer" } });
+    await act(async () => {
+      fireEvent.change(select, { target: { value: "TestServer" } });
+    });
 
     await waitFor(() => {
       expect(select.value).toBe("TestServer");
@@ -103,7 +111,10 @@ describe("Sidebar", () => {
   });
 
   it("toggles collapse state", async () => {
-    render(<Sidebar />);
+    await act(async () => {
+      render(<Sidebar />);
+    });
+
     await waitFor(() =>
       expect(screen.getByText("Overview")).toBeInTheDocument(),
     );
@@ -111,14 +122,18 @@ describe("Sidebar", () => {
     const collapseBtn = screen.getByRole("button", {
       name: "Collapse Sidebar",
     });
-    fireEvent.click(collapseBtn);
+    await act(async () => {
+      fireEvent.click(collapseBtn);
+    });
 
     await waitFor(() => {
       expect(screen.queryByText("Overview")).not.toBeInTheDocument();
     });
 
     const expandBtn = screen.getByRole("button", { name: "Expand Sidebar" });
-    fireEvent.click(expandBtn);
+    await act(async () => {
+      fireEvent.click(expandBtn);
+    });
 
     await waitFor(() => {
       expect(screen.getByText("Overview")).toBeInTheDocument();
@@ -126,11 +141,16 @@ describe("Sidebar", () => {
   });
 
   it("calls logout on click", async () => {
-    render(<Sidebar />);
+    await act(async () => {
+      render(<Sidebar />);
+    });
+
     await waitFor(() => expect(screen.getByText("Logout")).toBeInTheDocument());
 
     const logoutBtn = screen.getByText("Logout").closest("button");
-    fireEvent.click(logoutBtn);
+    await act(async () => {
+      fireEvent.click(logoutBtn);
+    });
 
     const api = await import("../api");
     expect(api.request).toHaveBeenCalledWith("/auth/logout");
@@ -166,7 +186,9 @@ describe("Sidebar", () => {
     // Simulate navigation to Plugin A
     window.history.pushState({}, "", "/plugin-native-view?url=%2Fplugin%2Fa");
 
-    render(<Sidebar />);
+    await act(async () => {
+      render(<Sidebar />);
+    });
 
     await waitFor(() => {
       expect(screen.getByText("Plugin A")).toBeInTheDocument();
