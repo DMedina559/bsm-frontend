@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import App from "./App";
 import { BrowserRouter } from "react-router-dom";
@@ -26,11 +26,13 @@ describe("App", () => {
     const api = await import("./api");
     api.get.mockImplementation(() => new Promise(() => {}));
 
-    render(
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>,
-    );
+    await act(async () => {
+      render(
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>,
+      );
+    });
 
     // It should show "Loading..."
     expect(screen.getByText("Loading...")).toBeInTheDocument();
@@ -46,11 +48,13 @@ describe("App", () => {
       return {};
     });
 
-    render(
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>,
-    );
+    await act(async () => {
+      render(
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>,
+      );
+    });
 
     await waitFor(() => {
       // App redirects to /setup, Setup component renders
