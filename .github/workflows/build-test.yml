@@ -8,9 +8,9 @@ on:
       - 'main'
     paths:
       - 'frontend/**'
-  pull_request:
-    paths:
-      - 'frontend/**'
+  #pull_request:
+  #  paths:
+  #    - 'frontend/**'
 
 jobs:
   build-and-test:
