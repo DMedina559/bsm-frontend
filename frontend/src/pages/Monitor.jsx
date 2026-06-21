@@ -12,13 +12,20 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { Play, Square, RotateCcw, Terminal, FileText } from "lucide-react";
+import {
+  Play,
+  Square,
+  RotateCcw,
+  Terminal,
+  FileText,
+  Users,
+} from "lucide-react";
 import { logger } from "../utils/logger";
 
 const Monitor = () => {
   const { isConnected, isFallback, lastMessage, subscribe, unsubscribe } =
     useWebSocket();
-  const { selectedServer } = useServer();
+  const { selectedServer, servers } = useServer();
   const { addToast } = useToast();
 
   const [processInfo, setProcessInfo] = useState(null);
@@ -316,6 +323,44 @@ const Monitor = () => {
                   }}
                 >
                   {processInfo.pid ? "RUNNING" : "STOPPED"}
+                </span>
+              </div>
+
+              {/* Online Players Tooltip inside Monitor */}
+              <div style={{ gridColumn: "1 / -1", marginTop: "10px" }}>
+                <span
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "5px",
+                  }}
+                >
+                  <Users size={14} /> <strong>Players:</strong>{" "}
+                  <span
+                    style={{
+                      color: "#fff",
+                      position: "relative",
+                      cursor: "help",
+                    }}
+                    title={(() => {
+                      const currentServerObj = servers.find(
+                        (s) => s.name === selectedServer,
+                      );
+                      const players = currentServerObj?.players || [];
+                      return players.length > 0
+                        ? players.map((p) => p.name).join("\n")
+                        : "No players online";
+                    })()}
+                  >
+                    {(() => {
+                      const currentServerObj = servers.find(
+                        (s) => s.name === selectedServer,
+                      );
+                      return currentServerObj?.player_count !== undefined
+                        ? currentServerObj.player_count
+                        : "-";
+                    })()}
+                  </span>
                 </span>
               </div>
             </div>

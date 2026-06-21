@@ -6,6 +6,8 @@ import {
   Scan,
   Shield,
   Trash2,
+  Users,
+  X,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useServer } from "../ServerContext";
@@ -25,6 +27,11 @@ const AccessControl = () => {
   const [permissionLevel, setPermissionLevel] = useState("member");
   const [ignoresPlayerLimit, setIgnoresPlayerLimit] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Online Players Modal State
+  const [showPlayersModal, setShowPlayersModal] = useState(false);
+  const [kickReasons, setKickReasons] = useState({});
+  const { servers } = useServer();
 
   const { addToast } = useToast();
   const location = useLocation();
@@ -121,6 +128,35 @@ const AccessControl = () => {
       fetchItems();
     } catch (error) {
       addToast(error.message || "Failed to add item.", "error");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleKickPlayer = async (kickPlayerName) => {
+    if (!selectedServer) return;
+
+    const reason = kickReasons[kickPlayerName] || "";
+    const commandToExecute = reason.trim()
+      ? `kick "${kickPlayerName}" ${reason}`
+      : `kick "${kickPlayerName}"`;
+
+    logger.info(
+      `[AccessControl] Kicking player ${kickPlayerName} from ${selectedServer} with reason: ${reason}`,
+    );
+    setActionLoading(true);
+    try {
+      await post(`/api/server/${selectedServer}/send_command`, {
+        command: commandToExecute,
+      });
+      addToast(`Kick command sent for ${kickPlayerName}.`, "success");
+      setKickReasons((prev) => ({ ...prev, [kickPlayerName]: "" }));
+    } catch (error) {
+      logger.error(
+        `[AccessControl] Failed to kick player ${kickPlayerName} from ${selectedServer}`,
+        error,
+      );
+      addToast(error.message || `Failed to kick ${kickPlayerName}.`, "error");
     } finally {
       setActionLoading(false);
     }
@@ -239,23 +275,48 @@ const AccessControl = () => {
             <>
               <button
                 className="action-button secondary"
+                onClick={() => setShowPlayersModal(true)}
+                disabled={actionLoading}
+                title="View and kick online players"
+                style={{
+                  padding: "4px 8px",
+                  fontSize: "0.85em",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "5px",
+                }}
+              >
+                <Users size={14} /> Online
+              </button>
+              <button
+                className="action-button secondary"
                 onClick={handleScanPlayers}
                 disabled={actionLoading}
                 title="Scan server logs for player history"
+                style={{
+                  padding: "4px 8px",
+                  fontSize: "0.85em",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "5px",
+                }}
               >
-                <Scan size={16} style={{ marginRight: "5px" }} /> Scan Players
+                <Scan size={14} /> Scan
               </button>
               <button
                 className="action-button secondary"
                 onClick={handleRefresh}
                 disabled={loading || actionLoading}
                 title="Reload current list"
+                style={{
+                  padding: "4px 8px",
+                  fontSize: "0.85em",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "5px",
+                }}
               >
-                <RefreshCw
-                  size={16}
-                  style={{ marginRight: "5px" }}
-                  className={loading ? "spin" : ""}
-                />{" "}
+                <RefreshCw size={14} className={loading ? "spin" : ""} />{" "}
                 Refresh
               </button>
             </>
@@ -550,6 +611,165 @@ const AccessControl = () => {
           </div>
         )}
       </div>
+
+      {/* Players Modal */}
+      {showPlayersModal && (
+        <div
+          className="modal-backdrop"
+          onClick={() => setShowPlayersModal(false)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.7)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "var(--container-background-color, #333)",
+              border: "1px solid var(--border-color, #555)",
+              borderRadius: "8px",
+              padding: "20px",
+              width: "90%",
+              maxWidth: "500px",
+              maxHeight: "80vh",
+              display: "flex",
+              flexDirection: "column",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "15px",
+                borderBottom: "1px solid var(--border-color, #555)",
+                paddingBottom: "10px",
+              }}
+            >
+              <h3
+                style={{
+                  margin: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <Users size={20} /> Online Players
+              </h3>
+              <button
+                onClick={() => setShowPlayersModal(false)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#aaa",
+                  cursor: "pointer",
+                  padding: "5px",
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div
+              style={{ overflowY: "auto", flexGrow: 1, paddingRight: "5px" }}
+            >
+              {(() => {
+                const currentServerObj = servers.find(
+                  (s) => s.name === selectedServer,
+                );
+                const players = currentServerObj?.players || [];
+
+                if (!players || players.length === 0) {
+                  return (
+                    <div
+                      style={{
+                        color: "#aaa",
+                        fontStyle: "italic",
+                        textAlign: "center",
+                        padding: "20px",
+                      }}
+                    >
+                      No players online.
+                    </div>
+                  );
+                }
+
+                return (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "10px",
+                    }}
+                  >
+                    {players.map((player, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          background: "rgba(0,0,0,0.2)",
+                          padding: "10px",
+                          borderRadius: "4px",
+                          border: "1px solid rgba(255,255,255,0.05)",
+                        }}
+                      >
+                        <span style={{ fontWeight: "bold" }}>
+                          {player.name}
+                        </span>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "10px",
+                            alignItems: "center",
+                          }}
+                        >
+                          <input
+                            type="text"
+                            placeholder="Optional reason..."
+                            value={kickReasons[player.name] || ""}
+                            onChange={(e) =>
+                              setKickReasons((prev) => ({
+                                ...prev,
+                                [player.name]: e.target.value,
+                              }))
+                            }
+                            className="form-input"
+                            style={{
+                              padding: "4px 8px",
+                              fontSize: "0.85em",
+                              width: "150px",
+                            }}
+                          />
+                          <button
+                            className="action-button danger-button"
+                            onClick={() => handleKickPlayer(player.name)}
+                            disabled={actionLoading}
+                            style={{ padding: "4px 10px", fontSize: "0.85em" }}
+                          >
+                            Kick
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         .badge-success { background-color: rgba(76, 175, 80, 0.2); color: #4caf50; border: 1px solid rgba(76, 175, 80, 0.4); padding: 2px 6px; border-radius: 4px; }

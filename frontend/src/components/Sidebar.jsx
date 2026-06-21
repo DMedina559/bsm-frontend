@@ -23,6 +23,7 @@ import {
   Gamepad2,
   List,
   ChevronLeft,
+  UserCheck,
   ChevronRight,
   Palette,
   X,
@@ -146,8 +147,21 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
     localStorage.setItem("sidebarOpacity", opacity);
   };
 
+  const currentServerObj = servers.find((s) => s.name === selectedServer);
+  const hasPlayersList =
+    currentServerObj?.players && currentServerObj.players.length > 0;
+
   const serverNavItems = [
     { path: "/monitor", label: "Monitor", icon: <LayoutDashboard size={20} /> },
+    ...(hasPlayersList
+      ? [
+          {
+            path: "/online-players",
+            label: "Online Players",
+            icon: <UserCheck size={20} />,
+          },
+        ]
+      : []),
     {
       path: "/server-config",
       label: "Settings",
