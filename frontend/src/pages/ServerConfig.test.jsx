@@ -20,7 +20,7 @@ describe("ServerConfig", () => {
     });
 
     api.get.mockImplementation((url) => {
-      if (url.includes("/settings")) {
+      if (url.includes("/settings/get")) {
         return Promise.resolve({
           status: "success",
           settings: {
