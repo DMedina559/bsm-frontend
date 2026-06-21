@@ -294,7 +294,18 @@ const Overview = () => {
                   >
                     <Users size={14} /> Players:
                   </span>
-                  <span style={{ color: "#fff" }}>
+                  <span
+                    style={{
+                      color: "#fff",
+                      position: "relative",
+                      cursor: "help",
+                    }}
+                    title={
+                      server.players && server.players.length > 0
+                        ? server.players.map((p) => p.name).join("\n")
+                        : "No players online"
+                    }
+                  >
                     {server.player_count !== undefined
                       ? server.player_count
                       : "-"}

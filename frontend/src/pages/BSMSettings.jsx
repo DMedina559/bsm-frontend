@@ -14,7 +14,7 @@ const BSMSettings = () => {
   const fetchSettings = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await get("/api/settings");
+      const data = await get("/api/settings/get");
       if (data && data.settings) {
         setSettings(data.settings);
       } else {
@@ -55,10 +55,10 @@ const BSMSettings = () => {
       const flattened = flattenObject(settings);
 
       // Iterate through keys and save each one individually as the API expects
-      // POST /api/settings with body { key: "...", value: ... }
+      // POST /api/settings/set with body { key: "...", value: ... }
       for (const [key, value] of Object.entries(flattened)) {
         try {
-          await post("/api/settings", { key: key, value: value });
+          await post("/api/settings/set", { key: key, value: value });
         } catch (err) {
           logger.error(`Failed to save setting ${key}:`, err);
           throw err; // Re-throw to be caught by outer block

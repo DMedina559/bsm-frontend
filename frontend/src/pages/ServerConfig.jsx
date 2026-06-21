@@ -19,7 +19,7 @@ const ServerConfig = () => {
   const fetchSettings = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await get(`/api/servers/${selectedServer}/settings`);
+      const data = await get(`/api/servers/${selectedServer}/settings/get`);
       if (data && data.status === "success" && data.settings) {
         setSettings(data.settings);
         return true;
@@ -60,7 +60,7 @@ const ServerConfig = () => {
       for (const [key, value] of Object.entries(flattened)) {
         if (key === "config_schema_version") continue;
 
-        await post(`/api/servers/${selectedServer}/settings`, {
+        await post(`/api/servers/${selectedServer}/settings/set`, {
           key: key,
           value: value,
         });

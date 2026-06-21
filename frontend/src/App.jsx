@@ -24,6 +24,7 @@ import ServerConfig from "./pages/ServerConfig";
 import AccessControl from "./pages/AccessControl";
 import ServerInstall from "./pages/ServerInstall";
 import GlobalPlayers from "./pages/GlobalPlayers";
+import OnlinePlayers from "./pages/OnlinePlayers";
 import DynamicPage from "./components/DynamicPage";
 import Playground from "./pages/Playground";
 
@@ -79,6 +80,7 @@ const AppRoutes = () => {
         <Route path="server-properties" element={<ServerProperties />} />
         <Route path="server-config" element={<ServerConfig />} />
         <Route path="access-control" element={<AccessControl />} />
+        <Route path="online-players" element={<OnlinePlayers />} />
         <Route path="bsm-settings" element={<BSMSettings />} />
         <Route path="content" element={<Content />} />
         <Route path="plugins" element={<Plugins />} />

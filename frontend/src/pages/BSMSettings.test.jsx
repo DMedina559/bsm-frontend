@@ -10,7 +10,7 @@ describe("BSMSettings", () => {
     vi.clearAllMocks();
 
     api.get.mockImplementation((url) => {
-      if (url === "/api/settings") {
+      if (url === "/api/settings/get") {
         return Promise.resolve({
           status: "success",
           settings: {
@@ -58,7 +58,7 @@ describe("BSMSettings", () => {
 
     await waitFor(() => {
       expect(api.post).toHaveBeenCalledWith(
-        "/api/settings",
+        "/api/settings/set",
         expect.objectContaining({ key: "server.name", value: "New Name" }),
       );
     });
