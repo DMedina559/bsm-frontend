@@ -61,7 +61,13 @@ export const AuthProvider = ({ children }) => {
 
     if (data.access_token) {
       logger.info(`[Auth] Login successful for user: ${username}`);
-      localStorage.setItem("access_token", data.access_token);
+      if (rememberMe) {
+        sessionStorage.removeItem("access_token");
+        localStorage.setItem("access_token", data.access_token);
+      } else {
+        localStorage.removeItem("access_token");
+        sessionStorage.setItem("access_token", data.access_token);
+      }
     } else {
       logger.warn(`[Auth] Login failed or token missing for user: ${username}`);
     }
@@ -78,6 +84,7 @@ export const AuthProvider = ({ children }) => {
       logger.warn("[Auth] Logout failed on server", e);
     }
     localStorage.removeItem("access_token");
+    sessionStorage.removeItem("access_token");
     setUser(null);
   };
 

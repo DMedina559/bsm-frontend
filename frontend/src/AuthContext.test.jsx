@@ -26,7 +26,12 @@ const TestComponent = () => {
   return (
     <div>
       No User
-      <button onClick={() => login("testuser", "password", true)}>Login</button>
+      <button onClick={() => login("testuser", "password", true)}>
+        Login Remember
+      </button>
+      <button onClick={() => login("testuser", "password", false)}>
+        Login Session
+      </button>
     </div>
   );
 };
@@ -35,6 +40,7 @@ describe("AuthContext", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    sessionStorage.clear();
   });
 
   it("handles needs_setup true", async () => {
@@ -114,7 +120,7 @@ describe("AuthContext", () => {
     expect(screen.getByText("User: testuser")).toBeInTheDocument();
   });
 
-  it("handles login successfully", async () => {
+  it("handles login successfully (remember me)", async () => {
     api.get.mockResolvedValueOnce({ needs_setup: false });
     api.request.mockRejectedValueOnce(new Error("Unauthorized")); // Initial checkUser
 
@@ -131,10 +137,36 @@ describe("AuthContext", () => {
     api.request.mockResolvedValueOnce({ username: "testuser" }); // checkUser fetch
 
     await act(async () => {
-      screen.getByText("Login").click();
+      screen.getByText("Login Remember").click();
     });
 
     expect(localStorage.getItem("access_token")).toBe("test_token");
+    expect(sessionStorage.getItem("access_token")).toBeNull();
+    expect(screen.getByText("User: testuser")).toBeInTheDocument();
+  });
+
+  it("handles login successfully (session storage)", async () => {
+    api.get.mockResolvedValueOnce({ needs_setup: false });
+    api.request.mockRejectedValueOnce(new Error("Unauthorized")); // Initial checkUser
+
+    await act(async () => {
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>,
+      );
+    });
+
+    api.request.mockResolvedValueOnce({ access_token: "test_token" }); // login
+    api.get.mockResolvedValueOnce({ needs_setup: false }); // checkUser setup
+    api.request.mockResolvedValueOnce({ username: "testuser" }); // checkUser fetch
+
+    await act(async () => {
+      screen.getByText("Login Session").click();
+    });
+
+    expect(sessionStorage.getItem("access_token")).toBe("test_token");
+    expect(localStorage.getItem("access_token")).toBeNull();
     expect(screen.getByText("User: testuser")).toBeInTheDocument();
   });
 
@@ -155,10 +187,11 @@ describe("AuthContext", () => {
     api.request.mockRejectedValueOnce(new Error("Unauthorized")); // checkUser fetch
 
     await act(async () => {
-      screen.getByText("Login").click();
+      screen.getByText("Login Remember").click();
     });
 
     expect(localStorage.getItem("access_token")).toBeNull();
+    expect(sessionStorage.getItem("access_token")).toBeNull();
     expect(screen.getByText("No User")).toBeInTheDocument();
   });
 
@@ -184,6 +217,7 @@ describe("AuthContext", () => {
     });
 
     expect(localStorage.getItem("access_token")).toBeNull();
+    expect(sessionStorage.getItem("access_token")).toBeNull();
     expect(screen.getByText("No User")).toBeInTheDocument();
   });
 
@@ -209,6 +243,7 @@ describe("AuthContext", () => {
 
     // Even if server request fails, local token should be removed and user set to null
     expect(localStorage.getItem("access_token")).toBeNull();
+    expect(sessionStorage.getItem("access_token")).toBeNull();
     expect(screen.getByText("No User")).toBeInTheDocument();
   });
 });

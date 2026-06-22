@@ -51,12 +51,15 @@ export async function request(url, options = {}) {
   };
 
   const config = {
+    credentials: "omit",
     method: method.toUpperCase(),
     headers: { ...defaultHeaders, ...headers },
     ...restOptions,
   };
 
-  const token = localStorage.getItem("access_token");
+  const token =
+    sessionStorage.getItem("access_token") ||
+    localStorage.getItem("access_token");
   if (token) {
     config.headers["Authorization"] = `Bearer ${token}`;
   }
