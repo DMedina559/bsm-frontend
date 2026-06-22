@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { RefreshCw, Save } from "lucide-react";
 import { useToast } from "../ToastContext";
-import { get, post } from "../api";
+import { get, post, put } from "../api";
 import { logger } from "../utils/logger";
 
 const BSMSettings = () => {
@@ -77,7 +77,7 @@ const BSMSettings = () => {
   const handleReload = async () => {
     setLoading(true);
     try {
-      await post("/api/settings/reload");
+      await put("/api/settings/reload");
       addToast("Settings reloaded from disk.", "success");
       fetchSettings();
     } catch (error) {

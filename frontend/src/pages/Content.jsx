@@ -259,10 +259,19 @@ const Content = () => {
 
     setActionLoading(true);
     try {
-      await post(`/api/server/${selectedServer}/addon/${action}`, {
-        pack_uuid: pack.uuid,
-        pack_type: packType,
-      });
+      if (action === "uninstall") {
+        await del(`/api/server/${selectedServer}/addon/uninstall`, {
+          body: {
+            pack_uuid: pack.uuid,
+            pack_type: packType,
+          },
+        });
+      } else {
+        await post(`/api/server/${selectedServer}/addon/${action}`, {
+          pack_uuid: pack.uuid,
+          pack_type: packType,
+        });
+      }
       addToast(`${action} successful.`, "success");
       fetchInstalledAddons();
     } catch (error) {
