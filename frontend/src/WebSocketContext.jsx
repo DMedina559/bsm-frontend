@@ -82,7 +82,9 @@ export const WebSocketProvider = ({ children }) => {
     }
 
     // Append access token if available
-    const token = localStorage.getItem("access_token");
+    const token =
+      sessionStorage.getItem("access_token") ||
+      localStorage.getItem("access_token");
     if (token) {
       wsUrl += `?token=${encodeURIComponent(token)}`;
     }

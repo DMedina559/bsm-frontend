@@ -748,7 +748,9 @@ const DynamicPage = ({ schemaJson }) => {
     } else if (actionDef.type === "download_file") {
       try {
         const headers = {};
-        const token = localStorage.getItem("access_token");
+        const token =
+          sessionStorage.getItem("access_token") ||
+          localStorage.getItem("access_token");
         if (token) {
           headers["Authorization"] = `Bearer ${token}`;
         }
