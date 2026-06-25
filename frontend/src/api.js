@@ -51,7 +51,6 @@ export async function request(url, options = {}) {
   };
 
   const config = {
-    credentials: "omit",
     method: method.toUpperCase(),
     headers: { ...defaultHeaders, ...headers },
     ...restOptions,
