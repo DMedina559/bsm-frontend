@@ -81,18 +81,12 @@ export const WebSocketProvider = ({ children }) => {
       wsUrl = `${protocol}//${host}/ws`;
     }
 
-    // Append access token if available
+    // Retrieve access token if available
     const token =
       sessionStorage.getItem("access_token") ||
       localStorage.getItem("access_token");
-    if (token) {
-      wsUrl += `?token=${encodeURIComponent(token)}`;
-    }
 
-    // Rely on token in query param for authentication
-    logger.debug(
-      `Connecting to WebSocket at ${wsUrl.replace(/\?token=.*$/, "?token=***")}`,
-    );
+    logger.debug(`Connecting to WebSocket at ${wsUrl}`);
 
     try {
       const socket = new WebSocket(wsUrl);
@@ -100,6 +94,12 @@ export const WebSocketProvider = ({ children }) => {
 
       socket.onopen = () => {
         logger.debug("WebSocket Connected");
+
+        // Send authentication message
+        if (token) {
+          socket.send(JSON.stringify({ action: "authenticate", token }));
+        }
+
         setIsConnected(true);
         setIsFallback(false);
         reconnectAttempts.current = 0; // Reset attempts on success
@@ -118,6 +118,13 @@ export const WebSocketProvider = ({ children }) => {
       socket.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
+          if (
+            data.status === "success" &&
+            data.message === "Authenticated successfully"
+          ) {
+            logger.debug("[WebSocket] Authentication successful");
+            return; // Don't expose this internal message to the app
+          }
           logger.debug(`[WebSocket Message] Topic: ${data.topic || "unknown"}`);
           setLastMessage(data);
         } catch (e) {
