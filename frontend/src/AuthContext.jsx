@@ -31,6 +31,33 @@ export const AuthProvider = ({ children }) => {
       // Check if we have a token in either storage (api.js handles retrieval)
       const userData = await request("/api/account", { method: "GET" });
       logger.debug(`[Auth] User authenticated: ${userData?.username}`);
+
+      // If we authenticated successfully (likely via cookie in a new tab)
+      // but have no token in storage, grab a fresh token via reauth.
+      const hasToken =
+        sessionStorage.getItem("access_token") ||
+        localStorage.getItem("access_token");
+
+      if (!hasToken) {
+        logger.debug(
+          "[Auth] Authenticated via cookie but no token in storage. Fetching new token.",
+        );
+        try {
+          const reauthData = await request("/auth/reauth", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams({ remember_me: "false" }),
+          });
+          if (reauthData.access_token) {
+            sessionStorage.setItem("access_token", reauthData.access_token);
+          }
+        } catch (reauthError) {
+          logger.warn("[Auth] Failed to reauth token", reauthError);
+        }
+      }
+
       setUser(userData);
     } catch (error) {
       logger.error("[Auth] Failed to check user status", error);

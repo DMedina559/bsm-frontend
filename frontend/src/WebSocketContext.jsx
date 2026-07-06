@@ -96,9 +96,9 @@ export const WebSocketProvider = ({ children }) => {
         logger.debug("WebSocket Connected");
 
         // Send authentication message
-        if (token) {
-          socket.send(JSON.stringify({ action: "authenticate", token }));
-        }
+        socket.send(
+          JSON.stringify({ action: "authenticate", token: token || "" }),
+        );
 
         setIsConnected(true);
         setIsFallback(false);
