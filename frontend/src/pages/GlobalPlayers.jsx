@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { get, post } from "../api";
+import { get, post, put } from "../api";
 import { useToast } from "../ToastContext";
 import { RefreshCw, Plus, Scan } from "lucide-react";
 import { logger } from "../utils/logger";
@@ -49,7 +49,7 @@ const GlobalPlayers = () => {
   const handleScan = async () => {
     setScanLoading(true);
     try {
-      const response = await post("/api/players/scan");
+      const response = await put("/api/players/scan");
       if (response && response.status === "success") {
         addToast(response.message || "Scan started.", "success");
         setTimeout(fetchPlayers, 2000);

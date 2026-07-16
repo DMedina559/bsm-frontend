@@ -56,7 +56,9 @@ export async function request(url, options = {}) {
     ...restOptions,
   };
 
-  const token = localStorage.getItem("access_token");
+  const token =
+    sessionStorage.getItem("access_token") ||
+    localStorage.getItem("access_token");
   if (token) {
     config.headers["Authorization"] = `Bearer ${token}`;
   }

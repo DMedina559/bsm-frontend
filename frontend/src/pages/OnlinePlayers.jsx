@@ -14,6 +14,9 @@ const OnlinePlayers = () => {
   const [kickModalOpen, setKickModalOpen] = useState(false);
   const [transferModalOpen, setTransferModalOpen] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [banModalOpen, setBanModalOpen] = useState(false);
+  const [selectedPlayerXuid, setSelectedPlayerXuid] = useState(null);
+  const [banReason, setBanReason] = useState("");
 
   // Form states
   const [kickReason, setKickReason] = useState("");
@@ -39,7 +42,50 @@ const OnlinePlayers = () => {
   const closeModals = () => {
     setKickModalOpen(false);
     setTransferModalOpen(false);
+    setBanModalOpen(false);
     setSelectedPlayer(null);
+    setSelectedPlayerXuid(null);
+    setBanReason("");
+  };
+
+  const handleOpenBanModal = (playerName, playerXuid) => {
+    if (!playerXuid) {
+      addToast(
+        "Cannot ban player: XUID is missing. Try kicking instead.",
+        "warning",
+      );
+      return;
+    }
+    setSelectedPlayer(playerName);
+    setSelectedPlayerXuid(playerXuid);
+    setBanReason("");
+    setBanModalOpen(true);
+  };
+
+  const handleBanPlayer = async () => {
+    if (!selectedServer || !selectedPlayer || !selectedPlayerXuid) return;
+
+    logger.info(
+      `[OnlinePlayers] Banning player ${selectedPlayer} (${selectedPlayerXuid}) from ${selectedServer}`,
+    );
+    setLoadingAction(true);
+    try {
+      await post(`/api/server/${selectedServer}/bans/add`, {
+        player_name: selectedPlayer,
+        xuid: selectedPlayerXuid,
+        reason: banReason || null,
+      });
+      addToast(`${selectedPlayer} has been banned.`, "success");
+      closeModals();
+    } catch (error) {
+      logger.error(
+        `[OnlinePlayers] Failed to ban player ${selectedPlayer}`,
+        error,
+      );
+      addToast(error.message || `Failed to ban ${selectedPlayer}.`, "error");
+    } finally {
+      setLoadingAction(false);
+    }
   };
 
   const handleKickPlayer = async () => {
@@ -211,12 +257,145 @@ const OnlinePlayers = () => {
                   >
                     Kick
                   </button>
+                  <button
+                    className="action-button danger-button"
+                    onClick={() => handleOpenBanModal(player.name, player.uuid)}
+                    disabled={loadingAction || !player.uuid}
+                    title={!player.uuid ? "XUID required to ban" : "Ban Player"}
+                  >
+                    Ban
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Ban Modal */}
+      {banModalOpen && (
+        <div
+          className="modal-backdrop"
+          onClick={closeModals}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.7)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "var(--container-background-color, #333)",
+              border: "1px solid var(--border-color, #555)",
+              borderRadius: "8px",
+              padding: "20px",
+              width: "90%",
+              maxWidth: "400px",
+              display: "flex",
+              flexDirection: "column",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "15px",
+                borderBottom: "1px solid var(--border-color, #555)",
+                paddingBottom: "10px",
+              }}
+            >
+              <h3 style={{ margin: 0, color: "#f44336" }}>
+                Ban {selectedPlayer}
+              </h3>
+              <button
+                onClick={closeModals}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#aaa",
+                  cursor: "pointer",
+                  padding: "5px",
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "15px" }}
+            >
+              <div
+                style={{
+                  background: "rgba(244, 67, 54, 0.1)",
+                  border: "1px solid rgba(244, 67, 54, 0.3)",
+                  padding: "10px",
+                  borderRadius: "4px",
+                  color: "#f44336",
+                  fontSize: "0.9em",
+                }}
+              >
+                Warning: This will prevent the player from joining the server.
+              </div>
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "5px",
+                    color: "var(--text-color)",
+                  }}
+                >
+                  Reason (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={banReason}
+                  onChange={(e) => setBanReason(e.target.value)}
+                  className="form-input"
+                  placeholder="e.g. Breaking rules"
+                  style={{
+                    width: "100%",
+                    padding: "8px",
+                    boxSizing: "border-box",
+                  }}
+                  autoFocus
+                />
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: "10px",
+                  marginTop: "10px",
+                }}
+              >
+                <button
+                  className="action-button secondary"
+                  onClick={closeModals}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="action-button danger-button"
+                  onClick={handleBanPlayer}
+                  disabled={loadingAction}
+                >
+                  Confirm Ban
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Kick Modal */}
       {kickModalOpen && (

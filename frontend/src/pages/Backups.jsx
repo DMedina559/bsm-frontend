@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
-import { get, post } from "../api";
+import { get, post, put } from "../api";
 
 const Backups = () => {
   const { selectedServer } = useServer();
@@ -135,7 +135,7 @@ const Backups = () => {
     if (!confirm("Prune old backups based on retention policy?")) return;
 
     try {
-      await post(`/api/server/${selectedServer}/backups/prune`, {});
+      await put(`/api/server/${selectedServer}/backups/prune`, {});
       addToast("Pruning task started.", "success");
     } catch (error) {
       addToast(error.message || "Failed to prune backups.", "error");

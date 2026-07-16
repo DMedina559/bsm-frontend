@@ -110,18 +110,20 @@ const Users = () => {
         role: inviteRole,
       });
 
-      if (response && response.redirect_url) {
-        const match = response.redirect_url.match(/register\/([a-zA-Z0-9_-]+)/);
-        if (match && match[1]) {
-          const token = match[1];
-          const v2Link = `${window.location.origin}/app/register/${token}`;
-          setGeneratedLink(v2Link);
-          addToast("Invitation link generated.", "success");
-        } else {
-          // Fallback if parsing fails but backend returned success
-          setGeneratedLink(response.redirect_url);
-          addToast("Link generated.", "success");
+      console.log("Generate token response:", response);
+      if (response && response.registration_url) {
+        let finalLink = response.registration_url;
+        try {
+          const urlObj = new URL(response.registration_url);
+          finalLink = `${window.location.origin}${urlObj.pathname}`;
+        } catch {
+          if (response.registration_url.startsWith("/")) {
+            finalLink = `${window.location.origin}${response.registration_url}`;
+          }
         }
+
+        setGeneratedLink(finalLink);
+        addToast("Invitation link generated.", "success");
       } else {
         addToast("Failed to generate link.", "error");
       }

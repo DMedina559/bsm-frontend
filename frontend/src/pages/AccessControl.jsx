@@ -27,6 +27,7 @@ const AccessControl = () => {
   const [permissionLevel, setPermissionLevel] = useState("member");
   const [ignoresPlayerLimit, setIgnoresPlayerLimit] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [banReason, setBanReason] = useState("");
 
   // Online Players Modal State
   const [showPlayersModal, setShowPlayersModal] = useState(false);
@@ -47,25 +48,22 @@ const AccessControl = () => {
   const fetchItems = useCallback(async () => {
     if (!selectedServer) return;
     setLoading(true);
+
     try {
-      const endpoint =
-        activeTab === "allowlist"
-          ? `/api/server/${selectedServer}/allowlist/get`
-          : `/api/server/${selectedServer}/permissions/get`;
+      let endpoint = "";
+      if (activeTab === "allowlist")
+        endpoint = `/api/server/${selectedServer}/allowlist/get`;
+      else if (activeTab === "permissions")
+        endpoint = `/api/server/${selectedServer}/permissions/get`;
+      else if (activeTab === "bans")
+        endpoint = `/api/server/${selectedServer}/bans/get`;
 
       const data = await get(endpoint);
-      if (data && data.status === "success") {
-        if (activeTab === "allowlist") {
-          setItems(data.players || []);
-        } else {
-          // Permissions data is nested in data.permissions
-          setItems(data.permissions || []);
-        }
+      if (data) {
+        if (activeTab === "allowlist") setItems(data.players || []);
+        else if (activeTab === "permissions") setItems(data.permissions || []);
+        else if (activeTab === "bans") setItems(data.bans || []);
       } else {
-        addToast(
-          `Failed to load ${activeTab}: ${data?.message || "Unknown error"}`,
-          "error",
-        );
         setItems([]);
       }
     } catch (error) {
@@ -96,8 +94,8 @@ const AccessControl = () => {
     e.preventDefault();
     if (!selectedServer || !playerName) return;
 
-    if (activeTab === "permissions" && !playerXuid) {
-      addToast("XUID is required for permissions.", "error");
+    if ((activeTab === "permissions" || activeTab === "bans") && !playerXuid) {
+      addToast("XUID is required.", "error");
       return;
     }
 
@@ -107,6 +105,12 @@ const AccessControl = () => {
         await post(`/api/server/${selectedServer}/allowlist/add`, {
           players: [playerName],
           ignoresPlayerLimit: ignoresPlayerLimit,
+        });
+      } else if (activeTab === "bans") {
+        await post(`/api/server/${selectedServer}/bans/add`, {
+          player_name: playerName,
+          xuid: playerXuid,
+          reason: banReason || null,
         });
       } else {
         await put(`/api/server/${selectedServer}/permissions/set`, {
@@ -124,7 +128,9 @@ const AccessControl = () => {
       addToast(`${playerName} added/updated in ${activeTab}.`, "success");
       setPlayerName("");
       setPlayerXuid("");
+      setBanReason("");
       setIgnoresPlayerLimit(false);
+
       fetchItems();
     } catch (error) {
       addToast(error.message || "Failed to add item.", "error");
@@ -164,7 +170,8 @@ const AccessControl = () => {
 
   const handleRemove = async (item) => {
     if (!selectedServer) return;
-    const name = item.name || item.xuid || "Unknown";
+    const name =
+      item.name || item.player_name || item.xuid || item.uuid || "Unknown";
     if (!confirm(`Remove ${name} from ${activeTab}?`)) return;
 
     setActionLoading(true);
@@ -174,6 +181,12 @@ const AccessControl = () => {
           body: { players: [item.name || item.xuid] },
         });
         addToast("Player removed from allowlist.", "success");
+        fetchItems();
+      } else if (activeTab === "bans") {
+        await del(`/api/server/${selectedServer}/bans/remove`, {
+          body: { xuid: item.xuid || item.uuid },
+        });
+        addToast("Player removed from ban list.", "success");
         fetchItems();
       } else {
         addToast(
@@ -354,6 +367,12 @@ const AccessControl = () => {
         >
           Permissions
         </button>
+        <button
+          className={`tab-button ${activeTab === "bans" ? "active" : ""}`}
+          onClick={() => setActiveTab("bans")}
+        >
+          Bans
+        </button>
       </div>
 
       <div
@@ -398,12 +417,14 @@ const AccessControl = () => {
               placeholder={
                 activeTab === "allowlist"
                   ? "Enter Gamertag to allow..."
-                  : "Enter Gamertag..."
+                  : activeTab === "bans"
+                    ? "Enter Gamertag to ban..."
+                    : "Enter Gamertag..."
               }
             />
           </div>
 
-          {activeTab === "permissions" && (
+          {(activeTab === "permissions" || activeTab === "bans") && (
             <div style={{ flexGrow: 1, minWidth: "150px" }}>
               <label
                 className="form-label"
@@ -423,6 +444,24 @@ const AccessControl = () => {
             </div>
           )}
 
+          {activeTab === "bans" && (
+            <div style={{ flexGrow: 1, minWidth: "150px" }}>
+              <label
+                className="form-label"
+                style={{ display: "block", marginBottom: "5px" }}
+              >
+                Reason (Optional)
+              </label>
+              <input
+                type="text"
+                className="form-input"
+                value={banReason}
+                onChange={(e) => setBanReason(e.target.value)}
+                style={{ width: "100%" }}
+                placeholder="Enter ban reason..."
+              />
+            </div>
+          )}
           {activeTab === "permissions" && (
             <div style={{ minWidth: "150px" }}>
               <label
@@ -499,10 +538,13 @@ const AccessControl = () => {
               <thead>
                 <tr>
                   <th>Name</th>
-                  {activeTab === "permissions" && <th>XUID</th>}
+                  {(activeTab === "permissions" || activeTab === "bans") && (
+                    <th>XUID</th>
+                  )}
                   {activeTab === "allowlist" && <th>Attributes</th>}
                   {activeTab === "permissions" && <th>Permission Level</th>}
-                  {activeTab === "allowlist" && (
+                  {activeTab === "bans" && <th>Reason</th>}
+                  {(activeTab === "allowlist" || activeTab === "bans") && (
                     <th style={{ width: "100px" }}>Actions</th>
                   )}
                 </tr>
@@ -513,10 +555,11 @@ const AccessControl = () => {
                     <tr key={idx}>
                       <td>
                         <span style={{ fontWeight: "bold" }}>
-                          {item.name || "Unknown"}
+                          {item.name || item.player_name || "Unknown"}
                         </span>
                       </td>
-                      {activeTab === "permissions" && (
+                      {(activeTab === "permissions" ||
+                        activeTab === "bans") && (
                         <td>
                           <span
                             className="mono-text"
@@ -525,7 +568,7 @@ const AccessControl = () => {
                               color: "var(--text-color-secondary)",
                             }}
                           >
-                            {item.xuid || "N/A"}
+                            {item.xuid || item.uuid || "N/A"}
                           </span>
                         </td>
                       )}
@@ -574,12 +617,13 @@ const AccessControl = () => {
                         </td>
                       )}
 
-                      {activeTab === "allowlist" && (
+                      {activeTab === "bans" && <td>{item.reason || "-"}</td>}
+                      {(activeTab === "allowlist" || activeTab === "bans") && (
                         <td>
                           <button
                             className="action-button danger-button"
                             onClick={() => handleRemove(item)}
-                            title="Remove from allowlist"
+                            title={`Remove from ${activeTab}`}
                             style={{ padding: "5px 10px" }}
                             disabled={actionLoading}
                           >

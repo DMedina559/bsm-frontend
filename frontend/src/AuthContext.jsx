@@ -31,6 +31,33 @@ export const AuthProvider = ({ children }) => {
       // Check if we have a token in either storage (api.js handles retrieval)
       const userData = await request("/api/account", { method: "GET" });
       logger.debug(`[Auth] User authenticated: ${userData?.username}`);
+
+      // If we authenticated successfully (likely via cookie in a new tab)
+      // but have no token in storage, grab a fresh token via reauth.
+      const hasToken =
+        sessionStorage.getItem("access_token") ||
+        localStorage.getItem("access_token");
+
+      if (!hasToken) {
+        logger.debug(
+          "[Auth] Authenticated via cookie but no token in storage. Fetching new token.",
+        );
+        try {
+          const reauthData = await request("/auth/reauth", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams({ remember_me: "false" }),
+          });
+          if (reauthData.access_token) {
+            sessionStorage.setItem("access_token", reauthData.access_token);
+          }
+        } catch (reauthError) {
+          logger.warn("[Auth] Failed to reauth token", reauthError);
+        }
+      }
+
       setUser(userData);
     } catch (error) {
       logger.error("[Auth] Failed to check user status", error);
@@ -50,18 +77,29 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password, rememberMe = false) => {
     logger.debug(`[Auth] Attempting login for user: ${username}`);
+    const formData = new URLSearchParams();
+    formData.append("grant_type", "password");
+    formData.append("username", username);
+    formData.append("password", password);
+    formData.append("remember_me", rememberMe);
+
     const data = await request("/auth/token", {
       method: "POST",
-      body: {
-        username,
-        password,
-        remember_me: rememberMe,
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
       },
+      body: formData,
     });
 
     if (data.access_token) {
       logger.info(`[Auth] Login successful for user: ${username}`);
-      localStorage.setItem("access_token", data.access_token);
+      if (rememberMe) {
+        sessionStorage.removeItem("access_token");
+        localStorage.setItem("access_token", data.access_token);
+      } else {
+        localStorage.removeItem("access_token");
+        sessionStorage.setItem("access_token", data.access_token);
+      }
     } else {
       logger.warn(`[Auth] Login failed or token missing for user: ${username}`);
     }
@@ -78,6 +116,7 @@ export const AuthProvider = ({ children }) => {
       logger.warn("[Auth] Logout failed on server", e);
     }
     localStorage.removeItem("access_token");
+    sessionStorage.removeItem("access_token");
     setUser(null);
   };
 
