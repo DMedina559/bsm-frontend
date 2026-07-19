@@ -9,8 +9,14 @@ import {
   Search,
   ChevronDown,
   ChevronUp,
+  FileText,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
+import propertiesLang from "react-syntax-highlighter/dist/esm/languages/hljs/properties";
+import atomOneDark from "react-syntax-highlighter/dist/esm/styles/hljs/atom-one-dark";
+
+SyntaxHighlighter.registerLanguage("properties", propertiesLang);
 
 // Categorize common properties for better organization
 const PROPERTY_GROUPS = {
@@ -37,6 +43,7 @@ const PROPERTY_GROUPS = {
   Network: [
     "server-port",
     "server-portv6",
+    "transport",
     "enable-lan-visibility",
     "compression-threshold",
     "compression-algorithm",
@@ -70,8 +77,10 @@ const PROPERTY_GROUPS = {
 const ServerProperties = () => {
   const { selectedServer } = useServer();
   const [properties, setProperties] = useState([]);
+  const [rawContent, setRawContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showRawModal, setShowRawModal] = useState(false);
   const { addToast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
@@ -98,6 +107,9 @@ const ServerProperties = () => {
         );
         propsArray.sort((a, b) => a.key.localeCompare(b.key));
         setProperties(propsArray);
+        if (data.raw_content !== undefined) {
+          setRawContent(data.raw_content);
+        }
         return true;
       } else {
         addToast("Failed to load server properties", "error");
@@ -247,6 +259,28 @@ const ServerProperties = () => {
       value === "false";
 
     if (isBoolean) {
+      const isChecked = value === "true";
+      return (
+        <div className="switch-wrapper" style={{ marginTop: "5px" }}>
+          <label className="switch" htmlFor={key}>
+            <input
+              type="checkbox"
+              id={key}
+              checked={isChecked}
+              onChange={(e) =>
+                handleChange(key, e.target.checked ? "true" : "false")
+              }
+            />
+            <span className="slider round"></span>
+          </label>
+          <label className="switch-label-text" htmlFor={key}>
+            {value}
+          </label>
+        </div>
+      );
+    }
+
+    if (key === "transport") {
       return (
         <select
           id={key}
@@ -254,8 +288,8 @@ const ServerProperties = () => {
           value={value}
           onChange={(e) => handleChange(key, e.target.value)}
         >
-          <option value="true">true</option>
-          <option value="false">false</option>
+          <option value="raknet">raknet</option>
+          <option value="nethernet">nethernet</option>
         </select>
       );
     }
@@ -410,7 +444,14 @@ const ServerProperties = () => {
         }}
       >
         <h1>Server Properties: {selectedServer}</h1>
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "10px",
+            flexWrap: "wrap",
+            justifyContent: "flex-end",
+          }}
+        >
           {!setupFlow && (
             <button
               className="action-button secondary"
@@ -424,6 +465,15 @@ const ServerProperties = () => {
                 className={loading ? "spin" : ""}
               />{" "}
               Refresh
+            </button>
+          )}
+          {!setupFlow && (
+            <button
+              className="action-button secondary"
+              onClick={() => setShowRawModal(true)}
+              title="View Properties File"
+            >
+              <FileText size={16} style={{ marginRight: "5px" }} /> View File
             </button>
           )}
           <button
@@ -644,8 +694,19 @@ const ServerProperties = () => {
               display: "flex",
               justifyContent: "flex-end",
               marginTop: "20px",
+              gap: "10px",
             }}
           >
+            {!setupFlow && (
+              <button
+                type="button"
+                className="action-button secondary"
+                onClick={() => setShowRawModal(true)}
+                title="View Properties File"
+              >
+                <FileText size={16} style={{ marginRight: "5px" }} /> View File
+              </button>
+            )}
             <button type="submit" className="action-button" disabled={loading}>
               {setupFlow ? (
                 <>
@@ -660,6 +721,116 @@ const ServerProperties = () => {
             </button>
           </div>
         </form>
+      )}
+
+      {/* Raw Content Modal */}
+      {showRawModal && (
+        <div
+          className="modal-backdrop"
+          onClick={() => setShowRawModal(false)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.7)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "var(--container-background-color, #333)",
+              border: "1px solid var(--border-color, #555)",
+              borderRadius: "8px",
+              width: "90%",
+              maxWidth: "800px",
+              maxHeight: "90vh",
+              display: "flex",
+              flexDirection: "column",
+              boxShadow: "0 4px 6px rgba(0,0,0,0.3)",
+            }}
+          >
+            <div
+              style={{
+                padding: "15px 20px",
+                borderBottom: "1px solid var(--border-color, #555)",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <h3 style={{ margin: 0, display: "flex", alignItems: "center" }}>
+                <FileText size={20} style={{ marginRight: "10px" }} />
+                Raw server.properties
+              </h3>
+              <button
+                onClick={() => setShowRawModal(false)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "var(--text-color, #fff)",
+                  fontSize: "1.5rem",
+                  cursor: "pointer",
+                }}
+              >
+                &times;
+              </button>
+            </div>
+            <div
+              style={{
+                padding: "20px",
+                overflowY: "auto",
+                flex: 1,
+                textAlign: "left",
+              }}
+            >
+              {rawContent ? (
+                <SyntaxHighlighter
+                  language="properties"
+                  style={atomOneDark}
+                  customStyle={{
+                    background: "rgba(0, 0, 0, 0.3)",
+                    padding: "15px",
+                    borderRadius: "5px",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    margin: 0,
+                    fontSize: "0.95em",
+                    lineHeight: "1.5",
+                  }}
+                  wrapLines={true}
+                  wrapLongLines={true}
+                >
+                  {rawContent}
+                </SyntaxHighlighter>
+              ) : (
+                <div style={{ textAlign: "center", color: "#888" }}>
+                  No raw content available.
+                </div>
+              )}
+            </div>
+            <div
+              style={{
+                padding: "15px 20px",
+                borderTop: "1px solid var(--border-color, #555)",
+                display: "flex",
+                justifyContent: "flex-end",
+              }}
+            >
+              <button
+                className="action-button secondary"
+                onClick={() => setShowRawModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
