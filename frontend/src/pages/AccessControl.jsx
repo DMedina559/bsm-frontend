@@ -12,7 +12,7 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
-import { del, get, post, put } from "../api";
+import { del, get, post } from "../api";
 import { logger } from "../utils/logger";
 
 const AccessControl = () => {
@@ -82,9 +82,11 @@ const AccessControl = () => {
   }, [selectedServer, activeTab, fetchItems]);
 
   const handleNextStep = () => {
-    // In setup flow, permissions usually follows allowlist, then config
+    // In setup flow, permissions usually follows allowlist, then bans, then config
     if (activeTab === "allowlist") {
       setActiveTab("permissions");
+    } else if (activeTab === "permissions") {
+      setActiveTab("bans");
     } else {
       navigate("/server-config", { state: { setupFlow: true } });
     }
@@ -113,7 +115,7 @@ const AccessControl = () => {
           reason: banReason || null,
         });
       } else {
-        await put(`/api/server/${selectedServer}/permissions/set`, {
+        await post(`/api/server/${selectedServer}/permissions/set`, {
           // Permission endpoint expects a list of objects
           permissions: [
             {
@@ -206,7 +208,7 @@ const AccessControl = () => {
 
     setActionLoading(true);
     try {
-      await put(`/api/server/${selectedServer}/permissions/set`, {
+      await post(`/api/server/${selectedServer}/permissions/set`, {
         permissions: [
           {
             xuid: item.xuid,
@@ -348,7 +350,13 @@ const AccessControl = () => {
           style={{ marginBottom: "20px" }}
         >
           <strong>
-            Setup Wizard (Step {activeTab === "allowlist" ? "2" : "3"}/4):
+            Setup Wizard (Step{" "}
+            {activeTab === "allowlist"
+              ? "2"
+              : activeTab === "permissions"
+                ? "3"
+                : "4"}
+            /5):
           </strong>{" "}
           Configure {activeTab}.
         </div>

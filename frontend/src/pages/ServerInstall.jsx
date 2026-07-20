@@ -64,7 +64,7 @@ const ServerInstall = () => {
         const taskData = lastMessage.data;
         if (taskData.status === "success") {
           addToast("Installation completed successfully!", "success");
-          // eslint-disable-next-line react-hooks/set-state-in-effect
+
           handleInstallSuccess();
         } else if (taskData.status === "error") {
           addToast(`Installation failed: ${taskData.message}`, "error");
