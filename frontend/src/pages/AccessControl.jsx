@@ -12,7 +12,7 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
-import { del, get, post, put } from "../api";
+import { del, get, post } from "../api";
 import { logger } from "../utils/logger";
 
 const AccessControl = () => {
@@ -113,7 +113,7 @@ const AccessControl = () => {
           reason: banReason || null,
         });
       } else {
-        await put(`/api/server/${selectedServer}/permissions/set`, {
+        await post(`/api/server/${selectedServer}/permissions/set`, {
           // Permission endpoint expects a list of objects
           permissions: [
             {
@@ -206,7 +206,7 @@ const AccessControl = () => {
 
     setActionLoading(true);
     try {
-      await put(`/api/server/${selectedServer}/permissions/set`, {
+      await post(`/api/server/${selectedServer}/permissions/set`, {
         permissions: [
           {
             xuid: item.xuid,
