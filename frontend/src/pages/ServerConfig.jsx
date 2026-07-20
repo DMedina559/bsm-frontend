@@ -321,8 +321,8 @@ const ServerConfig = () => {
           className="message-box message-info"
           style={{ marginBottom: "20px" }}
         >
-          <strong>Setup Wizard (Step 5/5):</strong> Configure BSM settings for
-          this server.
+          <strong>Setup Wizard (Step 5/5):</strong> Configure settings for this
+          server.
         </div>
       )}
 
