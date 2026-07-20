@@ -984,7 +984,7 @@ const ChartWrapper = ({ latestSocketMessage, data: initialData, ...props }) => {
   useEffect(() => {
     if (latestSocketMessage && latestSocketMessage.data) {
       const newData = latestSocketMessage.data;
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+
       setData((prev) => {
         const updated = [...prev, newData];
         if (updated.length > 20) updated.shift();
@@ -1011,7 +1011,7 @@ const LogViewerWrapper = ({
       if (newLines.length > 0 && newLines[newLines.length - 1] === "") {
         newLines.pop();
       }
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+
       setLines((prev) => [...prev, ...newLines].slice(-1000));
     }
   }, [latestSocketMessage]);

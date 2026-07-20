@@ -41,6 +41,7 @@ export default [
       "prettier/prettier": "error",
       "react/prop-types": "off",
       "no-unused-vars": ["error", { varsIgnorePattern: "^[A-Z_]" }],
+      "react-hooks/set-state-in-effect": "off",
     },
     settings: {
       react: {
