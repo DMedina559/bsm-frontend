@@ -467,15 +467,13 @@ const ServerProperties = () => {
               Refresh
             </button>
           )}
-          {!setupFlow && (
-            <button
-              className="action-button secondary"
-              onClick={() => setShowRawModal(true)}
-              title="View Properties File"
-            >
-              <FileText size={16} style={{ marginRight: "5px" }} /> View File
-            </button>
-          )}
+          <button
+            className="action-button secondary"
+            onClick={() => setShowRawModal(true)}
+            title="View Properties File"
+          >
+            <FileText size={16} style={{ marginRight: "5px" }} /> View File
+          </button>
           <button
             className="action-button"
             onClick={handleSave}
@@ -500,7 +498,7 @@ const ServerProperties = () => {
           className="message-box message-info"
           style={{ marginBottom: "20px" }}
         >
-          <strong>Setup Wizard (Step 1/4):</strong> Configure your server
+          <strong>Setup Wizard (Step 1/5):</strong> Configure your server
           properties below.
         </div>
       )}
@@ -697,16 +695,14 @@ const ServerProperties = () => {
               gap: "10px",
             }}
           >
-            {!setupFlow && (
-              <button
-                type="button"
-                className="action-button secondary"
-                onClick={() => setShowRawModal(true)}
-                title="View Properties File"
-              >
-                <FileText size={16} style={{ marginRight: "5px" }} /> View File
-              </button>
-            )}
+            <button
+              type="button"
+              className="action-button secondary"
+              onClick={() => setShowRawModal(true)}
+              title="View Properties File"
+            >
+              <FileText size={16} style={{ marginRight: "5px" }} /> View File
+            </button>
             <button type="submit" className="action-button" disabled={loading}>
               {setupFlow ? (
                 <>

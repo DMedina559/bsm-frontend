@@ -82,9 +82,11 @@ const AccessControl = () => {
   }, [selectedServer, activeTab, fetchItems]);
 
   const handleNextStep = () => {
-    // In setup flow, permissions usually follows allowlist, then config
+    // In setup flow, permissions usually follows allowlist, then bans, then config
     if (activeTab === "allowlist") {
       setActiveTab("permissions");
+    } else if (activeTab === "permissions") {
+      setActiveTab("bans");
     } else {
       navigate("/server-config", { state: { setupFlow: true } });
     }
@@ -348,7 +350,13 @@ const AccessControl = () => {
           style={{ marginBottom: "20px" }}
         >
           <strong>
-            Setup Wizard (Step {activeTab === "allowlist" ? "2" : "3"}/4):
+            Setup Wizard (Step{" "}
+            {activeTab === "allowlist"
+              ? "2"
+              : activeTab === "permissions"
+                ? "3"
+                : "4"}
+            /5):
           </strong>{" "}
           Configure {activeTab}.
         </div>
