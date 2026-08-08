@@ -40,12 +40,12 @@ const Monitor = () => {
     try {
       logger.debug(`[Monitor] Fetching process status for ${selectedServer}`);
       const data = await get(`/api/server/${selectedServer}/process_info`);
-      if (data && data.status === "success" && data.data?.process_info) {
-        setProcessInfo(data.data.process_info);
+      if (data && data.status === "success" && data.process_info) {
+        setProcessInfo(data.process_info);
         // Only update history on polling if we want, or rely on WS
         // If polling, we should update history here too
         if (isFallback) {
-          const info = data.data.process_info;
+          const info = data.process_info;
           setUsageHistory((prev) => {
             const newPoint = {
               time: new Date().toLocaleTimeString(),
