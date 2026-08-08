@@ -117,8 +117,8 @@ export const ServerProvider = ({ children }) => {
         "event:after_server_start",
         "event:after_server_stop",
         "event:after_delete_server_data",
-        "event:after_server_updated",
-        "event:server_install_complete",
+        "event:after_server_update",
+        "event:after_server_install",
       ];
 
       refreshTopics.forEach((topic) => subscribe(topic));
@@ -155,8 +155,8 @@ export const ServerProvider = ({ children }) => {
         "event:after_server_start",
         "event:after_server_stop",
         "event:after_delete_server_data",
-        "event:after_server_updated",
-        "event:server_install_complete",
+        "event:after_server_update",
+        "event:after_server_install",
       ];
 
       if (refreshTopics.includes(lastMessage.topic)) {
