@@ -4,6 +4,7 @@
  */
 
 import { logger } from "./utils/logger";
+import { getApiProxyBasePath } from "./utils/basePath";
 
 export class ApiError extends Error {
   constructor(message, status, data) {
@@ -78,7 +79,14 @@ export async function request(url, options = {}) {
 
   try {
     // Prepend base URL if the URL is relative (starts with /)
-    const baseUrl = getApiBaseUrl();
+    let baseUrl = getApiBaseUrl();
+
+    // If no explicit base URL is set, and we are in an environment like Home Assistant Ingress,
+    // we want to use the dynamically computed base path instead of treating it as absolute to the domain.
+    if (!baseUrl && typeof window !== "undefined") {
+      baseUrl = getApiProxyBasePath();
+    }
+
     const finalUrl = url.startsWith("/") && baseUrl ? `${baseUrl}${url}` : url;
 
     logger.debug(`[API Request] ${config.method} ${finalUrl}`);

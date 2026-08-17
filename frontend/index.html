@@ -15,9 +15,64 @@
       sizes="180x180"
       href="image/icon/apple-touch-icon.png"
     />
-    <link rel="manifest" href="site.webmanifest" />
+    <link rel="manifest" href="./site.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bedrock Server Manager</title>
+    <script>
+      (function () {
+        const path = window.location.pathname;
+        const routes = [
+          "/login",
+          "/setup",
+          "/register",
+          "/monitor",
+          "/backups",
+          "/server-properties",
+          "/server-config",
+          "/access-control",
+          "/online-players",
+          "/bsm-settings",
+          "/content",
+          "/plugins",
+          "/users",
+          "/global-players",
+          "/audit-log",
+          "/account",
+          "/server-install",
+          "/plugin-native-view",
+          "/playground",
+        ];
+        let basePath = path;
+        for (let i = 0; i < routes.length; i++) {
+          const route = routes[i];
+          if (path.endsWith(route)) {
+            basePath = path.slice(0, path.length - route.length);
+            break;
+          }
+          if (path.includes(route + "/")) {
+            basePath = path.slice(0, path.indexOf(route + "/"));
+            break;
+          }
+        }
+        if (basePath.endsWith("/")) {
+          basePath = basePath.slice(0, -1);
+        }
+        if (basePath) {
+          const links = document.querySelectorAll(
+            'link[href^="image/icon/"], link[href="./site.webmanifest"]',
+          );
+          links.forEach(function (link) {
+            let href = link.getAttribute("href");
+            if (href.startsWith("./")) {
+              href = href.slice(1);
+            } else if (!href.startsWith("/")) {
+              href = "/" + href;
+            }
+            link.setAttribute("href", basePath + href);
+          });
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

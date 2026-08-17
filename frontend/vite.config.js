@@ -52,7 +52,7 @@ export default defineConfig(({ mode }) => {
     define: {
       __APP_VERSION__: JSON.stringify(appVersion),
     },
-    base: "/app/",
+    base: "./",
     build: {
       outDir: "../src/bsm_frontend/static",
       emptyOutDir: true,

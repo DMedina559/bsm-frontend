@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { getDynamicBasePath } from "../utils/basePath";
 import { NavLink, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import { useServer } from "../ServerContext";
@@ -265,7 +266,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
                 }}
               >
                 <img
-                  src="/app/image/icon/favicon-96x96.png"
+                  src={`${getDynamicBasePath()}/image/icon/favicon-96x96.png`}
                   alt="Icon"
                   style={{ width: "64px", height: "64px" }}
                 />
@@ -327,7 +328,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
         ) : (
           <>
             <img
-              src="/app/image/icon/favicon-96x96.png"
+              src={`${getDynamicBasePath()}/image/icon/favicon-96x96.png`}
               alt="Icon"
               style={{ width: "30px", height: "30px" }}
             />

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { getDynamicBasePath } from "../utils/basePath";
 import { useServer } from "../ServerContext";
 import { useAuth } from "../AuthContext";
 import { useToast } from "../ToastContext";
@@ -219,7 +220,7 @@ const Overview = () => {
                   }}
                   onError={(e) => {
                     e.target.onerror = null; // Prevent infinite loop
-                    e.target.src = "/app/image/icon/favicon-96x96.png";
+                    e.target.src = `${getDynamicBasePath()}/image/icon/favicon-96x96.png`;
                   }}
                 />
                 <div style={{ flexGrow: 1, overflow: "hidden" }}>
