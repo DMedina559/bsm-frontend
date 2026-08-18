@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useServer } from "../ServerContext";
 import { useAuth } from "../AuthContext";
 import { useToast } from "../ToastContext";
+import { getApiProxyBasePath } from "../utils/basePath";
 import { useWebSocket } from "../WebSocketContext";
 import { useNavigate } from "react-router-dom";
 import { post, getApiBaseUrl } from "../api";
@@ -219,7 +220,7 @@ const Overview = () => {
                   }}
                   onError={(e) => {
                     e.target.onerror = null; // Prevent infinite loop
-                    e.target.src = "./image/icon/favicon-96x96.png";
+                    e.target.src = `${getApiProxyBasePath()}/app/image/icon/favicon-96x96.png`;
                   }}
                 />
                 <div style={{ flexGrow: 1, overflow: "hidden" }}>

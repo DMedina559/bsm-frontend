@@ -1,5 +1,5 @@
 :root {
-  --background-image: url("/api/panorama");
+  --background-image: var(--background-image);
   --background-overlay-color: rgba(100, 0, 0, 0.5);
   --text-color: #fff;
   --container-background-color: rgba(50, 0, 0, 0.8);
