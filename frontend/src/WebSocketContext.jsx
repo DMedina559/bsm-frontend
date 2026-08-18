@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import { useAuth } from "./AuthContext";
 import { getApiBaseUrl } from "./api";
+import { getApiProxyBasePath } from "./utils/basePath";
 import { logger } from "./utils/logger";
 
 const WebSocketContext = createContext(null);
@@ -78,7 +79,8 @@ export const WebSocketProvider = ({ children }) => {
     } else {
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       const host = window.location.host;
-      wsUrl = `${protocol}//${host}/ws`;
+      const appBase = getApiProxyBasePath();
+      wsUrl = `${protocol}//${host}${appBase}/ws`;
     }
 
     // Retrieve access token if available

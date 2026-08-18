@@ -265,7 +265,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
                 }}
               >
                 <img
-                  src="/app/image/icon/favicon-96x96.png"
+                  src="./image/icon/favicon-96x96.png"
                   alt="Icon"
                   style={{ width: "64px", height: "64px" }}
                 />
@@ -327,7 +327,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
         ) : (
           <>
             <img
-              src="/app/image/icon/favicon-96x96.png"
+              src="./image/icon/favicon-96x96.png"
               alt="Icon"
               style={{ width: "30px", height: "30px" }}
             />

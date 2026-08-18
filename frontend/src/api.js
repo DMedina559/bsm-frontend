@@ -2,6 +2,7 @@
  * @fileoverview Core API client for making HTTP requests.
  * Handles fetch logic, headers, authentication, and response parsing.
  */
+import { getApiProxyBasePath } from "./utils/basePath";
 
 import { logger } from "./utils/logger";
 
@@ -78,7 +79,10 @@ export async function request(url, options = {}) {
 
   try {
     // Prepend base URL if the URL is relative (starts with /)
-    const baseUrl = getApiBaseUrl();
+    let baseUrl = getApiBaseUrl();
+    if (!baseUrl && typeof window !== "undefined") {
+      baseUrl = getApiProxyBasePath();
+    }
     const finalUrl = url.startsWith("/") && baseUrl ? `${baseUrl}${url}` : url;
 
     logger.debug(`[API Request] ${config.method} ${finalUrl}`);
