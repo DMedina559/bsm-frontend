@@ -13,7 +13,7 @@ const Footer = () => {
           Docs
         </a>{" "}
         |{" "}
-        <a href="/docs" target="_blank" rel="noopener noreferrer">
+        <a href="../docs" target="_blank" rel="noopener noreferrer">
           HTTP API
         </a>{" "}
         |{" "}
