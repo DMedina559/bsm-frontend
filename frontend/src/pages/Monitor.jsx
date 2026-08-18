@@ -31,6 +31,29 @@ const Monitor = () => {
   const [processInfo, setProcessInfo] = useState(null);
   const [usageHistory, setUsageHistory] = useState([]);
   const [command, setCommand] = useState("");
+  const [chartReady, setChartReady] = useState(false);
+  const chartContainerRef = useRef(null);
+
+  // Use a ResizeObserver to wait until the chart container actually has dimensions
+  useEffect(() => {
+    if (!chartContainerRef.current) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
+          setChartReady(true);
+        } else {
+          setChartReady(false);
+        }
+      }
+    });
+
+    observer.observe(chartContainerRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [processInfo]); // Re-bind observer when server status changes panel visibility
   const [loadingAction, setLoadingAction] = useState(false);
   const [logLines, setLogLines] = useState([]);
   const logEndRef = useRef(null);
@@ -382,50 +405,77 @@ const Monitor = () => {
         >
           <h3>Resource Usage</h3>
           {/* Fixed dimensions container for ResponsiveContainer to calculate from */}
-          <div style={{ height: "200px", width: "100%", minHeight: "200px" }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={usageHistory}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                <XAxis dataKey="time" hide />
-                <YAxis
-                  yAxisId="left"
-                  domain={[0, 100]}
-                  stroke="#888"
-                  width={40}
-                />
-                <YAxis
-                  yAxisId="right"
-                  orientation="right"
-                  stroke="#82ca9d"
-                  width={40}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#333",
-                    border: "1px solid #555",
-                  }}
-                  labelStyle={{ color: "#ccc" }}
-                />
-                <Line
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="cpu"
-                  stroke="#8884d8"
-                  name="CPU %"
-                  dot={false}
-                  isAnimationActive={false}
-                />
-                <Line
-                  yAxisId="right"
-                  type="monotone"
-                  dataKey="memory"
-                  stroke="#82ca9d"
-                  name="RAM (MB)"
-                  dot={false}
-                  isAnimationActive={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+          <div
+            ref={chartContainerRef}
+            style={{
+              height: "200px",
+              width: "100%",
+              minHeight: "200px",
+              position: "relative",
+            }}
+          >
+            {chartReady && usageHistory && usageHistory.length > 0 ? (
+              <ResponsiveContainer
+                width="100%"
+                height="100%"
+                minWidth={10}
+                minHeight={10}
+              >
+                <LineChart data={usageHistory}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                  <XAxis dataKey="time" hide />
+                  <YAxis
+                    yAxisId="left"
+                    domain={[0, 100]}
+                    stroke="#888"
+                    width={40}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    stroke="#82ca9d"
+                    width={40}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#333",
+                      border: "1px solid #555",
+                    }}
+                    labelStyle={{ color: "#ccc" }}
+                  />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="cpu"
+                    stroke="#8884d8"
+                    name="CPU %"
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="memory"
+                    stroke="#82ca9d"
+                    name="RAM (MB)"
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  height: "100%",
+                  color: "#888",
+                }}
+              >
+                Waiting for resource data...
+              </div>
+            )}
           </div>
         </div>
       </div>
