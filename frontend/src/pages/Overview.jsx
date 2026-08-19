@@ -24,6 +24,13 @@ const Overview = () => {
   const [actionLoading, setActionLoading] = useState({});
   const [refreshing, setRefreshing] = useState(false);
 
+  // Force refresh servers list when navigating back to Overview,
+  // guaranteeing fresh status (e.g. after navigating back from Monitor)
+  React.useEffect(() => {
+    refreshServers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleServerClick = (serverName) => {
     setSelectedServer(serverName);
     navigate("/monitor");
@@ -64,6 +71,8 @@ const Overview = () => {
       addToast(error.message || `Failed to ${action} server.`, "error");
     } finally {
       setActionLoading((prev) => ({ ...prev, [serverName]: false }));
+      // Ensure UI reflects the latest state, even if WS messages are missed
+      refreshServers();
     }
   };
 
@@ -91,6 +100,7 @@ const Overview = () => {
       addToast(error.message || `Failed to update ${serverName}.`, "error");
     } finally {
       setActionLoading((prev) => ({ ...prev, [serverName]: false }));
+      refreshServers();
     }
   };
 

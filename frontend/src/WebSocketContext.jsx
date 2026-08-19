@@ -32,7 +32,7 @@ export const WebSocketProvider = ({ children }) => {
   const connectRef = useRef(null);
   const reconnectAttempts = useRef(0);
   const isConnecting = useRef(false);
-  const MAX_RECONNECT_ATTEMPTS = 5;
+  const MAX_RECONNECT_ATTEMPTS = 50;
 
   const connect = useCallback(async () => {
     // If not authenticated, don't attempt to connect
@@ -188,6 +188,34 @@ export const WebSocketProvider = ({ children }) => {
     connectRef.current = connect;
   }, [connect]);
 
+  const reconnect = useCallback(() => {
+    reconnectAttempts.current = 0; // Reset attempts on manual reconnect
+    setIsFallback(false);
+    if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current);
+    if (ws.current) {
+      ws.current.close(); // This will trigger onclose which triggers reconnect
+    } else {
+      connect();
+    }
+  }, [connect]);
+
+  // Handle visibility changes (waking up from background tab)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        logger.debug("[WebSocket] Tab became visible. Checking connection...");
+        if (!ws.current || ws.current.readyState === WebSocket.CLOSED) {
+          reconnect();
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [reconnect]);
+
   useEffect(() => {
     if (user) {
       connect();
@@ -255,17 +283,6 @@ export const WebSocketProvider = ({ children }) => {
       ws.current.send(JSON.stringify({ action: "unsubscribe", topic }));
     }
   }, []);
-
-  const reconnect = useCallback(() => {
-    reconnectAttempts.current = 0; // Reset attempts on manual reconnect
-    setIsFallback(false);
-    if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current);
-    if (ws.current) {
-      ws.current.close(); // This will trigger onclose which triggers reconnect
-    } else {
-      connect();
-    }
-  }, [connect]);
 
   return (
     <WebSocketContext.Provider

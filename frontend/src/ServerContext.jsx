@@ -4,6 +4,7 @@ import React, {
   useContext,
   useEffect,
   useState,
+  useRef,
 } from "react";
 import { request } from "./api";
 import { useAuth } from "./AuthContext";
@@ -22,6 +23,7 @@ export const ServerProvider = ({ children }) => {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const fetchRequestId = useRef(0);
 
   const { isConnected, isFallback, lastMessage, subscribe, unsubscribe } =
     useWebSocket();
@@ -48,12 +50,29 @@ export const ServerProvider = ({ children }) => {
         setLoading(true);
       }
       setError(null);
+
+      // Increment fetch request ID to track latest request
+      const currentRequestId = ++fetchRequestId.current;
+
       try {
         logger.debug(
           `[ServerContext] Fetching servers list (background: ${isBackground})`,
         );
-        // Use the API client we just created
-        const data = await request("/api/servers", { method: "GET" });
+        // Use the API client we just created.
+        // Pass cache-busting headers to completely bypass browser or proxy (e.g. Ingress) caching.
+        const data = await request("/api/servers", {
+          method: "GET",
+          headers: {
+            "Cache-Control": "no-store, no-cache, must-revalidate",
+            Pragma: "no-cache",
+          },
+        });
+
+        // Prevent race condition: ignore response if a newer fetch request was started
+        if (currentRequestId !== fetchRequestId.current) {
+          logger.debug("[ServerContext] Ignoring outdated fetch response");
+          return false;
+        }
 
         if (data && data.status === "success" && Array.isArray(data.servers)) {
           logger.info(`[ServerContext] Loaded ${data.servers.length} servers`);
