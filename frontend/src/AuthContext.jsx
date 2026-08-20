@@ -18,19 +18,21 @@ export const AuthProvider = ({ children }) => {
       const setupData = await get("/api/setup/status");
       setNeedsSetup(setupData.needs_setup);
       if (setupData.needs_setup) {
-        logger.info("[Auth] System needs setup");
+        logger.info("[Auth] System needs setup", { setupData });
         setLoading(false);
         return; // Stop if setup is needed
       }
     } catch (e) {
-      logger.warn("[Auth] Failed to check setup status", e);
+      logger.warn("[Auth] Failed to check setup status", { error: e });
     }
 
     try {
       logger.debug("[Auth] Checking user status");
       // Check if we have a token in either storage (api.js handles retrieval)
       const userData = await request("/api/account", { method: "GET" });
-      logger.debug(`[Auth] User authenticated: ${userData?.username}`);
+      logger.debug(`[Auth] User authenticated: ${userData?.username}`, {
+        userData,
+      });
 
       // If we authenticated successfully (likely via cookie in a new tab)
       // but have no token in storage, grab a fresh token via reauth.
@@ -54,15 +56,15 @@ export const AuthProvider = ({ children }) => {
             sessionStorage.setItem("access_token", reauthData.access_token);
           }
         } catch (reauthError) {
-          logger.warn("[Auth] Failed to reauth token", reauthError);
+          logger.warn("[Auth] Failed to reauth token", { error: reauthError });
         }
       }
 
       setUser(userData);
     } catch (error) {
-      logger.error("[Auth] Failed to check user status", error);
+      logger.error("[Auth] Failed to check user status", { error });
       if (error.status === 401) {
-        logger.info("[Auth] Unauthorized");
+        logger.info("[Auth] Unauthorized", { error });
         setUser(null);
       }
       setUser(null);
@@ -76,7 +78,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (username, password, rememberMe = false) => {
-    logger.debug(`[Auth] Attempting login for user: ${username}`);
+    logger.debug(`[Auth] Attempting login`, { username, rememberMe });
     const formData = new URLSearchParams();
     formData.append("grant_type", "password");
     formData.append("username", username);
@@ -92,7 +94,7 @@ export const AuthProvider = ({ children }) => {
     });
 
     if (data.access_token) {
-      logger.info(`[Auth] Login successful for user: ${username}`);
+      logger.info(`[Auth] Login successful`, { username });
       if (rememberMe) {
         sessionStorage.removeItem("access_token");
         localStorage.setItem("access_token", data.access_token);
@@ -101,7 +103,7 @@ export const AuthProvider = ({ children }) => {
         sessionStorage.setItem("access_token", data.access_token);
       }
     } else {
-      logger.warn(`[Auth] Login failed or token missing for user: ${username}`);
+      logger.warn(`[Auth] Login failed or token missing`, { username, data });
     }
 
     await checkUser();
@@ -110,10 +112,10 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      logger.info("[Auth] Logging out user");
+      logger.info("[Auth] Logging out user", { username: user?.username });
       await request("/auth/logout");
     } catch (e) {
-      logger.warn("[Auth] Logout failed on server", e);
+      logger.warn("[Auth] Logout failed on server", { error: e });
     }
     localStorage.removeItem("access_token");
     sessionStorage.removeItem("access_token");

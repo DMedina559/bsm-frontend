@@ -61,7 +61,9 @@ const Monitor = () => {
   const fetchStatus = useCallback(async () => {
     if (!selectedServer) return;
     try {
-      logger.debug(`[Monitor] Fetching process status for ${selectedServer}`);
+      logger.debug(`[Monitor] Fetching process status`, {
+        server: selectedServer,
+      });
       const data = await get(`/api/server/${selectedServer}/process_info`);
       if (data && data.status === "success" && data.process_info) {
         setProcessInfo(data.process_info);
@@ -88,10 +90,10 @@ const Monitor = () => {
       if (error.status === 404) {
         setProcessInfo(null);
       } else {
-        logger.warn(
-          `[Monitor] Failed to fetch initial status for ${selectedServer}`,
+        logger.warn(`[Monitor] Failed to fetch initial status`, {
           error,
-        );
+          server: selectedServer,
+        });
       }
     }
   }, [selectedServer, isFallback]);
@@ -134,7 +136,10 @@ const Monitor = () => {
   useEffect(() => {
     let intervalId = null;
     if (isFallback && selectedServer) {
-      logger.debug("WebSocket fallback active: polling monitor stats every 2s");
+      logger.debug("[Monitor] WebSocket fallback active: polling stats", {
+        interval: "2s",
+        server: selectedServer,
+      });
       fetchStatus();
       intervalId = setInterval(fetchStatus, 2000);
     }
@@ -196,9 +201,10 @@ const Monitor = () => {
     if (!command.trim()) return;
     if (!selectedServer) return;
 
-    logger.info(
-      `[Monitor] Sending command to ${selectedServer}: ${command.trim()}`,
-    );
+    logger.info(`[Monitor] Sending command`, {
+      server: selectedServer,
+      command: command.trim(),
+    });
     setLoadingAction(true);
     try {
       await post(`/api/server/${selectedServer}/send_command`, {
@@ -207,7 +213,11 @@ const Monitor = () => {
       addToast("Command sent successfully.", "success");
       setCommand("");
     } catch (error) {
-      logger.error(`[Monitor] Command failed for ${selectedServer}`, error);
+      logger.error(`[Monitor] Command failed`, {
+        error,
+        server: selectedServer,
+        command: command.trim(),
+      });
       addToast(error.message || "Failed to send command.", "error");
     } finally {
       setLoadingAction(false);
@@ -217,7 +227,7 @@ const Monitor = () => {
   const sendAction = async (action) => {
     if (loadingAction || !selectedServer) return;
 
-    logger.info(`[Monitor] Sending ${action} signal to ${selectedServer}`);
+    logger.info(`[Monitor] Sending signal`, { action, server: selectedServer });
     setLoadingAction(true);
     addToast(`Sending ${action} signal...`, "info");
 
@@ -226,10 +236,11 @@ const Monitor = () => {
       await post(`/api/server/${selectedServer}/${action}`, {});
       addToast(`Server ${action} signal sent.`, "success");
     } catch (error) {
-      logger.error(
-        `[Monitor] Action ${action} failed for ${selectedServer}`,
+      logger.error(`[Monitor] Action failed`, {
         error,
-      );
+        action,
+        server: selectedServer,
+      });
       addToast(error.message || `Failed to ${action} server.`, "error");
     } finally {
       setLoadingAction(false);

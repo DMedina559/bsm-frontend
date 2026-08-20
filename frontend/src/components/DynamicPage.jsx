@@ -270,7 +270,7 @@ const ComponentRegistry = {
   ),
   iframe: ({ src, title, height = "400px", className = "" }) => {
     if (!isSafeUrl(src)) {
-      logger.warn(`Blocked unsafe iframe src: ${src}`);
+      logger.warn(`[DynamicPage] Blocked unsafe iframe src`, { src });
       return (
         <div
           className={`dynamic-iframe ${className}`}
@@ -639,10 +639,15 @@ const DynamicPage = ({ schemaJson }) => {
         ) {
           setSchema(response);
         } else {
+          logger.warn("[DynamicPage] Invalid page definition response", {
+            response,
+          });
           setError("Invalid page definition.");
         }
       } catch (err) {
-        logger.error("DynamicPage Error:", err);
+        logger.error("[DynamicPage] Error loading page", {
+          error: err,
+        });
         setError(err.message || "Error loading page.");
       } finally {
         setLoading(false);
@@ -804,7 +809,10 @@ const DynamicPage = ({ schemaJson }) => {
 
     const Component = ComponentRegistry[node.type];
     if (!Component) {
-      logger.warn(`Unknown component type: ${node.type}`);
+      logger.warn(`[DynamicPage] Unknown component type`, {
+        nodeType: node.type,
+        node,
+      });
       return (
         <div
           key={key}

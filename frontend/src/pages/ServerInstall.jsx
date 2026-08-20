@@ -50,7 +50,7 @@ const ServerInstall = () => {
           setCustomZips(data.custom_zips || []);
         }
       } catch (error) {
-        logger.warn("Failed to fetch custom zips", error);
+        logger.warn("[ServerInstall] Failed to fetch custom zips", { error });
       }
     };
     fetchCustomZips();
@@ -84,7 +84,8 @@ const ServerInstall = () => {
 
     if (isFallback && installTaskId) {
       logger.debug(
-        `WebSocket fallback active: polling status for task ${installTaskId}`,
+        `[ServerInstall] WebSocket fallback active: polling status for task`,
+        { installTaskId },
       );
 
       const pollStatus = async () => {
@@ -105,7 +106,10 @@ const ServerInstall = () => {
             }
           }
         } catch (error) {
-          logger.warn("Polling task status failed", error);
+          logger.warn("[ServerInstall] Polling task status failed", {
+            error,
+            installTaskId,
+          });
           // If 404, maybe task is gone? Or error?
           if (error.status === 404) {
             // Treat as failure if task not found during install

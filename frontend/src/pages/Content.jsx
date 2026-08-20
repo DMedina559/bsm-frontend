@@ -34,7 +34,7 @@ const Content = () => {
   const [orderChanged, setOrderChanged] = useState(false);
   const { addToast } = useToast();
 
-  const checkUploadPluginStatus = async () => {
+  const checkUploadPluginStatus = React.useCallback(async () => {
     try {
       const response = await get("/api/plugins");
       if (response && response.status === "success" && response.data) {
@@ -46,10 +46,13 @@ const Content = () => {
         }
       }
     } catch (error) {
-      logger.warn("Failed to check upload plugin status:", error);
+      logger.warn("[Content] Failed to check upload plugin status", {
+        error,
+        selectedServer,
+      });
       setIsUploadEnabled(false);
     }
-  };
+  }, [selectedServer]);
 
   const fetchItems = React.useCallback(async () => {
     if (!selectedServer) return false;
@@ -82,7 +85,11 @@ const Content = () => {
         return false;
       }
     } catch (error) {
-      logger.error(`Error fetching ${activeTab}:`, error);
+      logger.error(`[Content] Error fetching ${activeTab}`, {
+        error,
+        activeTab,
+        selectedServer,
+      });
       addToast(`Error fetching ${activeTab}`, "error");
       setItems([]);
       return false;
@@ -96,7 +103,7 @@ const Content = () => {
     if (selectedServer) {
       fetchItems();
     }
-  }, [selectedServer, activeTab, fetchItems]);
+  }, [selectedServer, activeTab, fetchItems, checkUploadPluginStatus]);
 
   const handleRefresh = async () => {
     const success = await fetchItems();
@@ -185,7 +192,10 @@ const Content = () => {
         setInstalledAddons({ behavior_packs: [], resource_packs: [] });
       }
     } catch (error) {
-      logger.error("Error fetching installed addons:", error);
+      logger.error("[Content] Error fetching installed addons", {
+        error,
+        selectedServer,
+      });
       addToast("Error fetching installed addons", "error");
       setInstalledAddons({ behavior_packs: [], resource_packs: [] });
     } finally {

@@ -30,7 +30,7 @@ export const ServerProvider = ({ children }) => {
 
   // Wrapper for setting selected server to also persist to localStorage
   const setSelectedServer = useCallback((serverName) => {
-    logger.debug(`[ServerContext] Setting selected server: ${serverName}`);
+    logger.debug(`[ServerContext] Setting selected server`, { serverName });
     setSelectedServerState(serverName);
     if (serverName) {
       localStorage.setItem("selectedServer", serverName);
@@ -55,9 +55,10 @@ export const ServerProvider = ({ children }) => {
       const currentRequestId = ++fetchRequestId.current;
 
       try {
-        logger.debug(
-          `[ServerContext] Fetching servers list (background: ${isBackground})`,
-        );
+        logger.debug(`[ServerContext] Fetching servers list`, {
+          isBackground,
+          currentRequestId,
+        });
         // Use the API client we just created.
         // Pass cache-busting headers to completely bypass browser or proxy (e.g. Ingress) caching.
         const data = await request("/api/servers", {
@@ -70,12 +71,17 @@ export const ServerProvider = ({ children }) => {
 
         // Prevent race condition: ignore response if a newer fetch request was started
         if (currentRequestId !== fetchRequestId.current) {
-          logger.debug("[ServerContext] Ignoring outdated fetch response");
+          logger.debug("[ServerContext] Ignoring outdated fetch response", {
+            currentRequestId,
+            latestRequestId: fetchRequestId.current,
+          });
           return false;
         }
 
         if (data && data.status === "success" && Array.isArray(data.servers)) {
-          logger.info(`[ServerContext] Loaded ${data.servers.length} servers`);
+          logger.info(`[ServerContext] Loaded servers successfully`, {
+            serverCount: data.servers.length,
+          });
           setServers(data.servers);
 
           const serverList = data.servers;
@@ -86,9 +92,9 @@ export const ServerProvider = ({ children }) => {
             );
 
             if (!selectedServer || !currentSelectionExists) {
-              logger.debug(
-                `[ServerContext] Auto-selecting first server: ${serverList[0].name}`,
-              );
+              logger.debug(`[ServerContext] Auto-selecting first server`, {
+                firstServerName: serverList[0].name,
+              });
               // Default to the first server if selection is invalid or missing
               setSelectedServer(serverList[0].name);
             }
@@ -100,13 +106,15 @@ export const ServerProvider = ({ children }) => {
           return true;
         } else {
           setServers([]);
-          logger.error("[ServerContext] Invalid server data received", data);
+          logger.error("[ServerContext] Error: Invalid server data received", {
+            data,
+          });
           // If data.servers is missing, something is wrong.
           setError("Invalid server data received.");
           return false;
         }
       } catch (err) {
-        logger.error("[ServerContext] Error fetching servers:", err);
+        logger.error("[ServerContext] Error fetching servers", { error: err });
         setError(err.message || "Failed to fetch servers");
         return false;
       } finally {
@@ -153,7 +161,8 @@ export const ServerProvider = ({ children }) => {
     let intervalId = null;
     if (isFallback && user) {
       logger.info(
-        "[ServerContext] WebSocket fallback active: polling servers every 60s",
+        "[ServerContext] WebSocket fallback active: polling servers",
+        { interval: "60s" },
       );
       // Initial poll
       fetchServers(true);
@@ -179,9 +188,9 @@ export const ServerProvider = ({ children }) => {
       ];
 
       if (refreshTopics.includes(lastMessage.topic)) {
-        logger.info(
-          `[ServerContext] Refreshing servers due to WS event: ${lastMessage.topic}`,
-        );
+        logger.info(`[ServerContext] Refreshing servers due to WS event`, {
+          topic: lastMessage.topic,
+        });
         fetchServers(true); // Treat WS updates as background updates to avoid flicker
       }
     }

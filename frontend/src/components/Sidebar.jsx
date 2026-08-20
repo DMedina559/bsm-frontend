@@ -63,29 +63,32 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
   useEffect(() => {
     const fetchInfo = async () => {
       try {
+        logger.debug("[Sidebar] Fetching app info");
         const data = await get("/api/info");
         if (data && data.status === "success" && data.info) {
           setAppVersion(data.info.app_version);
         }
       } catch (error) {
-        console.error("Failed to fetch app info for sidebar:", error);
+        logger.error("[Sidebar] Failed to fetch app info", { error });
       }
     };
 
     fetchInfo();
     const fetchPluginPages = async () => {
       try {
+        logger.debug("[Sidebar] Fetching plugin pages");
         const response = await get("/api/plugins/pages");
         if (response && response.status === "success") {
           setPluginPages(response.pages || []);
         }
       } catch (error) {
-        logger.warn("Failed to fetch plugin pages", error);
+        logger.warn("[Sidebar] Failed to fetch plugin pages", { error });
       }
     };
 
     const fetchSplashText = async () => {
       try {
+        logger.debug("[Sidebar] Fetching splash text");
         const response = await get("/api/info");
         // API returns { status: "success", info: { splash_text: "..." } } based on API definition
         if (response && response.status === "success" && response.info) {
@@ -95,7 +98,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
           setSplashText(response.data.splash_text);
         }
       } catch (error) {
-        logger.warn("Failed to fetch splash text", error);
+        logger.warn("[Sidebar] Failed to fetch splash text", { error });
       }
     };
 

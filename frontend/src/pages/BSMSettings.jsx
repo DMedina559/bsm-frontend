@@ -60,14 +60,18 @@ const BSMSettings = () => {
         try {
           await post("/api/settings/set", { key: key, value: value });
         } catch (err) {
-          logger.error(`Failed to save setting ${key}:`, err);
+          logger.error(`[BSMSettings] Failed to save setting`, {
+            error: err,
+            key,
+            value,
+          });
           throw err; // Re-throw to be caught by outer block
         }
       }
 
       addToast("Settings saved successfully.", "success");
     } catch (error) {
-      logger.error("Save settings error:", error);
+      logger.error("[BSMSettings] Save settings error", { error });
       addToast(error.message || "Failed to save settings.", "error");
     } finally {
       setLoading(false);

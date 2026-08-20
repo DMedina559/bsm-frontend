@@ -85,14 +85,19 @@ export async function request(url, options = {}) {
     }
     const finalUrl = url.startsWith("/") && baseUrl ? `${baseUrl}${url}` : url;
 
-    logger.debug(`[API Request] ${config.method} ${finalUrl}`);
+    logger.debug(`[API] Request: ${config.method} ${finalUrl}`, {
+      method: config.method,
+      url: finalUrl,
+      headers: config.headers,
+    });
 
     const response = await fetch(finalUrl, config);
 
     if (response.status === 204) {
-      logger.debug(
-        `[API Response] ${response.status} ${finalUrl} (No Content)`,
-      );
+      logger.debug(`[API] Response (No Content)`, {
+        status: response.status,
+        url: finalUrl,
+      });
       return null;
     }
 
@@ -102,9 +107,13 @@ export async function request(url, options = {}) {
     if (contentType && contentType.includes("application/json")) {
       try {
         data = await response.json();
-      } catch {
+      } catch (err) {
         // Fallback if JSON parsing fails but header said JSON
-        logger.error(`[API Error] Invalid JSON response for ${finalUrl}`);
+        logger.error(`[API] Error: Invalid JSON response`, {
+          url: finalUrl,
+          status: response.status,
+          error: err,
+        });
         throw new ApiError(
           "Invalid JSON response from server",
           response.status,
@@ -118,9 +127,11 @@ export async function request(url, options = {}) {
       // If we expected JSON (based on Accept header) but got HTML (e.g. 404 page, 500 error page, or Login page redirect)
       // we should probably treat it as an error unless the caller explicitly handles it.
       if (!response.ok) {
-        logger.error(
-          `[API Error] Request failed: ${response.status} (Non-JSON response) for ${finalUrl}`,
-        );
+        logger.error(`[API] Error: Non-JSON response`, {
+          url: finalUrl,
+          status: response.status,
+          text: text,
+        });
         throw new ApiError(
           `Request failed with status ${response.status} (Non-JSON response)`,
           response.status,
@@ -138,9 +149,9 @@ export async function request(url, options = {}) {
         typeof text === "string" &&
         text.toLowerCase().includes("<!doctype html>")
       ) {
-        logger.warn(
-          `[API Response] Detected HTML redirect for ${finalUrl}, forcing 401 error`,
-        );
+        logger.warn(`[API] Detected HTML redirect, forcing 401 error`, {
+          url: finalUrl,
+        });
         // Force a 401 style error so AuthContext can handle logout
         throw new ApiError("Session expired (Redirected to App)", 401, null);
       }
@@ -157,9 +168,12 @@ export async function request(url, options = {}) {
         errorMessage = data.substring(0, 200);
       }
 
-      logger.error(
-        `[API Error] ${response.status} ${finalUrl}: ${errorMessage}`,
-      );
+      logger.error(`[API] Error: Request failed`, {
+        url: finalUrl,
+        status: response.status,
+        message: errorMessage,
+        data: data,
+      });
       throw new ApiError(errorMessage, response.status, data);
     }
 
@@ -170,9 +184,11 @@ export async function request(url, options = {}) {
       data.status &&
       data.status === "error"
     ) {
-      logger.error(
-        `[API Error] Application error in 200 OK for ${finalUrl}: ${data.message}`,
-      );
+      logger.error(`[API] Error: Application error in 200 OK`, {
+        url: finalUrl,
+        message: data.message,
+        data: data,
+      });
       throw new ApiError(
         data.message || "Application error",
         response.status,
@@ -180,14 +196,22 @@ export async function request(url, options = {}) {
       );
     }
 
-    logger.debug(`[API Response] ${response.status} ${finalUrl}`);
+    logger.debug(`[API] Response`, {
+      url: finalUrl,
+      status: response.status,
+      data: data,
+    });
     return data;
   } catch (error) {
     if (error instanceof ApiError) {
       throw error;
     }
     // Network errors
-    logger.error(`[API Network Error] ${url}: ${error.message}`);
+    logger.error(`[API] Network Error`, {
+      url: url,
+      message: error.message,
+      error: error,
+    });
     throw new ApiError(error.message, 0, null);
   }
 }

@@ -23,11 +23,12 @@ const GlobalPlayers = () => {
         setPlayers(response.players || []);
         return true;
       } else {
+        logger.warn("[GlobalPlayers] Failed to fetch players", { response });
         addToast(response?.message || "Failed to fetch players.", "error");
         return false;
       }
     } catch (error) {
-      logger.error("Error fetching players:", error);
+      logger.error("[GlobalPlayers] Error fetching players", { error });
       addToast("Error fetching players.", "error");
       return false;
     } finally {
