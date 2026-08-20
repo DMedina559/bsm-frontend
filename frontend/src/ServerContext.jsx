@@ -25,8 +25,13 @@ export const ServerProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const fetchRequestId = useRef(0);
 
-  const { isConnected, isFallback, lastMessage, subscribe, unsubscribe } =
-    useWebSocket();
+  const {
+    isConnected,
+    isFallback,
+    subscribe,
+    unsubscribe,
+    addMessageListener,
+  } = useWebSocket();
 
   // Wrapper for setting selected server to also persist to localStorage
   const setSelectedServer = useCallback((serverName) => {
@@ -140,12 +145,14 @@ export const ServerProvider = ({ children }) => {
   useEffect(() => {
     if (isConnected && user) {
       const refreshTopics = [
-        "event:after_server_statuses_updated",
+        "event:after_server_status_change",
         "event:after_server_start",
         "event:after_server_stop",
+        "event:before_server_stop",
         "event:after_delete_server_data",
         "event:after_server_update",
         "event:after_server_install",
+        "event:after_server_players_change",
       ];
 
       refreshTopics.forEach((topic) => subscribe(topic));
@@ -175,26 +182,37 @@ export const ServerProvider = ({ children }) => {
     };
   }, [isFallback, user, fetchServers]);
 
-  // Handle incoming WebSocket messages
+  // Handle incoming WebSocket messages bypassing React state batching
   useEffect(() => {
-    if (lastMessage) {
-      const refreshTopics = [
-        "event:after_server_statuses_updated",
-        "event:after_server_start",
-        "event:after_server_stop",
-        "event:after_delete_server_data",
-        "event:after_server_update",
-        "event:after_server_install",
-      ];
+    const handleWsMessage = (message) => {
+      if (message) {
+        const refreshTopics = [
+          "event:after_server_status_change",
+          "event:after_server_start",
+          "event:after_server_stop",
+          "event:before_server_stop",
+          "event:after_delete_server_data",
+          "event:after_server_update",
+          "event:after_server_install",
+          "event:after_server_players_change",
+        ];
 
-      if (refreshTopics.includes(lastMessage.topic)) {
-        logger.info(`[ServerContext] Refreshing servers due to WS event`, {
-          topic: lastMessage.topic,
-        });
-        fetchServers(true); // Treat WS updates as background updates to avoid flicker
+        if (refreshTopics.includes(message.topic)) {
+          logger.info(`[ServerContext] Refreshing servers due to WS event`, {
+            topic: message.topic,
+          });
+          fetchServers(true); // Treat WS updates as background updates to avoid flicker
+        }
       }
-    }
-  }, [lastMessage, fetchServers]);
+    };
+
+    // Register listener which is called synchronously upon WS message
+    const removeListener = addMessageListener(handleWsMessage);
+
+    return () => {
+      removeListener();
+    };
+  }, [fetchServers, addMessageListener]);
 
   const refreshServers = () => {
     logger.debug("[ServerContext] Manually refreshing servers list");

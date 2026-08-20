@@ -34,6 +34,14 @@ export const WebSocketProvider = ({ children }) => {
   const isConnecting = useRef(false);
   const MAX_RECONNECT_ATTEMPTS = 50;
 
+  // Registry for raw message callbacks to bypass React state batching
+  const messageListeners = useRef(new Set());
+
+  const addMessageListener = useCallback((callback) => {
+    messageListeners.current.add(callback);
+    return () => messageListeners.current.delete(callback);
+  }, []);
+
   const connect = useCallback(async () => {
     // If not authenticated, don't attempt to connect
     if (!user) {
@@ -133,6 +141,16 @@ export const WebSocketProvider = ({ children }) => {
             topic: data.topic,
             data,
           });
+
+          messageListeners.current.forEach((listener) => {
+            try {
+              listener(data);
+            } catch (err) {
+              logger.error("[WebSocket Error] Error in message listener", err);
+            }
+          });
+
+          // Still keep React state for generic UI rendering, even if it batches
           setLastMessage(data);
         } catch (e) {
           logger.error("[WebSocket] Error: Failed to parse message", {
@@ -316,6 +334,7 @@ export const WebSocketProvider = ({ children }) => {
         subscribe,
         unsubscribe,
         reconnect,
+        addMessageListener,
       }}
     >
       {children}
