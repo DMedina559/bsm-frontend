@@ -67,7 +67,11 @@ const AccessControl = () => {
         setItems([]);
       }
     } catch (error) {
-      logger.error(`Error fetching ${activeTab}:`, error);
+      logger.error(`[AccessControl] Error fetching ${activeTab}`, {
+        error,
+        activeTab,
+        selectedServer,
+      });
       addToast(error.message || `Error fetching ${activeTab}`, "error");
       setItems([]);
     } finally {
@@ -149,9 +153,11 @@ const AccessControl = () => {
       ? `kick "${kickPlayerName}" ${reason}`
       : `kick "${kickPlayerName}"`;
 
-    logger.info(
-      `[AccessControl] Kicking player ${kickPlayerName} from ${selectedServer} with reason: ${reason}`,
-    );
+    logger.info(`[AccessControl] Kicking player`, {
+      player: kickPlayerName,
+      server: selectedServer,
+      reason,
+    });
     setActionLoading(true);
     try {
       await post(`/api/server/${selectedServer}/send_command`, {
@@ -160,10 +166,11 @@ const AccessControl = () => {
       addToast(`Kick command sent for ${kickPlayerName}.`, "success");
       setKickReasons((prev) => ({ ...prev, [kickPlayerName]: "" }));
     } catch (error) {
-      logger.error(
-        `[AccessControl] Failed to kick player ${kickPlayerName} from ${selectedServer}`,
+      logger.error(`[AccessControl] Failed to kick player`, {
         error,
-      );
+        player: kickPlayerName,
+        server: selectedServer,
+      });
       addToast(error.message || `Failed to kick ${kickPlayerName}.`, "error");
     } finally {
       setActionLoading(false);

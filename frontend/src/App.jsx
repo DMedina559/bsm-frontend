@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth, AuthProvider } from "./AuthContext";
 import { ToastProvider } from "./ToastContext";
 import { getApiBaseUrl } from "./api";
+import { getApiProxyBasePath } from "./utils/basePath";
 import { ServerProvider } from "./ServerContext";
 import { WebSocketProvider } from "./WebSocketContext";
 import { ThemeProvider } from "./ThemeContext";
@@ -128,13 +129,15 @@ const App = () => {
 
   // Set custom CSS variable for panorama if remote URL is set
   React.useEffect(() => {
-    const baseUrl = getApiBaseUrl();
-    if (baseUrl) {
-      document.documentElement.style.setProperty(
-        "--background-image",
-        `url("${baseUrl}/api/panorama")`,
-      );
+    let baseUrl = getApiBaseUrl();
+    if (!baseUrl && typeof window !== "undefined") {
+      baseUrl = getApiProxyBasePath();
     }
+
+    document.documentElement.style.setProperty(
+      "--background-image",
+      `url("${baseUrl || ""}/api/panorama")`,
+    );
   }, []);
 
   return (

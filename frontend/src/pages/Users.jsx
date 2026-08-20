@@ -51,7 +51,7 @@ const Users = () => {
         return false;
       }
     } catch (error) {
-      logger.error("Error fetching users:", error);
+      logger.error("[Users] Error fetching users", { error });
       addToast(error.message || "Error fetching users", "error");
       return false;
     } finally {
@@ -95,7 +95,11 @@ const Users = () => {
       addToast(`User ${userToDelete.username} deleted.`, "success");
       await fetchUsers();
     } catch (error) {
-      logger.error("Delete failed:", error);
+      logger.error("[Users] Delete failed", {
+        error,
+        userId: userToDelete?.id,
+        username: userToDelete?.username,
+      });
       addToast(error.message || "Failed to delete user.", "error");
     } finally {
       setActionLoading(false);
@@ -110,7 +114,7 @@ const Users = () => {
         role: inviteRole,
       });
 
-      console.log("Generate token response:", response);
+      logger.debug("[Users] Generate token response", { response, inviteRole });
       if (response && response.registration_url) {
         let finalLink = response.registration_url;
         try {
@@ -181,7 +185,7 @@ const Users = () => {
         setShowEditModal(false);
       }
     } catch (error) {
-      logger.error("Update failed:", error);
+      logger.error("[Users] Update failed", { error, editingUser });
       addToast(error.message || "Failed to update user.", "error");
     } finally {
       setActionLoading(false);

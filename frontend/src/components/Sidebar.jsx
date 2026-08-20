@@ -3,6 +3,7 @@ import { NavLink, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
+import { getApiProxyBasePath } from "../utils/basePath";
 import { get } from "../api";
 import SidebarLabel from "./SidebarLabel";
 import {
@@ -62,29 +63,32 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
   useEffect(() => {
     const fetchInfo = async () => {
       try {
+        logger.debug("[Sidebar] Fetching app info");
         const data = await get("/api/info");
         if (data && data.status === "success" && data.info) {
           setAppVersion(data.info.app_version);
         }
       } catch (error) {
-        console.error("Failed to fetch app info for sidebar:", error);
+        logger.error("[Sidebar] Failed to fetch app info", { error });
       }
     };
 
     fetchInfo();
     const fetchPluginPages = async () => {
       try {
+        logger.debug("[Sidebar] Fetching plugin pages");
         const response = await get("/api/plugins/pages");
         if (response && response.status === "success") {
           setPluginPages(response.pages || []);
         }
       } catch (error) {
-        logger.warn("Failed to fetch plugin pages", error);
+        logger.warn("[Sidebar] Failed to fetch plugin pages", { error });
       }
     };
 
     const fetchSplashText = async () => {
       try {
+        logger.debug("[Sidebar] Fetching splash text");
         const response = await get("/api/info");
         // API returns { status: "success", info: { splash_text: "..." } } based on API definition
         if (response && response.status === "success" && response.info) {
@@ -94,7 +98,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
           setSplashText(response.data.splash_text);
         }
       } catch (error) {
-        logger.warn("Failed to fetch splash text", error);
+        logger.warn("[Sidebar] Failed to fetch splash text", { error });
       }
     };
 
@@ -265,7 +269,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
                 }}
               >
                 <img
-                  src="/app/image/icon/favicon-96x96.png"
+                  src={`${getApiProxyBasePath()}/app/image/icon/favicon-96x96.png`}
                   alt="Icon"
                   style={{ width: "64px", height: "64px" }}
                 />
@@ -327,7 +331,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
         ) : (
           <>
             <img
-              src="/app/image/icon/favicon-96x96.png"
+              src={`${getApiProxyBasePath()}/app/image/icon/favicon-96x96.png`}
               alt="Icon"
               style={{ width: "30px", height: "30px" }}
             />

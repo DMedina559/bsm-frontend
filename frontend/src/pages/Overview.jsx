@@ -2,9 +2,11 @@ import React, { useState } from "react";
 import { useServer } from "../ServerContext";
 import { useAuth } from "../AuthContext";
 import { useToast } from "../ToastContext";
+import { getApiProxyBasePath } from "../utils/basePath";
 import { useWebSocket } from "../WebSocketContext";
 import { useNavigate } from "react-router-dom";
 import { post, getApiBaseUrl } from "../api";
+import { logger } from "../utils/logger";
 import {
   Play,
   Square,
@@ -23,6 +25,13 @@ const Overview = () => {
   const [actionLoading, setActionLoading] = useState({});
   const [refreshing, setRefreshing] = useState(false);
 
+  // Force refresh servers list when navigating back to Overview,
+  // guaranteeing fresh status (e.g. after navigating back from Monitor)
+  React.useEffect(() => {
+    refreshServers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleServerClick = (serverName) => {
     setSelectedServer(serverName);
     navigate("/monitor");
@@ -31,11 +40,13 @@ const Overview = () => {
   const handleRefresh = async () => {
     if (refreshing) return;
     setRefreshing(true);
+    logger.debug("[Overview] Manually refreshing server list");
     addToast("Refreshing server list...", "info");
     try {
       await refreshServers();
       addToast("Server list refreshed.", "success");
-    } catch {
+    } catch (error) {
+      logger.error("[Overview] Failed to refresh server list", { error });
       addToast("Failed to refresh server list.", "error");
     } finally {
       setRefreshing(false);
@@ -53,6 +64,10 @@ const Overview = () => {
 
     if (actionLoading[serverName]) return;
 
+    logger.info("[Overview] Sending server action", {
+      server: serverName,
+      action,
+    });
     setActionLoading((prev) => ({ ...prev, [serverName]: true }));
     addToast(`Sending ${action} signal to ${serverName}...`, "info");
 
@@ -60,9 +75,16 @@ const Overview = () => {
       await post(`/api/server/${serverName}/${action}`);
       addToast(`Signal ${action} sent to ${serverName}.`, "success");
     } catch (error) {
+      logger.error("[Overview] Failed to send server action", {
+        error,
+        server: serverName,
+        action,
+      });
       addToast(error.message || `Failed to ${action} server.`, "error");
     } finally {
       setActionLoading((prev) => ({ ...prev, [serverName]: false }));
+      // Ensure UI reflects the latest state, even if WS messages are missed
+      refreshServers();
     }
   };
 
@@ -81,15 +103,21 @@ const Overview = () => {
     )
       return;
 
+    logger.info("[Overview] Initiating server update", { server: serverName });
     setActionLoading((prev) => ({ ...prev, [serverName]: true }));
     addToast(`Updating ${serverName}...`, "info");
     try {
       await post(`/api/server/${serverName}/update`);
       addToast(`Update initiated for ${serverName}.`, "success");
     } catch (error) {
+      logger.error("[Overview] Failed to initiate update", {
+        error,
+        server: serverName,
+      });
       addToast(error.message || `Failed to update ${serverName}.`, "error");
     } finally {
       setActionLoading((prev) => ({ ...prev, [serverName]: false }));
+      refreshServers();
     }
   };
 
@@ -105,11 +133,20 @@ const Overview = () => {
     const command = window.prompt(`Enter command to send to ${serverName}:`);
     if (!command) return;
 
+    logger.info("[Overview] Sending console command", {
+      server: serverName,
+      command,
+    });
     setActionLoading((prev) => ({ ...prev, [serverName]: true }));
     try {
       await post(`/api/server/${serverName}/send_command`, { command });
       addToast(`Command sent to ${serverName}.`, "success");
     } catch (error) {
+      logger.error("[Overview] Failed to send console command", {
+        error,
+        server: serverName,
+        command,
+      });
       addToast(
         error.message || `Failed to send command to ${serverName}.`,
         "error",
@@ -219,7 +256,7 @@ const Overview = () => {
                   }}
                   onError={(e) => {
                     e.target.onerror = null; // Prevent infinite loop
-                    e.target.src = "/app/image/icon/favicon-96x96.png";
+                    e.target.src = `${getApiProxyBasePath()}/app/image/icon/favicon-96x96.png`;
                   }}
                 />
                 <div style={{ flexGrow: 1, overflow: "hidden" }}>

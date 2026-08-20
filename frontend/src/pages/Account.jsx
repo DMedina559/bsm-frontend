@@ -34,7 +34,7 @@ const Account = () => {
           setAvailableThemes(["default"]);
         }
       } catch (error) {
-        logger.warn("Failed to fetch themes", error);
+        logger.warn("[Account] Failed to fetch themes", { error });
         setAvailableThemes(["default"]);
       }
     };
@@ -45,8 +45,11 @@ const Account = () => {
     changeTheme(newTheme);
     try {
       post("/api/account/theme", { theme: newTheme });
-    } catch {
-      logger.error("Failed to save theme preference");
+    } catch (error) {
+      logger.error("[Account] Failed to save theme preference", {
+        error,
+        newTheme,
+      });
     }
     addToast(`Theme changed to ${newTheme}`, "info");
   };

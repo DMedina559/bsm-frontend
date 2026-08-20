@@ -5,22 +5,6 @@ import packageJson from "./package.json" with { type: "json" };
 
 import { execSync } from "child_process";
 
-// Custom plugin to redirect /app to /app/
-
-const redirectApp = () => ({
-  name: "redirect-app",
-  configureServer(server) {
-    server.middlewares.use((req, res, next) => {
-      if (req.url === "/app") {
-        res.writeHead(301, { Location: "/app/" });
-        res.end();
-      } else {
-        next();
-      }
-    });
-  },
-});
-
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
@@ -48,11 +32,11 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
-    plugins: [react(), redirectApp()],
+    plugins: [react()],
     define: {
       __APP_VERSION__: JSON.stringify(appVersion),
     },
-    base: "/app/",
+    base: "./",
     build: {
       outDir: "../src/bsm_frontend/static",
       emptyOutDir: true,

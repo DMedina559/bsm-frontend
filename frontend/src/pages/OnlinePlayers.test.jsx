@@ -32,6 +32,7 @@ vi.mock("../WebSocketContext", () => ({
     lastMessage: null,
     subscribe: vi.fn(),
     unsubscribe: vi.fn(),
+    addMessageListener: vi.fn(() => vi.fn()),
   }),
 }));
 

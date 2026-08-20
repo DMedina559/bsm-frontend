@@ -65,9 +65,12 @@ const OnlinePlayers = () => {
   const handleBanPlayer = async () => {
     if (!selectedServer || !selectedPlayer || !selectedPlayerXuid) return;
 
-    logger.info(
-      `[OnlinePlayers] Banning player ${selectedPlayer} (${selectedPlayerXuid}) from ${selectedServer}`,
-    );
+    logger.info(`[OnlinePlayers] Banning player`, {
+      player: selectedPlayer,
+      xuid: selectedPlayerXuid,
+      server: selectedServer,
+      reason: banReason,
+    });
     setLoadingAction(true);
     try {
       await post(`/api/server/${selectedServer}/bans/add`, {
@@ -78,10 +81,11 @@ const OnlinePlayers = () => {
       addToast(`${selectedPlayer} has been banned.`, "success");
       closeModals();
     } catch (error) {
-      logger.error(
-        `[OnlinePlayers] Failed to ban player ${selectedPlayer}`,
+      logger.error(`[OnlinePlayers] Failed to ban player`, {
         error,
-      );
+        player: selectedPlayer,
+        server: selectedServer,
+      });
       addToast(error.message || `Failed to ban ${selectedPlayer}.`, "error");
     } finally {
       setLoadingAction(false);
@@ -95,9 +99,11 @@ const OnlinePlayers = () => {
       ? `kick "${selectedPlayer}" ${kickReason}`
       : `kick "${selectedPlayer}"`;
 
-    logger.info(
-      `[OnlinePlayers] Kicking player ${selectedPlayer} from ${selectedServer}`,
-    );
+    logger.info(`[OnlinePlayers] Kicking player`, {
+      player: selectedPlayer,
+      server: selectedServer,
+      reason: kickReason,
+    });
     setLoadingAction(true);
     try {
       await post(`/api/server/${selectedServer}/send_command`, {
@@ -106,10 +112,11 @@ const OnlinePlayers = () => {
       addToast(`Kick command sent for ${selectedPlayer}.`, "success");
       closeModals();
     } catch (error) {
-      logger.error(
-        `[OnlinePlayers] Failed to kick player ${selectedPlayer}`,
+      logger.error(`[OnlinePlayers] Failed to kick player`, {
         error,
-      );
+        player: selectedPlayer,
+        server: selectedServer,
+      });
       addToast(error.message || `Failed to kick ${selectedPlayer}.`, "error");
     } finally {
       setLoadingAction(false);
@@ -124,9 +131,12 @@ const OnlinePlayers = () => {
 
     const commandToExecute = `transfer "${selectedPlayer}" ${transferHost} ${transferPort}`;
 
-    logger.info(
-      `[OnlinePlayers] Transferring player ${selectedPlayer} to ${transferHost}:${transferPort}`,
-    );
+    logger.info(`[OnlinePlayers] Transferring player`, {
+      player: selectedPlayer,
+      host: transferHost,
+      port: transferPort,
+      server: selectedServer,
+    });
     setLoadingAction(true);
     try {
       await post(`/api/server/${selectedServer}/send_command`, {
@@ -135,10 +145,11 @@ const OnlinePlayers = () => {
       addToast(`Transfer command sent for ${selectedPlayer}.`, "success");
       closeModals();
     } catch (error) {
-      logger.error(
-        `[OnlinePlayers] Failed to transfer player ${selectedPlayer}`,
+      logger.error(`[OnlinePlayers] Failed to transfer player`, {
         error,
-      );
+        player: selectedPlayer,
+        server: selectedServer,
+      });
       addToast(
         error.message || `Failed to transfer ${selectedPlayer}.`,
         "error",

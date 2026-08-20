@@ -52,6 +52,10 @@ export const ThemeProvider = ({ children }) => {
 
   const changeTheme = async (newTheme) => {
     try {
+      logger.debug("[ThemeContext] Updating theme", {
+        newTheme,
+        currentTheme: theme,
+      });
       await request("/api/account/theme", {
         method: "POST",
         body: { theme: newTheme },
@@ -59,7 +63,10 @@ export const ThemeProvider = ({ children }) => {
       // Refresh user data to get the new theme applied
       await checkUser();
     } catch (error) {
-      logger.error("Failed to update theme:", error);
+      logger.error("[ThemeContext] Failed to update theme", {
+        error,
+        newTheme,
+      });
     }
   };
 

@@ -31,6 +31,29 @@ const Monitor = () => {
   const [processInfo, setProcessInfo] = useState(null);
   const [usageHistory, setUsageHistory] = useState([]);
   const [command, setCommand] = useState("");
+  const [chartReady, setChartReady] = useState(false);
+  const chartContainerRef = useRef(null);
+
+  // Use a ResizeObserver to wait until the chart container actually has dimensions
+  useEffect(() => {
+    if (!chartContainerRef.current) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
+          setChartReady(true);
+        } else {
+          setChartReady(false);
+        }
+      }
+    });
+
+    observer.observe(chartContainerRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [processInfo]); // Re-bind observer when server status changes panel visibility
   const [loadingAction, setLoadingAction] = useState(false);
   const [logLines, setLogLines] = useState([]);
   const logEndRef = useRef(null);
@@ -38,7 +61,9 @@ const Monitor = () => {
   const fetchStatus = useCallback(async () => {
     if (!selectedServer) return;
     try {
-      logger.debug(`[Monitor] Fetching process status for ${selectedServer}`);
+      logger.debug(`[Monitor] Fetching process status`, {
+        server: selectedServer,
+      });
       const data = await get(`/api/server/${selectedServer}/process_info`);
       if (data && data.status === "success" && data.process_info) {
         setProcessInfo(data.process_info);
@@ -65,10 +90,10 @@ const Monitor = () => {
       if (error.status === 404) {
         setProcessInfo(null);
       } else {
-        logger.warn(
-          `[Monitor] Failed to fetch initial status for ${selectedServer}`,
+        logger.warn(`[Monitor] Failed to fetch initial status`, {
           error,
-        );
+          server: selectedServer,
+        });
       }
     }
   }, [selectedServer, isFallback]);
@@ -111,7 +136,10 @@ const Monitor = () => {
   useEffect(() => {
     let intervalId = null;
     if (isFallback && selectedServer) {
-      logger.debug("WebSocket fallback active: polling monitor stats every 2s");
+      logger.debug("[Monitor] WebSocket fallback active: polling stats", {
+        interval: "2s",
+        server: selectedServer,
+      });
       fetchStatus();
       intervalId = setInterval(fetchStatus, 2000);
     }
@@ -173,9 +201,10 @@ const Monitor = () => {
     if (!command.trim()) return;
     if (!selectedServer) return;
 
-    logger.info(
-      `[Monitor] Sending command to ${selectedServer}: ${command.trim()}`,
-    );
+    logger.info(`[Monitor] Sending command`, {
+      server: selectedServer,
+      command: command.trim(),
+    });
     setLoadingAction(true);
     try {
       await post(`/api/server/${selectedServer}/send_command`, {
@@ -184,7 +213,11 @@ const Monitor = () => {
       addToast("Command sent successfully.", "success");
       setCommand("");
     } catch (error) {
-      logger.error(`[Monitor] Command failed for ${selectedServer}`, error);
+      logger.error(`[Monitor] Command failed`, {
+        error,
+        server: selectedServer,
+        command: command.trim(),
+      });
       addToast(error.message || "Failed to send command.", "error");
     } finally {
       setLoadingAction(false);
@@ -194,7 +227,7 @@ const Monitor = () => {
   const sendAction = async (action) => {
     if (loadingAction || !selectedServer) return;
 
-    logger.info(`[Monitor] Sending ${action} signal to ${selectedServer}`);
+    logger.info(`[Monitor] Sending signal`, { action, server: selectedServer });
     setLoadingAction(true);
     addToast(`Sending ${action} signal...`, "info");
 
@@ -203,10 +236,11 @@ const Monitor = () => {
       await post(`/api/server/${selectedServer}/${action}`, {});
       addToast(`Server ${action} signal sent.`, "success");
     } catch (error) {
-      logger.error(
-        `[Monitor] Action ${action} failed for ${selectedServer}`,
+      logger.error(`[Monitor] Action failed`, {
         error,
-      );
+        action,
+        server: selectedServer,
+      });
       addToast(error.message || `Failed to ${action} server.`, "error");
     } finally {
       setLoadingAction(false);
@@ -382,50 +416,77 @@ const Monitor = () => {
         >
           <h3>Resource Usage</h3>
           {/* Fixed dimensions container for ResponsiveContainer to calculate from */}
-          <div style={{ height: "200px", width: "100%", minHeight: "200px" }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={usageHistory}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                <XAxis dataKey="time" hide />
-                <YAxis
-                  yAxisId="left"
-                  domain={[0, 100]}
-                  stroke="#888"
-                  width={40}
-                />
-                <YAxis
-                  yAxisId="right"
-                  orientation="right"
-                  stroke="#82ca9d"
-                  width={40}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#333",
-                    border: "1px solid #555",
-                  }}
-                  labelStyle={{ color: "#ccc" }}
-                />
-                <Line
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="cpu"
-                  stroke="#8884d8"
-                  name="CPU %"
-                  dot={false}
-                  isAnimationActive={false}
-                />
-                <Line
-                  yAxisId="right"
-                  type="monotone"
-                  dataKey="memory"
-                  stroke="#82ca9d"
-                  name="RAM (MB)"
-                  dot={false}
-                  isAnimationActive={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+          <div
+            ref={chartContainerRef}
+            style={{
+              height: "200px",
+              width: "100%",
+              minHeight: "200px",
+              position: "relative",
+            }}
+          >
+            {chartReady && usageHistory && usageHistory.length > 0 ? (
+              <ResponsiveContainer
+                width="100%"
+                height="100%"
+                minWidth={10}
+                minHeight={10}
+              >
+                <LineChart data={usageHistory}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                  <XAxis dataKey="time" hide />
+                  <YAxis
+                    yAxisId="left"
+                    domain={[0, 100]}
+                    stroke="#888"
+                    width={40}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    stroke="#82ca9d"
+                    width={40}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#333",
+                      border: "1px solid #555",
+                    }}
+                    labelStyle={{ color: "#ccc" }}
+                  />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="cpu"
+                    stroke="#8884d8"
+                    name="CPU %"
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="memory"
+                    stroke="#82ca9d"
+                    name="RAM (MB)"
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  height: "100%",
+                  color: "#888",
+                }}
+              >
+                Waiting for resource data...
+              </div>
+            )}
           </div>
         </div>
       </div>
