@@ -6,18 +6,11 @@ const LogLevel = {
   NONE: 4,
 };
 
-// 1. Check local storage first (so you can toggle logs live in production)
-const storedOverride =
-  typeof window !== "undefined" ? localStorage.getItem("APP_LOG_LEVEL") : null;
-
-// 2. Resolve the level
-const currentLevel = storedOverride
-  ? LogLevel[storedOverride.toUpperCase()] || LogLevel.INFO
-  : import.meta.env.VITE_LOG_LEVEL
-    ? LogLevel[import.meta.env.VITE_LOG_LEVEL.toUpperCase()] || LogLevel.INFO
-    : import.meta.env.MODE === "development"
-      ? LogLevel.DEBUG
-      : LogLevel.WARN;
+const currentLevel = import.meta.env.VITE_LOG_LEVEL
+  ? LogLevel[import.meta.env.VITE_LOG_LEVEL.toUpperCase()] || LogLevel.INFO
+  : import.meta.env.MODE === "development"
+    ? LogLevel.DEBUG
+    : LogLevel.WARN;
 
 const getPrefix = (level, module) => {
   const timestamp = new Date().toISOString();
