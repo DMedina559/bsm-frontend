@@ -19,15 +19,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bedrock Server Manager</title>
     <script>
-      // Automatically redirect /app to /app/ to prevent relative asset loading failures
-      if (window.location.pathname.endsWith("/app")) {
-        window.location.replace(
-          window.location.pathname +
-            "/" +
-            window.location.search +
-            window.location.hash,
-        );
-      }
+      (function () {
+        var path = window.location.pathname;
+        var appIndex = path.lastIndexOf("/app");
+        if (appIndex !== -1) {
+          var basePath = path.substring(0, appIndex + 4) + "/";
+          document.write('<base href="' + basePath + '" />');
+          if (path.endsWith("/app")) {
+            window.history.replaceState(
+              null,
+              "",
+              basePath + window.location.search + window.location.hash,
+            );
+          }
+        }
+      })();
     </script>
   </head>
   <body>

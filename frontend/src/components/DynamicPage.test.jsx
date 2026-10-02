@@ -307,4 +307,94 @@ describe("DynamicPage", () => {
 
     unmount();
   });
+
+  it("renders new UI components (ProgressBar, Alert, Textarea, Slider, Chart)", async () => {
+    const mockSchema = [
+      { type: "ProgressBar", props: { value: 75, max: 100 } },
+      {
+        type: "Alert",
+        props: {
+          title: "Warning Alert",
+          message: "Careful!",
+          variant: "warning",
+        },
+      },
+      { type: "Textarea", props: { id: "myArea", placeholder: "Type here" } },
+      {
+        type: "Slider",
+        props: { id: "mySlider", value: 50, min: 0, max: 100 },
+      },
+      {
+        type: "Chart",
+        props: {
+          type: "pie",
+          data: [
+            { name: "A", value: 10 },
+            { name: "B", value: 20 },
+          ],
+        },
+      },
+    ];
+
+    render(<DynamicPage schemaJson={mockSchema} />);
+
+    expect(screen.getByText("75%")).toBeInTheDocument();
+    expect(screen.getByText("Warning Alert")).toBeInTheDocument();
+    expect(screen.getByText("Careful!")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Type here")).toBeInTheDocument();
+    expect(screen.getByRole("slider")).toHaveValue("50");
+  });
+
+  it("handles conditional visibility (visibleIf / disabledIf)", async () => {
+    const mockSchema = [
+      {
+        type: "Switch",
+        props: { id: "enableFeature", label: "Enable Feature" },
+      },
+      {
+        type: "Input",
+        props: {
+          id: "conditionalInput",
+          placeholder: "Conditional Field",
+          visibleIf: { field: "enableFeature", equals: true },
+        },
+      },
+      {
+        type: "Button",
+        props: {
+          label: "Conditional Button",
+          disabledIf: { field: "enableFeature", equals: false },
+        },
+      },
+    ];
+
+    render(<DynamicPage schemaJson={mockSchema} />);
+
+    // Initially conditionalInput should NOT be rendered
+    expect(
+      screen.queryByPlaceholderText("Conditional Field"),
+    ).not.toBeInTheDocument();
+
+    // Toggle switch on
+    const switchEl = screen.getByRole("checkbox");
+    fireEvent.click(switchEl);
+
+    // Should now be visible
+    expect(
+      screen.getByPlaceholderText("Conditional Field"),
+    ).toBeInTheDocument();
+  });
+
+  it("handles LogViewer auto-scroll and manual scrolling", async () => {
+    const mockSchema = {
+      type: "LogViewer",
+      props: { lines: ["Line 1", "Line 2", "Line 3"], height: 100 },
+    };
+
+    render(<DynamicPage schemaJson={mockSchema} />);
+
+    expect(screen.getByText("Line 1")).toBeInTheDocument();
+    expect(screen.getByText("Line 2")).toBeInTheDocument();
+    expect(screen.getByText("Line 3")).toBeInTheDocument();
+  });
 });
