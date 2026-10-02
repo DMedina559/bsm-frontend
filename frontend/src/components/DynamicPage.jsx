@@ -36,6 +36,10 @@ import {
   Area,
   BarChart,
   Bar,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
 } from "recharts";
 
 import "../styles/DynamicPage.css";
@@ -154,6 +158,7 @@ const ComponentRegistry = {
     placeholder,
     className = "",
     readOnly = false,
+    disabled = false,
   }) => (
     <input
       type={type}
@@ -162,7 +167,54 @@ const ComponentRegistry = {
       placeholder={placeholder}
       className={`form-input ${className}`}
       readOnly={readOnly}
+      disabled={disabled}
     />
+  ),
+  Textarea: ({
+    value,
+    onChange,
+    placeholder,
+    rows = 4,
+    className = "",
+    readOnly = false,
+    disabled = false,
+  }) => (
+    <textarea
+      value={value}
+      onChange={(e) => onChange && onChange(e.target.value)}
+      placeholder={placeholder}
+      rows={rows}
+      className={`form-input ${className}`}
+      readOnly={readOnly}
+      disabled={disabled}
+      style={{ width: "100%", resize: "vertical" }}
+    />
+  ),
+  Slider: ({
+    value = 0,
+    onChange,
+    min = 0,
+    max = 100,
+    step = 1,
+    disabled = false,
+    className = "",
+  }) => (
+    <div
+      className={`slider-container ${className}`}
+      style={{ display: "flex", alignItems: "center", gap: "10px" }}
+    >
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange && onChange(Number(e.target.value))}
+        disabled={disabled}
+        style={{ flex: 1 }}
+      />
+      <span className="slider-value-display">{value}</span>
+    </div>
   ),
   Select: ({
     value,
@@ -325,10 +377,56 @@ const ComponentRegistry = {
     series,
     height = 300,
     className = "",
+    showLegend = false,
+    layout = "horizontal",
+    colors = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d"],
+    nameKey = "name",
+    valueKey = "value",
   }) => {
+    if (type === "pie") {
+      return (
+        <div
+          className={`chart-container ${className}`}
+          style={{ width: "100%", height: height }}
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#333",
+                  border: "1px solid #555",
+                }}
+                labelStyle={{ color: "#ccc" }}
+              />
+              {showLegend && <Legend />}
+              <Pie
+                data={data}
+                dataKey={valueKey}
+                nameKey={nameKey}
+                cx="50%"
+                cy="50%"
+                outerRadius="80%"
+                fill="#8884d8"
+                label
+              >
+                {Array.isArray(data) &&
+                  data.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={entry.color || colors[index % colors.length]}
+                    />
+                  ))}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      );
+    }
+
     const ChartComponent =
       type === "area" ? AreaChart : type === "bar" ? BarChart : LineChart;
     const DataComponent = type === "area" ? Area : type === "bar" ? Bar : Line;
+    const isVertical = layout === "vertical";
 
     return (
       <div
@@ -336,10 +434,19 @@ const ComponentRegistry = {
         style={{ width: "100%", height: height }}
       >
         <ResponsiveContainer width="100%" height="100%">
-          <ChartComponent data={data}>
+          <ChartComponent data={data} layout={layout}>
             <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-            <XAxis dataKey={xAxis} stroke="#888" />
-            <YAxis stroke="#888" />
+            {isVertical ? (
+              <>
+                <XAxis type="number" stroke="#888" />
+                <YAxis dataKey={xAxis} type="category" stroke="#888" />
+              </>
+            ) : (
+              <>
+                <XAxis dataKey={xAxis} stroke="#888" />
+                <YAxis stroke="#888" />
+              </>
+            )}
             <Tooltip
               contentStyle={{
                 backgroundColor: "#333",
@@ -347,6 +454,7 @@ const ComponentRegistry = {
               }}
               labelStyle={{ color: "#ccc" }}
             />
+            {showLegend && <Legend />}
             {series &&
               series.map((s, idx) => (
                 <DataComponent
@@ -355,7 +463,7 @@ const ComponentRegistry = {
                   dataKey={s.dataKey}
                   stroke={s.color}
                   fill={s.color} // For Area/Bar
-                  name={s.name}
+                  name={s.name || s.dataKey}
                   dot={false}
                   isAnimationActive={false}
                 />
@@ -366,15 +474,30 @@ const ComponentRegistry = {
     );
   },
   LogViewer: ({ lines, height = 200, className = "" }) => {
-    const logEndRef = useRef(null);
+    const containerRef = useRef(null);
+    const [autoScroll, setAutoScroll] = useState(true);
+
+    const handleScroll = () => {
+      const el = containerRef.current;
+      if (!el) return;
+      const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= 40;
+      setAutoScroll(isAtBottom);
+    };
+
     useEffect(() => {
-      if (logEndRef.current) {
-        logEndRef.current.scrollIntoView({ behavior: "smooth" });
+      const el = containerRef.current;
+      if (el && autoScroll) {
+        el.scrollTop = el.scrollHeight;
       }
-    }, [lines]);
+    }, [lines, autoScroll]);
 
     return (
-      <div className={`log-viewer ${className}`} style={{ height: height }}>
+      <div
+        ref={containerRef}
+        onScroll={handleScroll}
+        className={`log-viewer ${className}`}
+        style={{ height, position: "relative" }}
+      >
         {!lines || lines.length === 0 ? (
           <div className="log-placeholder">Waiting for logs...</div>
         ) : (
@@ -384,7 +507,35 @@ const ComponentRegistry = {
             </div>
           ))
         )}
-        <div ref={logEndRef} />
+        {!autoScroll && lines && lines.length > 0 && (
+          <button
+            type="button"
+            className="log-viewer-scroll-btn"
+            onClick={() => {
+              setAutoScroll(true);
+              if (containerRef.current) {
+                containerRef.current.scrollTop =
+                  containerRef.current.scrollHeight;
+              }
+            }}
+            style={{
+              position: "sticky",
+              bottom: "10px",
+              float: "right",
+              background: "rgba(0, 123, 255, 0.85)",
+              color: "#fff",
+              border: "none",
+              borderRadius: "12px",
+              padding: "4px 10px",
+              fontSize: "0.75rem",
+              cursor: "pointer",
+              boxShadow: "0 2px 5px rgba(0,0,0,0.3)",
+              zIndex: 5,
+            }}
+          >
+            Scroll to bottom
+          </button>
+        )}
       </div>
     );
   },
@@ -413,6 +564,81 @@ const ComponentRegistry = {
       <span className="status-dot">●</span> {text}
     </span>
   ),
+  ProgressBar: ({
+    value = 0,
+    max = 100,
+    showLabel = true,
+    variant = "primary",
+    className = "",
+  }) => {
+    const percentage = Math.min(
+      100,
+      Math.max(0, Math.round((value / max) * 100)),
+    );
+    return (
+      <div
+        className={`progress-bar-container ${className}`}
+        style={{ width: "100%", margin: "8px 0" }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            fontSize: "0.85rem",
+            marginBottom: "4px",
+          }}
+        >
+          {showLabel && <span>{percentage}%</span>}
+        </div>
+        <div
+          style={{
+            width: "100%",
+            height: "10px",
+            backgroundColor: "rgba(255,255,255,0.1)",
+            borderRadius: "5px",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              width: `${percentage}%`,
+              height: "100%",
+              backgroundColor:
+                variant === "danger"
+                  ? "#dc3545"
+                  : variant === "warning"
+                    ? "#ffc107"
+                    : variant === "success"
+                      ? "#28a745"
+                      : "var(--primary-color, #007bff)",
+              transition: "width 0.3s ease",
+            }}
+          />
+        </div>
+      </div>
+    );
+  },
+  Alert: ({ title, message, variant = "info", icon, className = "" }) => {
+    const defaultIcon =
+      variant === "danger" || variant === "error"
+        ? "AlertCircle"
+        : variant === "success"
+          ? "CheckCircle2"
+          : "Info";
+    const IconComponent = ComponentRegistry.Icon({
+      name: icon || defaultIcon,
+      size: 20,
+    });
+    return (
+      <div className={`alert-box alert-${variant} ${className}`}>
+        <div className="alert-icon">{IconComponent}</div>
+        <div className="alert-content">
+          {title && <div className="alert-title">{title}</div>}
+          {message && <div className="alert-message">{message}</div>}
+        </div>
+      </div>
+    );
+  },
 
   // Icons
   Icon: ({ name, size = 20, className = "" }) => {
@@ -675,6 +901,33 @@ const DynamicPage = ({ schemaJson }) => {
     }
   }, [dataUrl, selectedServer, fetchSchema, schemaJson]);
 
+  // Handle auto-refresh / polling schema if specified
+  useEffect(() => {
+    let refreshIntervalId = null;
+
+    // Check if schema or schema root object has refreshInterval (in ms or seconds)
+    const intervalMs =
+      schema && typeof schema === "object" && !Array.isArray(schema)
+        ? schema.refreshInterval
+        : null;
+
+    if (intervalMs && dataUrl && !schemaJson) {
+      const interval =
+        Number(intervalMs) < 1000
+          ? Number(intervalMs) * 1000
+          : Number(intervalMs);
+      if (interval > 0) {
+        refreshIntervalId = setInterval(() => {
+          fetchSchema(dataUrl, selectedServer);
+        }, interval);
+      }
+    }
+
+    return () => {
+      if (refreshIntervalId) clearInterval(refreshIntervalId);
+    };
+  }, [schema, dataUrl, selectedServer, fetchSchema, schemaJson]);
+
   // Handle WebSocket subscriptions defined in schema
   useEffect(() => {
     if (!schema || !schema.websocketSubscriptions || !isConnected) return;
@@ -848,9 +1101,35 @@ const DynamicPage = ({ schemaJson }) => {
       return <StatCardWrapper key={key} {...props} />;
     }
 
+    // Dynamic evaluation for visibleIf and disabledIf
+    const evaluateRule = (rule) => {
+      if (!rule) return undefined;
+      const { field, equals, notEquals, in: inArray } = rule;
+      if (!field) return undefined;
+      const fieldValue = formState[field];
+      if (equals !== undefined) return fieldValue === equals;
+      if (notEquals !== undefined) return fieldValue !== notEquals;
+      if (Array.isArray(inArray)) return inArray.includes(fieldValue);
+      return !!fieldValue;
+    };
+
+    if (props.visibleIf) {
+      const isVisible = evaluateRule(props.visibleIf);
+      if (isVisible === false) return null;
+    }
+
+    if (props.disabledIf) {
+      const isDisabled = evaluateRule(props.disabledIf);
+      if (isDisabled !== undefined) {
+        props.disabled = isDisabled;
+      }
+    }
+
     // Handle input binding
     if (
       node.type === "Input" ||
+      node.type === "Textarea" ||
+      node.type === "Slider" ||
       node.type === "Select" ||
       node.type === "Switch" ||
       node.type === "Checkbox"
@@ -986,20 +1265,45 @@ const DynamicPage = ({ schemaJson }) => {
 
 // --- Wrapper Components for State Handling ---
 
-const ChartWrapper = ({ latestSocketMessage, data: initialData, ...props }) => {
+const ChartWrapper = ({
+  latestSocketMessage,
+  data: initialData,
+  updateMode = "append",
+  maxPoints = 20,
+  ...props
+}) => {
   const [data, setData] = useState(initialData || []);
 
   useEffect(() => {
-    if (latestSocketMessage && latestSocketMessage.data) {
-      const newData = latestSocketMessage.data;
-
-      setData((prev) => {
-        const updated = [...prev, newData];
-        if (updated.length > 20) updated.shift();
-        return updated;
-      });
+    if (initialData !== undefined && !latestSocketMessage) {
+      setData(initialData);
     }
-  }, [latestSocketMessage]);
+  }, [initialData, latestSocketMessage]);
+
+  useEffect(() => {
+    if (latestSocketMessage && latestSocketMessage.data !== undefined) {
+      const incoming = latestSocketMessage.data;
+
+      if (
+        updateMode === "replace" ||
+        (Array.isArray(incoming) && updateMode !== "append")
+      ) {
+        setData(Array.isArray(incoming) ? incoming : [incoming]);
+      } else {
+        if (Array.isArray(incoming)) {
+          setData(incoming);
+        } else {
+          setData((prev) => {
+            const updated = [...prev, incoming];
+            if (updated.length > maxPoints) {
+              return updated.slice(updated.length - maxPoints);
+            }
+            return updated;
+          });
+        }
+      }
+    }
+  }, [latestSocketMessage, updateMode, maxPoints]);
 
   return <ComponentRegistry.Chart data={data} {...props} />;
 };
