@@ -48,7 +48,7 @@ describe("Sidebar", () => {
       if (url === "/api/info")
         return Promise.resolve({
           status: "success",
-          info: { splash_text: "Splash!" },
+          info: { splash_text: "Splash!", app_version: "4.0.0b2.dev4" },
         });
       // Fallback for context calls if they use get
       if (url === "/api/account")
@@ -96,6 +96,15 @@ describe("Sidebar", () => {
     window.history.replaceState({}, "", "/");
   });
 
+  it("shows the API backend version in the heading without duplicating it in the footer", async () => {
+    render(<Sidebar />);
+    await waitFor(() =>
+      expect(screen.getByText("Version 4.0.0b2.dev4")).toBeInTheDocument(),
+    );
+    expect(screen.queryByText("Version 4.0")).not.toBeInTheDocument();
+    expect(screen.queryByText("Backend 4.0.0b2.dev4")).not.toBeInTheDocument();
+    expect(screen.getByText(/Frontend/)).toBeInTheDocument();
+  });
   it("displays splash text", async () => {
     await act(async () => {
       render(<Sidebar />);
@@ -189,7 +198,7 @@ describe("Sidebar", () => {
       if (url === "/api/info")
         return Promise.resolve({
           status: "success",
-          info: { splash_text: "Splash!" },
+          info: { splash_text: "Splash!", app_version: "4.0.0b2.dev4" },
         });
       if (url === "/api/account")
         return Promise.resolve({ username: "testuser", role: "admin" });

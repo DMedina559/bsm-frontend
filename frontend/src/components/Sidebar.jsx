@@ -247,7 +247,9 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
             <strong>
               Bedrock<span>Server Manager</span>
             </strong>
-            <small className="platform-brand-version">Version 4.0</small>
+            <small className="platform-brand-version">
+              Version {appVersion}
+            </small>
           </div>
         )}
         <button
@@ -416,7 +418,6 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
         {!effectiveCollapsed && (
           <div className="sidebar-version">
             <span>Frontend {__APP_VERSION__}</span>
-            <span>Backend {appVersion}</span>
           </div>
         )}
       </div>
