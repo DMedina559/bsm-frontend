@@ -67,3 +67,16 @@ it("gives personal colors priority over built-in mode-specific surface rules", (
     specificity(surfaceSelector),
   );
 });
+
+it("preserves optional descriptions across import and validates their length", () => {
+  expect(
+    validatePalette({ ...DEFAULT_PALETTE, description: "  Purple evening  " })
+      .description,
+  ).toBe("Purple evening");
+  const legacy = { ...DEFAULT_PALETTE };
+  delete legacy.description;
+  expect(validatePalette(legacy).description).toBe("");
+  expect(() =>
+    validatePalette({ ...DEFAULT_PALETTE, description: "x".repeat(161) }),
+  ).toThrow();
+});

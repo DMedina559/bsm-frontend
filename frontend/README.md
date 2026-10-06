@@ -34,7 +34,7 @@ The supplied frontend has no backend theme-upload endpoint. Install shared CSS f
 
 ## Fleet layout and sorting
 
-New browser preferences default to compact density; existing saved density choices are preserved. The overview uses a smaller banner and tighter summary cards. Sort the server fleet by name, status, version, or player count in either direction. Names and versions use natural numeric ordering; unknown values stay last. Sort preferences are retained in this browser. Sidebar splash text uses the theme’s yellow warning color.
+New browser preferences default to comfortable density; existing saved density choices are preserved. The overview uses a smaller banner and tighter summary cards. Sort the server fleet by name, status, version, or player count in either direction. Names and versions use natural numeric ordering; unknown values stay last. Sort preferences are retained in this browser. Sidebar splash text uses the theme’s yellow warning color.
 
 Panorama background is an optional switch in Appearance, disabled by default. It is saved as a browser display preference, uses the existing `/api/panorama` endpoint on the configured backend, and adds a theme-colored overlay for legibility. Turning it off removes the image reference; resetting display preferences disables it.
 
@@ -46,10 +46,14 @@ Personal palettes use the same swatch-card layout as built-in themes. Create pal
 
 Panorama visibility in Appearance controls image prominence from 0% to 100% when enabled. It defaults to 18% to preserve the previous subtle background, is saved in this browser, and resets with other display preferences. Panel surfaces retain their theme colors.
 
-Sidebar transparency is a separate 0–100% browser preference in Appearance, defaulting to fully opaque. It changes only the sidebar background; labels and controls retain their opacity. Reset display preferences restores 0%.
+Sidebar transparency is a separate 0–100% browser preference in Appearance, defaulting to fully opaque. It changes only the sidebar background; labels and controls retain their opacity. Reset appearance restores 0%.
 
 If deployment requests bundles from `/assets/` rather than `/app/assets/`, rebuild this frontend, deploy the complete output including its index.html and assets directory together, restart the backend if needed, and hard-refresh the browser. The HTML includes a static app base and adjusts it for ingress routes. Do not mix an older index.html with newer hashed bundles.
 
 Built-in theme cards preview their actual default-mode page, panel, and accent colors. Non-default themes now have distinct surface palettes in both dark and light modes; the original Bedrock Emerald remains unchanged. Personal palette overrides continue to take priority.
 
 Density now scales typography and card geometry throughout the interface. Comfortable uses 15px body text, 20px card padding, 24px grid gaps, and 340px minimum fleet-card width; Compact uses 13px, 12px, 12px, and 270px respectively. Headings, navigation, icons, previews, dialogs, and tables also scale. Mobile tap targets remain at least 44px, with 16px input text in both modes.
+
+Personal palettes can include an optional description (up to 160 characters), shown on their cards and retained in saved and exported palette JSON. Existing palettes without descriptions still work.
+
+Reset appearance restores the account’s BSM Default theme and clears the active personal palette, then restores theme-default mode, Comfortable density, panorama off with 18% visibility, and an opaque sidebar. Saved palettes are retained. If the account theme request fails, current preferences stay in place and an error is shown.

@@ -8,6 +8,7 @@ export const PALETTE_FIELDS = {
 };
 export const DEFAULT_PALETTE = {
   name: "My palette",
+  description: "",
   accent: "#159568",
   page: "#101a16",
   surface: "#192820",
@@ -22,7 +23,15 @@ export function validatePalette(value) {
     value.name.length > 60
   )
     throw new Error("Enter a palette name (up to 60 characters).");
-  const result = { name: value.name.trim() };
+  if (
+    value.description !== undefined &&
+    (typeof value.description !== "string" || value.description.length > 160)
+  )
+    throw new Error("Palette descriptions must be text, up to 160 characters.");
+  const result = {
+    name: value.name.trim(),
+    description: (value.description || "").trim(),
+  };
   for (const key of Object.keys(PALETTE_FIELDS)) {
     if (!/^#[0-9a-f]{6}$/i.test(value[key]))
       throw new Error("Palette colors must be six-digit hex colors.");

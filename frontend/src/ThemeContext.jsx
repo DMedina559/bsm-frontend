@@ -192,6 +192,12 @@ export const ThemeProvider = ({ children }) => {
     }
   };
 
+  const resetAppearance = async () => {
+    if (!(await changeTheme("default"))) return false;
+    updateAppearance(DEFAULT_APPEARANCE);
+    return true;
+  };
+
   return (
     <ThemeContext.Provider
       value={{
@@ -207,7 +213,7 @@ export const ThemeProvider = ({ children }) => {
         appearance,
         mode,
         updateAppearance,
-        resetAppearance: () => updateAppearance(DEFAULT_APPEARANCE),
+        resetAppearance,
       }}
     >
       {children}

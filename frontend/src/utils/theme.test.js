@@ -11,7 +11,7 @@ describe("theme preferences", () => {
     localStorage.setItem(APPEARANCE_KEY, "{");
     expect(readAppearance()).toEqual({
       mode: "theme",
-      density: "compact",
+      density: "comfortable",
       panorama: false,
       panoramaVisibility: 18,
       sidebarTransparency: 0,
@@ -20,7 +20,7 @@ describe("theme preferences", () => {
   it("rejects unknown preferences", () => {
     expect(normalizeAppearance({ mode: "broken", density: "tiny" })).toEqual({
       mode: "theme",
-      density: "compact",
+      density: "comfortable",
       panorama: false,
       panoramaVisibility: 18,
       sidebarTransparency: 0,

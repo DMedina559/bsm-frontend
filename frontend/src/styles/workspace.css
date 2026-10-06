@@ -629,3 +629,6 @@ pre.monitor-output {
   font-variant-numeric: tabular-nums;
   margin-left: 8px;
 }
+.theme-card small {
+  overflow-wrap: anywhere;
+}
