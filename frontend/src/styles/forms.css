@@ -3,7 +3,7 @@
   display: block;
   width: 100%;
   min-height: var(--bsm-control-height);
-  padding: 10px 12px;
+  padding: var(--bsm-control-padding) 12px;
   border: 1px solid var(--form-input-border-color);
   border-radius: var(--bsm-radius-md);
   background-color: var(--form-input-background-color);
@@ -67,7 +67,7 @@ input[type="radio"] {
   cursor: pointer;
 }
 .form-group {
-  margin-bottom: 22px;
+  margin-bottom: var(--bsm-form-gap);
   min-width: 0;
 }
 .form-grid,

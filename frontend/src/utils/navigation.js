@@ -1,7 +1,7 @@
 export const PAGE_INFO = {
   "/": [
     "Fleet",
-    "Platform overview",
+    "Overview",
     "A live view of the servers available to your account.",
   ],
   "/monitor": [
@@ -40,20 +40,16 @@ export const PAGE_INFO = {
     "Manage worlds, resource packs, and behavior packs.",
   ],
   "/plugins": [
-    "Platform",
+    "Global",
     "Plugins",
-    "Manage the extensions installed on your platform.",
+    "Manage the extensions installed in your manager.",
   ],
   "/bsm-settings": [
-    "Platform",
-    "Platform settings",
+    "Global",
+    "Global Settings",
     "Configure shared settings for the manager.",
   ],
-  "/users": [
-    "Administration",
-    "Users",
-    "Manage platform accounts and invitations.",
-  ],
+  "/users": ["Administration", "Users", "Manage accounts and invitations."],
   "/global-players": [
     "Players",
     "Player database",
@@ -64,21 +60,18 @@ export const PAGE_INFO = {
     "Logs & tasks",
     "Review activity and background operations.",
   ],
-  "/account": [
+  "/account": ["Workspace", "Account", "Manage your profile and password."],
+  "/appearance": [
     "Workspace",
-    "Account & appearance",
-    "Manage your profile, password, and interface preferences.",
+    "Appearance",
+    "Choose themes, create palettes, and adjust display preferences.",
   ],
   "/server-install": [
     "Fleet",
     "Install server",
     "Create a Bedrock server and configure its workspace.",
   ],
-  "/playground": [
-    "Platform",
-    "Playground",
-    "Preview native plugin components.",
-  ],
+  "/playground": ["Global", "Playground", "Preview native plugin components."],
   "/plugin-native-view": [
     "Extensions",
     "Plugin workspace",

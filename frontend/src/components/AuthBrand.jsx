@@ -9,7 +9,7 @@ export default function AuthBrand() {
       />
       <div>
         <strong>Bedrock Server Manager</strong>
-        <span>PLATFORM 4.0</span>
+        <span>4.0</span>
       </div>
     </div>
   );

@@ -26,7 +26,6 @@ import {
   UserCheck,
   ChevronRight,
   Palette,
-  X,
   Code,
   Search,
 } from "lucide-react";
@@ -96,7 +95,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
       items: [
         {
           path: "/",
-          label: "Platform overview",
+          label: "Overview",
           icon: LayoutDashboard,
           end: true,
         },
@@ -169,7 +168,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
       ],
     },
     {
-      label: "Platform",
+      label: "Global",
       items: [
         {
           path: "/plugins",
@@ -178,7 +177,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
         },
         {
           path: "/bsm-settings",
-          label: "Platform settings",
+          label: "Global Settings",
           icon: Settings,
         },
         ...(sessionStorage.getItem("show_hidden_flag") === "true"
@@ -248,14 +247,21 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
             <strong>
               Bedrock<span>Server Manager</span>
             </strong>
-            <small className="platform-brand-version">PLATFORM 4.0</small>
+            <small className="platform-brand-version">Version 4.0</small>
           </div>
         )}
         <button
           className="icon-button sidebar-collapse"
-          onClick={toggleSidebar}
+          onClick={() => {
+            if (mobileOpen) setMobileOpen?.(false);
+            else toggleSidebar();
+          }}
           aria-label={
-            effectiveCollapsed ? "Expand Sidebar" : "Collapse Sidebar"
+            mobileOpen
+              ? "Close Sidebar"
+              : effectiveCollapsed
+                ? "Expand Sidebar"
+                : "Collapse Sidebar"
           }
           type="button"
         >
@@ -264,14 +270,6 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
           ) : (
             <ChevronLeft size={16} />
           )}
-        </button>
-        <button
-          className="icon-button sidebar-close-btn"
-          onClick={() => setMobileOpen?.(false)}
-          aria-label="Close Sidebar"
-          type="button"
-        >
-          <X size={20} />
         </button>
       </header>
       {!effectiveCollapsed && (
@@ -323,7 +321,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
           </div>
         </>
       )}
-      <nav aria-label="Platform pages">
+      <nav aria-label="Application pages">
         {filtered.map((group) => (
           <div className="nav-group" key={group.label}>
             {!effectiveCollapsed && (
@@ -376,8 +374,8 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
       </nav>
       <div className="footer-nav">
         <NavLink
-          to="/account"
-          className="nav-link"
+          to="/appearance"
+          className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
           onClick={handleNavClick}
           title="Appearance"
         >

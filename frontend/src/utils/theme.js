@@ -21,7 +21,7 @@ export const THEME_LABELS = {
   yellow: "Gold",
 };
 export const APPEARANCE_KEY = "bsm.appearance.v4";
-export const DEFAULT_APPEARANCE = { mode: "theme", density: "comfortable" };
+export const DEFAULT_APPEARANCE = { mode: "theme", density: "compact" };
 export function normalizeAppearance(value) {
   return {
     mode: ["theme", "system", "light", "dark"].includes(value?.mode)
@@ -29,7 +29,7 @@ export function normalizeAppearance(value) {
       : "theme",
     density: ["comfortable", "compact"].includes(value?.density)
       ? value.density
-      : "comfortable",
+      : "compact",
   };
 }
 export function readAppearance() {

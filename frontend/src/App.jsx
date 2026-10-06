@@ -89,6 +89,7 @@ const AppRoutes = () => {
         <Route path="global-players" element={<GlobalPlayers />} />
         <Route path="audit-log" element={<AuditLog />} />
         <Route path="account" element={<Account />} />
+        <Route path="appearance" element={<Account appearanceOnly />} />
         <Route path="server-install" element={<ServerInstall />} />
         <Route path="plugin-native-view" element={<DynamicPage />} />
         <Route path="playground" element={<Playground />} />

@@ -17,6 +17,13 @@ import {
   themeStylesheetUrl,
 } from "./utils/theme";
 
+import {
+  PALETTE_KEY,
+  readPaletteState,
+  validatePalette,
+  paletteCss,
+} from "./utils/palettes";
+
 const ThemeContext = createContext();
 export const useTheme = () => useContext(ThemeContext);
 
@@ -27,6 +34,7 @@ export const ThemeProvider = ({ children }) => {
     savedTheme && savedTheme.username === user?.username
       ? savedTheme.theme
       : user?.theme || "default";
+  const [paletteState, setPaletteState] = useState(readPaletteState);
   const [appearance, setAppearance] = useState(readAppearance);
   const [systemDark, setSystemDark] = useState(
     () => window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? true,
@@ -46,6 +54,7 @@ export const ThemeProvider = ({ children }) => {
 
   useEffect(() => {
     const sync = (event) => {
+      if (event.key === PALETTE_KEY) setPaletteState(readPaletteState());
       if (event.key === APPEARANCE_KEY) setAppearance(readAppearance());
     };
     window.addEventListener("storage", sync);
@@ -84,6 +93,39 @@ export const ThemeProvider = ({ children }) => {
     };
   }, [theme]);
 
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.id = "personal-palette";
+    const active = paletteState.palettes.find(
+      (p) => p.name === paletteState.active,
+    );
+    style.textContent = active ? paletteCss(active) : "";
+    document.head.appendChild(style);
+    return () => style.remove();
+  }, [paletteState, theme]);
+  const storePalettes = (next) => {
+    try {
+      localStorage.setItem(PALETTE_KEY, JSON.stringify(next));
+    } catch {
+      throw new Error("This browser could not save your palette.");
+    }
+    setPaletteState(next);
+  };
+  const savePalette = (value) => {
+    const palette = validatePalette(value);
+    const others = paletteState.palettes.filter((p) => p.name !== palette.name);
+    if (others.length >= 30)
+      throw new Error("Remove a palette before adding another (maximum 30).");
+    storePalettes({ palettes: [...others, palette], active: palette.name });
+  };
+  const selectPalette = (name) =>
+    storePalettes({ ...paletteState, active: name });
+  const removePalette = (name) =>
+    storePalettes({
+      palettes: paletteState.palettes.filter((p) => p.name !== name),
+      active: paletteState.active === name ? null : paletteState.active,
+    });
+
   const updateAppearance = (patch) => {
     const next = normalizeAppearance({ ...appearance, ...patch });
     setAppearance(next);
@@ -106,6 +148,7 @@ export const ThemeProvider = ({ children }) => {
         method: "POST",
         body: { theme: newTheme },
       });
+      selectPalette(null);
       setSavedTheme({ username: user?.username, theme: newTheme });
       await checkUser();
       return true;
@@ -121,6 +164,11 @@ export const ThemeProvider = ({ children }) => {
   return (
     <ThemeContext.Provider
       value={{
+        palettes: paletteState.palettes,
+        activePalette: paletteState.active,
+        savePalette,
+        selectPalette,
+        removePalette,
         theme,
         changeTheme,
         themeSaving,

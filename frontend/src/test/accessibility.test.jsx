@@ -7,6 +7,7 @@ import { DialogProvider } from "../DialogContext";
 import { ToastProvider } from "../ToastContext";
 import { fixtureResponse, servers, user } from "./fixtures";
 import Account from "../pages/Account";
+const Appearance = () => <Account appearanceOnly />;
 import Overview from "../pages/Overview";
 import ServerConfig from "../pages/ServerConfig";
 import ServerProperties from "../pages/ServerProperties";
@@ -83,6 +84,7 @@ describe("page accessibility structure with fixture data", () => {
   for (const [name, Page] of Object.entries({
     Login,
     Account,
+    Appearance,
     Overview,
     ServerConfig,
     ServerProperties,

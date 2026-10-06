@@ -12,8 +12,8 @@
 .platform-brand-version {
   display: block;
   color: var(--bsm-accent);
-  letter-spacing: 0.16em;
-  font-size: 9px;
+  letter-spacing: 0.04em;
+  font-size: 11px;
   margin-top: 8px;
 }
 .platform-overview {
@@ -48,8 +48,8 @@
 .platform-hero {
   display: flex;
   align-items: center;
-  gap: 28px;
-  padding: 28px;
+  gap: 18px;
+  padding: 16px 20px;
   border: 1px solid var(--border-color);
   border-radius: var(--bsm-radius-lg);
   background:
@@ -58,12 +58,12 @@
   margin-bottom: 24px;
 }
 .platform-hero img {
-  width: 130px;
-  height: 130px;
+  width: 80px;
+  height: 80px;
   object-fit: contain;
 }
 .platform-hero h2 {
-  font-size: clamp(20px, 2vw, 28px);
+  font-size: clamp(18px, 1.5vw, 22px);
   margin: 8px 0;
   letter-spacing: -0.03em;
 }
@@ -102,23 +102,23 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
-  margin-bottom: 34px;
+  margin-bottom: 22px;
 }
 .platform-metric {
-  padding: 20px;
+  padding: 14px 16px;
   border: 1px solid var(--border-color);
   border-radius: var(--bsm-radius-lg);
   background: var(--container-background-color);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
 }
 .platform-metric > span {
   font-size: 12px;
   opacity: 0.7;
 }
 .platform-metric strong {
-  font-size: 30px;
+  font-size: 24px;
   letter-spacing: -0.04em;
 }
 .platform-metric small {
@@ -398,4 +398,84 @@ pre.monitor-output {
 .error-page {
   max-width: 680px;
   margin: 64px auto;
+}
+
+.settings-panel {
+  padding: var(--bsm-panel-padding);
+}
+.palette-saved {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.palette-colors {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+}
+.palette-colors input[type="color"] {
+  width: 64px;
+  height: var(--bsm-control-height);
+  border: 1px solid var(--bsm-border);
+  border-radius: var(--bsm-radius-sm);
+  padding: 3px;
+  background: var(--bsm-input);
+}
+.palette-hex {
+  display: block;
+  font-size: 12px;
+  color: var(--bsm-muted);
+  margin-top: 6px;
+}
+.palette-preview {
+  padding: 18px;
+  border: 1px solid var(--bsm-border);
+  border-radius: var(--bsm-radius-md);
+  margin-bottom: 20px;
+}
+.palette-preview > div {
+  padding: 20px;
+  border-radius: var(--bsm-radius-sm);
+}
+.theme-install-help {
+  margin-block: 16px 24px;
+  color: var(--bsm-muted);
+}
+.theme-install-help summary {
+  cursor: pointer;
+  color: var(--bsm-text);
+  font-weight: 600;
+}
+
+.fleet-heading {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.fleet-sort-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.fleet-sort-controls label {
+  font-size: 12px;
+  color: var(--bsm-muted);
+}
+.fleet-sort-controls .form-input {
+  width: auto;
+}
+:root[data-density="compact"] .platform-overview .header {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+}
+:root[data-density="compact"] .platform-hero {
+  margin-bottom: 16px;
+}
+:root[data-density="compact"] .platform-hero p {
+  margin-block: 6px 10px;
+}
+:root[data-density="compact"] .platform-overview .card-header,
+:root[data-density="compact"] .platform-overview .card-body {
+  padding: 10px 12px !important;
 }

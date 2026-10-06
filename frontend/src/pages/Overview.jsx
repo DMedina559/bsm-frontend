@@ -8,6 +8,7 @@ import { useWebSocket } from "../WebSocketContext";
 import { useNavigate } from "react-router-dom";
 import { post, getApiBaseUrl } from "../api";
 import { logger } from "../utils/logger";
+import { sortServers, readServerSort, SERVER_SORTS } from "../utils/serverSort";
 import { summarizeFleet } from "../utils/fleetStatus";
 import {
   Play,
@@ -27,6 +28,17 @@ const Overview = () => {
   const navigate = useNavigate();
   const [actionLoading, setActionLoading] = useState({});
   const [refreshing, setRefreshing] = useState(false);
+  const [sort, setSort] = useState(readServerSort);
+  const sortedServers = sortServers(servers, sort.key, sort.direction);
+  const updateSort = (patch) => {
+    const next = { ...sort, ...patch };
+    setSort(next);
+    try {
+      localStorage.setItem("bsm.fleet-sort.v4", JSON.stringify(next));
+    } catch {
+      /* Sorting remains available without browser storage. */
+    }
+  };
 
   // Force refresh servers list when navigating back to Overview,
   // guaranteeing fresh status (e.g. after navigating back from Monitor)
@@ -205,10 +217,8 @@ const Overview = () => {
         }}
       >
         <div>
-          <p className="platform-eyebrow">
-            BEDROCK SERVER MANAGER / PLATFORM 4.0
-          </p>
-          <h1>Platform overview</h1>
+          <p className="platform-eyebrow">BEDROCK SERVER MANAGER / 4.0</p>
+          <h1>Overview</h1>
           <p className="platform-subtitle">
             Your server fleet. One control plane.
           </p>
@@ -223,7 +233,7 @@ const Overview = () => {
         </button>
       </div>
 
-      <section className="platform-hero" aria-label="Platform connection">
+      <section className="platform-hero" aria-label="Connection status">
         <img
           src={`${getApiProxyBasePath()}/app/image/icon/platform-logo.png`}
           alt=""
@@ -285,7 +295,34 @@ const Overview = () => {
       </section>
       <div className="fleet-heading">
         <h2>Server fleet</h2>
-        <span>{servers.length} visible servers</span>
+        <div className="fleet-sort-controls">
+          <span>{servers.length} visible servers</span>
+          <label htmlFor="fleet-sort">Sort by</label>
+          <select
+            id="fleet-sort"
+            className="form-input"
+            value={sort.key}
+            onChange={(e) => updateSort({ key: e.target.value })}
+          >
+            {Object.entries(SERVER_SORTS).map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </select>
+          <label className="sr-only" htmlFor="fleet-sort-direction">
+            Sort direction
+          </label>
+          <select
+            id="fleet-sort-direction"
+            className="form-input"
+            value={sort.direction}
+            onChange={(e) => updateSort({ direction: e.target.value })}
+          >
+            <option value="asc">Ascending</option>
+            <option value="desc">Descending</option>
+          </select>
+        </div>
       </div>
       {error && (
         <div className="message-box message-error" role="alert">
@@ -320,7 +357,7 @@ const Overview = () => {
             gap: "20px",
           }}
         >
-          {servers.map((server) => (
+          {sortedServers.map((server) => (
             <div
               key={server.name}
               className="server-card"

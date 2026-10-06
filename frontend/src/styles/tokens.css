@@ -16,8 +16,13 @@
   --bsm-space-6: 32px;
   --bsm-focus: var(--bsm-accent);
   --bsm-control-height: 42px;
+  --bsm-control-padding: 10px;
+  --bsm-button-padding: 8px;
+  --bsm-nav-padding: 10px;
+  --bsm-panel-padding: 24px;
+  --bsm-form-gap: 22px;
   --bsm-row-padding: 14px;
-  --bsm-accent: #24dda0;
+  --bsm-accent: #00ed95;
   --bsm-accent-strong: #087b57;
   --bsm-accent-hover: #066447;
   --bsm-on-accent: #ffffff;
@@ -137,6 +142,11 @@
   --bsm-shadow: 0 10px 30px #19392a0d;
 }
 :root[data-density="compact"] {
-  --bsm-control-height: 34px;
+  --bsm-control-height: 32px;
+  --bsm-control-padding: 5px;
+  --bsm-button-padding: 4px;
+  --bsm-nav-padding: 5px;
+  --bsm-panel-padding: 16px;
+  --bsm-form-gap: 14px;
   --bsm-row-padding: 10px;
 }

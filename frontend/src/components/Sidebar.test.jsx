@@ -69,13 +69,31 @@ describe("Sidebar", () => {
 
     // Wait for user and servers to load (splash text is a good indicator or overview link)
     await waitFor(() => {
-      expect(screen.getByText("Platform overview")).toBeInTheDocument();
+      expect(screen.getByText("Overview")).toBeInTheDocument();
     });
 
     expect(screen.getByText("Monitor")).toBeInTheDocument();
     expect(screen.getByText("Settings")).toBeInTheDocument();
     // Admin item
     expect(screen.getByText("Install Server")).toBeInTheDocument();
+  });
+
+  it("keeps Appearance and Account navigation states separate", async () => {
+    window.history.replaceState({}, "", "/appearance");
+    await act(async () => {
+      render(<Sidebar />);
+    });
+    const appearance = screen.getByRole("link", { name: "Appearance" });
+    const account = screen.getByRole("link", { name: "Account" });
+    expect(appearance).toHaveAttribute("href", "/appearance");
+    expect(appearance).toHaveAttribute("aria-current", "page");
+    expect(account).not.toHaveAttribute("aria-current");
+    fireEvent.click(account);
+    await waitFor(() =>
+      expect(account).toHaveAttribute("aria-current", "page"),
+    );
+    expect(appearance).not.toHaveAttribute("aria-current");
+    window.history.replaceState({}, "", "/");
   });
 
   it("displays splash text", async () => {
@@ -116,7 +134,7 @@ describe("Sidebar", () => {
     });
 
     await waitFor(() =>
-      expect(screen.getByText("Platform overview")).toBeInTheDocument(),
+      expect(screen.getByText("Overview")).toBeInTheDocument(),
     );
 
     const collapseBtn = screen.getByRole("button", {
@@ -136,7 +154,7 @@ describe("Sidebar", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText("Platform overview")).toBeInTheDocument();
+      expect(screen.getByText("Overview")).toBeInTheDocument();
     });
   });
 

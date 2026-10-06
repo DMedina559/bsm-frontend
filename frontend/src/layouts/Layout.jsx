@@ -16,7 +16,7 @@ const Layout = () => {
   const { selectedServer } = useServer();
   const { isConnected, isFallback } = useWebSocket();
   const [group, title, description] = PAGE_INFO[pathname] || [
-    "Platform",
+    "Workspace",
     "Workspace",
     "",
   ];
@@ -62,7 +62,7 @@ const Layout = () => {
           <div className="workspace-indicators">
             <span
               className={`connection-indicator ${isConnected ? "connected" : "degraded"}`}
-              title="Update connection; not an overall platform health check"
+              title="Update connection; not an overall system health check"
             >
               <Radio size={14} />
               {isConnected ? "Live" : isFallback ? "Polling" : "Offline"}

@@ -11,7 +11,7 @@
   justify-content: center;
   gap: 8px;
   min-height: var(--bsm-control-height);
-  padding: 8px 16px;
+  padding: var(--bsm-button-padding) 16px;
   border: 1px solid var(--button-border-color);
   border-radius: var(--bsm-radius-md);
   background: var(--button-background-color);

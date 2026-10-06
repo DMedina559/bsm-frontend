@@ -5,10 +5,12 @@ import { useToast } from "../ToastContext";
 import { get, post } from "../api";
 import { Save, User, Palette, RotateCcw } from "lucide-react";
 import { BUILT_IN_THEMES, THEME_LABELS } from "../utils/theme";
-const Account = () => {
+import PaletteEditor from "../components/PaletteEditor";
+const Account = ({ appearanceOnly = false }) => {
   const { user } = useAuth();
   const {
     theme,
+    activePalette,
     changeTheme,
     themeError,
     themeSaving,
@@ -35,6 +37,7 @@ const Account = () => {
           setAvailableThemes([
             ...new Set([
               ...BUILT_IN_THEMES,
+              ...(theme && !BUILT_IN_THEMES.includes(theme) ? [theme] : []),
               ...response.themes.filter(
                 (item) => typeof item === "string" && item.trim(),
               ),
@@ -54,7 +57,7 @@ const Account = () => {
     return () => {
       active = false;
     };
-  }, []);
+  }, [theme]);
   const handleThemeChange = async (newTheme) => {
     try {
       if (await changeTheme(newTheme))
@@ -112,196 +115,235 @@ const Account = () => {
       <div className="header">
         <div>
           <p className="platform-eyebrow">YOUR WORKSPACE</p>
-          <h1>My Account</h1>
+          <h1>{appearanceOnly ? "Appearance" : "My Account"}</h1>
         </div>
       </div>
-      <section className="settings-panel">
-        <div className="section-heading">
-          <User size={20} />
-          <div>
-            <h2>Profile</h2>
-            <p>Your platform identity and access level.</p>
-          </div>
-        </div>
-        <dl className="profile-details">
-          <div>
-            <dt>Username</dt>
-            <dd>{user?.username}</dd>
-          </div>
-          <div>
-            <dt>Role</dt>
-            <dd>
-              <span className="badge">{user?.role}</span>
-            </dd>
-          </div>
-        </dl>
-      </section>
-      <section className="settings-panel" id="appearance">
-        <div className="section-heading">
-          <Palette size={20} />
-          <div>
-            <h2>Theme</h2>
-            <p>
-              Choose an account theme. Display mode and density are saved in
-              this browser.
-            </p>
-          </div>
-        </div>
-        {themesNotice && <p className="form-help-text">{themesNotice}</p>}
-        {themeError && (
-          <div className="message message-error" role="alert">
-            {themeError}
-          </div>
-        )}
-        <div className="theme-grid" role="group" aria-label="Account theme">
-          {availableThemes.map((item) => (
-            <button
-              key={item}
-              className={`theme-card ${theme === item ? "selected" : ""}`}
-              aria-pressed={theme === item}
-              disabled={themeSaving}
-              onClick={() => handleThemeChange(item)}
-              type="button"
-            >
-              <span
-                className={`theme-swatch theme-swatch-${BUILT_IN_THEMES.includes(item) ? item : "custom"}`}
-                aria-hidden="true"
-              >
-                <i />
-                <i />
-                <i />
-              </span>
-              <strong>{THEME_LABELS[item] || item.replace(/_/g, " ")}</strong>
-              <small>
-                {theme === item
-                  ? "Selected"
-                  : BUILT_IN_THEMES.includes(item)
-                    ? "Built-in theme"
-                    : "Custom theme"}
-              </small>
-            </button>
-          ))}
-        </div>
-        <div className="form-grid appearance-controls">
-          <div className="form-group">
-            <label className="form-label" htmlFor="display-mode">
-              Display mode
-            </label>
-            <select
-              className="form-input"
-              id="display-mode"
-              value={appearance.mode}
-              onChange={(event) =>
-                updateAppearance({
-                  mode: event.target.value,
-                })
-              }
-            >
-              <option value="theme">Use theme default</option>
-              <option value="system">Follow system</option>
-              <option value="dark">Dark</option>
-              <option value="light">Light</option>
-            </select>
-            <small className="form-help-text">
-              Custom themes can use the same light and dark tokens.
-            </small>
-          </div>
-          <div className="form-group">
-            <label className="form-label" htmlFor="display-density">
-              Interface density
-            </label>
-            <select
-              className="form-input"
-              id="display-density"
-              value={appearance.density}
-              onChange={(event) =>
-                updateAppearance({
-                  density: event.target.value,
-                })
-              }
-            >
-              <option value="comfortable">Comfortable</option>
-              <option value="compact">Compact</option>
-            </select>
-            <small className="form-help-text">
-              Adjust control heights and table spacing.
-            </small>
-          </div>
-        </div>
-        <button
-          className="action-button secondary"
-          onClick={resetAppearance}
-          type="button"
-        >
-          <RotateCcw size={16} />
-          Reset display preferences
-        </button>
-      </section>
-      <section className="settings-panel">
-        <div className="section-heading">
-          <Save size={20} />
-          <div>
-            <h2>Change Password</h2>
-            <p>Use a unique password for your platform account.</p>
-          </div>
-        </div>
-        <form
-          onSubmit={handlePasswordChange}
-          className="password-form"
-          aria-busy={passwordSaving}
-        >
-          <input
-            type="text"
-            name="username"
-            value={user?.username || ""}
-            autoComplete="username"
-            hidden
-            readOnly
-          />
-          {fields.map(([key, id, label, autoComplete]) => (
-            <div className="form-group" key={key}>
-              <label className="form-label" htmlFor={id}>
-                {label}
-              </label>
-              <input
-                className="form-input"
-                id={id}
-                name={id}
-                type="password"
-                value={passwords[key]}
-                onChange={(event) =>
-                  setPasswords({
-                    ...passwords,
-                    [key]: event.target.value,
-                  })
-                }
-                required
-                autoComplete={autoComplete}
-                disabled={passwordSaving}
-                aria-invalid={
-                  key === "confirmPassword" && passwordError ? true : undefined
-                }
-                aria-describedby={passwordError ? "password-error" : undefined}
-              />
+      {!appearanceOnly && (
+        <section className="settings-panel">
+          <div className="section-heading">
+            <User size={20} />
+            <div>
+              <h2>Profile</h2>
+              <p>Your account identity and access level.</p>
             </div>
-          ))}
-          {passwordError && (
-            <p className="validation-error" role="alert" id="password-error">
-              {passwordError}
+          </div>
+          <dl className="profile-details">
+            <div>
+              <dt>Username</dt>
+              <dd>{user?.username}</dd>
+            </div>
+            <div>
+              <dt>Role</dt>
+              <dd>
+                <span className="badge">{user?.role}</span>
+              </dd>
+            </div>
+          </dl>
+        </section>
+      )}
+      {appearanceOnly && (
+        <section className="settings-panel" id="appearance">
+          <div className="section-heading">
+            <Palette size={20} />
+            <div>
+              <h2>Theme</h2>
+              <p>
+                Choose an account theme. Display mode and density are saved in
+                this browser.
+              </p>
+            </div>
+          </div>
+          {themesNotice && <p className="form-help-text">{themesNotice}</p>}
+          {themeError && (
+            <div className="message message-error" role="alert">
+              {themeError}
+            </div>
+          )}
+          <details className="theme-install-help">
+            <summary>How to add a CSS theme</summary>
+            <p>
+              Server-installed themes appear below automatically. Ask your
+              administrator to install a CSS file in the backend’s themes
+              directory; it must be listed by the themes API and served at
+              /themes/NAME.css. Reload this page after installation.
+            </p>
+            <p>
+              Use the palette creator below to make a theme without writing CSS,
+              then export its CSS for installation. Personal palettes are saved
+              in this browser; server CSS themes are shared through the backend
+              and selected on your account.
+            </p>
+          </details>
+          <h3>Built-in and installed CSS themes</h3>
+          {activePalette && (
+            <p className="form-help-text">
+              The personal palette “{activePalette}” currently overrides account
+              theme colors. Selecting a theme below turns the palette off.
             </p>
           )}
-          <div className="form-actions">
-            <button
-              type="submit"
-              className="action-button primary-button"
-              disabled={passwordSaving}
-            >
-              <Save size={16} />
-              {passwordSaving ? "Updating…" : "Update Password"}
-            </button>
+          {!availableThemes.some((item) => !BUILT_IN_THEMES.includes(item)) && (
+            <p className="form-help-text">
+              No server CSS themes are listed. Built-in themes are ready to use;
+              see installation guidance above to add more.
+            </p>
+          )}
+          <div className="theme-grid" role="group" aria-label="Account theme">
+            {availableThemes.map((item) => (
+              <button
+                key={item}
+                className={`theme-card ${theme === item && !activePalette ? "selected" : ""}`}
+                aria-pressed={theme === item && !activePalette}
+                disabled={themeSaving}
+                onClick={() => handleThemeChange(item)}
+                type="button"
+              >
+                <span
+                  className={`theme-swatch theme-swatch-${BUILT_IN_THEMES.includes(item) ? item : "custom"}`}
+                  aria-hidden="true"
+                >
+                  <i />
+                  <i />
+                  <i />
+                </span>
+                <strong>{THEME_LABELS[item] || item.replace(/_/g, " ")}</strong>
+                <small>
+                  {theme === item && !activePalette
+                    ? "Selected"
+                    : BUILT_IN_THEMES.includes(item)
+                      ? "Built-in theme"
+                      : "Server CSS theme"}
+                </small>
+              </button>
+            ))}
           </div>
-        </form>
-      </section>
+          <div className="form-grid appearance-controls">
+            <div className="form-group">
+              <label className="form-label" htmlFor="display-mode">
+                Display mode
+              </label>
+              <select
+                className="form-input"
+                id="display-mode"
+                value={appearance.mode}
+                onChange={(event) =>
+                  updateAppearance({
+                    mode: event.target.value,
+                  })
+                }
+              >
+                <option value="theme">Use theme default</option>
+                <option value="system">Follow system</option>
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+              </select>
+              <small className="form-help-text">
+                Custom themes can use the same light and dark tokens.
+              </small>
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="display-density">
+                Interface density
+              </label>
+              <select
+                className="form-input"
+                id="display-density"
+                value={appearance.density}
+                onChange={(event) =>
+                  updateAppearance({
+                    density: event.target.value,
+                  })
+                }
+              >
+                <option value="comfortable">Comfortable</option>
+                <option value="compact">Compact</option>
+              </select>
+              <small className="form-help-text">
+                Adjust control heights and table spacing.
+              </small>
+            </div>
+          </div>
+          <button
+            className="action-button secondary"
+            onClick={resetAppearance}
+            type="button"
+          >
+            <RotateCcw size={16} />
+            Reset display preferences
+          </button>
+        </section>
+      )}
+      {appearanceOnly && <PaletteEditor />}
+      {!appearanceOnly && (
+        <section className="settings-panel">
+          <div className="section-heading">
+            <Save size={20} />
+            <div>
+              <h2>Change Password</h2>
+              <p>Use a unique password for your account.</p>
+            </div>
+          </div>
+          <form
+            onSubmit={handlePasswordChange}
+            className="password-form"
+            aria-busy={passwordSaving}
+          >
+            <input
+              type="text"
+              name="username"
+              value={user?.username || ""}
+              autoComplete="username"
+              hidden
+              readOnly
+            />
+            {fields.map(([key, id, label, autoComplete]) => (
+              <div className="form-group" key={key}>
+                <label className="form-label" htmlFor={id}>
+                  {label}
+                </label>
+                <input
+                  className="form-input"
+                  id={id}
+                  name={id}
+                  type="password"
+                  value={passwords[key]}
+                  onChange={(event) =>
+                    setPasswords({
+                      ...passwords,
+                      [key]: event.target.value,
+                    })
+                  }
+                  required
+                  autoComplete={autoComplete}
+                  disabled={passwordSaving}
+                  aria-invalid={
+                    key === "confirmPassword" && passwordError
+                      ? true
+                      : undefined
+                  }
+                  aria-describedby={
+                    passwordError ? "password-error" : undefined
+                  }
+                />
+              </div>
+            ))}
+            {passwordError && (
+              <p className="validation-error" role="alert" id="password-error">
+                {passwordError}
+              </p>
+            )}
+            <div className="form-actions">
+              <button
+                type="submit"
+                className="action-button primary-button"
+                disabled={passwordSaving}
+              >
+                <Save size={16} />
+                {passwordSaving ? "Updating…" : "Update Password"}
+              </button>
+            </div>
+          </form>
+        </section>
+      )}
     </div>
   );
 };
