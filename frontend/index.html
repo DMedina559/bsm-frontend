@@ -1,7 +1,8 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-mode="dark" data-density="compact">
   <head>
     <meta charset="UTF-8" />
+    <base id="app-asset-base" href="/app/" />
     <link rel="icon" type="image/svg+xml" href="./image/icon/favicon.svg" />
     <link
       rel="icon"
@@ -15,16 +16,33 @@
       sizes="180x180"
       href="./image/icon/apple-touch-icon.png"
     />
-    <link rel="manifest" href="../site.webmanifest" />
+    <link rel="manifest" href="./assets/site.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#081613" />
     <title>Bedrock Server Manager</title>
     <script>
       (function () {
+        try {
+          var appearance = JSON.parse(
+            localStorage.getItem("bsm.appearance.v4") || "{}",
+          );
+          var mode = appearance.mode;
+          if (mode === "system")
+            mode = window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light";
+          if (mode === "light" || mode === "dark")
+            document.documentElement.dataset.mode = mode;
+          if (["compact", "comfortable"].includes(appearance.density))
+            document.documentElement.dataset.density = appearance.density;
+        } catch (_) {}
         var path = window.location.pathname;
-        var appIndex = path.lastIndexOf("/app");
+        var appIndex = path.search(/\/app(?:\/|$)/);
         if (appIndex !== -1) {
           var basePath = path.substring(0, appIndex + 4) + "/";
-          document.write('<base href="' + basePath + '" />');
+          document
+            .getElementById("app-asset-base")
+            .setAttribute("href", basePath);
           if (path.endsWith("/app")) {
             window.history.replaceState(
               null,

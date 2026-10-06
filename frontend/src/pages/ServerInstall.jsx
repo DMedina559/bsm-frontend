@@ -1,3 +1,4 @@
+import { useDialog } from "../DialogContext";
 import React, { useState, useEffect, useCallback } from "react";
 import { useToast } from "../ToastContext";
 import { post, get } from "../api";
@@ -6,8 +7,8 @@ import { useNavigate } from "react-router-dom";
 import { PlusSquare, RefreshCw } from "lucide-react";
 import { useWebSocket } from "../WebSocketContext";
 import { logger } from "../utils/logger";
-
 const ServerInstall = () => {
+  const { confirmAction } = useDialog();
   const [formData, setFormData] = useState({
     server_name: "",
     server_version: "LATEST",
@@ -22,17 +23,18 @@ const ServerInstall = () => {
   const navigate = useNavigate();
   const { refreshServers, setSelectedServer } = useServer();
   const { isFallback, lastMessage, subscribe, unsubscribe } = useWebSocket();
-
   const handleInstallSuccess = useCallback(async () => {
     await refreshServers();
     setSelectedServer(formData.server_name);
-
     if (installTaskId) {
       unsubscribe(`task:${installTaskId}`);
     }
-
     setLoading(false);
-    navigate("/server-properties", { state: { setupFlow: true } });
+    navigate("/server-properties", {
+      state: {
+        setupFlow: true,
+      },
+    });
   }, [
     formData.server_name,
     installTaskId,
@@ -41,7 +43,6 @@ const ServerInstall = () => {
     setSelectedServer,
     unsubscribe,
   ]);
-
   useEffect(() => {
     const fetchCustomZips = async () => {
       try {
@@ -50,7 +51,9 @@ const ServerInstall = () => {
           setCustomZips(data.custom_zips || []);
         }
       } catch (error) {
-        logger.warn("[ServerInstall] Failed to fetch custom zips", { error });
+        logger.warn("[ServerInstall] Failed to fetch custom zips", {
+          error,
+        });
       }
     };
     fetchCustomZips();
@@ -64,7 +67,6 @@ const ServerInstall = () => {
         const taskData = lastMessage.data;
         if (taskData.status === "success") {
           addToast("Installation completed successfully!", "success");
-
           handleInstallSuccess();
         } else if (taskData.status === "error") {
           addToast(`Installation failed: ${taskData.message}`, "error");
@@ -81,13 +83,13 @@ const ServerInstall = () => {
   // Fallback Polling for Task Status
   useEffect(() => {
     let intervalId = null;
-
     if (isFallback && installTaskId) {
       logger.debug(
         `[ServerInstall] WebSocket fallback active: polling status for task`,
-        { installTaskId },
+        {
+          installTaskId,
+        },
       );
-
       const pollStatus = async () => {
         try {
           // taskData is the task object directly, e.g. { status: "in_progress", ... }
@@ -125,12 +127,10 @@ const ServerInstall = () => {
       // Initial check
       pollStatus();
     }
-
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
   }, [isFallback, installTaskId, addToast, handleInstallSuccess]);
-
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -138,28 +138,26 @@ const ServerInstall = () => {
       [name]: type === "checkbox" ? checked : value,
     }));
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.server_name) {
+    if (loading) return;
+    if (!formData.server_name.trim()) {
       addToast("Server name is required", "error");
       return;
     }
-
     if (formData.server_version === "SPECIFIC" && !specificVersion) {
       addToast("Please enter a specific version number.", "error");
       return;
     }
-
-    const payload = { ...formData };
+    const payload = {
+      ...formData,
+    };
     if (formData.server_version === "SPECIFIC") {
       payload.server_version = specificVersion.trim();
     }
-
     setLoading(true);
     try {
       const response = await post("/api/server/install", payload);
-
       const initiateMonitoring = (taskId) => {
         setInstallTaskId(taskId);
         if (!isFallback) {
@@ -167,16 +165,24 @@ const ServerInstall = () => {
         }
         addToast("Installation started. Please wait...", "info");
       };
-
       if (response && response.status === "confirm_needed") {
-        if (confirm(response.message)) {
-          const confirmData = { ...payload, overwrite: true };
+        if (await confirmAction(response.message)) {
+          const confirmData = {
+            ...payload,
+            overwrite: true,
+          };
           const confirmResponse = await post(
             "/api/server/install",
             confirmData,
           );
           if (confirmResponse && confirmResponse.task_id) {
             initiateMonitoring(confirmResponse.task_id);
+          } else {
+            addToast(
+              "The installation did not return a task ID. Try again.",
+              "error",
+            );
+            setLoading(false);
           }
         } else {
           setLoading(false);
@@ -192,7 +198,6 @@ const ServerInstall = () => {
       setLoading(false);
     }
   };
-
   return (
     <div className="container">
       <div className="header">
@@ -210,7 +215,11 @@ const ServerInstall = () => {
         }}
       >
         <form onSubmit={handleSubmit} className="form-group">
-          <div style={{ marginBottom: "20px" }}>
+          <div
+            style={{
+              marginBottom: "20px",
+            }}
+          >
             <label className="form-label" htmlFor="server_name">
               Server Name
             </label>
@@ -227,12 +236,20 @@ const ServerInstall = () => {
               title="Letters, numbers, underscores, and hyphens only."
               disabled={loading}
             />
-            <small style={{ color: "#888" }}>
+            <small
+              style={{
+                color: "var(--text-color-secondary)",
+              }}
+            >
               Unique name for the server instance.
             </small>
           </div>
 
-          <div style={{ marginBottom: "20px" }}>
+          <div
+            style={{
+              marginBottom: "20px",
+            }}
+          >
             <label className="form-label" htmlFor="server_version">
               Server Version
             </label>
@@ -258,8 +275,8 @@ const ServerInstall = () => {
               style={{
                 marginBottom: "20px",
                 padding: "15px",
-                background: "#f9f9f9",
-                border: "1px solid #ddd",
+                background: "var(--text-color)",
+                border: "1px solid var(--border-color)",
                 borderRadius: "5px",
               }}
             >
@@ -276,7 +293,11 @@ const ServerInstall = () => {
                 required
                 disabled={loading}
               />
-              <small style={{ color: "#666" }}>
+              <small
+                style={{
+                  color: "var(--text-color-secondary)",
+                }}
+              >
                 Must be a valid version number available from Mojang.
               </small>
             </div>
@@ -287,8 +308,8 @@ const ServerInstall = () => {
               style={{
                 marginBottom: "20px",
                 padding: "15px",
-                background: "#f9f9f9",
-                border: "1px solid #ddd",
+                background: "var(--text-color)",
+                border: "1px solid var(--border-color)",
                 borderRadius: "5px",
               }}
             >
@@ -313,7 +334,11 @@ const ServerInstall = () => {
                   ))}
                 </select>
               ) : (
-                <div style={{ color: "red" }}>
+                <div
+                  style={{
+                    color: "red",
+                  }}
+                >
                   No custom ZIP files found in <code>downloads/custom/</code>.
                   Please upload one first.
                 </div>
@@ -321,7 +346,11 @@ const ServerInstall = () => {
             </div>
           )}
 
-          <div style={{ marginBottom: "30px" }}>
+          <div
+            style={{
+              marginBottom: "30px",
+            }}
+          >
             <label
               className="form-label"
               style={{
@@ -335,7 +364,9 @@ const ServerInstall = () => {
                 name="overwrite"
                 checked={formData.overwrite}
                 onChange={handleChange}
-                style={{ marginRight: "10px" }}
+                style={{
+                  marginRight: "10px",
+                }}
                 disabled={loading}
               />
               Overwrite existing server if name conflicts?
@@ -346,16 +377,26 @@ const ServerInstall = () => {
             type="submit"
             className="action-button"
             disabled={loading}
-            style={{ width: "100%", justifyContent: "center" }}
+            style={{
+              width: "100%",
+              justifyContent: "center",
+            }}
           >
             {loading ? (
               <RefreshCw
                 className="spin"
                 size={20}
-                style={{ marginRight: "8px" }}
+                style={{
+                  marginRight: "8px",
+                }}
               />
             ) : (
-              <PlusSquare size={20} style={{ marginRight: "8px" }} />
+              <PlusSquare
+                size={20}
+                style={{
+                  marginRight: "8px",
+                }}
+              />
             )}
             {loading ? "Installing..." : "Install Server"}
           </button>
@@ -364,5 +405,4 @@ const ServerInstall = () => {
     </div>
   );
 };
-
 export default ServerInstall;

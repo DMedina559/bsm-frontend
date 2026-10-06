@@ -1,82 +1,100 @@
+import { useRequestTracker } from "../utils/useRequestTracker";
+import SettingsField from "../components/SettingsField";
+import {
+  flattenSettings,
+  updateSetting,
+  isSafeSettingPath,
+} from "../utils/settings";
+import { useDialog } from "../DialogContext";
 import React, { useCallback, useEffect, useState } from "react";
 import { CheckCircle, Download, RefreshCw, Save, Trash2 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
 import { get, post, del } from "../api";
-
 const ServerConfig = () => {
+  const { confirmAction } = useDialog();
   const { selectedServer } = useServer();
   const [settings, setSettings] = useState({});
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [savedSnapshot, setSavedSnapshot] = useState(null);
+  const [loadError, setLoadError] = useState(null);
   const [newKey, setNewKey] = useState("");
   const [newValue, setNewValue] = useState("");
   const { addToast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
   const setupFlow = location.state?.setupFlow;
-
+  const beginRequest = useRequestTracker(selectedServer + ":" + "");
   const fetchSettings = useCallback(async () => {
+    const requestTicket = beginRequest("fetchSettings");
     setLoading(true);
+    setLoadError(null);
     try {
       const data = await get(`/api/server/${selectedServer}/settings/get`);
+      if (!requestTicket.current()) return false;
       if (data && data.status === "success" && data.settings) {
         setSettings(data.settings);
+        setSavedSnapshot(JSON.stringify(data.settings));
         return true;
       } else {
+        setLoadError("Failed to load server settings");
         addToast("Failed to load server settings", "error");
         setSettings({});
         return false;
       }
     } catch (error) {
+      if (!requestTicket.current()) return false;
+      setLoadError(error.message || "Error fetching server settings");
       addToast(error.message || "Error fetching server settings", "error");
       return false;
     } finally {
-      setLoading(false);
+      if (requestTicket.current()) {
+        setLoading(false);
+      }
     }
-  }, [selectedServer, addToast]);
-
+  }, [selectedServer, addToast, beginRequest]);
   useEffect(() => {
     if (selectedServer) {
       fetchSettings();
     }
   }, [selectedServer, fetchSettings]);
-
   const handleRefresh = async () => {
     const success = await fetchSettings();
     if (success) {
       addToast("Settings refreshed", "success");
     }
   };
-
   const handleSave = async (e) => {
     e.preventDefault();
     if (!selectedServer) return;
-
-    setLoading(true);
+    if (saving) return;
+    setSaving(true);
     try {
-      const flattened = flattenObject(settings);
-
+      const flattened = flattenSettings(settings);
       for (const [key, value] of Object.entries(flattened)) {
         if (key === "config_schema_version") continue;
-
         await post(`/api/server/${selectedServer}/settings/set`, {
           key: key,
           value: value,
         });
       }
-
+      setSavedSnapshot(JSON.stringify(settings));
       addToast("Server settings saved successfully.", "success");
       fetchSettings();
     } catch (error) {
       addToast(error.message || "Failed to save settings.", "error");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
-
   const handleFinishSetup = async () => {
-    if (confirm("Setup complete! Would you like to start the server now?")) {
+    if (
+      await confirmAction(
+        "Setup complete! Would you like to start the server now?",
+      )
+    ) {
       addToast("Starting server...", "info");
       try {
         await post(`/api/server/${selectedServer}/start`);
@@ -88,16 +106,14 @@ const ServerConfig = () => {
     navigate("/");
     addToast("Server setup complete!", "success");
   };
-
   const handleUpdateServer = async () => {
     if (!selectedServer) return;
     if (
-      !confirm(
+      !(await confirmAction(
         "This will stop the server and update it to the latest version. Continue?",
-      )
+      ))
     )
       return;
-
     addToast("Updating server...", "info");
     try {
       await post(`/api/server/${selectedServer}/update`, {});
@@ -106,19 +122,14 @@ const ServerConfig = () => {
       addToast(error.message || "Failed to start update.", "error");
     }
   };
-
   const handleDeleteServer = async () => {
     if (!selectedServer) return;
-
-    const confirmed = confirm(
+    const confirmed = await confirmAction(
       `Are you sure you want to delete server "${selectedServer}"?\n\nThis action cannot be undone. All server data will be permanently lost.`,
     );
-
     if (!confirmed) return;
-
     setLoading(true);
     addToast(`Deleting server "${selectedServer}"...`, "info");
-
     try {
       await del(`/api/server/${selectedServer}/delete`);
       addToast(`Server "${selectedServer}" deletion started.`, "success");
@@ -128,65 +139,32 @@ const ServerConfig = () => {
       setLoading(false);
     }
   };
-
-  const handleChange = (path, value) => {
-    const updatePath = (obj, keys, val) => {
-      const [first, ...rest] = keys;
-      if (
-        first === "__proto__" ||
-        first === "constructor" ||
-        first === "prototype"
-      ) {
-        return obj;
-      }
-      if (rest.length === 0) {
-        return { ...obj, [first]: val };
-      }
-      return {
-        ...obj,
-        [first]: updatePath(obj[first] || {}, rest, val),
-      };
-    };
-
-    setSettings((prev) => updatePath(prev, path.split("."), value));
-  };
-
+  const handleChange = (path, value) =>
+    setSettings((previous) => updateSetting(previous, path, value));
   const handleAddCustom = (e) => {
     e.preventDefault();
+    if (saving) return;
     if (!newKey.trim()) {
       addToast("Key cannot be empty", "error");
       return;
     }
-
+    if (!isSafeSettingPath(newKey.trim())) {
+      addToast(
+        "Use a valid setting key without reserved path segments.",
+        "error",
+      );
+      return;
+    }
     const fullKey = `custom.${newKey.trim()}`;
     handleChange(fullKey, newValue);
     setNewKey("");
     setNewValue("");
     addToast(`Added ${fullKey} to pending changes.`, "info");
   };
-
-  const flattenObject = (obj, prefix = "") => {
-    return Object.keys(obj).reduce((acc, k) => {
-      const pre = prefix.length ? prefix + "." : "";
-      if (
-        typeof obj[k] === "object" &&
-        obj[k] !== null &&
-        !Array.isArray(obj[k])
-      ) {
-        Object.assign(acc, flattenObject(obj[k], pre + k));
-      } else {
-        acc[pre + k] = obj[k];
-      }
-      return acc;
-    }, {});
-  };
-
   const renderFields = (obj, prefix = "") => {
     return Object.entries(obj).map(([key, value]) => {
       const fullPath = prefix ? `${prefix}.${key}` : key;
-
       if (key === "config_schema_version") return null;
-
       if (
         typeof value === "object" &&
         value !== null &&
@@ -202,13 +180,19 @@ const ServerConfig = () => {
               borderLeft: "2px solid var(--border-color)",
             }}
           >
-            <h4 style={{ textTransform: "capitalize", margin: "10px 0" }}>
+            <h4
+              style={{
+                textTransform: "capitalize",
+                margin: "10px 0",
+              }}
+            >
               {key.replace(/_/g, " ")}
             </h4>
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                gridTemplateColumns:
+                  "repeat(auto-fill, minmax(min(100%, 300px), 1fr))",
                 gap: "15px",
               }}
             >
@@ -217,53 +201,20 @@ const ServerConfig = () => {
           </div>
         );
       }
-
       return (
-        <div
-          key={fullPath}
-          style={{ display: "flex", flexDirection: "column" }}
-        >
-          <label
-            htmlFor={fullPath}
-            className="form-label"
-            style={{
-              marginBottom: "5px",
-              fontWeight: "bold",
-              fontSize: "0.9em",
-            }}
-          >
-            {key.replace(/_/g, " ")}
-          </label>
-          {typeof value === "boolean" ? (
-            <select
-              id={fullPath}
-              className="form-input"
-              value={value.toString()}
-              onChange={(e) =>
-                handleChange(fullPath, e.target.value === "true")
-              }
-            >
-              <option value="true">True</option>
-              <option value="false">False</option>
-            </select>
-          ) : (
-            <input
-              type="text"
-              id={fullPath}
-              className="form-input"
-              value={value || ""}
-              readOnly={
-                prefix.includes("server_info") &&
-                (key === "status" || key === "installed_version")
-              }
-              onChange={(e) => handleChange(fullPath, e.target.value)}
-            />
-          )}
-        </div>
+        <SettingsField
+          key={`${selectedServer}:${fullPath}`}
+          path={fullPath}
+          value={value}
+          onChange={handleChange}
+          readOnly={
+            prefix.includes("server_info") &&
+            (key === "status" || key === "installed_version")
+          }
+        />
       );
     });
   };
-
   if (!selectedServer) {
     return (
       <div className="container">
@@ -282,7 +233,6 @@ const ServerConfig = () => {
       </div>
     );
   }
-
   return (
     <div className="container">
       <div
@@ -294,23 +244,41 @@ const ServerConfig = () => {
         }}
       >
         <h1>Server Settings: {selectedServer}</h1>
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "10px",
+          }}
+        >
           {!setupFlow && (
             <button
               className="action-button secondary"
               onClick={handleRefresh}
-              disabled={loading}
+              disabled={loading || saving}
+              type="button"
             >
-              <RefreshCw size={16} style={{ marginRight: "5px" }} /> Refresh
+              <RefreshCw
+                size={16}
+                style={{
+                  marginRight: "5px",
+                }}
+              />{" "}
+              Refresh
             </button>
           )}
           {setupFlow && (
             <button
               className="action-button success-button"
               onClick={handleFinishSetup}
+              type="button"
             >
-              <CheckCircle size={16} style={{ marginRight: "5px" }} /> Finish
-              Setup
+              <CheckCircle
+                size={16}
+                style={{
+                  marginRight: "5px",
+                }}
+              />{" "}
+              Finish Setup
             </button>
           )}
         </div>
@@ -319,170 +287,254 @@ const ServerConfig = () => {
       {setupFlow && (
         <div
           className="message-box message-info"
-          style={{ marginBottom: "20px" }}
+          style={{
+            marginBottom: "20px",
+          }}
         >
           <strong>Setup Wizard (Step 5/5):</strong> Configure settings for this
           server.
         </div>
       )}
 
+      {loadError && (
+        <div className="message message-error" role="alert">
+          {loadError}. Refresh before editing these settings.
+        </div>
+      )}
+      {savedSnapshot !== null && JSON.stringify(settings) !== savedSnapshot && (
+        <p className="save-state" role="status">
+          Unsaved changes
+        </p>
+      )}
       {loading && Object.keys(settings).length === 0 ? (
-        <div style={{ textAlign: "center", padding: "20px" }}>
+        <div
+          style={{
+            textAlign: "center",
+            padding: "20px",
+          }}
+        >
           Loading settings...
         </div>
       ) : (
         <div
           className="grid"
-          style={{ display: "flex", flexDirection: "column", gap: "20px" }}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "20px",
+          }}
         >
           {!setupFlow && (
             <div
               style={{
                 padding: "15px",
-                background: "#444",
+                background: "var(--border-color)",
                 borderRadius: "5px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
               }}
             >
-              <div style={{ color: "#eee" }}>
+              <div
+                style={{
+                  color: "var(--text-color)",
+                }}
+              >
                 <strong>Quick Actions:</strong>
               </div>
-              <div style={{ display: "flex", gap: "10px" }}>
-                <button className="action-button" onClick={handleUpdateServer}>
-                  <Download size={16} style={{ marginRight: "5px" }} /> Update
-                  Server
+              <div
+                style={{
+                  display: "flex",
+                  gap: "10px",
+                }}
+              >
+                <button
+                  className="action-button"
+                  onClick={handleUpdateServer}
+                  type="button"
+                >
+                  <Download
+                    size={16}
+                    style={{
+                      marginRight: "5px",
+                    }}
+                  />{" "}
+                  Update Server
                 </button>
                 <button
                   className="action-button danger-button"
                   onClick={handleDeleteServer}
+                  type="button"
                 >
-                  <Trash2 size={16} style={{ marginRight: "5px" }} /> Delete
-                  Server
+                  <Trash2
+                    size={16}
+                    style={{
+                      marginRight: "5px",
+                    }}
+                  />{" "}
+                  Delete Server
                 </button>
               </div>
             </div>
           )}
 
-          <form onSubmit={handleSave} className="form-group">
-            <div
-              style={{
-                background: "var(--container-background-color)",
-                padding: "20px",
-                border: "1px solid var(--border-color)",
-              }}
+          <form onSubmit={handleSave} className="form-group" aria-busy={saving}>
+            <fieldset
+              disabled={loading || saving || !!loadError}
+              className="form-fields"
             >
-              {Object.entries(settings).map(([group, groupData]) => {
-                if (
-                  typeof groupData === "object" &&
-                  groupData !== null &&
-                  !Array.isArray(groupData)
-                ) {
-                  return (
-                    <div
-                      key={group}
-                      style={{
-                        marginBottom: "30px",
-                        borderBottom: "1px solid var(--border-color)",
-                        paddingBottom: "20px",
-                      }}
-                    >
-                      <h3
-                        style={{
-                          textTransform: "capitalize",
-                          margin: "0 0 15px 0",
-                        }}
-                      >
-                        {group.replace(/_/g, " ")}
-                      </h3>
+              <div
+                style={{
+                  background: "var(--container-background-color)",
+                  padding: "20px",
+                  border: "1px solid var(--border-color)",
+                }}
+              >
+                {Object.entries(settings).map(([group, groupData]) => {
+                  if (
+                    typeof groupData === "object" &&
+                    groupData !== null &&
+                    !Array.isArray(groupData)
+                  ) {
+                    return (
                       <div
+                        key={group}
                         style={{
-                          display: "grid",
-                          gridTemplateColumns: "1fr",
-                          gap: "10px",
+                          marginBottom: "30px",
+                          borderBottom: "1px solid var(--border-color)",
+                          paddingBottom: "20px",
                         }}
                       >
-                        {renderFields(groupData, group)}
+                        <h3
+                          style={{
+                            textTransform: "capitalize",
+                            margin: "0 0 15px 0",
+                          }}
+                        >
+                          {group.replace(/_/g, " ")}
+                        </h3>
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr",
+                            gap: "10px",
+                          }}
+                        >
+                          {renderFields(groupData, group)}
+                        </div>
                       </div>
-                    </div>
-                  );
-                }
-                return null;
-              })}
-            </div>
+                    );
+                  }
+                  return null;
+                })}
+              </div>
 
-            {/* Custom Settings Entry */}
-            <div
-              style={{
-                background: "var(--container-background-color)",
-                padding: "20px",
-                border: "1px solid var(--border-color)",
-                marginTop: "20px",
-              }}
-            >
-              <h3 style={{ marginTop: 0 }}>Add Custom Setting</h3>
+              {/* Custom Settings Entry */}
+              <div
+                style={{
+                  background: "var(--container-background-color)",
+                  padding: "20px",
+                  border: "1px solid var(--border-color)",
+                  marginTop: "20px",
+                }}
+              >
+                <h3
+                  style={{
+                    marginTop: 0,
+                  }}
+                >
+                  Add Custom Setting
+                </h3>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "10px",
+                    alignItems: "flex-end",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <div
+                    style={{
+                      flex: 1,
+                      minWidth: "200px",
+                    }}
+                  >
+                    <label
+                      className="form-label"
+                      htmlFor="serverconfig-field-1"
+                    >
+                      Key Name (custom. prefix added automatically)
+                    </label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g., my_setting"
+                      value={newKey}
+                      onChange={(e) => setNewKey(e.target.value)}
+                      id="serverconfig-field-1"
+                    />
+                  </div>
+                  <div
+                    style={{
+                      flex: 1,
+                      minWidth: "200px",
+                    }}
+                  >
+                    <label
+                      className="form-label"
+                      htmlFor="serverconfig-field-2"
+                    >
+                      Value
+                    </label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Value"
+                      value={newValue}
+                      onChange={(e) => setNewValue(e.target.value)}
+                      id="serverconfig-field-2"
+                    />
+                  </div>
+                  <button
+                    className="action-button secondary"
+                    onClick={handleAddCustom}
+                    disabled={!newKey.trim()}
+                    style={{
+                      marginBottom: "2px",
+                    }}
+                    type="button"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+
               <div
                 style={{
                   display: "flex",
-                  gap: "10px",
-                  alignItems: "flex-end",
-                  flexWrap: "wrap",
+                  justifyContent: "flex-end",
+                  marginTop: "20px",
                 }}
               >
-                <div style={{ flex: 1, minWidth: "200px" }}>
-                  <label className="form-label">
-                    Key Name (custom. prefix added automatically)
-                  </label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="e.g., my_setting"
-                    value={newKey}
-                    onChange={(e) => setNewKey(e.target.value)}
-                  />
-                </div>
-                <div style={{ flex: 1, minWidth: "200px" }}>
-                  <label className="form-label">Value</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="Value"
-                    value={newValue}
-                    onChange={(e) => setNewValue(e.target.value)}
-                  />
-                </div>
                 <button
-                  className="action-button secondary"
-                  onClick={handleAddCustom}
-                  disabled={!newKey.trim()}
-                  style={{ marginBottom: "2px" }}
+                  type="submit"
+                  className="action-button"
+                  disabled={loading || saving || !!loadError}
                 >
-                  Add
+                  <Save
+                    size={16}
+                    style={{
+                      marginRight: "5px",
+                    }}
+                  />{" "}
+                  Save Settings
                 </button>
               </div>
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                marginTop: "20px",
-              }}
-            >
-              <button
-                type="submit"
-                className="action-button"
-                disabled={loading}
-              >
-                <Save size={16} style={{ marginRight: "5px" }} /> Save Settings
-              </button>
-            </div>
+            </fieldset>
           </form>
         </div>
       )}
     </div>
   );
 };
-
 export default ServerConfig;

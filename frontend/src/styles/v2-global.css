@@ -1,9 +1,2 @@
-body {
-  background-color: #2b2b2b;
-}
-
-#root {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
+/* Compatibility entry for plugins importing the previous global stylesheet. */
+@import "../index.css";

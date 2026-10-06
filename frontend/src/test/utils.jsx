@@ -1,3 +1,4 @@
+import { DialogProvider } from "../DialogContext";
 import React from "react";
 import { render } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
@@ -20,13 +21,15 @@ const AllTheProviders = ({ children }) => {
   return (
     <BrowserRouter>
       <ToastProvider>
-        <AuthProvider>
-          <ThemeProvider>
-            <WebSocketProvider>
-              <ServerProvider>{children}</ServerProvider>
-            </WebSocketProvider>
-          </ThemeProvider>
-        </AuthProvider>
+        <DialogProvider>
+          <AuthProvider>
+            <ThemeProvider>
+              <WebSocketProvider>
+                <ServerProvider>{children}</ServerProvider>
+              </WebSocketProvider>
+            </ThemeProvider>
+          </AuthProvider>
+        </DialogProvider>
       </ToastProvider>
     </BrowserRouter>
   );

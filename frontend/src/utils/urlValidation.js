@@ -11,6 +11,14 @@ export const isSafeUrl = (url) => {
 
   // Trim whitespace which might obscure protocol schemes
   const trimmedUrl = url.trim();
+  if (
+    trimmedUrl.includes("\\") ||
+    [...trimmedUrl].some(
+      (character) =>
+        character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127,
+    )
+  )
+    return false;
 
   // Allow safe relative paths
   // ^\/[^/]   -> Starts with / but not //

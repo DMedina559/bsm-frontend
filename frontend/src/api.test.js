@@ -201,3 +201,15 @@ describe("api", () => {
     });
   });
 });
+
+describe("authenticated API URL routing", () => {
+  it("blocks credential transmission to foreign origins", async () => {
+    localStorage.clear();
+    localStorage.setItem("access_token", "sensitive-token");
+    globalThis.fetch = vi.fn();
+    await expect(
+      request("https://untrusted.example/api/action"),
+    ).rejects.toThrow("configured backend");
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+});

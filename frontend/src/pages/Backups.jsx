@@ -1,3 +1,5 @@
+import { useRequestTracker } from "../utils/useRequestTracker";
+import { useDialog } from "../DialogContext";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   Archive,
@@ -10,17 +12,19 @@ import {
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
 import { get, post, put } from "../api";
-
 const Backups = () => {
+  const { confirmAction } = useDialog();
   const { selectedServer } = useServer();
   const [backups, setBackups] = useState({});
   const [loading, setLoading] = useState(false);
   const { addToast } = useToast();
-
+  const beginRequest = useRequestTracker(selectedServer + ":" + "");
   const fetchBackups = useCallback(async () => {
+    const requestTicket = beginRequest("fetchBackups");
     setLoading(true);
     try {
       const data = await get(`/api/server/${selectedServer}/backup/list/all`);
+      if (!requestTicket.current()) return false;
       if (data && data.status === "success" && data.details?.all_backups) {
         // Map API keys to local keys
         const apiBackups = data.details.all_backups;
@@ -37,26 +41,26 @@ const Backups = () => {
         return false;
       }
     } catch (error) {
+      if (!requestTicket.current()) return false;
       addToast(error.message || "Error fetching backups", "error");
       return false;
     } finally {
-      setLoading(false);
+      if (requestTicket.current()) {
+        setLoading(false);
+      }
     }
-  }, [selectedServer, addToast]);
-
+  }, [selectedServer, addToast, beginRequest]);
   useEffect(() => {
     if (selectedServer) {
       fetchBackups();
     }
   }, [selectedServer, fetchBackups]);
-
   const handleRefresh = async () => {
     const success = await fetchBackups();
     if (success) {
       addToast("Backups refreshed.", "success");
     }
   };
-
   const getBackupFilename = (type) => {
     switch (type) {
       case "properties":
@@ -69,14 +73,12 @@ const Backups = () => {
         return null;
     }
   };
-
   const handleCreateBackup = async (type) => {
     if (!selectedServer) return;
 
     // Map internal type to API expected type/filename
     let backupType = "world";
     let fileToBackup = null;
-
     if (type === "all") {
       backupType = "all";
     } else if (type !== "world") {
@@ -87,53 +89,48 @@ const Backups = () => {
         return;
       }
     }
-
     const confirmMsg =
       type === "all"
         ? "Create a FULL backup of world and all config files?"
         : `Create backup for ${type}?`;
-    if (!confirm(confirmMsg)) return;
-
+    if (!(await confirmAction(confirmMsg))) return;
     addToast(`Starting ${type} backup...`, "info");
     try {
-      const payload = { backup_type: backupType };
+      const payload = {
+        backup_type: backupType,
+      };
       if (fileToBackup) payload.file_to_backup = fileToBackup;
-
       await post(`/api/server/${selectedServer}/backup/action`, payload);
       addToast("Backup task started. Check logs for completion.", "success");
     } catch (error) {
       addToast(error.message || "Failed to start backup.", "error");
     }
   };
-
   const handleRestore = async (type, filename) => {
     if (!selectedServer) return;
-
     const confirmMessage =
       type === "all"
         ? "WARNING: EXTREMELY DESTRUCTIVE ACTION!\n\nThis will OVERWRITE your current world and ALL configuration files with the LATEST available backups.\n\nAny unsaved progress since the last backup will be LOST FOREVER.\n\nThe server will be restarted if the restore is successful.\n\nAre you absolutely sure?"
         : `WARNING: This will overwrite your current ${type} with backup '${filename}'.\nThe server may restart. Are you sure?`;
-
-    if (!confirm(confirmMessage)) return;
-
+    if (!(await confirmAction(confirmMessage))) return;
     addToast("Restoring backup...", "info");
     try {
-      const payload = { restore_type: type };
+      const payload = {
+        restore_type: type,
+      };
       if (type !== "all") {
         payload.backup_file = filename;
       }
-
       await post(`/api/server/${selectedServer}/restore/action`, payload);
       addToast("Restore task started.", "success");
     } catch (error) {
       addToast(error.message || "Failed to start restore.", "error");
     }
   };
-
   const handlePrune = async () => {
     if (!selectedServer) return;
-    if (!confirm("Prune old backups based on retention policy?")) return;
-
+    if (!(await confirmAction("Prune old backups based on retention policy?")))
+      return;
     try {
       await put(`/api/server/${selectedServer}/backups/prune`, {});
       addToast("Pruning task started.", "success");
@@ -141,7 +138,6 @@ const Backups = () => {
       addToast(error.message || "Failed to prune backups.", "error");
     }
   };
-
   if (!selectedServer) {
     return (
       <div className="container">
@@ -181,20 +177,45 @@ const Backups = () => {
           paddingBottom: "10px",
         }}
       >
-        <h3 style={{ margin: 0 }}>{title} Backups</h3>
+        <h3
+          style={{
+            margin: 0,
+          }}
+        >
+          {title} Backups
+        </h3>
         <button
           className="action-button"
           onClick={() => handleCreateBackup(type)}
+          type="button"
         >
-          <Plus size={16} style={{ marginRight: "5px" }} /> New {title} Backup
+          <Plus
+            size={16}
+            style={{
+              marginRight: "5px",
+            }}
+          />{" "}
+          New {title} Backup
         </button>
       </div>
 
-      <table className="table" style={{ width: "100%" }}>
+      <table
+        className="table"
+        style={{
+          width: "100%",
+        }}
+      >
         <thead>
           <tr>
             <th>Filename</th>
-            <th style={{ width: "100px", textAlign: "right" }}>Actions</th>
+            <th
+              style={{
+                width: "100px",
+                textAlign: "right",
+              }}
+            >
+              Actions
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -215,18 +236,37 @@ const Backups = () => {
                       gap: "10px",
                     }}
                   >
-                    <Archive size={16} style={{ flexShrink: 0 }} />
+                    <Archive
+                      size={16}
+                      style={{
+                        flexShrink: 0,
+                      }}
+                    />
                     <span>{file}</span>
                   </div>
                 </td>
-                <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                <td
+                  style={{
+                    textAlign: "right",
+                    whiteSpace: "nowrap",
+                  }}
+                >
                   <button
                     className="action-button warning-button"
                     onClick={() => handleRestore(type, file)}
                     title="Restore"
-                    style={{ padding: "5px 10px", fontSize: "0.8em" }}
+                    style={{
+                      padding: "5px 10px",
+                      fontSize: "0.8em",
+                    }}
+                    type="button"
                   >
-                    <RotateCcw size={14} style={{ marginRight: "5px" }} />{" "}
+                    <RotateCcw
+                      size={14}
+                      style={{
+                        marginRight: "5px",
+                      }}
+                    />{" "}
                     Restore
                   </button>
                 </td>
@@ -238,7 +278,7 @@ const Backups = () => {
                 colSpan="2"
                 style={{
                   textAlign: "center",
-                  color: "#888",
+                  color: "var(--text-color-secondary)",
                   fontStyle: "italic",
                   padding: "15px",
                 }}
@@ -251,7 +291,6 @@ const Backups = () => {
       </table>
     </div>
   );
-
   return (
     <div className="container">
       <div
@@ -263,23 +302,38 @@ const Backups = () => {
         }}
       >
         <h1>Backups: {selectedServer}</h1>
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "10px",
+          }}
+        >
           <button
             className="action-button danger-button"
             onClick={handlePrune}
             title="Prune old backups"
+            type="button"
           >
-            <Trash2 size={16} style={{ marginRight: "5px" }} /> Prune Old
+            <Trash2
+              size={16}
+              style={{
+                marginRight: "5px",
+              }}
+            />{" "}
+            Prune Old
           </button>
           <button
             className="action-button secondary"
             onClick={handleRefresh}
             title="Refresh List"
             disabled={loading}
+            type="button"
           >
             <RefreshCw
               size={16}
-              style={{ marginRight: "5px" }}
+              style={{
+                marginRight: "5px",
+              }}
               className={loading ? "spin" : ""}
             />{" "}
             Refresh
@@ -296,30 +350,65 @@ const Backups = () => {
           border: "1px solid var(--border-color)",
         }}
       >
-        <h3 style={{ marginTop: 0 }}>Global Actions</h3>
-        <p style={{ fontSize: "0.9em", color: "#aaa" }}>
+        <h3
+          style={{
+            marginTop: 0,
+          }}
+        >
+          Global Actions
+        </h3>
+        <p
+          style={{
+            fontSize: "0.9em",
+            color: "var(--text-color-secondary)",
+          }}
+        >
           Perform actions on all server components (World + Configs)
           simultaneously.
         </p>
-        <div className="button-group" style={{ display: "flex", gap: "15px" }}>
+        <div
+          className="button-group"
+          style={{
+            display: "flex",
+            gap: "15px",
+          }}
+        >
           <button
             className="action-button"
             onClick={() => handleCreateBackup("all")}
+            type="button"
           >
-            <Layers size={16} style={{ marginRight: "5px" }} /> Backup All
+            <Layers
+              size={16}
+              style={{
+                marginRight: "5px",
+              }}
+            />{" "}
+            Backup All
           </button>
           <button
             className="action-button danger-button"
             onClick={() => handleRestore("all", null)}
+            type="button"
           >
-            <RotateCcw size={16} style={{ marginRight: "5px" }} /> Restore All
-            (Latest)
+            <RotateCcw
+              size={16}
+              style={{
+                marginRight: "5px",
+              }}
+            />{" "}
+            Restore All (Latest)
           </button>
         </div>
       </div>
 
       {loading ? (
-        <div style={{ padding: "20px", textAlign: "center" }}>
+        <div
+          style={{
+            padding: "20px",
+            textAlign: "center",
+          }}
+        >
           Loading backups...
         </div>
       ) : (
@@ -333,5 +422,4 @@ const Backups = () => {
     </div>
   );
 };
-
 export default Backups;

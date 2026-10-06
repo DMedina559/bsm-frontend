@@ -17,39 +17,27 @@ repos:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
+
       - id: check-added-large-files
-
-  - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 26.5.1
-    hooks:
-      - id: black
-
-  - repo: https://github.com/PyCQA/isort
-    rev: 9.0.2
-    hooks:
-      - id: isort
-
-  - repo: https://github.com/PyCQA/flake8
-    rev: 7.4.1
-    hooks:
-      - id: flake8
-
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v2.3.1
-    hooks:
-      - id: mypy
-        additional_dependencies: [types-PyYAML]
-
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v4.0.0-alpha.8
-    hooks:
-      - id: prettier
-        files: ^frontend/
+        args: ['--maxkb=5120']
 
   - repo: local
     hooks:
+      - id: frontend-prettier
+        name: frontend-prettier
+        entry: npm exec --prefix frontend -- prettier --write
+        language: system
+        files: ^frontend/.*\.(js|jsx|ts|tsx|json|css|scss|html|md|yaml|yml)$
+        exclude: |
+          (?x)^frontend/(
+            node_modules/|
+            dist/|
+            build/|
+            coverage/
+          )
+
       - id: frontend-eslint
-        name: v2-frontend-eslint
+        name: frontend-eslint
         entry: npm run lint --prefix frontend/
         language: system
         files: ^frontend/

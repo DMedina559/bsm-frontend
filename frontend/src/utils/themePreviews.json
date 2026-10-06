@@ -1,0 +1,38 @@
+{
+  "default": {
+    "colors": ["#030b0d", "#082223", "#00ed95"],
+    "description": "Documentation emerald"
+  },
+  "light": {
+    "colors": ["#f7f8fc", "#ffffff", "#087b57"],
+    "description": "Clean white and slate"
+  },
+  "black": {
+    "colors": ["#090a0d", "#15171d", "#becac4"],
+    "description": "Neutral charcoal"
+  },
+  "gradient": {
+    "colors": ["#111024", "#1d1b38", "#abacff"],
+    "description": "Violet twilight"
+  },
+  "green": {
+    "colors": ["#0e170c", "#1a2915", "#8dd978"],
+    "description": "Woodland greens"
+  },
+  "blue": {
+    "colors": ["#091323", "#12243b", "#89bdff"],
+    "description": "Deep ocean navy"
+  },
+  "red": {
+    "colors": ["#211110", "#35201d", "#ffac98"],
+    "description": "Warm copper and ember"
+  },
+  "pink": {
+    "colors": ["#1c1020", "#2e1b34", "#eba9e5"],
+    "description": "Soft plum and orchid"
+  },
+  "yellow": {
+    "colors": ["#1b170a", "#2d2613", "#edcf77"],
+    "description": "Warm amber and parchment"
+  }
+}

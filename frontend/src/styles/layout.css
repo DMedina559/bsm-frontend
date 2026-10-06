@@ -1,46 +1,280 @@
-/* Layout container */
 .page-layout {
   display: flex;
   min-height: 100vh;
-  width: 100%;
 }
-
-/* Main Content Area */
+.navigation-shell {
+  flex-shrink: 0;
+}
+.workspace-shell {
+  flex: 1;
+  min-width: 0;
+}
+.workspace-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  min-height: 76px;
+  padding: 16px 32px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bsm-page);
+}
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--text-color-secondary);
+  min-width: 0;
+}
+.breadcrumbs a {
+  color: inherit;
+  text-decoration: none;
+}
+.breadcrumbs span {
+  color: var(--text-color);
+}
+.workspace-indicators {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.connection-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+.account-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--text-color);
+  font-size: 12px;
+}
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: var(--bsm-on-accent);
+  background: var(--bsm-accent-strong);
+  font-weight: 650;
+}
 .main-content {
-  flex-grow: 1; /* Take up remaining space */
-  padding: 20px;
-  min-height: 100vh;
-  box-sizing: border-box;
-  overflow-x: hidden; /* Prevent horizontal scrolling if content is too wide */
-  /* Remove fixed margin since flexbox handles spacing */
-  margin-left: 0;
+  padding: 32px;
+  min-width: 0;
+  outline: none;
+}
+.page-context {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  font-size: 12px;
+  color: var(--text-color-secondary);
+}
+.workspace-server {
+  color: var(--text-color);
+  font-family: var(--bsm-mono);
+}
+.skip-link {
+  position: fixed;
+  left: 16px;
+  top: 16px;
+  transform: translateY(-200%);
+  z-index: 4000;
+  background: var(--bsm-surface);
+  padding: 12px;
+  border: 2px solid var(--bsm-accent);
+  border-radius: 8px;
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bsm-overlay);
+  z-index: 950;
+}
+.dialog-backdrop,
+.modal-overlay,
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+  background: var(--bsm-overlay);
+  z-index: 2000;
+}
+.dialog-panel {
+  width: min(100%, 560px);
+  max-height: 90dvh;
+  overflow: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--bsm-radius-xl);
+  background: var(--container-background-color);
+  color: var(--text-color);
+  box-shadow: var(--bsm-shadow);
+  outline: none;
+}
+.dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+.dialog-header h2 {
+  font-size: 18px;
+  margin: 0;
+}
+.dialog-body {
+  padding: 24px;
+}
+.dialog-message {
+  white-space: pre-line;
+  margin: 0 0 20px;
+}
+.modal-content {
+  max-height: 90dvh;
+  overflow: auto;
+  background: var(--container-background-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--bsm-radius-lg);
+  padding: 24px;
+  width: min(100%, 600px);
+  margin: 0;
+  text-align: left;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+}
+@media (max-width: 768px) {
+  .workspace-topbar {
+    min-height: 64px;
+    padding: 12px 16px;
+  }
+  .main-content {
+    padding: 20px 16px;
+  }
+  .workspace-indicators {
+    gap: 12px;
+  }
+  .account-chip > span:last-child,
+  .breadcrumbs > a,
+  .breadcrumbs > svg {
+    display: none;
+  }
+  .page-context {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .dialog-backdrop {
+    padding: 16px;
+  }
 }
 
-/* Menu Toggle for mobile (if still needed) */
-.menu-toggle {
+/* Scope display rules above generic icon buttons, regardless of stylesheet order. */
+.workspace-topbar .mobile-menu-toggle {
   display: none;
 }
-
+.breadcrumbs {
+  flex: 1;
+}
+.breadcrumbs > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.workspace-indicators {
+  flex-shrink: 0;
+}
 @media (max-width: 768px) {
-  .page-layout {
-    flex-direction: column; /* Stack on mobile if desired, or keep row and hide sidebar */
+  .workspace-topbar .mobile-menu-toggle {
+    display: inline-flex;
   }
-
-  .main-content {
-    padding-top: 60px; /* Space for toggle button */
+  .workspace-topbar .mobile-menu-toggle[hidden] {
+    display: none;
   }
-
-  .menu-toggle {
-    display: block;
-    position: fixed;
-    top: 15px;
-    left: 15px;
-    z-index: 101;
-    background: var(--button-background-color, #444);
-    border: 1px solid var(--button-border-color, #666);
-    color: #fff;
-    padding: 5px 10px;
-    border-radius: 4px;
-    cursor: pointer;
+  .workspace-topbar {
+    gap: 10px;
+    padding: 12px 16px;
+  }
+  .workspace-topbar .icon-button,
+  .sidebar-nav .icon-button {
+    width: 44px;
+    min-height: 44px;
+  }
+  .sidebar-nav .sidebar-collapse {
+    width: 44px !important;
+    min-height: 44px !important;
+  }
+  .action-button,
+  .main-button,
+  .button,
+  .form-input:not([type="checkbox"]):not([type="radio"]) {
+    min-height: 44px;
+  }
+  input.form-input,
+  select.form-input,
+  textarea.form-input {
+    font-size: 16px;
+  }
+  .page-context {
+    flex-wrap: wrap;
+    overflow-wrap: anywhere;
+  }
+  .section-heading,
+  .header,
+  .form-actions {
+    flex-wrap: wrap;
+  }
+  .fleet-sort-controls {
+    width: 100%;
+  }
+  .fleet-sort-controls .form-input {
+    flex: 1;
+    min-width: 110px;
+  }
+  .dialog-panel {
+    max-width: calc(100vw - 24px);
+  }
+}
+@media (max-width: 480px) {
+  .workspace-topbar {
+    padding-inline: 10px;
+  }
+  .workspace-indicators {
+    gap: 8px;
+  }
+  .connection-indicator {
+    font-size: 10px;
+    gap: 3px;
+  }
+}
+@media (max-width: 768px) {
+  .icon-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .palette-card-actions .icon-button {
+    width: 44px;
+    min-height: 44px;
+  }
+  .personal-palette-card .theme-card {
+    padding-bottom: 60px;
   }
 }

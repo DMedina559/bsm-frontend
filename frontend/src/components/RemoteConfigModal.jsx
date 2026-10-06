@@ -1,166 +1,102 @@
 import React, { useState } from "react";
-import { createPortal } from "react-dom";
 import { getApiBaseUrl, setApiBaseUrl } from "../api";
-import { Save, RotateCcw, X, Globe } from "lucide-react";
-
+import Modal from "./Modal";
+import { useDialog } from "../DialogContext";
 const RemoteConfigModal = ({ isOpen, onClose }) => {
-  // Prefill with existing config or build-time environment variable
   const [remoteUrl, setRemoteUrl] = useState(
     getApiBaseUrl() || import.meta.env.VITE_API_URL || "",
   );
   const [isSaving, setIsSaving] = useState(false);
-
-  const handleSave = () => {
+  const [error, setError] = useState(null);
+  const { confirmAction } = useDialog();
+  const apply = (value) => {
+    setApiBaseUrl(value);
+    // A different backend must not receive the previous backend's bearer token.
+    localStorage.removeItem("access_token");
+    sessionStorage.removeItem("access_token");
+    localStorage.removeItem("selectedServer");
     setIsSaving(true);
-    setApiBaseUrl(remoteUrl);
-    // Reload to force re-authentication against the new server
     window.location.reload();
   };
-
-  const handleReset = () => {
-    if (window.confirm("Reset to default (local) backend?")) {
-      setIsSaving(true);
-      setApiBaseUrl("");
-      // Reload to force re-authentication
-      window.location.reload();
-    }
+  const handleSave = (event) => {
+    event.preventDefault();
+    setError(null);
+    const value = remoteUrl.trim();
+    if (value) {
+      try {
+        const url = new URL(value);
+        if (
+          !["http:", "https:"].includes(url.protocol) ||
+          url.username ||
+          url.password ||
+          url.search ||
+          url.hash
+        )
+          throw new Error();
+        apply(value.replace(/\/+$/, ""));
+      } catch {
+        setError(
+          "Enter an HTTP or HTTPS URL without credentials, a query, or a fragment.",
+        );
+      }
+    } else apply("");
   };
-
-  if (!isOpen) return null;
-
-  return createPortal(
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 9999,
-      }}
-      onClick={onClose}
+  const handleReset = async () => {
+    if (await confirmAction("Reset to the local backend and sign in again?"))
+      apply("");
+  };
+  return (
+    <Modal
+      isOpen={isOpen}
+      title="Server Connection"
+      onClose={onClose}
+      closeDisabled={isSaving}
     >
-      <div
-        style={{
-          backgroundColor: "#2a2a2a", // Fallback color
-          color: "#fff", // Fallback color
-          padding: "25px",
-          borderRadius: "8px",
-          width: "90%",
-          maxWidth: "400px",
-          boxShadow: "0 4px 15px rgba(0,0,0,0.3)",
-          position: "relative",
-          display: "flex",
-          flexDirection: "column",
-          gap: "15px",
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          onClick={onClose}
-          style={{
-            position: "absolute",
-            top: "10px",
-            right: "10px",
-            background: "transparent",
-            border: "none",
-            color: "#aaa",
-            cursor: "pointer",
-          }}
-          aria-label="Close"
-        >
-          <X size={20} />
-        </button>
-
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <Globe size={24} color="#007bff" />
-          <h3 style={{ margin: 0, fontSize: "1.2em" }}>Server Connection</h3>
-        </div>
-
-        <p style={{ fontSize: "0.9em", color: "#ccc", margin: 0 }}>
-          Configure the URL of your Bedrock Server Manager backend.
-        </p>
-
-        <div>
-          <label
-            htmlFor="remote-url-input"
-            style={{
-              display: "block",
-              marginBottom: "5px",
-              fontSize: "0.85em",
-              color: "#aaa",
-            }}
-          >
+      <p className="form-help-text">
+        Connect to your Bedrock Server Manager backend. Changing it signs you
+        out of this browser session.
+      </p>
+      <form onSubmit={handleSave}>
+        <div className="form-group">
+          <label htmlFor="remote-url-input" className="form-label">
             Backend URL
           </label>
           <input
             id="remote-url-input"
-            type="text"
+            className="form-input"
+            type="url"
             value={remoteUrl}
-            onChange={(e) => setRemoteUrl(e.target.value)}
+            onChange={(event) => setRemoteUrl(event.target.value)}
             placeholder="http://192.168.1.100:11325"
-            style={{
-              width: "100%",
-              padding: "10px",
-              borderRadius: "4px",
-              border: "1px solid #444",
-              backgroundColor: "#1a1a1a",
-              color: "#fff",
-              fontSize: "1em",
-            }}
+            disabled={isSaving}
+            aria-invalid={!!error}
+            aria-describedby={error ? "remote-url-error" : undefined}
           />
         </div>
-
-        <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+        {error && (
+          <p id="remote-url-error" role="alert" className="validation-error">
+            {error}
+          </p>
+        )}
+        <div className="form-actions">
           <button
+            type="button"
+            className="action-button secondary"
             onClick={handleReset}
             disabled={isSaving}
-            className="button"
-            style={{
-              flex: 1,
-              backgroundColor: "transparent",
-              border: "1px solid #444",
-              color: "#ccc",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "5px",
-              padding: "8px",
-              cursor: "pointer",
-              borderRadius: "4px",
-            }}
           >
-            <RotateCcw size={16} /> Reset
+            Reset to local
           </button>
           <button
-            onClick={handleSave}
+            type="submit"
+            className="action-button primary-button"
             disabled={isSaving}
-            className="button button-primary"
-            style={{
-              flex: 1,
-              backgroundColor: "#007bff",
-              border: "none",
-              color: "#fff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "5px",
-              padding: "8px",
-              cursor: "pointer",
-              borderRadius: "4px",
-            }}
           >
-            <Save size={16} /> {isSaving ? "Saving..." : "Save"}
+            {isSaving ? "Connecting…" : "Save connection"}
           </button>
         </div>
-      </div>
-    </div>,
-    document.body,
+      </form>
+    </Modal>
   );
 };
-
 export default RemoteConfigModal;

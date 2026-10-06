@@ -1,3 +1,6 @@
+import { useRequestTracker } from "../utils/useRequestTracker";
+import Modal from "../components/Modal";
+import { useDialog } from "../DialogContext";
 import React, { useState, useEffect } from "react";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
@@ -16,8 +19,8 @@ import {
   X,
 } from "lucide-react";
 import DraggableList from "../components/DraggableList";
-
 const Content = () => {
+  const { confirmAction } = useDialog();
   const { selectedServer } = useServer();
   const [activeTab, setActiveTab] = useState("worlds");
   const [items, setItems] = useState([]);
@@ -33,12 +36,17 @@ const Content = () => {
   const [addonsLoading, setAddonsLoading] = useState(false);
   const [orderChanged, setOrderChanged] = useState(false);
   const { addToast } = useToast();
-
   const checkUploadPluginStatus = React.useCallback(async () => {
     try {
       const response = await get("/api/plugins");
-      if (response && response.status === "success" && response.data) {
-        const plugin = response.data["content_uploader_plugin"];
+      if (
+        response &&
+        response.status === "success" &&
+        (response.plugins || response.data)
+      ) {
+        const plugin = (response.plugins || response.data)[
+          "content_uploader_plugin"
+        ];
         if (plugin && plugin.enabled) {
           setIsUploadEnabled(true);
         } else {
@@ -53,8 +61,9 @@ const Content = () => {
       setIsUploadEnabled(false);
     }
   }, [selectedServer]);
-
+  const beginRequest = useRequestTracker(selectedServer + ":" + activeTab);
   const fetchItems = React.useCallback(async () => {
+    const requestTicket = beginRequest("fetchItems");
     if (!selectedServer) return false;
     setLoading(true);
     try {
@@ -64,8 +73,8 @@ const Content = () => {
       } else {
         endpoint = `/api/content/addons`;
       }
-
       const data = await get(endpoint);
+      if (!requestTicket.current()) return false;
       if (data && data.status === "success") {
         // Backend returns "files": ["filename.mcworld", ...]
         // We need to map this to objects for the table
@@ -78,13 +87,14 @@ const Content = () => {
         return true;
       } else {
         addToast(
-          `Failed to load ${activeTab}: ${data.message || "Unknown error"}`,
+          `Failed to load ${activeTab}: ${data?.message || "Unknown error"}`,
           "error",
         );
         setItems([]);
         return false;
       }
     } catch (error) {
+      if (!requestTicket.current()) return false;
       logger.error(`[Content] Error fetching ${activeTab}`, {
         error,
         activeTab,
@@ -94,17 +104,17 @@ const Content = () => {
       setItems([]);
       return false;
     } finally {
-      setLoading(false);
+      if (requestTicket.current()) {
+        setLoading(false);
+      }
     }
-  }, [selectedServer, activeTab, addToast]);
-
+  }, [selectedServer, activeTab, addToast, beginRequest]);
   useEffect(() => {
     checkUploadPluginStatus();
     if (selectedServer) {
       fetchItems();
     }
   }, [selectedServer, activeTab, fetchItems, checkUploadPluginStatus]);
-
   const handleRefresh = async () => {
     const success = await fetchItems();
     if (success) {
@@ -114,23 +124,22 @@ const Content = () => {
       );
     }
   };
-
   const handleInstall = async (item) => {
     if (
-      !confirm(
+      !(await confirmAction(
         `Install ${item.name} to server ${selectedServer}? Server will restart.`,
-      )
+      ))
     )
       return;
-
     setActionLoading(true);
     try {
       const endpoint =
         activeTab === "worlds"
           ? `/api/server/${selectedServer}/world/install`
           : `/api/server/${selectedServer}/addon/install`;
-
-      await post(endpoint, { filename: item.name });
+      await post(endpoint, {
+        filename: item.name,
+      });
       addToast(`Installation of ${item.name} started.`, "success");
     } catch (error) {
       addToast(error.message || "Installation failed.", "error");
@@ -138,15 +147,13 @@ const Content = () => {
       setActionLoading(false);
     }
   };
-
   const handleResetWorld = async () => {
     if (
-      !confirm(
+      !(await confirmAction(
         `Are you sure you want to RESET the world for ${selectedServer}? This will DELETE the current active world directory. This cannot be undone!`,
-      )
+      ))
     )
       return;
-
     setActionLoading(true);
     try {
       await del(`/api/server/${selectedServer}/world/reset`);
@@ -157,7 +164,6 @@ const Content = () => {
       setActionLoading(false);
     }
   };
-
   const handleExportWorld = async () => {
     setActionLoading(true);
     try {
@@ -170,13 +176,14 @@ const Content = () => {
       setActionLoading(false);
     }
   };
-
   const fetchInstalledAddons = async () => {
+    const requestTicket = beginRequest("fetchInstalledAddons");
     if (!selectedServer) return;
     setAddonsLoading(true);
     setOrderChanged(false);
     try {
       const data = await get(`/api/server/${selectedServer}/addons`);
+      if (!requestTicket.current()) return false;
       if (data && data.status === "success" && data.addons) {
         const bp = (data.addons.behavior_packs || []).map((p) => ({
           ...p,
@@ -186,32 +193,41 @@ const Content = () => {
           ...p,
           id: p.uuid,
         }));
-        setInstalledAddons({ behavior_packs: bp, resource_packs: rp });
+        setInstalledAddons({
+          behavior_packs: bp,
+          resource_packs: rp,
+        });
       } else {
         addToast("Failed to load installed addons", "error");
-        setInstalledAddons({ behavior_packs: [], resource_packs: [] });
+        setInstalledAddons({
+          behavior_packs: [],
+          resource_packs: [],
+        });
       }
     } catch (error) {
+      if (!requestTicket.current()) return false;
       logger.error("[Content] Error fetching installed addons", {
         error,
         selectedServer,
       });
       addToast("Error fetching installed addons", "error");
-      setInstalledAddons({ behavior_packs: [], resource_packs: [] });
+      setInstalledAddons({
+        behavior_packs: [],
+        resource_packs: [],
+      });
     } finally {
-      setAddonsLoading(false);
+      if (requestTicket.current()) {
+        setAddonsLoading(false);
+      }
     }
   };
-
   const handleOpenAddonModal = () => {
     setIsAddonModalOpen(true);
     fetchInstalledAddons();
   };
-
   const handleCloseAddonModal = () => {
     setIsAddonModalOpen(false);
   };
-
   const handleReorderAddons = (newItems, type) => {
     setInstalledAddons((prev) => ({
       ...prev,
@@ -219,7 +235,6 @@ const Content = () => {
     }));
     setOrderChanged(true);
   };
-
   const handleSaveAddonOrder = async () => {
     if (!selectedServer) return;
     setActionLoading(true);
@@ -229,7 +244,6 @@ const Content = () => {
         const behaviorUuids = installedAddons.behavior_packs
           .filter((p) => p.status === "ACTIVE" && p.uuid)
           .map((p) => p.uuid);
-
         if (behaviorUuids.length > 0) {
           await post(`/api/server/${selectedServer}/addon/reorder`, {
             pack_type: "behavior",
@@ -241,7 +255,6 @@ const Content = () => {
         const resourceUuids = installedAddons.resource_packs
           .filter((p) => p.status === "ACTIVE" && p.uuid)
           .map((p) => p.uuid);
-
         if (resourceUuids.length > 0) {
           await post(`/api/server/${selectedServer}/addon/reorder`, {
             pack_type: "resource",
@@ -249,7 +262,6 @@ const Content = () => {
           });
         }
       }
-
       addToast("Addon order saved.", "success");
       setOrderChanged(false);
       fetchInstalledAddons();
@@ -259,14 +271,12 @@ const Content = () => {
       setActionLoading(false);
     }
   };
-
   const handleAddonAction = async (pack, packType, action) => {
     if (
       action === "uninstall" &&
-      !confirm(`Are you sure you want to uninstall ${pack.name}?`)
+      !(await confirmAction(`Are you sure you want to uninstall ${pack.name}?`))
     )
       return;
-
     setActionLoading(true);
     try {
       if (action === "uninstall") {
@@ -290,7 +300,6 @@ const Content = () => {
       setActionLoading(false);
     }
   };
-
   const handleSubpackChange = async (pack, packType, newSubpackFolderName) => {
     setActionLoading(true);
     try {
@@ -310,7 +319,10 @@ const Content = () => {
           ...prev,
           [listKey]: prev[listKey].map((p) =>
             p.uuid === pack.uuid
-              ? { ...p, active_subpack: newSubpackFolderName }
+              ? {
+                  ...p,
+                  active_subpack: newSubpackFolderName,
+                }
               : p,
           ),
         };
@@ -321,14 +333,14 @@ const Content = () => {
       setActionLoading(false);
     }
   };
-
   const renderAddonItem = (item, packType) => {
     const isActive = item.status === "ACTIVE";
-    const statusColor = isActive ? "#4CAF50" : "#777";
+    const statusColor = isActive
+      ? "var(--bsm-success)"
+      : "var(--text-color-secondary)";
     const versionStr = Array.isArray(item.version)
       ? item.version.join(".")
       : "Unknown";
-
     const subpacks = item.subpacks || [];
     const hasSubpacks = subpacks.length > 0;
 
@@ -341,7 +353,6 @@ const Content = () => {
     ) {
       activeSubpack = hasSubpacks ? subpacks[0].folder_name : "";
     }
-
     return (
       <div
         className="server-card"
@@ -386,7 +397,7 @@ const Content = () => {
               style={{
                 width: "48px",
                 height: "48px",
-                background: "#333",
+                background: "var(--bsm-surface-raised)",
                 borderRadius: "4px",
                 display: "flex",
                 alignItems: "center",
@@ -394,7 +405,7 @@ const Content = () => {
                 flexShrink: 0,
               }}
             >
-              <Layers size={24} color="#666" />
+              <Layers size={24} color="var(--text-color-secondary)" />
             </div>
           )}
           <div
@@ -423,7 +434,7 @@ const Content = () => {
             <div
               style={{
                 fontSize: "0.85em",
-                color: "#ccc",
+                color: "var(--text-color-secondary)",
                 display: "flex",
                 flexWrap: "wrap",
                 gap: "10px",
@@ -512,6 +523,7 @@ const Content = () => {
               }}
               onClick={() => handleAddonAction(item, packType, "disable")}
               disabled={actionLoading}
+              type="button"
             >
               Disable
             </button>
@@ -521,13 +533,14 @@ const Content = () => {
               style={{
                 padding: "6px 8px",
                 fontSize: "0.85em",
-                background: "#4CAF50",
-                color: "#fff",
+                background: "var(--bsm-success)",
+                color: "var(--text-color)",
                 width: "100%",
                 justifyContent: "center",
               }}
               onClick={() => handleAddonAction(item, packType, "enable")}
               disabled={actionLoading}
+              type="button"
             >
               Enable
             </button>
@@ -542,6 +555,7 @@ const Content = () => {
             }}
             onClick={() => handleAddonAction(item, packType, "uninstall")}
             disabled={actionLoading}
+            type="button"
           >
             Uninstall
           </button>
@@ -549,31 +563,26 @@ const Content = () => {
       </div>
     );
   };
-
   const handleUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     const formData = new FormData();
     formData.append("file", file);
 
     // Determine type based on tab or file extension
     const type = activeTab === "worlds" ? "world" : "addon";
     formData.append("type", type);
-
     try {
       setLoading(true);
-
       const data = await request(`/api/content/upload`, {
         method: "POST",
         body: formData,
       });
-
       if (data && data.status === "success") {
         addToast("Upload successful.", "success");
         fetchItems();
       } else {
-        addToast(`Upload failed: ${data.message || "Unknown error"}`, "error");
+        addToast(`Upload failed: ${data?.message || "Unknown error"}`, "error");
       }
     } catch {
       addToast("Upload failed.", "error");
@@ -582,7 +591,6 @@ const Content = () => {
       e.target.value = null; // Reset input
     }
   };
-
   if (!selectedServer) {
     return (
       <div className="container">
@@ -601,7 +609,6 @@ const Content = () => {
       </div>
     );
   }
-
   return (
     <div className="container">
       <div
@@ -614,16 +621,31 @@ const Content = () => {
           alignItems: "center",
         }}
       >
-        <h1 style={{ margin: 0 }}>Content Management: {selectedServer}</h1>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+        <h1
+          style={{
+            margin: 0,
+          }}
+        >
+          Content Management: {selectedServer}
+        </h1>
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "10px",
+          }}
+        >
           <button
             className="action-button secondary"
             onClick={handleRefresh}
             disabled={loading || actionLoading}
+            type="button"
           >
             <RefreshCw
               size={16}
-              style={{ marginRight: "5px" }}
+              style={{
+                marginRight: "5px",
+              }}
               className={loading ? "spin" : ""}
             />{" "}
             Refresh
@@ -633,9 +655,15 @@ const Content = () => {
               className="action-button primary"
               onClick={handleOpenAddonModal}
               disabled={actionLoading}
+              type="button"
             >
-              <Settings size={16} style={{ marginRight: "5px" }} /> Manage
-              Installed Addons
+              <Settings
+                size={16}
+                style={{
+                  marginRight: "5px",
+                }}
+              />{" "}
+              Manage Installed Addons
             </button>
           )}
           {activeTab === "worlds" && (
@@ -645,18 +673,30 @@ const Content = () => {
                 onClick={handleExportWorld}
                 disabled={actionLoading}
                 title="Export active world to content/worlds"
+                type="button"
               >
-                <Download size={16} style={{ marginRight: "5px" }} /> Export
-                World
+                <Download
+                  size={16}
+                  style={{
+                    marginRight: "5px",
+                  }}
+                />{" "}
+                Export World
               </button>
               <button
                 className="action-button danger-button"
                 onClick={handleResetWorld}
                 disabled={actionLoading}
                 title="Delete current world and generate new one"
+                type="button"
               >
-                <RefreshCcw size={16} style={{ marginRight: "5px" }} /> Reset
-                World
+                <RefreshCcw
+                  size={16}
+                  style={{
+                    marginRight: "5px",
+                  }}
+                />{" "}
+                Reset World
               </button>
             </>
           )}
@@ -667,12 +707,16 @@ const Content = () => {
         <button
           className={`tab-button ${activeTab === "worlds" ? "active" : ""}`}
           onClick={() => setActiveTab("worlds")}
+          type="button"
+          aria-pressed={activeTab === "worlds"}
         >
           Worlds
         </button>
         <button
           className={`tab-button ${activeTab === "addons" ? "active" : ""}`}
           onClick={() => setActiveTab("addons")}
+          type="button"
+          aria-pressed={activeTab === "addons"}
         >
           Addons
         </button>
@@ -680,199 +724,170 @@ const Content = () => {
 
       {/* Manage Addons Modal */}
       {isAddonModalOpen && (
-        <div
-          className="dynamic-modal-overlay"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0,0,0,0.7)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-          }}
+        <Modal
+          title={<>Manage Installed Addons: {selectedServer}</>}
+          onClose={handleCloseAddonModal}
+          closeDisabled={actionLoading}
+          className="addon-dialog"
         >
           <div
-            className="dynamic-modal-content"
+            className="dynamic-modal-header"
             style={{
-              background: "#222222",
-              width: "600px",
-              maxWidth: "95vw",
-              maxHeight: "90vh",
+              padding: "15px",
+              borderBottom: "1px solid var(--border-color)",
               display: "flex",
-              flexDirection: "column",
-              borderRadius: "8px",
-              overflow: "hidden",
-              boxShadow: "0 10px 25px rgba(0,0,0,0.5)",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          ></div>
+
+          <div
+            style={{
+              padding: "0 15px",
+              borderBottom: "1px solid var(--border-color)",
+              display: "flex",
+              gap: "10px",
+              marginTop: "10px",
             }}
           >
-            <div
-              className="dynamic-modal-header"
+            <button
+              className={`tab-button ${addonModalTab === "behavior" ? "active" : ""}`}
+              onClick={() => setAddonModalTab("behavior")}
               style={{
-                padding: "15px",
-                borderBottom: "1px solid var(--border-color)",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
+                padding: "10px",
+                background: "none",
+                border: "none",
+                borderBottom:
+                  addonModalTab === "behavior"
+                    ? "2px solid var(--primary-color)"
+                    : "2px solid transparent",
+                cursor: "pointer",
+                color:
+                  addonModalTab === "behavior"
+                    ? "var(--primary-color)"
+                    : "var(--text-color)",
+                fontWeight: addonModalTab === "behavior" ? "bold" : "normal",
               }}
+              type="button"
+              aria-pressed={addonModalTab === "behavior"}
             >
-              <h3 style={{ margin: 0 }}>
-                Manage Installed Addons: {selectedServer}
-              </h3>
-              <button
-                onClick={handleCloseAddonModal}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "var(--text-color)",
-                  cursor: "pointer",
-                }}
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div
+              Behavior Packs
+            </button>
+            <button
+              className={`tab-button ${addonModalTab === "resource" ? "active" : ""}`}
+              onClick={() => setAddonModalTab("resource")}
               style={{
-                padding: "0 15px",
-                borderBottom: "1px solid var(--border-color)",
-                display: "flex",
-                gap: "10px",
-                marginTop: "10px",
+                padding: "10px",
+                background: "none",
+                border: "none",
+                borderBottom:
+                  addonModalTab === "resource"
+                    ? "2px solid var(--primary-color)"
+                    : "2px solid transparent",
+                cursor: "pointer",
+                color:
+                  addonModalTab === "resource"
+                    ? "var(--primary-color)"
+                    : "var(--text-color)",
+                fontWeight: addonModalTab === "resource" ? "bold" : "normal",
               }}
+              type="button"
+              aria-pressed={addonModalTab === "resource"}
             >
-              <button
-                className={`tab-button ${addonModalTab === "behavior" ? "active" : ""}`}
-                onClick={() => setAddonModalTab("behavior")}
-                style={{
-                  padding: "10px",
-                  background: "none",
-                  border: "none",
-                  borderBottom:
-                    addonModalTab === "behavior"
-                      ? "2px solid var(--primary-color)"
-                      : "2px solid transparent",
-                  cursor: "pointer",
-                  color:
-                    addonModalTab === "behavior"
-                      ? "var(--primary-color)"
-                      : "var(--text-color)",
-                  fontWeight: addonModalTab === "behavior" ? "bold" : "normal",
-                }}
-              >
-                Behavior Packs
-              </button>
-              <button
-                className={`tab-button ${addonModalTab === "resource" ? "active" : ""}`}
-                onClick={() => setAddonModalTab("resource")}
-                style={{
-                  padding: "10px",
-                  background: "none",
-                  border: "none",
-                  borderBottom:
-                    addonModalTab === "resource"
-                      ? "2px solid var(--primary-color)"
-                      : "2px solid transparent",
-                  cursor: "pointer",
-                  color:
-                    addonModalTab === "resource"
-                      ? "var(--primary-color)"
-                      : "var(--text-color)",
-                  fontWeight: addonModalTab === "resource" ? "bold" : "normal",
-                }}
-              >
-                Resource Packs
-              </button>
-            </div>
-
-            <div
-              className="dynamic-modal-body"
-              style={{ padding: "15px", overflowY: "auto", flex: 1 }}
-            >
-              {addonsLoading ? (
-                <div
-                  style={{
-                    textAlign: "center",
-                    padding: "20px",
-                    color: "var(--text-color-secondary)",
-                  }}
-                >
-                  Loading addons...
-                </div>
-              ) : (
-                <>
-                  {addonModalTab === "behavior" &&
-                    (installedAddons.behavior_packs.length > 0 ? (
-                      <DraggableList
-                        items={installedAddons.behavior_packs}
-                        onReorder={(items) =>
-                          handleReorderAddons(items, "behavior")
-                        }
-                        renderItem={(item) => renderAddonItem(item, "behavior")}
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          textAlign: "center",
-                          padding: "20px",
-                          color: "var(--text-color-secondary)",
-                        }}
-                      >
-                        No behavior packs installed.
-                      </div>
-                    ))}
-                  {addonModalTab === "resource" &&
-                    (installedAddons.resource_packs.length > 0 ? (
-                      <DraggableList
-                        items={installedAddons.resource_packs}
-                        onReorder={(items) =>
-                          handleReorderAddons(items, "resource")
-                        }
-                        renderItem={(item) => renderAddonItem(item, "resource")}
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          textAlign: "center",
-                          padding: "20px",
-                          color: "var(--text-color-secondary)",
-                        }}
-                      >
-                        No resource packs installed.
-                      </div>
-                    ))}
-                </>
-              )}
-            </div>
-
-            <div
-              style={{
-                padding: "15px",
-                borderTop: "1px solid var(--border-color)",
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: "10px",
-              }}
-            >
-              <button
-                className="action-button secondary"
-                onClick={handleCloseAddonModal}
-              >
-                Close
-              </button>
-              <button
-                className="action-button primary"
-                onClick={handleSaveAddonOrder}
-                disabled={!orderChanged || actionLoading}
-              >
-                Save Order
-              </button>
-            </div>
+              Resource Packs
+            </button>
           </div>
-        </div>
+
+          <div
+            className="dynamic-modal-body"
+            style={{
+              padding: "15px",
+              overflowY: "auto",
+              flex: 1,
+            }}
+          >
+            {addonsLoading ? (
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "20px",
+                  color: "var(--text-color-secondary)",
+                }}
+              >
+                Loading addons...
+              </div>
+            ) : (
+              <>
+                {addonModalTab === "behavior" &&
+                  (installedAddons.behavior_packs.length > 0 ? (
+                    <DraggableList
+                      items={installedAddons.behavior_packs}
+                      onReorder={(items) =>
+                        handleReorderAddons(items, "behavior")
+                      }
+                      renderItem={(item) => renderAddonItem(item, "behavior")}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        textAlign: "center",
+                        padding: "20px",
+                        color: "var(--text-color-secondary)",
+                      }}
+                    >
+                      No behavior packs installed.
+                    </div>
+                  ))}
+                {addonModalTab === "resource" &&
+                  (installedAddons.resource_packs.length > 0 ? (
+                    <DraggableList
+                      items={installedAddons.resource_packs}
+                      onReorder={(items) =>
+                        handleReorderAddons(items, "resource")
+                      }
+                      renderItem={(item) => renderAddonItem(item, "resource")}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        textAlign: "center",
+                        padding: "20px",
+                        color: "var(--text-color-secondary)",
+                      }}
+                    >
+                      No resource packs installed.
+                    </div>
+                  ))}
+              </>
+            )}
+          </div>
+
+          <div
+            style={{
+              padding: "15px",
+              borderTop: "1px solid var(--border-color)",
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: "10px",
+            }}
+          >
+            <button
+              className="action-button secondary"
+              onClick={handleCloseAddonModal}
+              type="button"
+            >
+              Close
+            </button>
+            <button
+              className="action-button primary"
+              onClick={handleSaveAddonOrder}
+              disabled={!orderChanged || actionLoading}
+              type="button"
+            >
+              Save Order
+            </button>
+          </div>
+        </Modal>
       )}
 
       <div className="tab-content">
@@ -886,7 +901,11 @@ const Content = () => {
               border: "1px solid var(--border-color)",
             }}
           >
-            <h3 style={{ marginTop: 0 }}>
+            <h3
+              style={{
+                marginTop: 0,
+              }}
+            >
               Upload{" "}
               {activeTab === "worlds"
                 ? "World (.mcworld)"
@@ -894,6 +913,7 @@ const Content = () => {
             </h3>
             <input
               type="file"
+              aria-label="Upload world or addon"
               onChange={handleUpload}
               disabled={loading || actionLoading}
               className="form-input"
@@ -922,11 +942,22 @@ const Content = () => {
           </div>
         ) : (
           <div className="table-responsive-wrapper">
-            <table className="server-table" style={{ width: "100%" }}>
+            <table
+              className="server-table"
+              style={{
+                width: "100%",
+              }}
+            >
               <thead>
                 <tr>
                   <th>File Name</th>
-                  <th style={{ width: "150px" }}>Actions</th>
+                  <th
+                    style={{
+                      width: "150px",
+                    }}
+                  >
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -948,9 +979,19 @@ const Content = () => {
                           }}
                         >
                           {activeTab === "worlds" ? (
-                            <Folder size={16} style={{ flexShrink: 0 }} />
+                            <Folder
+                              size={16}
+                              style={{
+                                flexShrink: 0,
+                              }}
+                            />
                           ) : (
-                            <Layers size={16} style={{ flexShrink: 0 }} />
+                            <Layers
+                              size={16}
+                              style={{
+                                flexShrink: 0,
+                              }}
+                            />
                           )}
                           <span>{item.name}</span>
                         </div>
@@ -960,8 +1001,12 @@ const Content = () => {
                           className="action-button"
                           onClick={() => handleInstall(item)}
                           title={`Install to ${selectedServer}`}
-                          style={{ padding: "5px 10px", fontSize: "0.9em" }}
+                          style={{
+                            padding: "5px 10px",
+                            fontSize: "0.9em",
+                          }}
                           disabled={actionLoading}
+                          type="button"
                         >
                           Install
                         </button>
@@ -975,7 +1020,7 @@ const Content = () => {
                       className="no-servers"
                       style={{
                         textAlign: "center",
-                        color: "#888",
+                        color: "var(--text-color-secondary)",
                         fontStyle: "italic",
                         padding: "20px",
                       }}
@@ -992,5 +1037,4 @@ const Content = () => {
     </div>
   );
 };
-
 export default Content;

@@ -1,254 +1,197 @@
-/* Enhanced Sidebar Styles */
-
-/* Ensure the sidebar nav is a flex container for better layout control */
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  height: 100vh; /* Full viewport height */
-  flex-shrink: 0; /* Prevent shrinking in flex layout */
+  width: 264px;
+  flex-shrink: 0;
   position: sticky;
   top: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  /* Custom scrollbar for webkit */
+  height: 100dvh;
+  overflow: auto;
+  background: color-mix(
+    in srgb,
+    var(--sidebar-bg-custom) var(--bsm-sidebar-opacity, 100%),
+    transparent
+  );
+  color: var(--text-color);
+  border-right: 1px solid var(--border-color);
   scrollbar-width: thin;
-  scrollbar-color: var(--border-color) transparent;
-  color: #ccc; /* Default text color */
-  /* Default Width on Desktop (Expanded) */
-  width: 220px;
-  transition:
-    width 0.2s ease-out,
-    transform 0.3s ease-in-out;
   z-index: 1000;
+  transition: width 0.18s ease;
 }
-
-/* Collapsed Width on Desktop */
 .sidebar-nav.collapsed {
-  width: 60px;
+  width: 76px;
 }
-
-/* Mobile Styles */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 16px 16px;
+  position: relative;
+}
+.sidebar-brand-icon {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.sidebar-brand {
+  flex: 1;
+  min-width: 0;
+}
+.sidebar-brand strong {
+  font-size: 14px;
+  line-height: 1.3;
+  letter-spacing: -0.03em;
+}
+.sidebar-brand strong span {
+  display: block;
+  font-size: inherit;
+  letter-spacing: inherit;
+  font-weight: inherit;
+  color: inherit;
+}
+.sidebar-collapse {
+  width: 24px !important;
+  min-height: 28px !important;
+}
+.sidebar-nav.collapsed .sidebar-header {
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 16px 8px;
+}
+.sidebar-splash {
+  margin: 0 16px 16px;
+  font-size: 11px;
+  color: var(--splash-text-color);
+  line-height: 1.5;
+}
+.sidebar-search {
+  position: relative;
+  margin: 0 16px 16px;
+}
+.sidebar-search > svg {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 12px;
+  color: var(--text-color-secondary);
+}
+.sidebar-search input {
+  padding-left: 36px;
+  font-size: 12px;
+  width: 100%;
+}
+.sidebar-server-picker {
+  padding: 16px;
+  border-block: 1px solid var(--border-color);
+  margin-bottom: 12px;
+}
+.sidebar-server-picker label {
+  font-size: 11px;
+  color: var(--text-color-secondary);
+}
+.sidebar-server-picker select {
+  width: 100%;
+  min-width: 0;
+  font-size: 12px;
+  flex: 1;
+}
+.inline-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav-group {
+  padding: 4px 10px 12px;
+}
+.nav-section-label {
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-color-secondary);
+  padding: 4px 12px;
+  margin: 8px 0;
+}
+.sidebar-nav .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: var(--bsm-nav-padding) 12px;
+  border-radius: var(--bsm-radius-md);
+  text-decoration: none;
+  font-size: 13px;
+  color: var(--text-color-secondary);
+  border: 1px solid transparent;
+  margin: 2px 0;
+  min-height: var(--bsm-control-height);
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  box-sizing: border-box;
+}
+.sidebar-nav .nav-link:hover {
+  background: var(--button-hover-background-color);
+  color: var(--text-color);
+}
+.sidebar-nav .nav-link.active {
+  background: var(--bsm-accent-soft);
+  color: var(--text-color);
+  border-color: var(--border-color);
+  font-weight: 600;
+}
+.sidebar-nav .nav-link.active svg {
+  color: var(--bsm-accent);
+}
+.sidebar-nav .nav-link.disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.sidebar-nav.collapsed .nav-link {
+  justify-content: center;
+  padding: 12px 0;
+}
+.sidebar-nav.collapsed .nav-group {
+  padding: 4px 10px;
+}
+.footer-nav {
+  padding: 12px 10px;
+  margin-top: auto;
+  border-top: 1px solid var(--border-color);
+}
+.sidebar-version {
+  font-size: 10px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-color-secondary);
+  padding: 16px 8px 4px;
+}
+.mobile-menu-toggle {
+  display: none;
+}
+.navigation-empty {
+  padding: 12px 20px;
+  font-size: 12px;
+  color: var(--text-color-secondary);
+}
 @media (max-width: 768px) {
   .sidebar-nav {
     position: fixed;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 250px !important; /* Fixed width for mobile menu */
-    transform: translateX(-100%); /* Hidden by default */
-    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+    inset: 0 auto 0 0;
+    width: min(280px, calc(100vw - 48px)) !important;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
   }
-
   .sidebar-nav.mobile-open {
-    transform: translateX(0); /* Show when open */
-  }
-
-  /* Hamburger Menu Button (in Layout) */
-  .mobile-menu-toggle {
-    display: block; /* Visible on mobile */
-    position: fixed;
-    top: 15px;
-    left: 15px;
-    z-index: 900; /* Below sidebar (1000) */
-    background: var(--button-background-color, #333);
-    border: 1px solid var(--border-color, #555);
-    color: #fff;
-    padding: 8px;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-
-  /* Close Button (in Sidebar) */
-  .sidebar-close-btn {
-    display: flex !important; /* Show on mobile */
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    border: none;
-    color: #ccc;
-    cursor: pointer;
-    padding: 10px;
-    position: absolute;
-    top: 10px;
-    right: 10px;
-  }
-}
-
-/* Desktop: Hide Mobile specific elements */
-@media (min-width: 769px) {
-  .mobile-menu-toggle {
-    display: none;
-  }
-
-  .sidebar-close-btn {
-    display: none !important;
-  }
-}
-
-.sidebar-nav::-webkit-scrollbar {
-  width: 6px;
-}
-
-.sidebar-nav::-webkit-scrollbar-thumb {
-  background-color: var(--border-color);
-  border-radius: 3px;
-}
-
-/* Nav Links - Global styling for sidebar links */
-.sidebar-nav a.nav-link,
-.sidebar-nav button.nav-link {
-  display: flex;
-  align-items: center;
-  padding: 10px 15px;
-  color: #ccc; /* Ensure text is not blue */
-  text-decoration: none; /* Remove underline */
-  border-radius: 4px;
-  margin: 2px 10px;
-  transition:
-    background-color 0.2s,
-    color 0.2s;
-  font-size: 0.95rem;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.sidebar-nav a.nav-link:hover,
-.sidebar-nav button.nav-link:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  cursor: pointer;
-}
-
-.sidebar-nav a.nav-link.active {
-  background-color: var(
-    --primary-color,
-    #4caf50
-  ); /* Use theme primary or fallback */
-  color: #fff;
-}
-
-.sidebar-nav a.nav-link.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background-color: transparent !important;
-  color: #888 !important;
-}
-
-/* Nav Item Container - Center icons when collapsed */
-.sidebar-nav.collapsed .nav-link {
-  justify-content: center !important;
-  padding: 10px 0; /* Adjust padding for collapsed state */
-  margin: 5px; /* Tighter margins */
-}
-
-/* Tooltip behavior for collapsed sidebar */
-.sidebar-nav.collapsed .nav-link[title]:hover::after {
-  /* Optional: CSS-only tooltip if not using title attribute directly */
-  /* content: attr(title); */
-  /* Implementation depends on preference, browser title usually sufficient */
-}
-
-/* Icon centering */
-.nav-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 24px; /* Fixed width for alignment */
-  margin-right: 10px;
-}
-
-.sidebar-nav.collapsed .nav-icon {
-  margin-right: 0;
-}
-
-/* Fix blank space by ensuring nav groups take appropriate space */
-.nav-group {
-  /* No extra margin by default */
-  margin-bottom: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.nav-section-label {
-  padding: 10px 25px 5px;
-  font-size: 0.75em;
-  text-transform: uppercase;
-  color: #666;
-  font-weight: bold;
-  letter-spacing: 0.5px;
-}
-
-/* Separator styling */
-.nav-separator {
-  border: 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  margin: 10px 15px;
-}
-
-/* Footer Nav pushed to bottom if needed */
-.footer-nav {
-  margin-top: auto !important;
-  padding-bottom: 20px;
-}
-
-/* Ensure separators look good in collapsed mode */
-.sidebar-nav.collapsed .nav-separator {
-  margin: 10px 5px;
-}
-
-/* Customizeable Background handling via inline styles in component,
-   but defaults can be improved here */
-:root {
-  --sidebar-bg-custom: var(--sidebar-background-color);
-}
-
-.sidebar-nav {
-  background-color: var(--sidebar-bg-custom);
-  /* Improve contrast if needed, or rely on ThemeContext */
-  backdrop-filter: blur(5px); /* Modern touch if background has transparency */
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-/* Sidebar Label Scrolling Support */
-.nav-label-wrapper {
-  flex: 1;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  min-width: 0; /* Important for flex containers to allow shrinking */
-  display: block;
-}
-
-.nav-label-text {
-  display: inline-block;
-  transition: transform 0.5s ease-out; /* Smooth reset */
-  will-change: transform;
-}
-
-/* Keyframes for scrolling animation */
-@keyframes scroll-text {
-  0%,
-  15% {
     transform: translateX(0);
+    box-shadow: var(--bsm-shadow);
   }
-
-  50%,
-  65% {
-    transform: translateX(var(--scroll-distance));
+  .sidebar-collapse {
+    display: inline-flex;
   }
-
-  100% {
-    transform: translateX(0);
+  .mobile-menu-toggle {
+    display: inline-flex;
   }
-}
-
-/* On hover of the link, if overflowing */
-.sidebar-nav .nav-link:hover .nav-label-wrapper.overflowing {
-  text-overflow: clip; /* Remove dots so we can see the text scrolling */
-}
-
-.sidebar-nav .nav-link:hover .nav-label-wrapper.overflowing .nav-label-text {
-  /* Use a fixed duration for now. */
-  animation: scroll-text 6s ease-in-out infinite;
 }

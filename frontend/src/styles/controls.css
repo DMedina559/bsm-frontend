@@ -15,7 +15,7 @@
 .segmented-control {
   display: inline-flex; /* Arrange segments horizontally, touching */
   border: 1px solid var(--border-color); /* Outer border for the group */
-  border-radius: 0; /* Sharp corners */
+  border-radius: var(--bsm-radius-md); /* Sharp corners */
   overflow: hidden; /* Clip child borders cleanly */
   margin: 4px 0; /* Add some vertical margin */
 }
@@ -106,7 +106,7 @@
   display: block; /* Ensure help text is block */
   margin-top: 0;
   font-size: 0.9em; /* Smaller help text */
-  color: #bbb; /* Lighter color */
+  color: var(--text-color-secondary); /* Lighter color */
   line-height: 1.3; /* Adjust line height if needed */
 }
 
@@ -207,7 +207,7 @@
 
 .step-indicator {
   font-size: 0.9em;
-  color: #bbb; /* Lighter text */
+  color: var(--text-color-secondary); /* Lighter text */
   font-style: italic;
   margin-top: 3px;
   margin-bottom: 15px; /* Add space below indicator */

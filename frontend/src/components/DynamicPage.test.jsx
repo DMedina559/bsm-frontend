@@ -13,6 +13,7 @@ describe("DynamicPage", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    api.resolveApiUrl.mockImplementation((url) => url);
 
     // Mock global fetch for download test and setup status
     fetchSpy = vi.spyOn(window, "fetch").mockImplementation((url) => {

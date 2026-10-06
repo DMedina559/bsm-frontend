@@ -1,3 +1,4 @@
+import { useRequestTracker } from "../utils/useRequestTracker";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useWebSocket } from "../WebSocketContext";
 import { useServer } from "../ServerContext";
@@ -21,13 +22,11 @@ import {
   Users,
 } from "lucide-react";
 import { logger } from "../utils/logger";
-
 const Monitor = () => {
   const { isConnected, isFallback, lastMessage, subscribe, unsubscribe } =
     useWebSocket();
   const { selectedServer, servers } = useServer();
   const { addToast } = useToast();
-
   const [processInfo, setProcessInfo] = useState(null);
   const [usageHistory, setUsageHistory] = useState([]);
   const [command, setCommand] = useState("");
@@ -35,9 +34,9 @@ const Monitor = () => {
   const chartContainerRef = useRef(null);
 
   // Use a ResizeObserver to wait until the chart container actually has dimensions
+  const beginRequest = useRequestTracker(selectedServer + ":" + "");
   useEffect(() => {
     if (!chartContainerRef.current) return;
-
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
@@ -47,9 +46,7 @@ const Monitor = () => {
         }
       }
     });
-
     observer.observe(chartContainerRef.current);
-
     return () => {
       observer.disconnect();
     };
@@ -57,14 +54,15 @@ const Monitor = () => {
   const [loadingAction, setLoadingAction] = useState(false);
   const [logLines, setLogLines] = useState([]);
   const logEndRef = useRef(null);
-
   const fetchStatus = useCallback(async () => {
+    const requestTicket = beginRequest("fetchStatus");
     if (!selectedServer) return;
     try {
       logger.debug(`[Monitor] Fetching process status`, {
         server: selectedServer,
       });
       const data = await get(`/api/server/${selectedServer}/process_info`);
+      if (!requestTicket.current()) return false;
       if (data && data.status === "success" && data.process_info) {
         setProcessInfo(data.process_info);
         // Only update history on polling if we want, or rely on WS
@@ -87,6 +85,7 @@ const Monitor = () => {
         setProcessInfo(null);
       }
     } catch (error) {
+      if (!requestTicket.current()) return false;
       if (error.status === 404) {
         setProcessInfo(null);
       } else {
@@ -96,7 +95,7 @@ const Monitor = () => {
         });
       }
     }
-  }, [selectedServer, isFallback]);
+  }, [selectedServer, isFallback, beginRequest]);
 
   // Auto-scroll logs
   useEffect(() => {
@@ -111,6 +110,8 @@ const Monitor = () => {
   // Clear logs on server switch
   useEffect(() => {
     setLogLines([]);
+    setUsageHistory([]);
+    setProcessInfo(null);
   }, [selectedServer]);
 
   // Handle WebSocket subscriptions
@@ -118,13 +119,11 @@ const Monitor = () => {
     if (isConnected && selectedServer) {
       const topic = `resource-monitor:${selectedServer}`;
       const logTopic = `server_log:${selectedServer}`;
-
       subscribe(topic);
       subscribe(logTopic);
 
       // Perform an initial fetch of the status when we connect or switch servers
       fetchStatus();
-
       return () => {
         unsubscribe(topic);
         unsubscribe(logTopic);
@@ -153,7 +152,6 @@ const Monitor = () => {
     if (lastMessage && selectedServer) {
       const resourceTopic = `resource-monitor:${selectedServer}`;
       const logTopic = `server_log:${selectedServer}`;
-
       if (
         lastMessage.topic === resourceTopic &&
         lastMessage.type === "resource_update"
@@ -195,12 +193,10 @@ const Monitor = () => {
       }
     }
   }, [lastMessage, selectedServer]);
-
   const handleCommand = async (e) => {
     e.preventDefault();
     if (!command.trim()) return;
     if (!selectedServer) return;
-
     logger.info(`[Monitor] Sending command`, {
       server: selectedServer,
       command: command.trim(),
@@ -223,14 +219,14 @@ const Monitor = () => {
       setLoadingAction(false);
     }
   };
-
   const sendAction = async (action) => {
     if (loadingAction || !selectedServer) return;
-
-    logger.info(`[Monitor] Sending signal`, { action, server: selectedServer });
+    logger.info(`[Monitor] Sending signal`, {
+      action,
+      server: selectedServer,
+    });
     setLoadingAction(true);
     addToast(`Sending ${action} signal...`, "info");
-
     try {
       // Pass empty body explicitely to ensure headers are set if needed, though usually not required for this endpoint
       await post(`/api/server/${selectedServer}/${action}`, {});
@@ -246,7 +242,6 @@ const Monitor = () => {
       setLoadingAction(false);
     }
   };
-
   if (!selectedServer) {
     return (
       <div className="container">
@@ -265,9 +260,7 @@ const Monitor = () => {
       </div>
     );
   }
-
   const isRunning = processInfo && processInfo.pid;
-
   return (
     <div className="container">
       <div
@@ -279,7 +272,13 @@ const Monitor = () => {
         }}
       >
         <h1>Server Monitor: {selectedServer}</h1>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+          }}
+        >
           <span
             className={`status-text ${isConnected ? "status-running" : "status-stopped"}`}
             style={{
@@ -307,7 +306,8 @@ const Monitor = () => {
         className="grid"
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+          gridTemplateColumns:
+            "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
           gap: "20px",
           marginBottom: "20px",
         }}
@@ -348,7 +348,12 @@ const Monitor = () => {
                   ? processInfo.memory_mb.toFixed(1) + " MB"
                   : "N/A"}
               </div>
-              <div style={{ gridColumn: "1 / -1", marginTop: "10px" }}>
+              <div
+                style={{
+                  gridColumn: "1 / -1",
+                  marginTop: "10px",
+                }}
+              >
                 <strong>Status:</strong>{" "}
                 <span
                   style={{
@@ -361,7 +366,12 @@ const Monitor = () => {
               </div>
 
               {/* Online Players Tooltip inside Monitor */}
-              <div style={{ gridColumn: "1 / -1", marginTop: "10px" }}>
+              <div
+                style={{
+                  gridColumn: "1 / -1",
+                  marginTop: "10px",
+                }}
+              >
                 <span
                   style={{
                     display: "flex",
@@ -372,7 +382,7 @@ const Monitor = () => {
                   <Users size={14} /> <strong>Players:</strong>{" "}
                   <span
                     style={{
-                      color: "#fff",
+                      color: "var(--text-color)",
                       position: "relative",
                       cursor: "help",
                     }}
@@ -399,7 +409,12 @@ const Monitor = () => {
               </div>
             </div>
           ) : (
-            <div style={{ color: "#aaa", fontStyle: "italic" }}>
+            <div
+              style={{
+                color: "var(--text-color-secondary)",
+                fontStyle: "italic",
+              }}
+            >
               Server process not running or status unavailable.
             </div>
           )}
@@ -433,32 +448,37 @@ const Monitor = () => {
                 minHeight={10}
               >
                 <LineChart data={usageHistory}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="var(--border-color)"
+                  />
                   <XAxis dataKey="time" hide />
                   <YAxis
                     yAxisId="left"
                     domain={[0, 100]}
-                    stroke="#888"
+                    stroke="var(--text-color-secondary)"
                     width={40}
                   />
                   <YAxis
                     yAxisId="right"
                     orientation="right"
-                    stroke="#82ca9d"
+                    stroke="var(--bsm-chart-2)"
                     width={40}
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "#333",
-                      border: "1px solid #555",
+                      backgroundColor: "var(--bsm-surface-raised)",
+                      border: "1px solid var(--border-color)",
                     }}
-                    labelStyle={{ color: "#ccc" }}
+                    labelStyle={{
+                      color: "var(--text-color-secondary)",
+                    }}
                   />
                   <Line
                     yAxisId="left"
                     type="monotone"
                     dataKey="cpu"
-                    stroke="#8884d8"
+                    stroke="var(--bsm-chart-1)"
                     name="CPU %"
                     dot={false}
                     isAnimationActive={false}
@@ -467,7 +487,7 @@ const Monitor = () => {
                     yAxisId="right"
                     type="monotone"
                     dataKey="memory"
-                    stroke="#82ca9d"
+                    stroke="var(--bsm-chart-2)"
                     name="RAM (MB)"
                     dot={false}
                     isAnimationActive={false}
@@ -481,7 +501,7 @@ const Monitor = () => {
                   justifyContent: "center",
                   alignItems: "center",
                   height: "100%",
-                  color: "#888",
+                  color: "var(--text-color-secondary)",
                 }}
               >
                 Waiting for resource data...
@@ -495,7 +515,8 @@ const Monitor = () => {
         className="grid"
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+          gridTemplateColumns:
+            "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
           gap: "20px",
           marginBottom: "20px",
         }}
@@ -512,33 +533,72 @@ const Monitor = () => {
           <h3>Quick Actions</h3>
           <div
             className="button-group"
-            style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
+            }}
           >
-            <div style={{ display: "flex", gap: "10px" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: "10px",
+              }}
+            >
               <button
                 className="action-button start-button"
                 onClick={() => sendAction("start")}
                 disabled={loadingAction || isRunning}
-                style={{ flex: 1, justifyContent: "center" }}
+                style={{
+                  flex: 1,
+                  justifyContent: "center",
+                }}
+                type="button"
               >
-                <Play size={16} style={{ marginRight: "5px" }} /> Start
+                <Play
+                  size={16}
+                  style={{
+                    marginRight: "5px",
+                  }}
+                />{" "}
+                Start
               </button>
               <button
                 className="action-button danger-button"
                 onClick={() => sendAction("stop")}
                 disabled={loadingAction || !isRunning}
-                style={{ flex: 1, justifyContent: "center" }}
+                style={{
+                  flex: 1,
+                  justifyContent: "center",
+                }}
+                type="button"
               >
-                <Square size={16} style={{ marginRight: "5px" }} /> Stop
+                <Square
+                  size={16}
+                  style={{
+                    marginRight: "5px",
+                  }}
+                />{" "}
+                Stop
               </button>
             </div>
             <button
               className="action-button warning-button"
               onClick={() => sendAction("restart")}
               disabled={loadingAction}
-              style={{ width: "100%", justifyContent: "center" }}
+              style={{
+                width: "100%",
+                justifyContent: "center",
+              }}
+              type="button"
             >
-              <RotateCcw size={16} style={{ marginRight: "5px" }} /> Restart
+              <RotateCcw
+                size={16}
+                style={{
+                  marginRight: "5px",
+                }}
+              />{" "}
+              Restart
             </button>
           </div>
         </div>
@@ -553,14 +613,20 @@ const Monitor = () => {
             flexDirection: "column",
           }}
         >
-          <h3 style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <h3
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+            }}
+          >
             <FileText size={18} /> Server Log
           </h3>
           <div
             style={{
               flexGrow: 1,
-              background: "#1e1e1e",
-              color: "#d4d4d4",
+              background: "var(--bsm-console)",
+              color: "var(--text-color)",
               padding: "10px",
               fontFamily: "monospace",
               fontSize: "0.85em",
@@ -571,12 +637,22 @@ const Monitor = () => {
             }}
           >
             {logLines.length === 0 ? (
-              <div style={{ color: "#666", fontStyle: "italic" }}>
+              <div
+                style={{
+                  color: "var(--text-color-secondary)",
+                  fontStyle: "italic",
+                }}
+              >
                 Waiting for logs...
               </div>
             ) : (
               logLines.map((line, idx) => (
-                <div key={idx} style={{ minHeight: "1.2em" }}>
+                <div
+                  key={idx}
+                  style={{
+                    minHeight: "1.2em",
+                  }}
+                >
                   {line}
                 </div>
               ))
@@ -596,8 +672,19 @@ const Monitor = () => {
         }}
       >
         <h3>Send Command</h3>
-        <form onSubmit={handleCommand} style={{ display: "flex", gap: "10px" }}>
-          <div style={{ flexGrow: 1, position: "relative" }}>
+        <form
+          onSubmit={handleCommand}
+          style={{
+            display: "flex",
+            gap: "10px",
+          }}
+        >
+          <div
+            style={{
+              flexGrow: 1,
+              position: "relative",
+            }}
+          >
             <Terminal
               size={18}
               style={{
@@ -605,7 +692,7 @@ const Monitor = () => {
                 left: "10px",
                 top: "50%",
                 transform: "translateY(-50%)",
-                color: "#aaa",
+                color: "var(--text-color-secondary)",
               }}
             />
             <input
@@ -614,7 +701,11 @@ const Monitor = () => {
               value={command}
               onChange={(e) => setCommand(e.target.value)}
               placeholder="Enter command..."
-              style={{ width: "100%", paddingLeft: "35px" }}
+              aria-label="Console command"
+              style={{
+                width: "100%",
+                paddingLeft: "35px",
+              }}
               disabled={loadingAction || !isRunning}
             />
           </div>
@@ -630,5 +721,4 @@ const Monitor = () => {
     </div>
   );
 };
-
 export default Monitor;
