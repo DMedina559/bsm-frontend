@@ -116,6 +116,7 @@ export const ThemeProvider = ({ children }) => {
       theme,
       import.meta.env.BASE_URL,
       getApiBaseUrl() || getApiProxyBasePath(),
+      __THEME_REVISION__,
     );
     return () => {
       link.onload = null;

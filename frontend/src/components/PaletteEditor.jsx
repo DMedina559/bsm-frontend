@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import themePreviews from "../utils/themePreviews.json";
 import Modal from "./Modal";
 import { Palette, Plus, Pencil, Trash2 } from "lucide-react";
 import { useTheme } from "../ThemeContext";
@@ -20,6 +21,7 @@ function download(name, content, type) {
 }
 export default function PaletteEditor() {
   const {
+    theme,
     palettes = [],
     activePalette,
     savePalette,
@@ -115,9 +117,11 @@ export default function PaletteEditor() {
             className="theme-swatch theme-swatch-default"
             aria-hidden="true"
           >
-            <i />
-            <i />
-            <i />
+            {(themePreviews[theme] || themePreviews.default).colors.map(
+              (color, index) => (
+                <i key={index} style={{ background: color }} />
+              ),
+            )}
           </span>
           <strong>Use account theme</strong>
           <small>

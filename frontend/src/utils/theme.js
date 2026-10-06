@@ -59,9 +59,9 @@ export function resolveMode(theme, mode, systemDark) {
   if (mode === "light" || mode === "dark") return mode;
   return theme === "light" ? "light" : "dark";
 }
-export function themeStylesheetUrl(theme, assetBase, apiBase) {
+export function themeStylesheetUrl(theme, assetBase, apiBase, revision = "") {
   const base = assetBase.replace(/\/$/, "");
   return BUILT_IN_THEMES.includes(theme)
-    ? `${base}/assets/css/themes/${theme}.css`
+    ? `${base}/assets/css/themes/${theme}.css${revision ? `?v=${encodeURIComponent(revision)}` : ""}`
     : `${apiBase}/themes/${encodeURIComponent(theme)}.css`;
 }

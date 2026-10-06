@@ -69,3 +69,12 @@ it("bounds sidebar transparency and defaults to opaque", () => {
     normalizeAppearance({ sidebarTransparency: -5 }).sidebarTransparency,
   ).toBe(0);
 });
+
+it("versions built-in theme CSS independently from the frontend release label", () => {
+  expect(themeStylesheetUrl("default", "/app/", "", "abc123")).toBe(
+    "/app/assets/css/themes/default.css?v=abc123",
+  );
+  expect(themeStylesheetUrl("custom", "/app/", "/ingress", "abc123")).toBe(
+    "/ingress/themes/custom.css",
+  );
+});

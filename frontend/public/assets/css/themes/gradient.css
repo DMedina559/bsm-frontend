@@ -10,3 +10,25 @@ body {
     transparent 60%
   );
 }
+
+:root[data-theme="gradient"][data-mode="dark"] {
+  --bsm-page: #111024;
+  --bsm-surface: #1d1b38;
+  --bsm-surface-raised: #2a274a;
+  --bsm-input: #15132c;
+  --bsm-text: #f1eeff;
+  --bsm-muted: #beb8df;
+  --bsm-border: #4b456e;
+  --sidebar-bg-custom: var(--bsm-surface);
+}
+
+:root[data-theme="gradient"][data-mode="light"] {
+  --bsm-page: #f1effb;
+  --bsm-surface: #faf8ff;
+  --bsm-surface-raised: #e7e1f6;
+  --bsm-input: #fdfbff;
+  --bsm-text: #30274e;
+  --bsm-muted: #6b5d85;
+  --bsm-border: #cbbfe0;
+  --sidebar-bg-custom: var(--bsm-surface);
+}

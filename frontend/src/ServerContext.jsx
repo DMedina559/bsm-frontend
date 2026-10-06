@@ -126,7 +126,7 @@ export const ServerProvider = ({ children }) => {
           setError(err.message || "Failed to fetch servers");
         return false;
       } finally {
-        if (!isBackground && currentRequestId === fetchRequestId.current) {
+        if (currentRequestId === fetchRequestId.current) {
           setLoading(false);
         }
       }

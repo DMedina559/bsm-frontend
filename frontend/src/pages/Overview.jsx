@@ -205,7 +205,7 @@ const Overview = () => {
     : isFallback
       ? "Polling fallback"
       : "Live updates disconnected";
-  const unavailable = loading || error;
+  const unavailable = (loading || error) && servers.length === 0;
   return (
     <div className="container platform-overview">
       <div

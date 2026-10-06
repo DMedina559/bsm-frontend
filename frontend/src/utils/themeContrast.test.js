@@ -31,19 +31,27 @@ function ratio(a, b) {
 for (const theme of BUILT_IN_THEMES)
   for (const mode of ["dark", "light"]) {
     it(`${theme} ${mode} text and primary-button contrast`, () => {
-      const themeTokens = parse(
-        readFileSync(
-          new URL(
-            `../../public/assets/css/themes/${theme}.css`,
-            import.meta.url,
-          ),
-          "utf8",
-        ),
+      const root = document.documentElement;
+      root.dataset.theme = theme;
+      root.dataset.mode = mode;
+      const source = readFileSync(
+        `public/assets/css/themes/${theme}.css`,
+        "utf8",
+      );
+      const themeTokens = Object.assign(
+        {},
+        ...[...source.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+          .filter(
+            (match) =>
+              match[1].trim().startsWith(":root") &&
+              root.matches(match[1].trim()),
+          )
+          .map((match) => parse(match[2])),
       );
       const tokens = {
         ...dark,
-        ...themeTokens,
         ...(mode === "light" ? light : {}),
+        ...themeTokens,
       };
       for (const [fg, bg] of [
         ["--text-color", "--container-background-color"],

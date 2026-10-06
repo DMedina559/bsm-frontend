@@ -3,3 +3,25 @@
   --bsm-accent-strong: #8a377e;
   --bsm-accent-hover: #6f2865;
 }
+
+:root[data-theme="pink"][data-mode="dark"] {
+  --bsm-page: #1c1020;
+  --bsm-surface: #2e1b34;
+  --bsm-surface-raised: #402746;
+  --bsm-input: #24152b;
+  --bsm-text: #fdf0ff;
+  --bsm-muted: #d0b5d4;
+  --bsm-border: #65456c;
+  --sidebar-bg-custom: var(--bsm-surface);
+}
+
+:root[data-theme="pink"][data-mode="light"] {
+  --bsm-page: #faf0fa;
+  --bsm-surface: #fff9ff;
+  --bsm-surface-raised: #f1e0f2;
+  --bsm-input: #fdf5fd;
+  --bsm-text: #49294b;
+  --bsm-muted: #704e73;
+  --bsm-border: #d9bddd;
+  --sidebar-bg-custom: var(--bsm-surface);
+}

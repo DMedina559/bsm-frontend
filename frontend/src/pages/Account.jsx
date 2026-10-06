@@ -5,6 +5,7 @@ import { useToast } from "../ToastContext";
 import { get, post } from "../api";
 import { Save, User, Palette, RotateCcw } from "lucide-react";
 import { BUILT_IN_THEMES, THEME_LABELS } from "../utils/theme";
+import themePreviews from "../utils/themePreviews.json";
 import PaletteEditor from "../components/PaletteEditor";
 const Account = ({ appearanceOnly = false }) => {
   const { user } = useAuth();
@@ -201,16 +202,23 @@ const Account = ({ appearanceOnly = false }) => {
                   className={`theme-swatch theme-swatch-${BUILT_IN_THEMES.includes(item) ? item : "custom"}`}
                   aria-hidden="true"
                 >
-                  <i />
-                  <i />
-                  <i />
+                  {[0, 1, 2].map((index) => (
+                    <i
+                      key={index}
+                      style={
+                        themePreviews[item]
+                          ? { background: themePreviews[item].colors[index] }
+                          : undefined
+                      }
+                    />
+                  ))}
                 </span>
                 <strong>{THEME_LABELS[item] || item.replace(/_/g, " ")}</strong>
                 <small>
                   {theme === item && !activePalette
                     ? "Selected"
                     : BUILT_IN_THEMES.includes(item)
-                      ? "Built-in theme"
+                      ? themePreviews[item]?.description || "Built-in theme"
                       : "Server CSS theme"}
                 </small>
               </button>
