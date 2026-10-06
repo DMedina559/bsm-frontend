@@ -19,6 +19,7 @@ describe("palette editor", () => {
         <PaletteEditor />
       </ThemeProvider>,
     );
+    fireEvent.click(screen.getByText("Create palette"));
     fireEvent.change(screen.getByLabelText("Palette name"), {
       target: { value: "Ocean custom" },
     });
@@ -45,6 +46,7 @@ describe("palette editor", () => {
         <PaletteEditor />
       </ThemeProvider>,
     );
+    fireEvent.click(screen.getByText("Create palette"));
     fireEvent.change(screen.getByLabelText("Text"), {
       target: { value: "#192820" },
     });

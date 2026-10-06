@@ -495,3 +495,118 @@ pre.monitor-output {
 .panorama-preference {
   margin-top: 20px;
 }
+
+.notification-history-toggle {
+  position: relative;
+}
+.notification-count {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  padding: 0 5px;
+  min-width: 18px;
+  border-radius: 12px;
+  background: var(--bsm-accent-strong);
+  color: var(--bsm-on-accent);
+  font-size: 10px;
+  line-height: 18px;
+}
+.notification-history-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.notification-history-toolbar p {
+  flex: 1;
+  min-width: 180px;
+}
+.notification-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.notification-history-entry {
+  border: 1px solid var(--bsm-border);
+  border-left: 3px solid var(--bsm-info);
+  border-radius: var(--bsm-radius-sm);
+  padding: 12px;
+  margin-bottom: 10px;
+}
+.notification-history-entry.message-error {
+  border-left-color: var(--bsm-danger);
+}
+.notification-history-entry.message-warning {
+  border-left-color: var(--bsm-warning);
+}
+.notification-history-entry.message-success {
+  border-left-color: var(--bsm-success);
+}
+.notification-history-entry > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.notification-history-entry time {
+  color: var(--bsm-muted);
+  font-size: 11px;
+}
+.notification-history-entry p {
+  margin: 6px 0 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.palette-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.palette-section-header .section-heading {
+  margin-bottom: 0;
+}
+.personal-palette-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.personal-palette-card .theme-card {
+  width: 100%;
+  height: 100%;
+  padding-bottom: 44px;
+}
+.palette-card-actions {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  display: flex;
+  gap: 6px;
+}
+.palette-card-actions .icon-button {
+  width: 26px;
+  min-height: 26px;
+  background: transparent;
+  border-color: transparent;
+}
+.palette-card-actions .icon-button:hover {
+  background: var(--bsm-accent-soft);
+  border-color: var(--bsm-border);
+}
+.palette-editor-dialog {
+  max-width: 680px;
+}
+.palette-editor-dialog .palette-colors {
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 10px;
+}
+.palette-editor-dialog .palette-preview {
+  padding: 10px;
+}
+.palette-editor-dialog .palette-preview > div {
+  padding: 14px;
+}

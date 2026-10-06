@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
+import NotificationHistory from "../components/NotificationHistory";
 import Sidebar from "../components/Sidebar";
 import Footer from "../components/Footer";
 import { Menu, ChevronRight, Radio } from "lucide-react";
@@ -67,6 +68,7 @@ const Layout = () => {
               <Radio size={14} />
               {isConnected ? "Live" : isFallback ? "Polling" : "Offline"}
             </span>
+            <NotificationHistory />
             <Link className="account-chip" to="/account">
               <span className="avatar">
                 {user?.username?.slice(0, 1).toUpperCase() || "U"}
