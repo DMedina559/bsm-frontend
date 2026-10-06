@@ -69,6 +69,22 @@ export const ThemeProvider = ({ children }) => {
   }, [theme, mode, appearance.density]);
 
   useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.panorama = String(appearance.panorama);
+    if (appearance.panorama) {
+      const base = getApiBaseUrl() || getApiProxyBasePath();
+      root.style.setProperty(
+        "--bsm-panorama-image",
+        `url(${JSON.stringify(`${base}/api/panorama`)})`,
+      );
+    } else root.style.removeProperty("--bsm-panorama-image");
+    return () => {
+      delete root.dataset.panorama;
+      root.style.removeProperty("--bsm-panorama-image");
+    };
+  }, [appearance.panorama]);
+
+  useEffect(() => {
     let link = document.getElementById("theme-stylesheet");
     if (!link) {
       link = document.createElement("link");

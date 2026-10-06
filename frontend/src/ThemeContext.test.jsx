@@ -17,6 +17,11 @@ function Harness() {
       <span data-testid="theme">{theme}</span>
       <span role="alert">{themeError}</span>
       <span data-testid="mode">{appearance.mode}</span>
+      <button
+        onClick={() => updateAppearance({ panorama: !appearance.panorama })}
+      >
+        Panorama
+      </button>
       <button onClick={() => changeTheme("blue").catch(() => {})}>
         Change
       </button>
@@ -77,6 +82,34 @@ describe("theme engine", () => {
     );
     expect(document.documentElement.dataset.density).toBe("compact");
     expect(request).not.toHaveBeenCalled();
+  });
+  it("keeps panoramas off by default and removes the image when disabled", async () => {
+    const { unmount } = render(
+      <ThemeProvider>
+        <Harness />
+      </ThemeProvider>,
+    );
+    expect(document.documentElement.dataset.panorama).toBe("false");
+    expect(
+      document.documentElement.style.getPropertyValue("--bsm-panorama-image"),
+    ).toBe("");
+    fireEvent.click(screen.getByText("Panorama"));
+    await waitFor(() =>
+      expect(document.documentElement.dataset.panorama).toBe("true"),
+    );
+    expect(
+      document.documentElement.style.getPropertyValue("--bsm-panorama-image"),
+    ).toContain("/api/panorama");
+    expect(JSON.parse(localStorage.getItem("bsm.appearance.v4")).panorama).toBe(
+      true,
+    );
+    expect(request).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText("Panorama"));
+    expect(
+      document.documentElement.style.getPropertyValue("--bsm-panorama-image"),
+    ).toBe("");
+    unmount();
+    expect(document.documentElement.dataset.panorama).toBeUndefined();
   });
   it("surfaces stylesheet failures", async () => {
     render(

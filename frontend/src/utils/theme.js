@@ -21,9 +21,14 @@ export const THEME_LABELS = {
   yellow: "Gold",
 };
 export const APPEARANCE_KEY = "bsm.appearance.v4";
-export const DEFAULT_APPEARANCE = { mode: "theme", density: "compact" };
+export const DEFAULT_APPEARANCE = {
+  mode: "theme",
+  density: "compact",
+  panorama: false,
+};
 export function normalizeAppearance(value) {
   return {
+    panorama: value?.panorama === true,
     mode: ["theme", "system", "light", "dark"].includes(value?.mode)
       ? value.mode
       : "theme",

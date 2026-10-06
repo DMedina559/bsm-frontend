@@ -262,6 +262,26 @@ const Account = ({ appearanceOnly = false }) => {
               </small>
             </div>
           </div>
+          <div className="form-group panorama-preference">
+            <label className="checkbox-wrapper" htmlFor="panorama-background">
+              <input
+                type="checkbox"
+                role="switch"
+                id="panorama-background"
+                checked={appearance.panorama === true}
+                onChange={(event) =>
+                  updateAppearance({ panorama: event.target.checked })
+                }
+                aria-describedby="panorama-help"
+              />
+              <span className="form-label-inline">Panorama background</span>
+            </label>
+            <p className="form-help-text" id="panorama-help">
+              Use the server’s panorama behind the interface. Disabled by
+              default and saved only in this browser. Theme colors remain in use
+              if the image is unavailable.
+            </p>
+          </div>
           <button
             className="action-button secondary"
             onClick={resetAppearance}

@@ -479,3 +479,19 @@ pre.monitor-output {
 :root[data-density="compact"] .platform-overview .card-body {
   padding: 10px 12px !important;
 }
+
+:root[data-panorama="true"] body {
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--bsm-page) 82%, transparent),
+      color-mix(in srgb, var(--bsm-page) 82%, transparent)
+    ),
+    var(--bsm-panorama-image);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+.panorama-preference {
+  margin-top: 20px;
+}

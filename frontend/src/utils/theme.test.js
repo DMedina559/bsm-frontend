@@ -9,12 +9,17 @@ import {
 describe("theme preferences", () => {
   it("falls back safely on malformed storage", () => {
     localStorage.setItem(APPEARANCE_KEY, "{");
-    expect(readAppearance()).toEqual({ mode: "theme", density: "compact" });
+    expect(readAppearance()).toEqual({
+      mode: "theme",
+      density: "compact",
+      panorama: false,
+    });
   });
   it("rejects unknown preferences", () => {
     expect(normalizeAppearance({ mode: "broken", density: "tiny" })).toEqual({
       mode: "theme",
       density: "compact",
+      panorama: false,
     });
   });
   it("supports theme defaults, explicit modes, and OS changes", () => {
