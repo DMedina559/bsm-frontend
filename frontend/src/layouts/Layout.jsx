@@ -36,7 +36,15 @@ const Layout = () => {
   ];
   const mainRef = useRef(null);
   const navigationRef = useRef(null);
+  const menuRef = useRef(null);
+  const wasMobileOpen = useRef(false);
   useFocusTrap(navigationRef, mobileOpen, () => setMobileOpen(false));
+  useEffect(() => {
+    if (wasMobileOpen.current && !mobileOpen && isMobile) {
+      menuRef.current?.focus({ preventScroll: true });
+    }
+    wasMobileOpen.current = mobileOpen;
+  }, [mobileOpen, isMobile]);
   useEffect(() => {
     document.title = `${title} · Bedrock Server Manager 4.0`;
     mainRef.current?.focus({ preventScroll: true });
@@ -58,13 +66,13 @@ const Layout = () => {
         ref={navigationRef}
         className="navigation-shell"
         inert={isMobile && !mobileOpen ? true : undefined}
-        aria-hidden={isMobile && !mobileOpen ? true : undefined}
       >
         <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
       </div>
       <div className="workspace-shell" inert={mobileOpen ? true : undefined}>
         <header className="workspace-topbar">
           <button
+            ref={menuRef}
             className="icon-button mobile-menu-toggle"
             hidden={mobileOpen}
             type="button"

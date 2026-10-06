@@ -51,7 +51,8 @@ it("shows one mobile navigation control at a time and excludes the closed drawer
   expect(navigation).not.toHaveAttribute("inert");
   fireEvent.click(screen.getByRole("button", { name: "Close sidebar" }));
   expect(menu).not.toHaveAttribute("hidden");
-  expect(navigation).toHaveAttribute("aria-hidden", "true");
+  expect(navigation).not.toHaveAttribute("aria-hidden");
+  expect(menu).toHaveFocus();
 });
 it("resets drawer and restores desktop navigation on a breakpoint change", () => {
   const { container } = render(
