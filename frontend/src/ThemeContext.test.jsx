@@ -143,3 +143,90 @@ describe("theme engine", () => {
     );
   });
 });
+
+function ResetHarness() {
+  const context = useTheme();
+  return (
+    <>
+      <button
+        onClick={() => {
+          context.savePalette({
+            name: "Custom",
+            accent: "#159568",
+            page: "#101a16",
+            surface: "#192820",
+            text: "#eaf5ee",
+            muted: "#a7bdae",
+          });
+          context.updateAppearance({
+            mode: "light",
+            density: "compact",
+            panorama: true,
+            panoramaVisibility: 70,
+            sidebarTransparency: 50,
+          });
+        }}
+      >
+        Customize
+      </button>
+      <button onClick={() => context.resetAppearance().catch(() => {})}>
+        Reset
+      </button>
+    </>
+  );
+}
+describe("appearance reset", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    request.mockResolvedValue({ status: "success" });
+    auth.checkUser.mockResolvedValue();
+  });
+  it("resets account theme, palette selection and every display preference", async () => {
+    auth.user = { username: "admin", theme: "blue" };
+    render(
+      <ThemeProvider>
+        <ResetHarness />
+      </ThemeProvider>,
+    );
+    fireEvent.click(screen.getByText("Customize"));
+    fireEvent.click(screen.getByText("Reset"));
+    await waitFor(() =>
+      expect(document.documentElement.dataset.theme).toBe("default"),
+    );
+    expect(request).toHaveBeenCalledWith("/api/account/theme", {
+      method: "POST",
+      body: { theme: "default" },
+    });
+    expect(JSON.parse(localStorage.getItem("bsm.appearance.v4"))).toEqual({
+      mode: "theme",
+      density: "comfortable",
+      panorama: false,
+      panoramaVisibility: 18,
+      sidebarTransparency: 0,
+    });
+    const palettes = JSON.parse(localStorage.getItem("bsm.palettes.v4"));
+    expect(palettes.active).toBeNull();
+    expect(palettes.palettes).toHaveLength(1);
+    expect(document.getElementById("personal-palette").textContent).toBe("");
+  });
+  it("keeps existing preferences when resetting the account theme fails", async () => {
+    auth.user = { username: "admin", theme: "blue" };
+    request.mockRejectedValue(new Error("Offline"));
+    render(
+      <ThemeProvider>
+        <ResetHarness />
+      </ThemeProvider>,
+    );
+    fireEvent.click(screen.getByText("Customize"));
+    fireEvent.click(screen.getByText("Reset"));
+    await waitFor(() => expect(request).toHaveBeenCalled());
+    expect(document.documentElement.dataset.theme).toBe("blue");
+    expect(JSON.parse(localStorage.getItem("bsm.appearance.v4")).panorama).toBe(
+      true,
+    );
+    expect(JSON.parse(localStorage.getItem("bsm.palettes.v4")).active).toBe(
+      "Custom",
+    );
+  });
+});

@@ -23,6 +23,9 @@ describe("palette editor", () => {
     fireEvent.change(screen.getByLabelText("Palette name"), {
       target: { value: "Ocean custom" },
     });
+    fireEvent.change(screen.getByLabelText("Description (optional)"), {
+      target: { value: "Blue evening tones" },
+    });
     fireEvent.change(screen.getByLabelText("Accent"), {
       target: { value: "#2266bb" },
     });
@@ -35,6 +38,12 @@ describe("palette editor", () => {
     expect(JSON.parse(localStorage.getItem(PALETTE_KEY)).active).toBe(
       "Ocean custom",
     );
+    expect(
+      screen.getByText("Selected · Blue evening tones"),
+    ).toBeInTheDocument();
+    expect(
+      JSON.parse(localStorage.getItem(PALETTE_KEY)).palettes[0].description,
+    ).toBe("Blue evening tones");
     fireEvent.click(screen.getByText("Use account theme"));
     expect(document.getElementById("personal-palette").textContent).toBe("");
     fireEvent.click(screen.getByLabelText("Remove Ocean custom"));

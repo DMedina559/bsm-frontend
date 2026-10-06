@@ -215,11 +215,10 @@ const Account = ({ appearanceOnly = false }) => {
                 </span>
                 <strong>{THEME_LABELS[item] || item.replace(/_/g, " ")}</strong>
                 <small>
-                  {theme === item && !activePalette
-                    ? "Selected"
-                    : BUILT_IN_THEMES.includes(item)
-                      ? themePreviews[item]?.description || "Built-in theme"
-                      : "Server CSS theme"}
+                  {theme === item && !activePalette ? "Selected · " : ""}
+                  {BUILT_IN_THEMES.includes(item)
+                    ? themePreviews[item]?.description || "Built-in theme"
+                    : "Server CSS theme"}
                 </small>
               </button>
             ))}
@@ -348,11 +347,22 @@ const Account = ({ appearanceOnly = false }) => {
           </div>
           <button
             className="action-button secondary"
-            onClick={resetAppearance}
+            onClick={async () => {
+              try {
+                if (await resetAppearance())
+                  addToast("Appearance reset to defaults.", "success");
+              } catch (error) {
+                addToast(
+                  error.message || "Appearance could not be reset.",
+                  "error",
+                );
+              }
+            }}
+            disabled={themeSaving}
             type="button"
           >
             <RotateCcw size={16} />
-            Reset display preferences
+            Reset appearance
           </button>
         </section>
       )}

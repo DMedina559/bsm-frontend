@@ -1,7 +1,7 @@
 {
   "default": {
     "colors": ["#030b0d", "#082223", "#00ed95"],
-    "description": "Documentation emerald"
+    "description": "BSM Default"
   },
   "light": {
     "colors": ["#f7f8fc", "#ffffff", "#087b57"],

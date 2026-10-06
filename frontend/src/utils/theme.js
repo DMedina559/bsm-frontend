@@ -23,7 +23,7 @@ export const THEME_LABELS = {
 export const APPEARANCE_KEY = "bsm.appearance.v4";
 export const DEFAULT_APPEARANCE = {
   mode: "theme",
-  density: "compact",
+  density: "comfortable",
   panorama: false,
   panoramaVisibility: 18,
   sidebarTransparency: 0,
@@ -42,7 +42,7 @@ export function normalizeAppearance(value) {
       : "theme",
     density: ["comfortable", "compact"].includes(value?.density)
       ? value.density
-      : "compact",
+      : "comfortable",
   };
 }
 export function readAppearance() {

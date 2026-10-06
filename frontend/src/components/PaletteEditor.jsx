@@ -143,7 +143,8 @@ export default function PaletteEditor() {
               </span>
               <strong>{p.name}</strong>
               <small>
-                {activePalette === p.name ? "Selected" : "Personal palette"}
+                {activePalette === p.name ? "Selected · " : ""}
+                {p.description || "Personal palette"}
               </small>
             </button>
             <div className="palette-card-actions">
@@ -217,6 +218,21 @@ export default function PaletteEditor() {
             <small className="form-help-text">
               Saving an existing name updates that palette.
             </small>
+          </div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="palette-description">
+              Description (optional)
+            </label>
+            <input
+              id="palette-description"
+              className="form-input"
+              maxLength={160}
+              value={draft.description || ""}
+              placeholder="e.g. Soft purple with warm highlights"
+              onChange={(event) =>
+                setDraft({ ...draft, description: event.target.value })
+              }
+            />
           </div>
           <div className="palette-colors">
             {Object.entries(PALETTE_FIELDS).map(([key, label]) => (
