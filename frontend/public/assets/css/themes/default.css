@@ -1,12 +1,5 @@
 :root {
-  --background-image: var(--background-image);
-  --background-overlay-color: rgba(34, 34, 34, 0.25);
-  --text-color: #eee;
-  --container-background-color: rgba(51, 51, 51, 0.92);
-  --border-color: #555;
-  --header-text-color: #eee;
-  --monitor-output-background-color: #111;
-  --monitor-output-text-color: #00dd00;
-  --monitor-output-border-color: #444;
-  --splash-text-color: #ffff00;
+  --bsm-accent: #24dda0;
+  --bsm-accent-strong: #087b57;
+  --bsm-accent-hover: #066447;
 }

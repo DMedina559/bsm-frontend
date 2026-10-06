@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import "../styles/SidebarEnhanced.css";
-
 const SidebarLabel = ({ children }) => {
   const textRef = useRef(null);
   const containerRef = useRef(null);
   const [isOverflowing, setIsOverflowing] = useState(false);
   const [scrollDistance, setScrollDistance] = useState(0);
-
   useEffect(() => {
     const checkOverflow = () => {
       if (textRef.current && containerRef.current) {
@@ -32,14 +30,17 @@ const SidebarLabel = ({ children }) => {
     window.addEventListener("resize", checkOverflow);
     return () => window.removeEventListener("resize", checkOverflow);
   }, [children]);
-
   return (
     <span
       className={`nav-label-wrapper ${isOverflowing ? "overflowing" : ""}`}
       ref={containerRef}
       title={children}
       style={
-        isOverflowing ? { "--scroll-distance": `-${scrollDistance}px` } : {}
+        isOverflowing
+          ? {
+              "--scroll-distance": `-${scrollDistance}px`,
+            }
+          : {}
       }
     >
       <span className="nav-label-text" ref={textRef}>
@@ -48,5 +49,4 @@ const SidebarLabel = ({ children }) => {
     </span>
   );
 };
-
 export default SidebarLabel;

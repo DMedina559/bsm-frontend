@@ -1,73 +1,85 @@
-import React, { createContext, useCallback, useContext, useState } from "react";
-
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { X, Info, CircleCheck, TriangleAlert } from "lucide-react";
 const ToastContext = createContext();
-
 export const useToast = () => useContext(ToastContext);
-
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
-
+  const counter = useRef(0);
+  const timers = useRef(new Map());
   const removeToast = useCallback((id) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
+    clearTimeout(timers.current.get(id));
+    timers.current.delete(id);
+    setToasts((previous) => previous.filter((toast) => toast.id !== id));
   }, []);
-
   const addToast = useCallback(
     (message, type = "info") => {
-      const id = Date.now();
-      setToasts((prev) => [...prev, { id, message, type }]);
-      setTimeout(() => removeToast(id), 5000);
+      const id = ++counter.current;
+      setToasts((previous) => [...previous, { id, message, type }]);
+      timers.current.set(
+        id,
+        setTimeout(() => removeToast(id), type === "error" ? 10000 : 6000),
+      );
     },
     [removeToast],
   );
-
+  useEffect(() => {
+    const current = timers.current;
+    return () => {
+      current.forEach(clearTimeout);
+      current.clear();
+    };
+  }, []);
+  const pause = (id) => {
+    clearTimeout(timers.current.get(id));
+    timers.current.delete(id);
+  };
+  const resume = (id) => {
+    if (!timers.current.has(id))
+      timers.current.set(
+        id,
+        setTimeout(() => removeToast(id), 6000),
+      );
+  };
   return (
     <ToastContext.Provider value={{ addToast }}>
       {children}
-      <div
-        className="toast-container"
-        style={{
-          position: "fixed",
-          top: "20px",
-          right: "20px",
-          zIndex: 1000,
-          display: "flex",
-          flexDirection: "column",
-          gap: "10px",
-        }}
-      >
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className={`message message-${toast.type}`}
-            style={{
-              padding: "15px",
-              borderRadius: "5px",
-              boxShadow: "0 2px 10px rgba(0,0,0,0.5)",
-              minWidth: "300px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              backgroundColor: "var(--sidebar-bg-custom, #3a3a3a)",
-              color: "#eee",
-              border: `1px solid var(--border-color)`,
-            }}
-          >
-            <span>{toast.message}</span>
-            <button
-              onClick={() => removeToast(toast.id)}
-              style={{
-                background: "none",
-                border: "none",
-                color: "inherit",
-                cursor: "pointer",
-                marginLeft: "10px",
-                fontSize: "1.2em",
-              }}
+      <div className="toast-container" role="region" aria-label="Notifications">
+        {toasts.map((toast) => {
+          const Icon =
+            toast.type === "success"
+              ? CircleCheck
+              : ["error", "warning"].includes(toast.type)
+                ? TriangleAlert
+                : Info;
+          return (
+            <div
+              key={toast.id}
+              role={toast.type === "error" ? "alert" : "status"}
+              className={`toast message-${toast.type}`}
+              onMouseEnter={() => pause(toast.id)}
+              onMouseLeave={() => resume(toast.id)}
+              onFocus={() => pause(toast.id)}
+              onBlur={() => resume(toast.id)}
             >
-              &times;
-            </button>
-          </div>
-        ))}
+              <Icon size={18} aria-hidden="true" />
+              <span>{toast.message}</span>
+              <button
+                className="icon-button"
+                aria-label="Dismiss notification"
+                onClick={() => removeToast(toast.id)}
+              >
+                <X size={16} />
+              </button>
+            </div>
+          );
+        })}
       </div>
     </ToastContext.Provider>
   );

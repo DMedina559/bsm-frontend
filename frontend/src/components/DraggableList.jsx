@@ -17,7 +17,6 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
-
 const SortableItem = ({ id, children, itemClassName }) => {
   const {
     attributes,
@@ -26,8 +25,9 @@ const SortableItem = ({ id, children, itemClassName }) => {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id });
-
+  } = useSortable({
+    id,
+  });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -38,7 +38,6 @@ const SortableItem = ({ id, children, itemClassName }) => {
     alignItems: "center",
     gap: "10px",
   };
-
   return (
     <div
       ref={setNodeRef}
@@ -56,13 +55,19 @@ const SortableItem = ({ id, children, itemClassName }) => {
         }}
         className="drag-handle"
       >
-        <GripVertical size={20} color="#888" />
+        <GripVertical size={20} color="var(--text-color-secondary)" />
       </div>
-      <div style={{ flex: 1, width: "100%" }}>{children}</div>
+      <div
+        style={{
+          flex: 1,
+          width: "100%",
+        }}
+      >
+        {children}
+      </div>
     </div>
   );
 };
-
 const DraggableList = ({
   items,
   onReorder,
@@ -86,19 +91,16 @@ const DraggableList = ({
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
-
   const handleDragEnd = (event) => {
     const { active, over } = event;
-
-    if (active.id !== over.id) {
+    if (over && active.id !== over.id) {
       const oldIndex = items.findIndex((item) => item.id === active.id);
       const newIndex = items.findIndex((item) => item.id === over.id);
-
+      if (oldIndex < 0 || newIndex < 0) return;
       const newItems = arrayMove(items, oldIndex, newIndex);
       onReorder(newItems);
     }
   };
-
   return (
     <DndContext
       sensors={sensors}
@@ -111,7 +113,11 @@ const DraggableList = ({
       >
         <div
           className={`draggable-list ${className || ""}`}
-          style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+          }}
         >
           {items.map((item, index) => (
             <SortableItem
@@ -127,5 +133,4 @@ const DraggableList = ({
     </DndContext>
   );
 };
-
 export default DraggableList;

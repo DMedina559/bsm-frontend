@@ -1,46 +1,23 @@
-# Bedrock Server Manager - V2 Frontend
+# Bedrock Server Manager 4.0 frontend
 
-This is the new React-based frontend for Bedrock Server Manager.
+React interface with the supplied server-stack branding, fleet dashboard, grouped navigation, and shared appearance system.
 
-## Development Setup
+## Development
 
-1.  **Install dependencies**:
+Validation used Node 24. From this directory, run `npm ci`, then `npm run dev`, and open the development URL at `/app/`. The development server proxies backend routes to `http://localhost:11325`. Set `VITE_API_URL` in `.env.local` for another backend. The Python backend must run separately; its source is not included here.
 
-    ```bash
-    cd frontend/v2
-    npm install
-    ```
+## Production integration
 
-2.  **Start the Backend**:
-    Make sure the Python backend is running on port 11325.
+Replace the corresponding frontend sources and public assets in your existing project, then run `npm run build`. Vite writes to `../src/bsm_frontend/static` and clears that output directory. Preserve this location for Python package integration. Frontend 4.0 branding does not change the backend version; navigation reports the actual backend version.
 
-    ```bash
-    # From project root
-    python -m bedrock_server_manager web start --host 0.0.0.0 --port 11325
-    ```
+## Appearance
 
-3.  **Start the Frontend Dev Server**:
-    ```bash
-    cd frontend/v2
-    npm run dev
-    ```
-    The dev server will proxy API requests to `http://localhost:11325`.
+Account settings offer nine built-in palettes and available server-provided CSS themes. Theme selection uses the existing account API. Light, dark, system, and theme-default modes, plus comfortable or compact density, are device preferences shared between tabs. Theme-load and save errors are visible.
 
-## Scripts
+Custom themes should use semantic `--bsm-*` variables from `src/styles/tokens.css`; legacy aliases remain available. Explicit light mode overrides shared light surfaces. Colors, typography, spacing, control sizes, focus rings, and status colors are centralized.
 
-- `npm run dev`: Start development server.
-- `npm run build`: Build for production.
-- `npm run lint`: Run ESLint.
-- `npm run lint:fix`: Fix linting issues.
-- `npm run format`: Format code with Prettier.
-- `npm test`: Run tests in watch mode.
-- `npm run test:run`: Run tests once.
+## Checks
 
-## Testing
+Run `npm run test:run`, `npm run lint`, `npm run build`, and `npm audit`.
 
-This project uses Vitest for unit testing and React Testing Library.
-Run tests with `npm test`.
-
-## Linting & Formatting
-
-We use ESLint and Prettier. Please run `npm run lint:fix` and `npm run format` before committing.
+See `FRONTEND-AUDIT.md` for changes, evidence, and remaining integration checks.

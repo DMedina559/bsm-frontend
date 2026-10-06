@@ -1,3 +1,6 @@
+import { useRequestTracker } from "../utils/useRequestTracker";
+import Modal from "../components/Modal";
+import { useDialog } from "../DialogContext";
 import React, { useCallback, useEffect, useState } from "react";
 import { useToast } from "../ToastContext";
 import { get, post } from "../api";
@@ -15,8 +18,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "../AuthContext";
 import { logger } from "../utils/logger";
-
 const Users = () => {
+  const { confirmAction } = useDialog();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -32,16 +35,15 @@ const Users = () => {
   // Edit state
   const [editRole, setEditRole] = useState("");
   const [editActive, setEditActive] = useState(true);
-
   const { addToast } = useToast();
   const { user: currentUser } = useAuth();
-
+  const beginRequest = useRequestTracker("" + ":" + "");
   const fetchUsers = useCallback(async () => {
+    const requestTicket = beginRequest("fetchUsers");
     setLoading(true);
     try {
-      // Small delay to ensure the spinner is visible for feedback
-      await new Promise((resolve) => setTimeout(resolve, 300));
       const data = await get("/api/users/list");
+      if (!requestTicket.current()) return false;
       if (Array.isArray(data)) {
         setUsers(data);
         return true;
@@ -51,25 +53,27 @@ const Users = () => {
         return false;
       }
     } catch (error) {
-      logger.error("[Users] Error fetching users", { error });
+      if (!requestTicket.current()) return false;
+      logger.error("[Users] Error fetching users", {
+        error,
+      });
       addToast(error.message || "Error fetching users", "error");
       return false;
     } finally {
-      setLoading(false);
+      if (requestTicket.current()) {
+        setLoading(false);
+      }
     }
-  }, [addToast]);
-
+  }, [addToast, beginRequest]);
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
-
   const handleRefresh = async () => {
     const success = await fetchUsers();
     if (success) {
       addToast("Users list refreshed", "success");
     }
   };
-
   const handleDelete = async (userToDelete) => {
     if (userToDelete.role === "admin") {
       const adminCount = users.filter(
@@ -83,12 +87,12 @@ const Users = () => {
         return;
       }
     }
-
     if (
-      !confirm(`Are you sure you want to delete user ${userToDelete.username}?`)
+      !(await confirmAction(
+        `Are you sure you want to delete user ${userToDelete.username}?`,
+      ))
     )
       return;
-
     setActionLoading(true);
     try {
       await post(`/api/users/${userToDelete.id}/delete`);
@@ -105,7 +109,6 @@ const Users = () => {
       setActionLoading(false);
     }
   };
-
   const handleGenerateLink = async (e) => {
     e.preventDefault();
     setActionLoading(true);
@@ -113,8 +116,10 @@ const Users = () => {
       const response = await post("/api/register/generate-token", {
         role: inviteRole,
       });
-
-      logger.debug("[Users] Generate token response", { response, inviteRole });
+      logger.debug("[Users] Generate token response", {
+        response,
+        inviteRole,
+      });
       if (response && response.registration_url) {
         let finalLink = response.registration_url;
         try {
@@ -125,7 +130,6 @@ const Users = () => {
             finalLink = `${window.location.origin}${response.registration_url}`;
           }
         }
-
         setGeneratedLink(finalLink);
         addToast("Invitation link generated.", "success");
       } else {
@@ -137,7 +141,6 @@ const Users = () => {
       setActionLoading(false);
     }
   };
-
   const openEditModal = (user) => {
     if (user.id === currentUser?.id) {
       addToast(
@@ -151,17 +154,17 @@ const Users = () => {
     setEditActive(user.is_active);
     setShowEditModal(true);
   };
-
   const saveUserChanges = async () => {
     if (!editingUser) return;
-
     setActionLoading(true);
     try {
       let updated = false;
 
       // Update Role if changed
       if (editRole !== editingUser.role) {
-        await post(`/api/users/${editingUser.id}/role`, { role: editRole });
+        await post(`/api/users/${editingUser.id}/role`, {
+          role: editRole,
+        });
         updated = true;
       }
 
@@ -171,7 +174,6 @@ const Users = () => {
         await post(`/api/users/${editingUser.id}/${endpoint}`);
         updated = true;
       }
-
       if (updated) {
         addToast(
           `User ${editingUser.username} updated successfully.`,
@@ -185,30 +187,37 @@ const Users = () => {
         setShowEditModal(false);
       }
     } catch (error) {
-      logger.error("[Users] Update failed", { error, editingUser });
+      logger.error("[Users] Update failed", {
+        error,
+        editingUser,
+      });
       addToast(error.message || "Failed to update user.", "error");
     } finally {
       setActionLoading(false);
     }
   };
-
-  const copyToClipboard = () => {
+  const copyToClipboard = async () => {
     if (generatedLink) {
-      navigator.clipboard.writeText(generatedLink);
+      try {
+        await navigator.clipboard.writeText(generatedLink);
+      } catch {
+        addToast(
+          "Could not copy the link. Select and copy it manually.",
+          "error",
+        );
+        return;
+      }
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
       addToast("Link copied to clipboard", "success");
     }
   };
-
   const closeInviteModal = () => {
     setShowInviteModal(false);
     setGeneratedLink(null);
     setInviteRole("user");
   };
-
   const isAdmin = currentUser?.role === "admin";
-
   return (
     <div className="container">
       <div
@@ -220,15 +229,23 @@ const Users = () => {
         }}
       >
         <h1>User Management</h1>
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "10px",
+          }}
+        >
           <button
             className="action-button secondary"
             onClick={handleRefresh}
             disabled={loading || actionLoading}
+            type="button"
           >
             <RefreshCw
               size={16}
-              style={{ marginRight: "5px" }}
+              style={{
+                marginRight: "5px",
+              }}
               className={loading ? "spin" : ""}
             />{" "}
             Refresh
@@ -238,33 +255,67 @@ const Users = () => {
               className="action-button"
               onClick={() => setShowInviteModal(true)}
               disabled={actionLoading}
+              type="button"
             >
-              <UserPlus size={16} style={{ marginRight: "5px" }} /> Invite User
+              <UserPlus
+                size={16}
+                style={{
+                  marginRight: "5px",
+                }}
+              />{" "}
+              Invite User
             </button>
           )}
         </div>
       </div>
 
       {loading && users.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "40px" }}>
+        <div
+          style={{
+            textAlign: "center",
+            padding: "40px",
+          }}
+        >
           <div className="spinner"></div> Loading users...
         </div>
       ) : (
         <div className="table-responsive-wrapper">
-          <table className="server-table" style={{ width: "100%" }}>
+          <table
+            className="server-table"
+            style={{
+              width: "100%",
+            }}
+          >
             <thead>
               <tr>
                 <th>Username</th>
                 <th>Role</th>
                 <th>Status</th>
-                <th style={{ width: "150px" }}>Actions</th>
+                <th
+                  style={{
+                    width: "150px",
+                  }}
+                >
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
               {users.map((user) => (
-                <tr key={user.id} style={{ opacity: user.is_active ? 1 : 0.6 }}>
+                <tr
+                  key={user.id}
+                  style={{
+                    opacity: user.is_active ? 1 : 0.6,
+                  }}
+                >
                   <td>
-                    <span style={{ fontWeight: "bold" }}>{user.username}</span>
+                    <span
+                      style={{
+                        fontWeight: "bold",
+                      }}
+                    >
+                      {user.username}
+                    </span>
                     {currentUser && currentUser.id === user.id && (
                       <span
                         style={{
@@ -279,7 +330,12 @@ const Users = () => {
                   </td>
                   <td>
                     <span className={`badge badge-${user.role}`}>
-                      <Shield size={12} style={{ marginRight: "4px" }} />{" "}
+                      <Shield
+                        size={12}
+                        style={{
+                          marginRight: "4px",
+                        }}
+                      />{" "}
                       {user.role}
                     </span>
                   </td>
@@ -309,17 +365,26 @@ const Users = () => {
                     )}
                   </td>
                   <td>
-                    <div style={{ display: "flex", gap: "5px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "5px",
+                      }}
+                    >
                       {isAdmin && (
                         <>
                           <button
                             className="action-button secondary"
                             onClick={() => openEditModal(user)}
                             title="Edit User"
-                            style={{ padding: "5px 10px" }}
+                            style={{
+                              padding: "5px 10px",
+                            }}
                             disabled={
                               actionLoading || user.id === currentUser?.id
                             }
+                            type="button"
+                            aria-label="Edit User"
                           >
                             <UserCog size={14} />
                           </button>
@@ -327,10 +392,14 @@ const Users = () => {
                             className="action-button danger-button"
                             onClick={() => handleDelete(user)}
                             title="Delete User"
-                            style={{ padding: "5px 10px" }}
+                            style={{
+                              padding: "5px 10px",
+                            }}
                             disabled={
                               actionLoading || user.id === currentUser?.id
                             }
+                            type="button"
+                            aria-label="Delete User"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -348,7 +417,7 @@ const Users = () => {
                       textAlign: "center",
                       padding: "20px",
                       fontStyle: "italic",
-                      color: "#888",
+                      color: "var(--text-color-secondary)",
                     }}
                   >
                     No users found.
@@ -362,203 +431,264 @@ const Users = () => {
 
       {/* Invite Modal */}
       {showInviteModal && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: "500px" }}>
-            <h2>Invite New User</h2>
-            {!generatedLink ? (
-              <form onSubmit={handleGenerateLink}>
-                <div style={{ marginBottom: "20px", textAlign: "left" }}>
-                  <p
-                    style={{
-                      marginBottom: "15px",
-                      color: "var(--text-color-secondary)",
-                      lineHeight: "1.5",
-                    }}
-                  >
-                    Generate a secure registration link to send to a new user.
-                    This link will be valid for 24 hours.
-                  </p>
-                  <label
-                    className="form-label"
-                    style={{ display: "block", marginBottom: "5px" }}
-                  >
-                    Select Role
-                  </label>
-                  <select
-                    className="form-input"
-                    value={inviteRole}
-                    onChange={(e) => setInviteRole(e.target.value)}
-                    style={{ width: "100%" }}
-                  >
-                    <option value="user">User (Read Only)</option>
-                    <option value="moderator">Moderator</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-                <div
-                  className="modal-actions"
-                  style={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    gap: "10px",
-                  }}
-                >
-                  <button
-                    type="button"
-                    className="action-button secondary"
-                    onClick={closeInviteModal}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="action-button"
-                    disabled={actionLoading}
-                  >
-                    Generate Link
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <div style={{ textAlign: "left" }}>
+        <Modal
+          title={<>Invite New User</>}
+          onClose={closeInviteModal}
+          closeDisabled={actionLoading}
+        >
+          {!generatedLink ? (
+            <form onSubmit={handleGenerateLink}>
+              <div
+                style={{
+                  marginBottom: "20px",
+                  textAlign: "left",
+                }}
+              >
                 <p
                   style={{
-                    marginBottom: "10px",
-                    color: "var(--success-color)",
-                    fontWeight: "bold",
+                    marginBottom: "15px",
+                    color: "var(--text-color-secondary)",
+                    lineHeight: "1.5",
                   }}
                 >
-                  Link generated successfully!
+                  Generate a secure registration link to send to a new user.
+                  This link will be valid for 24 hours.
                 </p>
-                <div
-                  style={{ display: "flex", gap: "10px", marginBottom: "20px" }}
-                >
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={generatedLink}
-                    readOnly
-                    style={{ flexGrow: 1 }}
-                  />
-                  <button
-                    className="action-button"
-                    onClick={copyToClipboard}
-                    title="Copy to clipboard"
-                  >
-                    {copied ? <Check size={16} /> : <Copy size={16} />}
-                  </button>
-                </div>
-                <div
-                  className="modal-actions"
-                  style={{ display: "flex", justifyContent: "flex-end" }}
-                >
-                  <button
-                    type="button"
-                    className="action-button secondary"
-                    onClick={closeInviteModal}
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Edit User Modal */}
-      {showEditModal && editingUser && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: "400px" }}>
-            <h2>Edit User: {editingUser.username}</h2>
-            <div style={{ marginBottom: "20px", textAlign: "left" }}>
-              <div style={{ marginBottom: "15px" }}>
                 <label
                   className="form-label"
-                  style={{ display: "block", marginBottom: "5px" }}
+                  style={{
+                    display: "block",
+                    marginBottom: "5px",
+                  }}
+                  htmlFor="users-field-1"
                 >
-                  Role
+                  Select Role
                 </label>
                 <select
                   className="form-input"
-                  value={editRole}
-                  onChange={(e) => setEditRole(e.target.value)}
-                  style={{ width: "100%" }}
-                  disabled={editingUser.id === currentUser?.id || actionLoading}
+                  value={inviteRole}
+                  onChange={(e) => setInviteRole(e.target.value)}
+                  style={{
+                    width: "100%",
+                  }}
+                  id="users-field-1"
                 >
                   <option value="user">User (Read Only)</option>
                   <option value="moderator">Moderator</option>
                   <option value="admin">Admin</option>
                 </select>
               </div>
-
-              <div>
-                <label
-                  className="form-label"
-                  style={{ display: "block", marginBottom: "5px" }}
-                >
-                  Account Status
-                </label>
+              <div
+                className="modal-actions"
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: "10px",
+                }}
+              >
                 <button
                   type="button"
-                  className={`action-button ${editActive ? "success-button" : "danger-button"}`}
-                  onClick={() => setEditActive(!editActive)}
-                  style={{ width: "100%", justifyContent: "center" }}
-                  disabled={editingUser.id === currentUser?.id || actionLoading}
+                  className="action-button secondary"
+                  onClick={closeInviteModal}
                 >
-                  {editActive ? (
-                    <>
-                      <Unlock size={16} style={{ marginRight: "5px" }} />{" "}
-                      Account Active
-                    </>
-                  ) : (
-                    <>
-                      <Lock size={16} style={{ marginRight: "5px" }} /> Account
-                      Disabled
-                    </>
-                  )}
+                  Cancel
                 </button>
-                <small
-                  style={{
-                    display: "block",
-                    marginTop: "5px",
-                    color: "var(--text-color-secondary)",
-                  }}
+                <button
+                  type="submit"
+                  className="action-button"
+                  disabled={actionLoading}
                 >
-                  {editActive ? "User can log in." : "User cannot log in."}
-                </small>
+                  Generate Link
+                </button>
               </div>
-            </div>
+            </form>
+          ) : (
             <div
-              className="modal-actions"
               style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: "10px",
+                textAlign: "left",
               }}
             >
-              <button
-                type="button"
-                className="action-button secondary"
-                onClick={() => {
-                  setShowEditModal(false);
-                  setEditingUser(null);
+              <p
+                style={{
+                  marginBottom: "10px",
+                  color: "var(--success-color)",
+                  fontWeight: "bold",
                 }}
-                disabled={actionLoading}
               >
-                Cancel
-              </button>
+                Link generated successfully!
+              </p>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "10px",
+                  marginBottom: "20px",
+                }}
+              >
+                <input
+                  type="text"
+                  className="form-input"
+                  value={generatedLink}
+                  readOnly
+                  style={{
+                    flexGrow: 1,
+                  }}
+                />
+                <button
+                  className="action-button"
+                  onClick={copyToClipboard}
+                  title="Copy to clipboard"
+                  type="button"
+                  aria-label="Copy to clipboard"
+                >
+                  {copied ? <Check size={16} /> : <Copy size={16} />}
+                </button>
+              </div>
+              <div
+                className="modal-actions"
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                }}
+              >
+                <button
+                  type="button"
+                  className="action-button secondary"
+                  onClick={closeInviteModal}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          )}
+        </Modal>
+      )}
+
+      {/* Edit User Modal */}
+      {showEditModal && editingUser && (
+        <Modal
+          title={<>Edit User: {editingUser.username}</>}
+          onClose={() => setShowEditModal(false)}
+          closeDisabled={actionLoading}
+        >
+          <div
+            style={{
+              marginBottom: "20px",
+              textAlign: "left",
+            }}
+          >
+            <div
+              style={{
+                marginBottom: "15px",
+              }}
+            >
+              <label
+                className="form-label"
+                style={{
+                  display: "block",
+                  marginBottom: "5px",
+                }}
+                htmlFor="users-field-2"
+              >
+                Role
+              </label>
+              <select
+                className="form-input"
+                value={editRole}
+                onChange={(e) => setEditRole(e.target.value)}
+                style={{
+                  width: "100%",
+                }}
+                disabled={editingUser.id === currentUser?.id || actionLoading}
+                id="users-field-2"
+              >
+                <option value="user">User (Read Only)</option>
+                <option value="moderator">Moderator</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+
+            <div>
+              <label
+                className="form-label"
+                style={{
+                  display: "block",
+                  marginBottom: "5px",
+                }}
+              >
+                Account Status
+              </label>
               <button
                 type="button"
-                className="action-button"
-                onClick={saveUserChanges}
-                disabled={actionLoading}
+                className={`action-button ${editActive ? "success-button" : "danger-button"}`}
+                onClick={() => setEditActive(!editActive)}
+                style={{
+                  width: "100%",
+                  justifyContent: "center",
+                }}
+                disabled={editingUser.id === currentUser?.id || actionLoading}
               >
-                Save Changes
+                {editActive ? (
+                  <>
+                    <Unlock
+                      size={16}
+                      style={{
+                        marginRight: "5px",
+                      }}
+                    />{" "}
+                    Account Active
+                  </>
+                ) : (
+                  <>
+                    <Lock
+                      size={16}
+                      style={{
+                        marginRight: "5px",
+                      }}
+                    />{" "}
+                    Account Disabled
+                  </>
+                )}
               </button>
+              <small
+                style={{
+                  display: "block",
+                  marginTop: "5px",
+                  color: "var(--text-color-secondary)",
+                }}
+              >
+                {editActive ? "User can log in." : "User cannot log in."}
+              </small>
             </div>
           </div>
-        </div>
+          <div
+            className="modal-actions"
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: "10px",
+            }}
+          >
+            <button
+              type="button"
+              className="action-button secondary"
+              onClick={() => {
+                setShowEditModal(false);
+                setEditingUser(null);
+              }}
+              disabled={actionLoading}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="action-button"
+              onClick={saveUserChanges}
+              disabled={actionLoading}
+            >
+              Save Changes
+            </button>
+          </div>
+        </Modal>
       )}
 
       <style>{`
@@ -607,5 +737,4 @@ const Users = () => {
     </div>
   );
 };
-
 export default Users;

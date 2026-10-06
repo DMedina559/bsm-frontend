@@ -36,6 +36,35 @@ export function setApiBaseUrl(url) {
   }
 }
 
+/** Resolve API/download URLs against the configured backend, preserving ingress prefixes. */
+export function resolveApiUrl(url) {
+  if (typeof url !== "string" || !url.trim())
+    throw new ApiError("Missing API URL", 0, null);
+  const base = getApiBaseUrl() || getApiProxyBasePath();
+  const finalUrl =
+    url.startsWith("/") && !url.startsWith("//") && base
+      ? `${base}${url}`
+      : url;
+  const backend = new URL(
+    base || window.location.origin,
+    window.location.origin,
+  );
+  const target = new URL(finalUrl, window.location.origin);
+  if (
+    !["http:", "https:"].includes(target.protocol) ||
+    target.origin !== backend.origin ||
+    target.username ||
+    target.password
+  ) {
+    throw new ApiError(
+      "API requests must target the configured backend.",
+      0,
+      null,
+    );
+  }
+  return finalUrl;
+}
+
 /**
  * Sends an HTTP request to the API.
  *
@@ -78,12 +107,7 @@ export async function request(url, options = {}) {
   }
 
   try {
-    // Prepend base URL if the URL is relative (starts with /)
-    let baseUrl = getApiBaseUrl();
-    if (!baseUrl && typeof window !== "undefined") {
-      baseUrl = getApiProxyBasePath();
-    }
-    const finalUrl = url.startsWith("/") && baseUrl ? `${baseUrl}${url}` : url;
+    const finalUrl = resolveApiUrl(url);
 
     logger.debug(`[API] Request: ${config.method} ${finalUrl}`, {
       method: config.method,
@@ -130,7 +154,7 @@ export async function request(url, options = {}) {
         logger.error(`[API] Error: Non-JSON response`, {
           url: finalUrl,
           status: response.status,
-          text: text,
+          responseType: "text",
         });
         throw new ApiError(
           `Request failed with status ${response.status} (Non-JSON response)`,
@@ -172,7 +196,7 @@ export async function request(url, options = {}) {
         url: finalUrl,
         status: response.status,
         message: errorMessage,
-        data: data,
+        responseType: typeof data,
       });
       throw new ApiError(errorMessage, response.status, data);
     }
@@ -187,7 +211,7 @@ export async function request(url, options = {}) {
       logger.error(`[API] Error: Application error in 200 OK`, {
         url: finalUrl,
         message: data.message,
-        data: data,
+        responseType: typeof data,
       });
       throw new ApiError(
         data.message || "Application error",
@@ -199,7 +223,7 @@ export async function request(url, options = {}) {
     logger.debug(`[API] Response`, {
       url: finalUrl,
       status: response.status,
-      data: data,
+      responseType: typeof data,
     });
     return data;
   } catch (error) {

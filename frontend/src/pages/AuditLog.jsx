@@ -1,9 +1,9 @@
+import { useRequestTracker } from "../utils/useRequestTracker";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useToast } from "../ToastContext";
 import { get } from "../api";
 import { useWebSocket } from "../WebSocketContext";
 import { RefreshCw, Activity, User, FileText } from "lucide-react";
-
 const AuditLog = () => {
   const [activeTab, setActiveTab] = useState("users");
   const [logs, setLogs] = useState([]);
@@ -15,11 +15,11 @@ const AuditLog = () => {
 
   // Tasks State
   const [tasks, setTasks] = useState([]);
-
   const { addToast } = useToast();
   const { isConnected, lastMessage, subscribe, unsubscribe } = useWebSocket();
 
   // App Log Subscription
+  const beginRequest = useRequestTracker("" + ":" + activeTab);
   useEffect(() => {
     if (activeTab === "app_log" && isConnected) {
       subscribe("app_log");
@@ -30,7 +30,6 @@ const AuditLog = () => {
   // Handle WS Messages
   useEffect(() => {
     if (!lastMessage) return;
-
     if (lastMessage.topic === "app_log" && lastMessage.type === "log_update") {
       if (lastMessage.data) {
         setAppLogLines((prev) => {
@@ -53,11 +52,12 @@ const AuditLog = () => {
       }
     }
   }, [appLogLines, activeTab]);
-
   const fetchLogs = useCallback(async () => {
+    const requestTicket = beginRequest("fetchLogs");
     setLoading(true);
     try {
       const data = await get("/audit-log/list");
+      if (!requestTicket.current()) return false;
       if (Array.isArray(data)) {
         setLogs(data);
         return true;
@@ -67,17 +67,21 @@ const AuditLog = () => {
         return false;
       }
     } catch (error) {
+      if (!requestTicket.current()) return false;
       addToast(error.message || "Error fetching audit logs", "error");
       return false;
     } finally {
-      setLoading(false);
+      if (requestTicket.current()) {
+        setLoading(false);
+      }
     }
-  }, [addToast]);
-
+  }, [addToast, beginRequest]);
   const fetchTasks = useCallback(async () => {
+    const requestTicket = beginRequest("fetchTasks");
     setLoading(true);
     try {
       const data = await get("/api/tasks/list");
+      if (!requestTicket.current()) return false;
       if (Array.isArray(data)) {
         setTasks(data);
         return true;
@@ -86,14 +90,16 @@ const AuditLog = () => {
         return false;
       }
     } catch {
+      if (!requestTicket.current()) return false;
       addToast("Error fetching tasks", "error");
       setTasks([]);
       return false;
     } finally {
-      setLoading(false);
+      if (requestTicket.current()) {
+        setLoading(false);
+      }
     }
-  }, [addToast]);
-
+  }, [addToast, beginRequest]);
   useEffect(() => {
     if (activeTab === "users") {
       fetchLogs();
@@ -101,7 +107,6 @@ const AuditLog = () => {
       fetchTasks();
     }
   }, [activeTab, fetchLogs, fetchTasks]);
-
   const handleRefresh = async () => {
     if (activeTab === "users") {
       const success = await fetchLogs();
@@ -114,7 +119,6 @@ const AuditLog = () => {
       addToast("App log cleared", "info");
     }
   };
-
   const formatDate = (dateString) => {
     try {
       return new Date(dateString).toLocaleString();
@@ -122,7 +126,6 @@ const AuditLog = () => {
       return dateString;
     }
   };
-
   return (
     <div className="container">
       <div
@@ -135,15 +138,24 @@ const AuditLog = () => {
           alignItems: "center",
         }}
       >
-        <h1 style={{ margin: 0 }}>System Logs & Tasks</h1>
+        <h1
+          style={{
+            margin: 0,
+          }}
+        >
+          System Logs & Tasks
+        </h1>
         <button
           className="action-button secondary"
           onClick={handleRefresh}
           disabled={loading && activeTab !== "app_log"}
+          type="button"
         >
           <RefreshCw
             size={16}
-            style={{ marginRight: "5px" }}
+            style={{
+              marginRight: "5px",
+            }}
             className={loading ? "spin" : ""}
           />
           {activeTab === "app_log" ? "Clear" : "Refresh"}
@@ -154,20 +166,44 @@ const AuditLog = () => {
         <button
           className={`tab-button ${activeTab === "users" ? "active" : ""}`}
           onClick={() => setActiveTab("users")}
+          type="button"
+          aria-pressed={activeTab === "users"}
         >
-          <User size={16} style={{ marginRight: "5px" }} /> User Actions
+          <User
+            size={16}
+            style={{
+              marginRight: "5px",
+            }}
+          />{" "}
+          User Actions
         </button>
         <button
           className={`tab-button ${activeTab === "app_log" ? "active" : ""}`}
           onClick={() => setActiveTab("app_log")}
+          type="button"
+          aria-pressed={activeTab === "app_log"}
         >
-          <FileText size={16} style={{ marginRight: "5px" }} /> App Log
+          <FileText
+            size={16}
+            style={{
+              marginRight: "5px",
+            }}
+          />{" "}
+          App Log
         </button>
         <button
           className={`tab-button ${activeTab === "tasks" ? "active" : ""}`}
           onClick={() => setActiveTab("tasks")}
+          type="button"
+          aria-pressed={activeTab === "tasks"}
         >
-          <Activity size={16} style={{ marginRight: "5px" }} /> Background Tasks
+          <Activity
+            size={16}
+            style={{
+              marginRight: "5px",
+            }}
+          />{" "}
+          Background Tasks
         </button>
       </div>
 
@@ -177,13 +213,21 @@ const AuditLog = () => {
             {loading && logs.length === 0 ? (
               <div
                 className="container"
-                style={{ textAlign: "center", padding: "20px" }}
+                style={{
+                  textAlign: "center",
+                  padding: "20px",
+                }}
               >
                 Loading logs...
               </div>
             ) : (
               <div className="table-responsive-wrapper">
-                <table className="server-table" style={{ width: "100%" }}>
+                <table
+                  className="server-table"
+                  style={{
+                    width: "100%",
+                  }}
+                >
                   <thead>
                     <tr>
                       <th>Timestamp</th>
@@ -252,8 +296,8 @@ const AuditLog = () => {
         {activeTab === "app_log" && (
           <div
             style={{
-              background: "#1e1e1e",
-              color: "#d4d4d4",
+              background: "var(--bsm-console)",
+              color: "var(--text-color)",
               padding: "15px",
               fontFamily: "monospace",
               fontSize: "0.9em",
@@ -266,12 +310,22 @@ const AuditLog = () => {
             }}
           >
             {appLogLines.length === 0 ? (
-              <div style={{ color: "#666", fontStyle: "italic" }}>
+              <div
+                style={{
+                  color: "var(--text-color-secondary)",
+                  fontStyle: "italic",
+                }}
+              >
                 Waiting for application logs...
               </div>
             ) : (
               appLogLines.map((line, idx) => (
-                <div key={idx} style={{ minHeight: "1.2em" }}>
+                <div
+                  key={idx}
+                  style={{
+                    minHeight: "1.2em",
+                  }}
+                >
                   {line}
                 </div>
               ))
@@ -285,13 +339,21 @@ const AuditLog = () => {
             {loading && tasks.length === 0 ? (
               <div
                 className="container"
-                style={{ textAlign: "center", padding: "20px" }}
+                style={{
+                  textAlign: "center",
+                  padding: "20px",
+                }}
               >
                 Loading tasks...
               </div>
             ) : (
               <div className="table-responsive-wrapper">
-                <table className="server-table" style={{ width: "100%" }}>
+                <table
+                  className="server-table"
+                  style={{
+                    width: "100%",
+                  }}
+                >
                   <thead>
                     <tr>
                       <th>Task ID</th>
@@ -371,5 +433,4 @@ const AuditLog = () => {
     </div>
   );
 };
-
 export default AuditLog;

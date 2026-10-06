@@ -69,7 +69,7 @@ describe("Sidebar", () => {
 
     // Wait for user and servers to load (splash text is a good indicator or overview link)
     await waitFor(() => {
-      expect(screen.getByText("Overview")).toBeInTheDocument();
+      expect(screen.getByText("Platform overview")).toBeInTheDocument();
     });
 
     expect(screen.getByText("Monitor")).toBeInTheDocument();
@@ -116,7 +116,7 @@ describe("Sidebar", () => {
     });
 
     await waitFor(() =>
-      expect(screen.getByText("Overview")).toBeInTheDocument(),
+      expect(screen.getByText("Platform overview")).toBeInTheDocument(),
     );
 
     const collapseBtn = screen.getByRole("button", {
@@ -127,7 +127,7 @@ describe("Sidebar", () => {
     });
 
     await waitFor(() => {
-      expect(screen.queryByText("Overview")).not.toBeInTheDocument();
+      expect(screen.getByLabelText("Main navigation")).toHaveClass("collapsed");
     });
 
     const expandBtn = screen.getByRole("button", { name: "Expand Sidebar" });
@@ -136,7 +136,7 @@ describe("Sidebar", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText("Overview")).toBeInTheDocument();
+      expect(screen.getByText("Platform overview")).toBeInTheDocument();
     });
   });
 

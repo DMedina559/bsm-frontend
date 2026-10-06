@@ -1,21 +1,33 @@
 {
-  "name": "Bedrock Server Manager",
-  "short_name": "Bedrock Server Manager",
+  "name": "Bedrock Server Manager 4.0",
+  "short_name": "Bedrock Manager",
   "icons": [
     {
       "src": "image/icon/web-app-manifest-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any"
     },
     {
       "src": "image/icon/web-app-manifest-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "image/icon/web-app-manifest-maskable-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "image/icon/web-app-manifest-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ],
-  "theme_color": "#4CAF50",
-  "background_color": "#4a7f4c",
+  "theme_color": "#00ed95",
+  "background_color": "#030b0d",
   "display": "standalone"
 }
