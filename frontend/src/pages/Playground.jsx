@@ -3,7 +3,6 @@ import JSON5 from "json5";
 import DynamicPage from "../components/DynamicPage";
 import { useToast } from "../ToastContext";
 import { Play } from "lucide-react";
-
 const DEFAULT_JSON = `{
   "type": "Container",
   "children": [
@@ -23,12 +22,10 @@ const DEFAULT_JSON = `{
     }
   ]
 }`;
-
 const Playground = () => {
   const [jsonInput, setJsonInput] = useState(DEFAULT_JSON);
   const [schemaJson, setSchemaJson] = useState(null);
   const { addToast } = useToast();
-
   const handleRender = () => {
     try {
       // First try standard JSON parsing
@@ -55,7 +52,6 @@ const Playground = () => {
       }
     }
   };
-
   return (
     <div
       style={{
@@ -72,6 +68,8 @@ const Playground = () => {
       <div className="card">
         <h3>JSON Input</h3>
         <textarea
+          aria-label="JSON schema"
+          className="form-input"
           style={{
             width: "100%",
             height: "300px",
@@ -94,8 +92,17 @@ const Playground = () => {
             justifyContent: "flex-end",
           }}
         >
-          <button className="action-button primary" onClick={handleRender}>
-            <Play size={16} style={{ marginRight: "5px" }} />
+          <button
+            className="action-button primary"
+            onClick={handleRender}
+            type="button"
+          >
+            <Play
+              size={16}
+              style={{
+                marginRight: "5px",
+              }}
+            />
             Render Page
           </button>
         </div>
@@ -123,5 +130,4 @@ const Playground = () => {
     </div>
   );
 };
-
 export default Playground;

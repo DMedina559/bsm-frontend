@@ -1,5 +1,7 @@
+import { useRequestTracker } from "../utils/useRequestTracker";
+import Modal from "./Modal";
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { get, post } from "../api";
+import { get, post, resolveApiUrl } from "../api";
 import { useToast } from "../ToastContext";
 import { useSearchParams } from "react-router-dom";
 import { useServer } from "../ServerContext";
@@ -41,7 +43,6 @@ import {
   Cell,
   Legend,
 } from "recharts";
-
 import "../styles/DynamicPage.css";
 import { isSafeUrl } from "../utils/urlValidation";
 import { logger } from "../utils/logger";
@@ -66,7 +67,12 @@ const ComponentRegistry = {
   Row: ({ children, gap = "10px", className = "" }) => (
     <div
       className={className}
-      style={{ display: "flex", flexDirection: "row", gap, flexWrap: "wrap" }}
+      style={{
+        display: "flex",
+        flexDirection: "row",
+        gap,
+        flexWrap: "wrap",
+      }}
     >
       {children}
     </div>
@@ -74,13 +80,17 @@ const ComponentRegistry = {
   Column: ({ children, gap = "10px", className = "", flex = 1 }) => (
     <div
       className={className}
-      style={{ display: "flex", flexDirection: "column", gap, flex }}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap,
+        flex,
+      }}
     >
       {children}
     </div>
   ),
   Divider: ({ className = "" }) => <hr className={`divider ${className}`} />,
-
   // Typography
   Text: ({ content, variant = "body", className = "" }) => {
     const Tag =
@@ -102,8 +112,14 @@ const ComponentRegistry = {
     <span className={`badge ${variant} ${className}`}>{content}</span>
   ),
   CodeBlock: ({ content, title, className = "" }) => {
-    const copyToClipboard = () => {
-      navigator.clipboard.writeText(content);
+    const { addToast } = useToast();
+    const copyToClipboard = async () => {
+      try {
+        await navigator.clipboard.writeText(content);
+        addToast("Copied to clipboard", "success");
+      } catch {
+        addToast("Could not copy. Select and copy the text manually.", "error");
+      }
     };
     return (
       <div className={`code-block ${className}`}>
@@ -119,6 +135,8 @@ const ComponentRegistry = {
                 cursor: "pointer",
               }}
               title="Copy"
+              type="button"
+              aria-label="Copy"
             >
               <ComponentRegistry.Icon name="Copy" size={14} />
             </button>
@@ -128,7 +146,6 @@ const ComponentRegistry = {
       </div>
     );
   },
-
   // Basic Inputs
   Button: ({
     label,
@@ -138,13 +155,23 @@ const ComponentRegistry = {
     disabled = false,
     className = "",
   }) => {
-    const Icon = icon ? ComponentRegistry.Icon({ name: icon, size: 16 }) : null;
+    const Icon = icon
+      ? ComponentRegistry.Icon({
+          name: icon,
+          size: 16,
+        })
+      : null;
     return (
       <button
-        className={`action-button ${variant === "secondary" ? "secondary" : ""} ${variant === "danger" ? "danger" : ""} ${className}`}
+        className={`action-button ${variant === "secondary" ? "secondary" : ""} ${variant === "danger" ? "danger-button" : variant === "primary" ? "primary-button" : ""} ${className}`}
         onClick={onClick}
         disabled={disabled}
-        style={{ display: "flex", alignItems: "center", gap: "5px" }}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "5px",
+        }}
+        type="button"
       >
         {Icon}
         {label}
@@ -152,6 +179,10 @@ const ComponentRegistry = {
     );
   },
   Input: ({
+    id,
+    name,
+    label,
+    ariaLabel,
     type = "text",
     value,
     onChange,
@@ -161,6 +192,11 @@ const ComponentRegistry = {
     disabled = false,
   }) => (
     <input
+      id={id}
+      name={name}
+      aria-label={
+        ariaLabel || label || (name ? name.replace(/[_-]/g, " ") : undefined)
+      }
       type={type}
       value={value}
       onChange={(e) => onChange && onChange(e.target.value)}
@@ -171,6 +207,10 @@ const ComponentRegistry = {
     />
   ),
   Textarea: ({
+    id,
+    name,
+    label,
+    ariaLabel,
     value,
     onChange,
     placeholder,
@@ -180,6 +220,11 @@ const ComponentRegistry = {
     disabled = false,
   }) => (
     <textarea
+      id={id}
+      name={name}
+      aria-label={
+        ariaLabel || label || (name ? name.replace(/[_-]/g, " ") : undefined)
+      }
       value={value}
       onChange={(e) => onChange && onChange(e.target.value)}
       placeholder={placeholder}
@@ -187,10 +232,17 @@ const ComponentRegistry = {
       className={`form-input ${className}`}
       readOnly={readOnly}
       disabled={disabled}
-      style={{ width: "100%", resize: "vertical" }}
+      style={{
+        width: "100%",
+        resize: "vertical",
+      }}
     />
   ),
   Slider: ({
+    id,
+    name,
+    label,
+    ariaLabel,
     value = 0,
     onChange,
     min = 0,
@@ -201,9 +253,18 @@ const ComponentRegistry = {
   }) => (
     <div
       className={`slider-container ${className}`}
-      style={{ display: "flex", alignItems: "center", gap: "10px" }}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+      }}
     >
       <input
+        id={id}
+        name={name}
+        aria-label={
+          ariaLabel || label || (name ? name.replace(/[_-]/g, " ") : undefined)
+        }
         type="range"
         min={min}
         max={max}
@@ -211,7 +272,9 @@ const ComponentRegistry = {
         value={value}
         onChange={(e) => onChange && onChange(Number(e.target.value))}
         disabled={disabled}
-        style={{ flex: 1 }}
+        style={{
+          flex: 1,
+        }}
       />
       <span className="slider-value-display">{value}</span>
     </div>
@@ -223,9 +286,16 @@ const ComponentRegistry = {
     className = "",
     disabled = false,
     id,
+    name,
+    label,
+    ariaLabel,
   }) => (
     <select
       id={id}
+      name={name}
+      aria-label={
+        ariaLabel || label || (name ? name.replace(/[_-]/g, " ") : undefined)
+      }
       value={value}
       onChange={(e) => onChange && onChange(e.target.value)}
       className={`form-input ${className}`}
@@ -284,10 +354,22 @@ const ComponentRegistry = {
       {label && <span className="form-label-inline">{label}</span>}
     </label>
   ),
-  FileUpload: ({ id, accept, onChange, className = "" }) => (
+  FileUpload: ({
+    id,
+    name,
+    label,
+    ariaLabel,
+    accept,
+    onChange,
+    className = "",
+  }) => (
     <input
-      type="file"
       id={id}
+      name={name}
+      aria-label={
+        ariaLabel || label || (name ? name.replace(/[_-]/g, " ") : undefined)
+      }
+      type="file"
       accept={accept}
       onChange={(e) => onChange && onChange(e.target.files[0])}
       className={`form-input ${className}`}
@@ -303,13 +385,18 @@ const ComponentRegistry = {
     <button
       className={`action-button ${variant === "secondary" ? "secondary" : ""} ${className}`}
       onClick={onClick}
-      style={{ ...style, display: "flex", alignItems: "center", gap: "5px" }}
+      style={{
+        ...style,
+        display: "flex",
+        alignItems: "center",
+        gap: "5px",
+      }}
+      type="button"
     >
       <ComponentRegistry.Icon name="Download" size={16} />
       {label || "Download"}
     </button>
   ),
-
   // Media
   Image: ({ src, alt, width, height, className = "" }) => (
     <img
@@ -322,7 +409,9 @@ const ComponentRegistry = {
   ),
   iframe: ({ src, title, height = "400px", className = "" }) => {
     if (!isSafeUrl(src)) {
-      logger.warn(`[DynamicPage] Blocked unsafe iframe src`, { src });
+      logger.warn(`[DynamicPage] Blocked unsafe iframe src`, {
+        src,
+      });
       return (
         <div
           className={`dynamic-iframe ${className}`}
@@ -343,7 +432,7 @@ const ComponentRegistry = {
     return (
       <iframe
         src={src}
-        title={title}
+        title={title || "Plugin content"}
         height={height}
         className={`dynamic-iframe ${className}`}
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
@@ -352,23 +441,32 @@ const ComponentRegistry = {
   },
   Link: ({ href, label, target = "_self", className = "", icon }) => {
     const Icon = icon
-      ? ComponentRegistry.Icon({ name: icon, size: 14 })
+      ? ComponentRegistry.Icon({
+          name: icon,
+          size: 14,
+        })
       : target === "_blank"
-        ? ComponentRegistry.Icon({ name: "ExternalLink", size: 14 })
+        ? ComponentRegistry.Icon({
+            name: "ExternalLink",
+            size: 14,
+          })
         : null;
     return (
       <a
         href={href}
         target={target}
         className={`action-link ${className}`}
-        style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "5px",
+        }}
       >
         {label}
         {Icon}
       </a>
     );
   },
-
   // Advanced Visualizations
   Chart: ({
     type = "line",
@@ -379,7 +477,14 @@ const ComponentRegistry = {
     className = "",
     showLegend = false,
     layout = "horizontal",
-    colors = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d"],
+    colors = [
+      "var(--bsm-info)",
+      "var(--bsm-success)",
+      "var(--bsm-warning)",
+      "var(--bsm-chart-3)",
+      "var(--bsm-chart-1)",
+      "var(--bsm-chart-2)",
+    ],
     nameKey = "name",
     valueKey = "value",
   }) => {
@@ -387,16 +492,21 @@ const ComponentRegistry = {
       return (
         <div
           className={`chart-container ${className}`}
-          style={{ width: "100%", height: height }}
+          style={{
+            width: "100%",
+            height: height,
+          }}
         >
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "#333",
-                  border: "1px solid #555",
+                  backgroundColor: "var(--bsm-surface-raised)",
+                  border: "1px solid var(--border-color)",
                 }}
-                labelStyle={{ color: "#ccc" }}
+                labelStyle={{
+                  color: "var(--text-color-secondary)",
+                }}
               />
               {showLegend && <Legend />}
               <Pie
@@ -406,7 +516,7 @@ const ComponentRegistry = {
                 cx="50%"
                 cy="50%"
                 outerRadius="80%"
-                fill="#8884d8"
+                fill="var(--bsm-chart-1)"
                 label
               >
                 {Array.isArray(data) &&
@@ -422,37 +532,44 @@ const ComponentRegistry = {
         </div>
       );
     }
-
     const ChartComponent =
       type === "area" ? AreaChart : type === "bar" ? BarChart : LineChart;
     const DataComponent = type === "area" ? Area : type === "bar" ? Bar : Line;
     const isVertical = layout === "vertical";
-
     return (
       <div
         className={`chart-container ${className}`}
-        style={{ width: "100%", height: height }}
+        style={{
+          width: "100%",
+          height: height,
+        }}
       >
         <ResponsiveContainer width="100%" height="100%">
           <ChartComponent data={data} layout={layout}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
             {isVertical ? (
               <>
-                <XAxis type="number" stroke="#888" />
-                <YAxis dataKey={xAxis} type="category" stroke="#888" />
+                <XAxis type="number" stroke="var(--text-color-secondary)" />
+                <YAxis
+                  dataKey={xAxis}
+                  type="category"
+                  stroke="var(--text-color-secondary)"
+                />
               </>
             ) : (
               <>
-                <XAxis dataKey={xAxis} stroke="#888" />
-                <YAxis stroke="#888" />
+                <XAxis dataKey={xAxis} stroke="var(--text-color-secondary)" />
+                <YAxis stroke="var(--text-color-secondary)" />
               </>
             )}
             <Tooltip
               contentStyle={{
-                backgroundColor: "#333",
-                border: "1px solid #555",
+                backgroundColor: "var(--bsm-surface-raised)",
+                border: "1px solid var(--border-color)",
               }}
-              labelStyle={{ color: "#ccc" }}
+              labelStyle={{
+                color: "var(--text-color-secondary)",
+              }}
             />
             {showLegend && <Legend />}
             {series &&
@@ -476,27 +593,27 @@ const ComponentRegistry = {
   LogViewer: ({ lines, height = 200, className = "" }) => {
     const containerRef = useRef(null);
     const [autoScroll, setAutoScroll] = useState(true);
-
     const handleScroll = () => {
       const el = containerRef.current;
       if (!el) return;
       const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= 40;
       setAutoScroll(isAtBottom);
     };
-
     useEffect(() => {
       const el = containerRef.current;
       if (el && autoScroll) {
         el.scrollTop = el.scrollHeight;
       }
     }, [lines, autoScroll]);
-
     return (
       <div
         ref={containerRef}
         onScroll={handleScroll}
         className={`log-viewer ${className}`}
-        style={{ height, position: "relative" }}
+        style={{
+          height,
+          position: "relative",
+        }}
       >
         {!lines || lines.length === 0 ? (
           <div className="log-placeholder">Waiting for logs...</div>
@@ -523,7 +640,7 @@ const ComponentRegistry = {
               bottom: "10px",
               float: "right",
               background: "rgba(0, 123, 255, 0.85)",
-              color: "#fff",
+              color: "var(--text-color)",
               border: "none",
               borderRadius: "12px",
               padding: "4px 10px",
@@ -578,7 +695,10 @@ const ComponentRegistry = {
     return (
       <div
         className={`progress-bar-container ${className}`}
-        style={{ width: "100%", margin: "8px 0" }}
+        style={{
+          width: "100%",
+          margin: "8px 0",
+        }}
       >
         <div
           style={{
@@ -605,11 +725,11 @@ const ComponentRegistry = {
               height: "100%",
               backgroundColor:
                 variant === "danger"
-                  ? "#dc3545"
+                  ? "var(--bsm-danger)"
                   : variant === "warning"
-                    ? "#ffc107"
+                    ? "var(--bsm-warning)"
                     : variant === "success"
-                      ? "#28a745"
+                      ? "var(--bsm-success)"
                       : "var(--primary-color, #007bff)",
               transition: "width 0.3s ease",
             }}
@@ -639,7 +759,6 @@ const ComponentRegistry = {
       </div>
     );
   },
-
   // Icons
   Icon: ({ name, size = 20, className = "" }) => {
     const icons = {
@@ -665,7 +784,6 @@ const ComponentRegistry = {
     const LucideIcon = icons[name] || Info;
     return <LucideIcon size={size} className={className} />;
   },
-
   // Advanced
   Table: ({ headers, rows, className = "" }) => (
     <div className="table-container">
@@ -693,34 +811,32 @@ const ComponentRegistry = {
     const [isOpen, setIsOpen] = useState(defaultOpen);
     return (
       <div className={`accordion ${className}`}>
-        <div className="accordion-header" onClick={() => setIsOpen(!isOpen)}>
+        <button
+          type="button"
+          className="accordion-header"
+          aria-expanded={isOpen}
+          onClick={() => setIsOpen(!isOpen)}
+        >
           {title}
           <ComponentRegistry.Icon
             name={isOpen ? "ChevronUp" : "ChevronDown"}
             size={16}
           />
-        </div>
+        </button>
         {isOpen && <div className="accordion-body">{children}</div>}
       </div>
     );
   },
-  Modal: ({ isOpen, onClose, title, children, className = "" }) => {
-    if (!isOpen) return null;
-    return (
-      <div className="dynamic-modal-overlay">
-        <div className={`dynamic-modal-content ${className}`}>
-          <div className="dynamic-modal-header">
-            <h3>{title}</h3>
-            <button className="dynamic-modal-close" onClick={onClose}>
-              <ComponentRegistry.Icon name="X" size={20} />
-            </button>
-          </div>
-          <div className="dynamic-modal-body">{children}</div>
-        </div>
-      </div>
-    );
-  },
-
+  Modal: ({ isOpen, onClose, title, children, className = "" }) => (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={title}
+      className={className}
+    >
+      {children}
+    </Modal>
+  ),
   // Navigation
   Tabs: ({ children, activeTab, onTabChange, className = "" }) => {
     const [localActive, setLocalActive] = useState(activeTab || 0);
@@ -734,25 +850,21 @@ const ComponentRegistry = {
 
     // If children is not an array, make it one
     const childArray = React.Children.toArray(children);
-
     const tabHeaders = childArray.map((child, index) => {
       return {
         id: child.props.id || index,
         label: child.props.label || `Tab ${index + 1}`,
       };
     });
-
     const isControlled = onTabChange !== undefined;
     const currentTabId =
       isControlled && activeTab !== undefined ? activeTab : localActive;
-
     const handleTabClick = (id) => {
       if (!isControlled) {
         setLocalActive(id);
       }
       if (onTabChange) onTabChange(id);
     };
-
     return (
       <div className={`tabs-container ${className}`}>
         <div
@@ -760,7 +872,7 @@ const ComponentRegistry = {
           style={{
             display: "flex",
             gap: "10px",
-            borderBottom: "1px solid #ccc",
+            borderBottom: "1px solid var(--border-color)",
             marginBottom: "15px",
           }}
         >
@@ -781,6 +893,8 @@ const ComponentRegistry = {
                 fontWeight: currentTabId === header.id ? "bold" : "normal",
                 color: "inherit",
               }}
+              type="button"
+              aria-pressed={currentTabId === header.id}
             >
               {header.label}
             </button>
@@ -815,7 +929,6 @@ const ComponentRegistry = {
     />
   ),
 };
-
 const DynamicPage = ({ schemaJson }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const dataUrl = searchParams.get("url");
@@ -835,8 +948,10 @@ const DynamicPage = ({ schemaJson }) => {
   const [socketData, setSocketData] = useState({});
 
   // Using useCallback to define fetchSchema so it can be added to dependencies
+  const beginRequest = useRequestTracker(`${dataUrl}:${selectedServer}`);
   const fetchSchema = useCallback(
     async (url, server) => {
+      const requestTicket = beginRequest("schema");
       setLoading(true);
       setError(null);
       try {
@@ -854,10 +969,9 @@ const DynamicPage = ({ schemaJson }) => {
         if (server && !fetchUrlObj.searchParams.has("server")) {
           fetchUrlObj.searchParams.append("server", server);
         }
-
         const relativeFetchUrl = fetchUrlObj.pathname + fetchUrlObj.search;
-
         const response = await get(relativeFetchUrl);
+        if (!requestTicket.current()) return;
         // Verify if response is valid schema
         if (
           response &&
@@ -871,15 +985,16 @@ const DynamicPage = ({ schemaJson }) => {
           setError("Invalid page definition.");
         }
       } catch (err) {
+        if (!requestTicket.current()) return;
         logger.error("[DynamicPage] Error loading page", {
           error: err,
         });
         setError(err.message || "Error loading page.");
       } finally {
-        setLoading(false);
+        if (requestTicket.current()) setLoading(false);
       }
     },
-    [searchParams],
+    [searchParams, beginRequest],
   ); // Dependent on searchParams
 
   useEffect(() => {
@@ -910,7 +1025,6 @@ const DynamicPage = ({ schemaJson }) => {
       schema && typeof schema === "object" && !Array.isArray(schema)
         ? schema.refreshInterval
         : null;
-
     if (intervalMs && dataUrl && !schemaJson) {
       const interval =
         Number(intervalMs) < 1000
@@ -922,7 +1036,6 @@ const DynamicPage = ({ schemaJson }) => {
         }, interval);
       }
     }
-
     return () => {
       if (refreshIntervalId) clearInterval(refreshIntervalId);
     };
@@ -931,16 +1044,13 @@ const DynamicPage = ({ schemaJson }) => {
   // Handle WebSocket subscriptions defined in schema
   useEffect(() => {
     if (!schema || !schema.websocketSubscriptions || !isConnected) return;
-
     const topics = schema.websocketSubscriptions
       .map((sub) => {
         // Replace placeholders like {server} with actual values
         return sub.replace("{server}", selectedServer || "");
       })
       .filter(Boolean);
-
     topics.forEach((topic) => subscribe(topic));
-
     return () => {
       topics.forEach((topic) => unsubscribe(topic));
     };
@@ -953,27 +1063,29 @@ const DynamicPage = ({ schemaJson }) => {
     // Update socketData map
     setSocketData((prev) => {
       const topic = lastMessage.topic;
-      return { ...prev, [topic]: lastMessage };
+      return {
+        ...prev,
+        [topic]: lastMessage,
+      };
     });
   }, [lastMessage]);
-
   const handleAction = async (actionDef) => {
     if (!actionDef) return;
-
     if (actionDef.type === "api_call") {
       try {
         // Merge formState into payload if configured
         let payload = actionDef.payload || {};
         if (actionDef.includeFormState) {
-          payload = { ...payload, ...formState };
+          payload = {
+            ...payload,
+            ...formState,
+          };
         }
-
         let res;
         // Check for File objects in payload -> use FormData
         const hasFile = Object.values(payload).some(
           (val) => val instanceof File,
         );
-
         if (hasFile) {
           const formData = new FormData();
           Object.entries(payload).forEach(([key, value]) => {
@@ -986,7 +1098,6 @@ const DynamicPage = ({ schemaJson }) => {
         } else {
           res = await post(actionDef.endpoint, payload);
         }
-
         if (res && res.status === "success") {
           addToast(res.message || "Action successful", "success");
           // Refresh logic if needed
@@ -1012,12 +1123,10 @@ const DynamicPage = ({ schemaJson }) => {
         if (token) {
           headers["Authorization"] = `Bearer ${token}`;
         }
-
-        const response = await fetch(actionDef.endpoint, {
+        const response = await fetch(resolveApiUrl(actionDef.endpoint), {
           headers,
         });
         if (!response.ok) throw new Error("Download failed");
-
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -1051,15 +1160,15 @@ const DynamicPage = ({ schemaJson }) => {
       setActiveModalId(null);
     }
   };
-
   const handleInputChange = (id, value) => {
-    setFormState((prev) => ({ ...prev, [id]: value }));
+    setFormState((prev) => ({
+      ...prev,
+      [id]: value,
+    }));
   };
-
   const renderNode = (node, key) => {
     if (!node) return null;
     if (typeof node === "string") return node;
-
     const Component = ComponentRegistry[node.type];
     if (!Component) {
       logger.warn(`[DynamicPage] Unknown component type`, {
@@ -1069,20 +1178,24 @@ const DynamicPage = ({ schemaJson }) => {
       return (
         <div
           key={key}
-          style={{ color: "red", border: "1px dashed red", padding: "5px" }}
+          style={{
+            color: "red",
+            border: "1px dashed red",
+            padding: "5px",
+          }}
         >
           Unknown component: {node.type}
         </div>
       );
     }
-
-    const props = { ...node.props };
+    const props = {
+      ...node.props,
+    };
 
     // Inject Socket Data if needed
     if (props.socketTopic) {
       const topic = props.socketTopic.replace("{server}", selectedServer || "");
       const latestMsg = socketData[topic];
-
       props.latestSocketMessage = latestMsg;
     }
 
@@ -1112,12 +1225,10 @@ const DynamicPage = ({ schemaJson }) => {
       if (Array.isArray(inArray)) return inArray.includes(fieldValue);
       return !!fieldValue;
     };
-
     if (props.visibleIf) {
       const isVisible = evaluateRule(props.visibleIf);
       if (isVisible === false) return null;
     }
-
     if (props.disabledIf) {
       const isDisabled = evaluateRule(props.disabledIf);
       if (isDisabled !== undefined) {
@@ -1150,18 +1261,18 @@ const DynamicPage = ({ schemaJson }) => {
               ? stateValue
               : props.value || props.defaultValue || "";
         }
-
         props.onChange = (val) => {
           handleInputChange(formKey, val);
           if (props.onChangeAction) {
-            const action = { ...props.onChangeAction };
+            const action = {
+              ...props.onChangeAction,
+            };
 
             // If it's a navigation action, we might want to dynamically set a param based on the value
             if (action.type === "navigate" && action.dynamicParam) {
               if (!action.params) action.params = {};
               action.params[action.dynamicParam] = val;
             }
-
             handleAction(action);
           }
         };
@@ -1169,14 +1280,12 @@ const DynamicPage = ({ schemaJson }) => {
         if (node.type === "Input") props.readOnly = true;
       }
     }
-
     if (node.type === "FileUpload") {
       const formKey = props.id || props.name;
       if (formKey) {
         props.onChange = (file) => handleInputChange(formKey, file);
       }
     }
-
     if (node.type === "FileDownload") {
       props.onClick = () =>
         handleAction({
@@ -1191,12 +1300,16 @@ const DynamicPage = ({ schemaJson }) => {
       props.isOpen = activeModalId === props.id;
       props.onClose = () => setActiveModalId(null);
     }
-
     if (node.type === "DraggableList") {
       props.onReorder = (newItems) => {
         if (props.onReorderAction) {
-          const action = { ...props.onReorderAction };
-          action.payload = { ...action.payload, items: newItems };
+          const action = {
+            ...props.onReorderAction,
+          };
+          action.payload = {
+            ...action.payload,
+            items: newItems,
+          };
           handleAction(action);
         }
       };
@@ -1232,18 +1345,15 @@ const DynamicPage = ({ schemaJson }) => {
       props.onClick = () => handleAction(props.onClickAction);
       // delete props.onClickAction; // keep it or remove it, doesn't matter much for HTML props unless it leaks
     }
-
     const children = node.children
       ? node.children.map((child, i) => renderNode(child, i))
       : null;
-
     return (
       <Component key={key} {...props}>
         {children}
       </Component>
     );
   };
-
   if (loading) return <div className="container">Loading...</div>;
   if (error)
     return (
@@ -1252,7 +1362,6 @@ const DynamicPage = ({ schemaJson }) => {
       </div>
     );
   if (!schema) return <div className="container">No schema loaded.</div>;
-
   return (
     <div className="dynamic-page-wrapper">
       {/* If schema is an array, render root nodes, else render single root */}
@@ -1273,17 +1382,14 @@ const ChartWrapper = ({
   ...props
 }) => {
   const [data, setData] = useState(initialData || []);
-
   useEffect(() => {
     if (initialData !== undefined && !latestSocketMessage) {
       setData(initialData);
     }
   }, [initialData, latestSocketMessage]);
-
   useEffect(() => {
     if (latestSocketMessage && latestSocketMessage.data !== undefined) {
       const incoming = latestSocketMessage.data;
-
       if (
         updateMode === "replace" ||
         (Array.isArray(incoming) && updateMode !== "append")
@@ -1304,17 +1410,14 @@ const ChartWrapper = ({
       }
     }
   }, [latestSocketMessage, updateMode, maxPoints]);
-
   return <ComponentRegistry.Chart data={data} {...props} />;
 };
-
 const LogViewerWrapper = ({
   latestSocketMessage,
   lines: initialLines,
   ...props
 }) => {
   const [lines, setLines] = useState(initialLines || []);
-
   useEffect(() => {
     if (latestSocketMessage && latestSocketMessage.data) {
       const newContent = latestSocketMessage.data;
@@ -1323,14 +1426,11 @@ const LogViewerWrapper = ({
       if (newLines.length > 0 && newLines[newLines.length - 1] === "") {
         newLines.pop();
       }
-
       setLines((prev) => [...prev, ...newLines].slice(-1000));
     }
   }, [latestSocketMessage]);
-
   return <ComponentRegistry.LogViewer lines={lines} {...props} />;
 };
-
 const StatCardWrapper = ({
   latestSocketMessage,
   value: initialValue,
@@ -1338,7 +1438,6 @@ const StatCardWrapper = ({
   ...props
 }) => {
   const [value, setValue] = useState(initialValue);
-
   useEffect(() => {
     if (latestSocketMessage && latestSocketMessage.data && dataKey) {
       const keys = dataKey.split(".");
@@ -1357,8 +1456,6 @@ const StatCardWrapper = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [latestSocketMessage]);
-
   return <ComponentRegistry.StatCard value={value} {...props} />;
 };
-
 export default DynamicPage;

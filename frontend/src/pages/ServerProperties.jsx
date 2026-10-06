@@ -1,3 +1,5 @@
+import { useRequestTracker } from "../utils/useRequestTracker";
+import Modal from "../components/Modal";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
@@ -15,7 +17,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
 import propertiesLang from "react-syntax-highlighter/dist/esm/languages/hljs/properties";
 import atomOneDark from "react-syntax-highlighter/dist/esm/styles/hljs/atom-one-dark";
-
 SyntaxHighlighter.registerLanguage("properties", propertiesLang);
 
 // Categorize common properties for better organization
@@ -73,12 +74,13 @@ const PROPERTY_GROUPS = {
     "enable-profiler",
   ],
 };
-
 const ServerProperties = () => {
   const { selectedServer } = useServer();
   const [properties, setProperties] = useState([]);
   const [rawContent, setRawContent] = useState("");
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [savedSnapshot, setSavedSnapshot] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showRawModal, setShowRawModal] = useState(false);
   const { addToast } = useToast();
@@ -92,11 +94,13 @@ const ServerProperties = () => {
 
   // Collapsible state for sections
   const [collapsedSections, setCollapsedSections] = useState({});
-
+  const beginRequest = useRequestTracker(selectedServer + ":" + "");
   const fetchProperties = useCallback(async () => {
+    const requestTicket = beginRequest("fetchProperties");
     setLoading(true);
     try {
       const data = await get(`/api/server/${selectedServer}/properties/get`);
+      if (!requestTicket.current()) return false;
       if (data && data.status === "success" && data.properties) {
         // Convert object to array for mapping
         const propsArray = Object.entries(data.properties).map(
@@ -107,6 +111,7 @@ const ServerProperties = () => {
         );
         propsArray.sort((a, b) => a.key.localeCompare(b.key));
         setProperties(propsArray);
+        setSavedSnapshot(JSON.stringify(propsArray));
         if (data.raw_content !== undefined) {
           setRawContent(data.raw_content);
         }
@@ -117,81 +122,91 @@ const ServerProperties = () => {
         return false;
       }
     } catch (error) {
+      if (!requestTicket.current()) return false;
       addToast(error.message || "Error fetching properties", "error");
       return false;
     } finally {
-      setLoading(false);
+      if (requestTicket.current()) {
+        setLoading(false);
+      }
     }
-  }, [selectedServer, addToast]);
-
+  }, [selectedServer, addToast, beginRequest]);
   useEffect(() => {
     if (selectedServer) {
       // Initial fetch
       fetchProperties();
     }
   }, [selectedServer, fetchProperties]);
-
   const handleRefresh = async () => {
     const success = await fetchProperties();
     if (success) {
       addToast("Properties refreshed", "success");
     }
   };
-
   const handleSave = async (e) => {
     e.preventDefault();
     if (!selectedServer) return;
-
-    setLoading(true);
+    if (saving) return;
+    setSaving(true);
     const propsObj = properties.reduce((acc, curr) => {
       acc[curr.key] = curr.value;
       return acc;
     }, {});
-
     try {
       await post(`/api/server/${selectedServer}/properties/set`, {
         properties: propsObj,
       });
+      setSavedSnapshot(JSON.stringify(properties));
       addToast("Server properties saved successfully.", "success");
-
       if (setupFlow) {
         navigate("/access-control", {
-          state: { setupFlow: true, tab: "allowlist" },
+          state: {
+            setupFlow: true,
+            tab: "allowlist",
+          },
         });
       }
     } catch (error) {
       addToast(error.message || "Failed to save properties.", "error");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
-
   const handleChange = (key, newValue) => {
     setProperties((prev) =>
-      prev.map((p) => (p.key === key ? { ...p, value: newValue } : p)),
+      prev.map((p) =>
+        p.key === key
+          ? {
+              ...p,
+              value: newValue,
+            }
+          : p,
+      ),
     );
   };
-
   const toggleSection = (section) => {
-    setCollapsedSections((prev) => ({ ...prev, [section]: !prev[section] }));
+    setCollapsedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
   };
-
   const handleAddCustomProperty = (e) => {
     e.preventDefault();
     if (!newPropKey.trim()) {
       addToast("Property key cannot be empty.", "error");
       return;
     }
-
     const exists = properties.some((p) => p.key === newPropKey.trim());
     if (exists) {
       addToast(`Property '${newPropKey}' already exists.`, "warning");
       return;
     }
-
     setProperties((prev) => [
       ...prev,
-      { key: newPropKey.trim(), value: newPropValue },
+      {
+        key: newPropKey.trim(),
+        value: newPropValue,
+      },
     ]);
     setNewPropKey("");
     setNewPropValue("");
@@ -201,16 +216,15 @@ const ServerProperties = () => {
   // Group properties based on PROPERTY_GROUPS and filter by searchTerm
   const groupedProperties = useMemo(() => {
     // Initialize groups defensively
-    const groups = { Other: [] };
+    const groups = {
+      Other: [],
+    };
     Object.keys(PROPERTY_GROUPS).forEach((key) => {
       groups[key] = [];
     });
-
     const lowerSearch = searchTerm.toLowerCase();
-
     properties.forEach((prop) => {
       if (!prop.key.toLowerCase().includes(lowerSearch)) return;
-
       let placed = false;
       for (const [groupName, keys] of Object.entries(PROPERTY_GROUPS)) {
         if (keys.includes(prop.key)) {
@@ -224,10 +238,8 @@ const ServerProperties = () => {
         groups.Other.push(prop);
       }
     });
-
     return groups;
   }, [properties, searchTerm]);
-
   const renderInput = (prop) => {
     const key = prop.key;
     const value = prop.value;
@@ -257,11 +269,15 @@ const ServerProperties = () => {
       ].includes(key) ||
       value === "true" ||
       value === "false";
-
     if (isBoolean) {
       const isChecked = value === "true";
       return (
-        <div className="switch-wrapper" style={{ marginTop: "5px" }}>
+        <div
+          className="switch-wrapper"
+          style={{
+            marginTop: "5px",
+          }}
+        >
           <label className="switch" htmlFor={key}>
             <input
               type="checkbox"
@@ -279,7 +295,6 @@ const ServerProperties = () => {
         </div>
       );
     }
-
     if (key === "transport") {
       return (
         <select
@@ -293,7 +308,6 @@ const ServerProperties = () => {
         </select>
       );
     }
-
     if (key === "content-log-level") {
       return (
         <select
@@ -309,7 +323,6 @@ const ServerProperties = () => {
         </select>
       );
     }
-
     if (key === "compression-algorithm") {
       return (
         <select
@@ -323,7 +336,6 @@ const ServerProperties = () => {
         </select>
       );
     }
-
     if (key === "chat-restriction") {
       return (
         <select
@@ -338,7 +350,6 @@ const ServerProperties = () => {
         </select>
       );
     }
-
     if (key === "script-debugger-auto-attach") {
       return (
         <select
@@ -369,7 +380,6 @@ const ServerProperties = () => {
         </select>
       );
     }
-
     if (key === "difficulty") {
       return (
         <select
@@ -385,7 +395,6 @@ const ServerProperties = () => {
         </select>
       );
     }
-
     if (key === "default-player-permission-level") {
       return (
         <select
@@ -412,7 +421,6 @@ const ServerProperties = () => {
       />
     );
   };
-
   if (!selectedServer) {
     return (
       <div className="container">
@@ -431,7 +439,6 @@ const ServerProperties = () => {
       </div>
     );
   }
-
   return (
     <div className="container">
       <div
@@ -456,12 +463,15 @@ const ServerProperties = () => {
             <button
               className="action-button secondary"
               onClick={handleRefresh}
-              disabled={loading}
+              disabled={loading || saving}
               title="Reload properties"
+              type="button"
             >
               <RefreshCw
                 size={16}
-                style={{ marginRight: "5px" }}
+                style={{
+                  marginRight: "5px",
+                }}
                 className={loading ? "spin" : ""}
               />{" "}
               Refresh
@@ -471,22 +481,41 @@ const ServerProperties = () => {
             className="action-button secondary"
             onClick={() => setShowRawModal(true)}
             title="View Properties File"
+            type="button"
           >
-            <FileText size={16} style={{ marginRight: "5px" }} /> View File
+            <FileText
+              size={16}
+              style={{
+                marginRight: "5px",
+              }}
+            />{" "}
+            View File
           </button>
           <button
             className="action-button"
-            onClick={handleSave}
-            disabled={loading}
+            form="server-properties-form"
+            disabled={loading || saving}
+            type="submit"
           >
             {setupFlow ? (
               <>
                 Save & Continue{" "}
-                <ArrowRight size={16} style={{ marginLeft: "5px" }} />
+                <ArrowRight
+                  size={16}
+                  style={{
+                    marginLeft: "5px",
+                  }}
+                />
               </>
             ) : (
               <>
-                <Save size={16} style={{ marginRight: "5px" }} /> Save Changes
+                <Save
+                  size={16}
+                  style={{
+                    marginRight: "5px",
+                  }}
+                />{" "}
+                Save Changes
               </>
             )}
           </button>
@@ -496,15 +525,28 @@ const ServerProperties = () => {
       {setupFlow && (
         <div
           className="message-box message-info"
-          style={{ marginBottom: "20px" }}
+          style={{
+            marginBottom: "20px",
+          }}
         >
           <strong>Setup Wizard (Step 1/5):</strong> Configure your server
           properties below.
         </div>
       )}
 
+      {savedSnapshot !== null &&
+        savedSnapshot !== JSON.stringify(properties) && (
+          <p className="save-state" role="status">
+            Unsaved changes
+          </p>
+        )}
       {/* Search Bar */}
-      <div style={{ marginBottom: "20px", position: "relative" }}>
+      <div
+        style={{
+          marginBottom: "20px",
+          position: "relative",
+        }}
+      >
         <Search
           size={18}
           style={{
@@ -512,324 +554,376 @@ const ServerProperties = () => {
             left: "10px",
             top: "50%",
             transform: "translateY(-50%)",
-            color: "#888",
+            color: "var(--text-color-secondary)",
           }}
         />
         <input
           type="text"
           placeholder="Filter properties..."
+          aria-label="Filter server properties"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="form-input"
-          style={{ paddingLeft: "35px", width: "100%", maxWidth: "400px" }}
+          style={{
+            paddingLeft: "35px",
+            width: "100%",
+            maxWidth: "400px",
+          }}
         />
       </div>
 
       {loading && properties.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "20px" }}>
+        <div
+          style={{
+            textAlign: "center",
+            padding: "20px",
+          }}
+        >
           <div className="spinner"></div> Loading properties...
         </div>
       ) : (
-        <form onSubmit={handleSave} className="form-group">
-          {Object.entries(groupedProperties).map(([groupName, groupProps]) => {
-            if (groupProps.length === 0) return null;
-            const isCollapsed = collapsedSections[groupName];
+        <form
+          id="server-properties-form"
+          onSubmit={handleSave}
+          className="form-group"
+          aria-busy={saving}
+        >
+          <fieldset className="form-fields" disabled={loading || saving}>
+            {Object.entries(groupedProperties).map(
+              ([groupName, groupProps]) => {
+                if (groupProps.length === 0) return null;
+                const isCollapsed = collapsedSections[groupName];
+                return (
+                  <div
+                    key={groupName}
+                    style={{
+                      marginBottom: "20px",
+                      border: "1px solid var(--border-color)",
+                      borderRadius: "5px",
+                      background: "var(--container-background-color)",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <button
+                      type="button"
+                      aria-expanded={!isCollapsed}
+                      className="property-section-toggle"
+                      onClick={() => toggleSection(groupName)}
+                      style={{
+                        padding: "10px 15px",
+                        background: "rgba(0,0,0,0.2)",
+                        borderBottom: isCollapsed
+                          ? "none"
+                          : "1px solid var(--border-color)",
+                        cursor: "pointer",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      <span>
+                        {groupName} Properties ({groupProps.length})
+                      </span>
+                      {isCollapsed ? (
+                        <ChevronDown size={18} />
+                      ) : (
+                        <ChevronUp size={18} />
+                      )}
+                    </button>
 
-            return (
+                    {!isCollapsed && (
+                      <div
+                        style={{
+                          padding: "20px",
+                          display: "grid",
+                          gridTemplateColumns:
+                            "repeat(auto-fill, minmax(min(100%, 280px), 1fr))",
+                          gap: "20px",
+                        }}
+                      >
+                        {groupProps.map((prop) => (
+                          <div
+                            key={prop.key}
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                            }}
+                          >
+                            <label
+                              htmlFor={prop.key}
+                              className="form-label"
+                              style={{
+                                marginBottom: "5px",
+                                fontSize: "0.9em",
+                                color: "var(--text-color-secondary)",
+                              }}
+                              title={prop.key}
+                            >
+                              {prop.key.replace(/-/g, " ")}
+                            </label>
+                            {renderInput(prop)}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              },
+            )}
+
+            {/* Custom Property Section */}
+            <div
+              style={{
+                marginBottom: "20px",
+                border: "1px solid var(--border-color)",
+                borderRadius: "5px",
+                background: "var(--container-background-color)",
+                overflow: "hidden",
+              }}
+            >
               <div
-                key={groupName}
                 style={{
-                  marginBottom: "20px",
-                  border: "1px solid var(--border-color)",
-                  borderRadius: "5px",
-                  background: "var(--container-background-color)",
-                  overflow: "hidden",
+                  padding: "10px 15px",
+                  background: "rgba(0,0,0,0.2)",
+                  borderBottom: "1px solid var(--border-color)",
+                  fontWeight: "bold",
+                }}
+              >
+                Add Custom Property
+              </div>
+              <div
+                style={{
+                  padding: "20px",
+                  display: "flex",
+                  gap: "10px",
+                  alignItems: "flex-end",
+                  flexWrap: "wrap",
                 }}
               >
                 <div
-                  onClick={() => toggleSection(groupName)}
                   style={{
-                    padding: "10px 15px",
-                    background: "rgba(0,0,0,0.2)",
-                    borderBottom: isCollapsed
-                      ? "none"
-                      : "1px solid var(--border-color)",
-                    cursor: "pointer",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    fontWeight: "bold",
+                    flex: 1,
+                    minWidth: "200px",
                   }}
                 >
-                  <span>
-                    {groupName} Properties ({groupProps.length})
-                  </span>
-                  {isCollapsed ? (
-                    <ChevronDown size={18} />
-                  ) : (
-                    <ChevronUp size={18} />
-                  )}
-                </div>
-
-                {!isCollapsed && (
-                  <div
+                  <label
+                    className="form-label"
                     style={{
-                      padding: "20px",
-                      display: "grid",
-                      gridTemplateColumns:
-                        "repeat(auto-fill, minmax(280px, 1fr))",
-                      gap: "20px",
+                      display: "block",
+                      marginBottom: "5px",
+                      fontSize: "0.9em",
                     }}
+                    htmlFor="serverproperties-field-1"
                   >
-                    {groupProps.map((prop) => (
-                      <div
-                        key={prop.key}
-                        style={{ display: "flex", flexDirection: "column" }}
-                      >
-                        <label
-                          htmlFor={prop.key}
-                          className="form-label"
-                          style={{
-                            marginBottom: "5px",
-                            fontSize: "0.9em",
-                            color: "#ccc",
-                          }}
-                          title={prop.key}
-                        >
-                          {prop.key.replace(/-/g, " ")}
-                        </label>
-                        {renderInput(prop)}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                    Property Key
+                  </label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g. max-threads"
+                    value={newPropKey}
+                    onChange={(e) => setNewPropKey(e.target.value)}
+                    style={{
+                      width: "100%",
+                    }}
+                    id="serverproperties-field-1"
+                  />
+                </div>
+                <div
+                  style={{
+                    flex: 1,
+                    minWidth: "200px",
+                  }}
+                >
+                  <label
+                    className="form-label"
+                    style={{
+                      display: "block",
+                      marginBottom: "5px",
+                      fontSize: "0.9em",
+                    }}
+                    htmlFor="serverproperties-field-2"
+                  >
+                    Value
+                  </label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Value"
+                    value={newPropValue}
+                    onChange={(e) => setNewPropValue(e.target.value)}
+                    style={{
+                      width: "100%",
+                    }}
+                    id="serverproperties-field-2"
+                  />
+                </div>
+                <button
+                  className="action-button secondary"
+                  onClick={handleAddCustomProperty}
+                  style={{
+                    marginBottom: "1px",
+                  }}
+                  type="button"
+                >
+                  Add Property
+                </button>
               </div>
-            );
-          })}
-
-          {/* Custom Property Section */}
-          <div
-            style={{
-              marginBottom: "20px",
-              border: "1px solid var(--border-color)",
-              borderRadius: "5px",
-              background: "var(--container-background-color)",
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                padding: "10px 15px",
-                background: "rgba(0,0,0,0.2)",
-                borderBottom: "1px solid var(--border-color)",
-                fontWeight: "bold",
-              }}
-            >
-              Add Custom Property
             </div>
+
+            {/* Bottom Save Button for convenience */}
             <div
               style={{
-                padding: "20px",
                 display: "flex",
+                justifyContent: "flex-end",
+                marginTop: "20px",
                 gap: "10px",
-                alignItems: "flex-end",
-                flexWrap: "wrap",
               }}
             >
-              <div style={{ flex: 1, minWidth: "200px" }}>
-                <label
-                  className="form-label"
-                  style={{
-                    display: "block",
-                    marginBottom: "5px",
-                    fontSize: "0.9em",
-                  }}
-                >
-                  Property Key
-                </label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="e.g. max-threads"
-                  value={newPropKey}
-                  onChange={(e) => setNewPropKey(e.target.value)}
-                  style={{ width: "100%" }}
-                />
-              </div>
-              <div style={{ flex: 1, minWidth: "200px" }}>
-                <label
-                  className="form-label"
-                  style={{
-                    display: "block",
-                    marginBottom: "5px",
-                    fontSize: "0.9em",
-                  }}
-                >
-                  Value
-                </label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="Value"
-                  value={newPropValue}
-                  onChange={(e) => setNewPropValue(e.target.value)}
-                  style={{ width: "100%" }}
-                />
-              </div>
               <button
+                type="button"
                 className="action-button secondary"
-                onClick={handleAddCustomProperty}
-                style={{ marginBottom: "1px" }}
+                onClick={() => setShowRawModal(true)}
+                title="View Properties File"
               >
-                Add Property
+                <FileText
+                  size={16}
+                  style={{
+                    marginRight: "5px",
+                  }}
+                />{" "}
+                View File
+              </button>
+              <button
+                type="submit"
+                className="action-button"
+                disabled={loading || saving}
+              >
+                {setupFlow ? (
+                  <>
+                    Save & Continue{" "}
+                    <ArrowRight
+                      size={16}
+                      style={{
+                        marginLeft: "5px",
+                      }}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <Save
+                      size={16}
+                      style={{
+                        marginRight: "5px",
+                      }}
+                    />{" "}
+                    {saving ? "Saving…" : "Save Changes"}
+                  </>
+                )}
               </button>
             </div>
-          </div>
-
-          {/* Bottom Save Button for convenience */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              marginTop: "20px",
-              gap: "10px",
-            }}
-          >
-            <button
-              type="button"
-              className="action-button secondary"
-              onClick={() => setShowRawModal(true)}
-              title="View Properties File"
-            >
-              <FileText size={16} style={{ marginRight: "5px" }} /> View File
-            </button>
-            <button type="submit" className="action-button" disabled={loading}>
-              {setupFlow ? (
-                <>
-                  Save & Continue{" "}
-                  <ArrowRight size={16} style={{ marginLeft: "5px" }} />
-                </>
-              ) : (
-                <>
-                  <Save size={16} style={{ marginRight: "5px" }} /> Save Changes
-                </>
-              )}
-            </button>
-          </div>
+          </fieldset>
         </form>
       )}
 
       {/* Raw Content Modal */}
       {showRawModal && (
-        <div
-          className="modal-backdrop"
-          onClick={() => setShowRawModal(false)}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.7)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 1000,
-          }}
+        <Modal
+          title={
+            <>
+              <FileText
+                size={20}
+                style={{
+                  marginRight: "10px",
+                }}
+              />
+              Raw server.properties
+            </>
+          }
+          onClose={() => setShowRawModal(false)}
+          closeDisabled={saving}
+          className="addon-dialog"
         >
           <div
-            className="modal-content"
-            onClick={(e) => e.stopPropagation()}
             style={{
-              background: "var(--container-background-color, #333)",
-              border: "1px solid var(--border-color, #555)",
-              borderRadius: "8px",
-              width: "90%",
-              maxWidth: "800px",
-              maxHeight: "90vh",
+              padding: "15px 20px",
+              borderBottom: "1px solid var(--border-color, #555)",
               display: "flex",
-              flexDirection: "column",
-              boxShadow: "0 4px 6px rgba(0,0,0,0.3)",
+              justifyContent: "space-between",
+              alignItems: "center",
             }}
           >
-            <div
+            <button
+              onClick={() => setShowRawModal(false)}
               style={{
-                padding: "15px 20px",
-                borderBottom: "1px solid var(--border-color, #555)",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
+                background: "transparent",
+                border: "none",
+                color: "var(--text-color, #fff)",
+                fontSize: "1.5rem",
+                cursor: "pointer",
               }}
+              type="button"
             >
-              <h3 style={{ margin: 0, display: "flex", alignItems: "center" }}>
-                <FileText size={20} style={{ marginRight: "10px" }} />
-                Raw server.properties
-              </h3>
-              <button
-                onClick={() => setShowRawModal(false)}
+              &times;
+            </button>
+          </div>
+          <div
+            style={{
+              padding: "20px",
+              overflowY: "auto",
+              flex: 1,
+              textAlign: "left",
+            }}
+          >
+            {rawContent ? (
+              <SyntaxHighlighter
+                language="properties"
+                style={atomOneDark}
+                customStyle={{
+                  background: "rgba(0, 0, 0, 0.3)",
+                  padding: "15px",
+                  borderRadius: "5px",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  margin: 0,
+                  fontSize: "0.95em",
+                  lineHeight: "1.5",
+                }}
+                wrapLines={true}
+                wrapLongLines={true}
+              >
+                {rawContent}
+              </SyntaxHighlighter>
+            ) : (
+              <div
                 style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "var(--text-color, #fff)",
-                  fontSize: "1.5rem",
-                  cursor: "pointer",
+                  textAlign: "center",
+                  color: "var(--text-color-secondary)",
                 }}
               >
-                &times;
-              </button>
-            </div>
-            <div
-              style={{
-                padding: "20px",
-                overflowY: "auto",
-                flex: 1,
-                textAlign: "left",
-              }}
-            >
-              {rawContent ? (
-                <SyntaxHighlighter
-                  language="properties"
-                  style={atomOneDark}
-                  customStyle={{
-                    background: "rgba(0, 0, 0, 0.3)",
-                    padding: "15px",
-                    borderRadius: "5px",
-                    border: "1px solid rgba(255, 255, 255, 0.1)",
-                    margin: 0,
-                    fontSize: "0.95em",
-                    lineHeight: "1.5",
-                  }}
-                  wrapLines={true}
-                  wrapLongLines={true}
-                >
-                  {rawContent}
-                </SyntaxHighlighter>
-              ) : (
-                <div style={{ textAlign: "center", color: "#888" }}>
-                  No raw content available.
-                </div>
-              )}
-            </div>
-            <div
-              style={{
-                padding: "15px 20px",
-                borderTop: "1px solid var(--border-color, #555)",
-                display: "flex",
-                justifyContent: "flex-end",
-              }}
-            >
-              <button
-                className="action-button secondary"
-                onClick={() => setShowRawModal(false)}
-              >
-                Close
-              </button>
-            </div>
+                No raw content available.
+              </div>
+            )}
           </div>
-        </div>
+          <div
+            style={{
+              padding: "15px 20px",
+              borderTop: "1px solid var(--border-color, #555)",
+              display: "flex",
+              justifyContent: "flex-end",
+            }}
+          >
+            <button
+              className="action-button secondary"
+              onClick={() => setShowRawModal(false)}
+              type="button"
+            >
+              Close
+            </button>
+          </div>
+        </Modal>
       )}
     </div>
   );
 };
-
 export default ServerProperties;

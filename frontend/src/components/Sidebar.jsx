@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
-import { NavLink, Link, useLocation } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
 import { getApiProxyBasePath } from "../utils/basePath";
 import { get } from "../api";
-import SidebarLabel from "./SidebarLabel";
+import { logger } from "../utils/logger";
 import {
   LayoutDashboard,
   Users,
@@ -22,17 +22,14 @@ import {
   RefreshCw,
   PlusSquare,
   Gamepad2,
-  List,
   ChevronLeft,
   UserCheck,
   ChevronRight,
   Palette,
-  X,
   Code,
+  Search,
 } from "lucide-react";
-import { logger } from "../utils/logger";
-import "../styles/SidebarEnhanced.css"; // Import enhanced styles
-
+import "../styles/SidebarEnhanced.css";
 const Sidebar = ({ mobileOpen, setMobileOpen }) => {
   const location = useLocation();
   const { logout, user } = useAuth();
@@ -50,658 +47,381 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
   );
   const [appVersion, setAppVersion] = useState("Unknown");
   const [splashText, setSplashText] = useState("");
-
-  // Customization State
-  const [showColorPicker, setShowColorPicker] = useState(false);
-  const [sidebarColor, setSidebarColor] = useState(
-    localStorage.getItem("sidebarColor") || "#3a3a3a",
-  );
-  const [sidebarOpacity, setSidebarOpacity] = useState(
-    localStorage.getItem("sidebarOpacity") || "1",
-  );
-
-  useEffect(() => {
-    const fetchInfo = async () => {
-      try {
-        logger.debug("[Sidebar] Fetching app info");
-        const data = await get("/api/info");
-        if (data && data.status === "success" && data.info) {
-          setAppVersion(data.info.app_version);
-        }
-      } catch (error) {
-        logger.error("[Sidebar] Failed to fetch app info", { error });
-      }
-    };
-
-    fetchInfo();
-    const fetchPluginPages = async () => {
-      try {
-        logger.debug("[Sidebar] Fetching plugin pages");
-        const response = await get("/api/plugins/pages");
-        if (response && response.status === "success") {
-          setPluginPages(response.pages || []);
-        }
-      } catch (error) {
-        logger.warn("[Sidebar] Failed to fetch plugin pages", { error });
-      }
-    };
-
-    const fetchSplashText = async () => {
-      try {
-        logger.debug("[Sidebar] Fetching splash text");
-        const response = await get("/api/info");
-        // API returns { status: "success", info: { splash_text: "..." } } based on API definition
-        if (response && response.status === "success" && response.info) {
-          setSplashText(response.info.splash_text || "");
-        } else if (response && response.data && response.data.splash_text) {
-          // Fallback in case api.js unwraps it differently or structure changes
-          setSplashText(response.data.splash_text);
-        }
-      } catch (error) {
-        logger.warn("[Sidebar] Failed to fetch splash text", { error });
-      }
-    };
-
-    fetchPluginPages();
-    fetchSplashText();
-  }, []);
-
-  // Update CSS variable when color changes
-  useEffect(() => {
-    const r = parseInt(sidebarColor.slice(1, 3), 16);
-    const g = parseInt(sidebarColor.slice(3, 5), 16);
-    const b = parseInt(sidebarColor.slice(5, 7), 16);
-    const rgba = `rgba(${r}, ${g}, ${b}, ${sidebarOpacity})`;
-    document.documentElement.style.setProperty("--sidebar-bg-custom", rgba);
-  }, [sidebarColor, sidebarOpacity]);
-
-  const handleServerChange = (e) => {
-    setSelectedServer(e.target.value);
-  };
-
-  const handleRefreshServers = async () => {
-    const success = await refreshServers();
-    if (success) {
-      addToast("Server list refreshed", "success");
-    }
-  };
-
-  const toggleSidebar = () => {
-    const newState = !isCollapsed;
-    setIsCollapsed(newState);
-    localStorage.setItem("sidebarCollapsed", newState);
-  };
-
-  // Auto-close sidebar on mobile when a navigation item is clicked
-  const handleNavClick = (isDisabled) => {
-    if (isDisabled) return;
-    if (mobileOpen && setMobileOpen) {
-      setMobileOpen(false);
-    }
-  };
-
-  // If mobile menu is open, we force the sidebar to appear expanded (not collapsed)
-  // so the user can see the text/labels on the overlay.
+  const [query, setQuery] = useState("");
   const effectiveCollapsed = isCollapsed && !mobileOpen;
-
-  const saveColorSettings = (color, opacity) => {
-    setSidebarColor(color);
-    setSidebarOpacity(opacity);
-    localStorage.setItem("sidebarColor", color);
-    localStorage.setItem("sidebarOpacity", opacity);
+  useEffect(() => {
+    let active = true;
+    get("/api/info")
+      .then((data) => {
+        if (!active) return;
+        setAppVersion(data?.info?.app_version || "Unknown");
+        setSplashText(data?.info?.splash_text || data?.data?.splash_text || "");
+      })
+      .catch((error) =>
+        logger.warn("[Sidebar] Unable to load application info", {
+          error,
+        }),
+      );
+    get("/api/plugins/pages")
+      .then((data) => {
+        if (active && data?.status === "success" && Array.isArray(data.pages))
+          setPluginPages(data.pages);
+      })
+      .catch((error) =>
+        logger.warn("[Sidebar] Unable to load plugin pages", {
+          error,
+        }),
+      );
+    return () => {
+      active = false;
+    };
+  }, []);
+  const toggleSidebar = () => {
+    setIsCollapsed((previous) => {
+      localStorage.setItem("sidebarCollapsed", String(!previous));
+      return !previous;
+    });
   };
-
-  const currentServerObj = servers.find((s) => s.name === selectedServer);
-  const hasPlayersList =
-    currentServerObj?.players && currentServerObj.players.length > 0;
-
-  const serverNavItems = [
-    { path: "/monitor", label: "Monitor", icon: <LayoutDashboard size={20} /> },
-    ...(hasPlayersList
+  const handleNavClick = () => {
+    if (mobileOpen) setMobileOpen?.(false);
+  };
+  const refresh = async () => {
+    if (await refreshServers()) addToast("Server list refreshed", "success");
+    else addToast("Server list could not be refreshed", "error");
+  };
+  const groups = [
+    {
+      label: "Fleet",
+      items: [
+        {
+          path: "/",
+          label: "Overview",
+          icon: LayoutDashboard,
+          end: true,
+        },
+        ...(user?.role === "admin"
+          ? [
+              {
+                path: "/server-install",
+                label: "Install Server",
+                icon: PlusSquare,
+              },
+            ]
+          : []),
+      ],
+    },
+    {
+      label: "Selected server",
+      items: [
+        {
+          path: "/monitor",
+          label: "Monitor",
+          icon: LayoutDashboard,
+          server: true,
+        },
+        {
+          path: "/online-players",
+          label: "Online Players",
+          icon: UserCheck,
+          server: true,
+        },
+        {
+          path: "/server-config",
+          label: "Settings",
+          icon: Wrench,
+          server: true,
+        },
+        {
+          path: "/server-properties",
+          label: "Properties",
+          icon: Server,
+          server: true,
+        },
+        {
+          path: "/access-control",
+          label: "Access Control",
+          icon: Shield,
+          server: true,
+        },
+        {
+          path: "/backups",
+          label: "Backups",
+          icon: Database,
+          server: true,
+        },
+        {
+          path: "/content",
+          label: "Content",
+          icon: Package,
+          server: true,
+        },
+      ],
+    },
+    {
+      label: "Players",
+      items: [
+        {
+          path: "/global-players",
+          label: "Players",
+          icon: Gamepad2,
+        },
+      ],
+    },
+    {
+      label: "Global",
+      items: [
+        {
+          path: "/plugins",
+          label: "Plugins",
+          icon: Plug,
+        },
+        {
+          path: "/bsm-settings",
+          label: "Global Settings",
+          icon: Settings,
+        },
+        ...(sessionStorage.getItem("show_hidden_flag") === "true"
+          ? [
+              {
+                path: "/playground",
+                label: "Playground",
+                icon: Code,
+              },
+            ]
+          : []),
+      ],
+    },
+    {
+      label: "Administration",
+      items: [
+        {
+          path: "/users",
+          label: "Users",
+          icon: Users,
+        },
+        {
+          path: "/audit-log",
+          label: "Logs & tasks",
+          icon: ScrollText,
+        },
+      ],
+    },
+    ...(pluginPages.length
       ? [
           {
-            path: "/online-players",
-            label: "Online Players",
-            icon: <UserCheck size={20} />,
+            label: "Extensions",
+            items: pluginPages.map((page) => ({
+              path: `/plugin-native-view?url=${encodeURIComponent(page.path)}`,
+              label: page.name,
+              icon: Plug,
+              pluginPath: page.path,
+            })),
           },
         ]
       : []),
-    {
-      path: "/server-config",
-      label: "Settings",
-      icon: <Wrench size={20} />,
-    },
-    {
-      path: "/server-properties",
-      label: "Properties",
-      icon: <Server size={20} />,
-    },
-    {
-      path: "/access-control",
-      label: "Access Control",
-      icon: <Shield size={20} />,
-    },
-    { path: "/backups", label: "Backups", icon: <Database size={20} /> },
-    { path: "/content", label: "Content", icon: <Package size={20} /> },
   ];
-
-  const globalNavItems = [
-    { path: "/global-players", label: "Players", icon: <Gamepad2 size={20} /> },
-    { path: "/plugins", label: "Plugins", icon: <Plug size={20} /> },
-    { path: "/users", label: "Users", icon: <Users size={20} /> },
-    {
-      path: "/bsm-settings",
-      label: "BSM Settings",
-      icon: <Settings size={20} />,
-    },
-    { path: "/audit-log", label: "Logs", icon: <ScrollText size={20} /> },
-  ];
-
-  if (sessionStorage.getItem("show_hidden_flag") === "true") {
-    globalNavItems.push({
-      path: "/playground",
-      label: "Playground",
-      icon: <Code size={20} />,
-    });
-  }
-
+  const filtered = groups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) =>
+        `${group.label} ${item.label}`
+          .toLowerCase()
+          .includes(query.trim().toLowerCase()),
+      ),
+    }))
+    .filter((group) => group.items.length);
   return (
     <aside
+      id="manager-navigation"
+      aria-label="Main navigation"
       className={`sidebar-nav ${effectiveCollapsed ? "collapsed" : ""} ${mobileOpen ? "mobile-open" : ""}`}
-      style={{
-        // Width removed (handled by CSS)
-        // transition: "width 0.2s ease-out", // Handled by CSS
-        overflowX: "hidden",
-        backgroundColor: "var(--sidebar-bg-custom)", // Apply custom color
-      }}
     >
-      {/* Close Button for Mobile */}
-      <button
-        className="sidebar-close-btn"
-        onClick={() => setMobileOpen && setMobileOpen(false)}
-        aria-label="Close Sidebar"
-      >
-        <X size={24} />
-      </button>
-
-      <div
-        className="sidebar-header"
-        style={{
-          padding: "15px 0",
-          textAlign: "center",
-          borderBottom: "1px solid var(--sidebar-border-color)",
-          display: "flex",
-          justifyContent: effectiveCollapsed ? "center" : "space-between",
-          alignItems: "center",
-          paddingLeft: effectiveCollapsed ? "0" : "15px",
-          paddingRight: effectiveCollapsed ? "0" : "15px",
-          height: effectiveCollapsed ? "60px" : "auto",
-          minHeight: "60px",
-          flexDirection: effectiveCollapsed ? "row" : "column",
-        }}
-      >
-        {!effectiveCollapsed ? (
-          <div
-            style={{
-              width: "100%",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "flex-start",
-                gap: "5px",
-                overflow: "hidden",
-                width: "100%",
-                paddingRight: "5px",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "15px",
-                  marginBottom: "5px",
-                }}
-              >
-                <img
-                  src={`${getApiProxyBasePath()}/app/image/icon/favicon-96x96.png`}
-                  alt="Icon"
-                  style={{ width: "64px", height: "64px" }}
-                />
-                <div
-                  style={{ overflow: "hidden", whiteSpace: "nowrap" }}
-                  className="marquee-container"
-                >
-                  <span
-                    className="scrolling-text"
-                    style={{
-                      fontWeight: "bold",
-                      fontSize: "1.1em",
-                      color: "#fff",
-                      display: "block",
-                    }}
-                  >
-                    Bedrock Server Manager
-                  </span>
-                </div>
-              </div>
-              {splashText && (
-                <div
-                  style={{
-                    overflow: "hidden",
-                    width: "100%",
-                    whiteSpace: "nowrap",
-                  }}
-                  className="marquee-container"
-                >
-                  <span
-                    className="scrolling-text"
-                    style={{
-                      fontSize: "0.85em",
-                      fontStyle: "italic",
-                      color: "#FFD700",
-                      display: "inline-block",
-                    }}
-                  >
-                    {splashText}
-                  </span>
-                </div>
-              )}
-            </div>
-            <button
-              onClick={toggleSidebar}
-              style={{
-                background: "transparent",
-                border: "none",
-                color: "#ccc",
-                cursor: "pointer",
-                padding: "5px",
-                flexShrink: 0,
-              }}
-              aria-label="Collapse Sidebar"
-            >
-              <ChevronLeft size={16} />
-            </button>
+      <header className="sidebar-header">
+        <img
+          className="sidebar-brand-icon"
+          src={`${getApiProxyBasePath()}/app/image/icon/favicon-96x96.png`}
+          alt="Bedrock Server Manager"
+        />
+        {!effectiveCollapsed && (
+          <div className="sidebar-brand">
+            <strong>
+              Bedrock<span>Server Manager</span>
+            </strong>
+            <small className="workspace-brand-version">
+              Version {appVersion}
+            </small>
           </div>
-        ) : (
-          <>
-            <img
-              src={`${getApiProxyBasePath()}/app/image/icon/favicon-96x96.png`}
-              alt="Icon"
-              style={{ width: "30px", height: "30px" }}
-            />
-            <button
-              onClick={toggleSidebar}
-              style={{
-                background: "transparent",
-                border: "none",
-                color: "#ccc",
-                cursor: "pointer",
-                padding: "5px",
-              }}
-              aria-label="Expand Sidebar"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </>
         )}
-      </div>
-
-      <div
-        style={{
-          padding: effectiveCollapsed ? "10px 5px" : "15px 15px 10px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "10px",
-        }}
-      >
-        {!effectiveCollapsed ? (
-          <>
-            <label
-              htmlFor="server-select"
-              style={{
-                display: "block",
-                marginBottom: "5px",
-                color: "#aaa",
-                fontSize: "0.85em",
-              }}
-            >
-              Selected Server:
+        <button
+          className="icon-button sidebar-collapse"
+          onClick={() => {
+            if (mobileOpen) setMobileOpen?.(false);
+            else toggleSidebar();
+          }}
+          aria-label={
+            mobileOpen
+              ? "Close Sidebar"
+              : effectiveCollapsed
+                ? "Expand Sidebar"
+                : "Collapse Sidebar"
+          }
+          type="button"
+        >
+          {effectiveCollapsed ? (
+            <ChevronRight size={16} />
+          ) : (
+            <ChevronLeft size={16} />
+          )}
+        </button>
+      </header>
+      {!effectiveCollapsed && (
+        <>
+          {splashText && <p className="sidebar-splash">{splashText}</p>}
+          <div className="sidebar-search">
+            <Search size={16} aria-hidden="true" />
+            <input
+              type="search"
+              className="form-input"
+              placeholder="Find a page…"
+              aria-label="Search navigation"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </div>
+          <div className="sidebar-server-picker">
+            <label className="form-label" htmlFor="server-select">
+              Server workspace
             </label>
-            <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
+            <div className="inline-controls">
               <select
                 id="server-select"
-                value={selectedServer || ""}
-                onChange={handleServerChange}
-                disabled={loading}
                 className="form-input"
-                style={{
-                  width: "100%",
-                  padding: "6px",
-                  fontSize: "0.9em",
-                }}
+                value={selectedServer || ""}
+                onChange={(event) => setSelectedServer(event.target.value)}
+                disabled={loading || !servers.length}
               >
-                {loading ? (
-                  <option value="">Loading...</option>
-                ) : servers.length === 0 ? (
-                  <option value="">No Servers</option>
-                ) : (
-                  <>
-                    <option value="" disabled>
-                      -- Select --
-                    </option>
-                    {servers.map((s) => (
-                      <option key={s.name} value={s.name}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </>
-                )}
+                <option value="" disabled>
+                  {loading ? "Loading servers…" : "Select a server"}
+                </option>
+                {servers.map((server) => (
+                  <option key={server.name} value={server.name}>
+                    {server.name}
+                  </option>
+                ))}
               </select>
               <button
-                onClick={handleRefreshServers}
+                className="icon-button"
                 title="Refresh Server List"
-                className="action-button secondary"
+                aria-label="Refresh Server List"
+                onClick={refresh}
                 disabled={loading}
-                style={{
-                  padding: "6px",
-                  margin: 0,
-                  height: "32px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
+                type="button"
               >
-                <RefreshCw size={14} className={loading ? "spin" : ""} />
+                <RefreshCw size={16} className={loading ? "spin" : ""} />
               </button>
             </div>
-          </>
-        ) : (
-          <div
-            style={{ textAlign: "center" }}
-            title={selectedServer || "No Server Selected"}
-          >
-            <div
-              style={{
-                width: "32px",
-                height: "32px",
-                background: "rgba(0,0,0,0.3)",
-                borderRadius: "4px",
-                margin: "0 auto",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "1px solid var(--border-color)",
-                fontSize: "0.9em",
-                fontWeight: "bold",
-                color: "#fff",
-              }}
-            >
-              {selectedServer
-                ? selectedServer.substring(0, 2).toUpperCase()
-                : "-"}
-            </div>
           </div>
-        )}
-      </div>
-
-      <div className="nav-group">
-        <NavLink
-          to="/"
-          className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
-          title={effectiveCollapsed ? "Overview" : ""}
-          onClick={() => handleNavClick(false)}
-        >
-          <span className="nav-icon">
-            <List size={20} />
-          </span>
-          {!effectiveCollapsed && <SidebarLabel>Overview</SidebarLabel>}
-        </NavLink>
-      </div>
-
-      <hr className="nav-separator" />
-
-      <div className="nav-group">
-        {!effectiveCollapsed && (
-          <div className="nav-section-label">Server Management</div>
-        )}
-        {serverNavItems.map((item) => {
-          const isDisabled = !selectedServer;
-          return (
-            <NavLink
-              key={item.path}
-              to={isDisabled ? "#" : item.path}
-              className={({ isActive }) =>
-                `nav-link ${isActive && !isDisabled ? "active" : ""} ${isDisabled ? "disabled" : ""}`
-              }
-              onClick={(e) => {
-                if (isDisabled) e.preventDefault();
-                handleNavClick(isDisabled);
-              }}
-              title={effectiveCollapsed ? item.label : ""}
-            >
-              <span className="nav-icon">{item.icon}</span>
-              {!effectiveCollapsed && <SidebarLabel>{item.label}</SidebarLabel>}
-            </NavLink>
-          );
-        })}
-      </div>
-
-      <hr className="nav-separator" />
-
-      <div className="nav-group">
-        {!effectiveCollapsed && <div className="nav-section-label">Global</div>}
-        {globalNavItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
-            title={effectiveCollapsed ? item.label : ""}
-            onClick={() => handleNavClick(false)}
-          >
-            <span className="nav-icon">{item.icon}</span>
-            {!effectiveCollapsed && <SidebarLabel>{item.label}</SidebarLabel>}
-          </NavLink>
-        ))}
-
-        {user?.role === "admin" && (
-          <NavLink
-            to="/server-install"
-            className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
-            title={effectiveCollapsed ? "Install Server" : ""}
-            onClick={() => handleNavClick(false)}
-          >
-            <span className="nav-icon">
-              <PlusSquare size={20} />
-            </span>
-            {!effectiveCollapsed && <SidebarLabel>Install Server</SidebarLabel>}
-          </NavLink>
-        )}
-      </div>
-
-      {pluginPages.length > 0 && (
-        <>
-          <hr className="nav-separator" />
-          <div className="nav-group">
+        </>
+      )}
+      <nav aria-label="Application pages">
+        {filtered.map((group) => (
+          <div className="nav-group" key={group.label}>
             {!effectiveCollapsed && (
-              <div className="nav-section-label">From Plugins</div>
+              <h2 className="nav-section-label">{group.label}</h2>
             )}
-            {pluginPages.map((page) => {
-              const targetPath = `/plugin-native-view?url=${encodeURIComponent(page.path)}`;
-
-              const isPluginActive = () => {
-                const currentPath = location.pathname;
-                const searchParams = new URLSearchParams(location.search);
-                const currentUrlParam = searchParams.get("url");
-
-                return (
-                  currentPath === "/plugin-native-view" &&
-                  currentUrlParam === page.path
-                );
-              };
-
+            {group.items.map((item) => {
+              const disabled = item.server && !selectedServer;
+              const Icon = item.icon;
+              const pluginActive =
+                item.pluginPath &&
+                location.pathname === "/plugin-native-view" &&
+                new URLSearchParams(location.search).get("url") ===
+                  item.pluginPath;
               return (
                 <NavLink
-                  key={page.path}
-                  to={targetPath}
-                  className={() =>
-                    `nav-link ${isPluginActive() ? "active" : ""}`
+                  key={item.path}
+                  to={disabled ? "#" : item.path}
+                  end={item.end}
+                  aria-disabled={disabled || undefined}
+                  tabIndex={disabled ? -1 : undefined}
+                  className={({ isActive }) =>
+                    `nav-link ${!disabled && (item.pluginPath ? pluginActive : isActive) ? "active" : ""} ${disabled ? "disabled" : ""}`
                   }
-                  title={effectiveCollapsed ? page.name : ""}
-                  onClick={() => handleNavClick(false)}
+                  title={
+                    disabled
+                      ? "Select a server to open this page"
+                      : effectiveCollapsed
+                        ? item.label
+                        : undefined
+                  }
+                  onClick={(event) => {
+                    if (disabled) event.preventDefault();
+                    else handleNavClick();
+                  }}
                 >
-                  <span className="nav-icon">
-                    <Plug size={20} />
-                  </span>
-                  {!effectiveCollapsed && (
-                    <SidebarLabel>{page.name}</SidebarLabel>
+                  <Icon size={18} aria-hidden="true" />
+                  {effectiveCollapsed ? (
+                    <span className="sr-only">{item.label}</span>
+                  ) : (
+                    <span className="nav-label">{item.label}</span>
                   )}
                 </NavLink>
               );
             })}
           </div>
-        </>
-      )}
-
-      <hr className="nav-separator" />
-
-      {/* Settings Toggle */}
-      <div className="nav-group">
-        <button
-          className="nav-link"
-          onClick={() => setShowColorPicker(!showColorPicker)}
-          style={{
-            background: "transparent",
-            border: "none",
-            width: "100%",
-            textAlign: "left",
-            cursor: "pointer",
-            color: "inherit",
-          }}
-          title={effectiveCollapsed ? "Customize Sidebar" : ""}
-        >
-          <span className="nav-icon">
-            <Palette size={20} />
-          </span>
-          {!effectiveCollapsed && <SidebarLabel>Appearance</SidebarLabel>}
-        </button>
-
-        {showColorPicker && !effectiveCollapsed && (
-          <div
-            style={{
-              padding: "10px 15px",
-              background: "rgba(0,0,0,0.2)",
-              margin: "0 10px 10px",
-              borderRadius: "4px",
-            }}
-          >
-            <div style={{ marginBottom: "5px" }}>
-              <label style={{ fontSize: "0.8em", display: "block" }}>
-                Background Color
-              </label>
-              <input
-                type="color"
-                value={sidebarColor}
-                onChange={(e) =>
-                  saveColorSettings(e.target.value, sidebarOpacity)
-                }
-                style={{
-                  width: "100%",
-                  height: "30px",
-                  border: "none",
-                  cursor: "pointer",
-                }}
-              />
-            </div>
-            <div>
-              <label style={{ fontSize: "0.8em", display: "block" }}>
-                Opacity ({Math.round(sidebarOpacity * 100)}%)
-              </label>
-              <input
-                type="range"
-                min="0.1"
-                max="1"
-                step="0.05"
-                value={sidebarOpacity}
-                onChange={(e) =>
-                  saveColorSettings(sidebarColor, e.target.value)
-                }
-                style={{ width: "100%" }}
-              />
-            </div>
-          </div>
+        ))}
+        {!filtered.length && (
+          <p className="navigation-empty">No matching pages.</p>
         )}
-      </div>
-
-      <div className="nav-group footer-nav">
+      </nav>
+      <div className="footer-nav">
+        <NavLink
+          to="/appearance"
+          className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
+          onClick={handleNavClick}
+          title="Appearance"
+        >
+          <Palette size={18} />
+          {effectiveCollapsed ? (
+            <span className="sr-only">Appearance</span>
+          ) : (
+            <span>Appearance</span>
+          )}
+        </NavLink>
         <NavLink
           to="/account"
           className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
-          title={effectiveCollapsed ? `Account (${user?.username})` : ""}
-          onClick={() => handleNavClick(false)}
+          onClick={handleNavClick}
         >
-          <span className="nav-icon">
-            <User size={20} />
-          </span>
-          {!effectiveCollapsed && <SidebarLabel>Account</SidebarLabel>}
+          <User size={18} />
+          {effectiveCollapsed ? (
+            <span className="sr-only">Account</span>
+          ) : (
+            <span>Account</span>
+          )}
         </NavLink>
         <button
           className="nav-link logout-button"
           onClick={() => {
-            handleNavClick(false);
+            handleNavClick();
             logout();
           }}
-          style={{
-            border: "none",
-            background: "transparent",
-            width: "100%",
-            textAlign: effectiveCollapsed ? "center" : "left",
-            fontSize: "1em",
-            color: "inherit",
-            display: "flex",
-            justifyContent: effectiveCollapsed ? "center" : "flex-start",
-            padding: "10px 20px",
-          }}
-          title={effectiveCollapsed ? "Logout" : ""}
+          type="button"
         >
-          <span className="nav-icon">
-            <LogOut size={20} />
-          </span>
-          {!effectiveCollapsed && <SidebarLabel>Logout</SidebarLabel>}
-        </button>
-
-        {/* App Version */}
-        <div
-          style={{
-            padding: "10px",
-            textAlign: "center",
-            fontSize: "0.75em",
-            color: "var(--text-color)",
-            opacity: 0.6,
-            marginTop: "auto",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-          title={`bsm-frontend: ${__APP_VERSION__}\nbedrock-server-manager: ${appVersion}\nMIT 2025-2026 ©`}
-        >
+          <LogOut size={18} />
           {effectiveCollapsed ? (
-            "v"
+            <span className="sr-only">Logout</span>
           ) : (
-            <>
-              <div>Frontend: {__APP_VERSION__}</div>
-              <div>Backend: {appVersion}</div>
-            </>
+            <span>Logout</span>
           )}
-        </div>
+        </button>
+        {!effectiveCollapsed && (
+          <div className="sidebar-version">
+            <span>Frontend {__APP_VERSION__}</span>
+          </div>
+        )}
       </div>
     </aside>
   );
 };
-
 export default Sidebar;

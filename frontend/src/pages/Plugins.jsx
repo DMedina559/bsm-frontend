@@ -1,17 +1,19 @@
+import { useRequestTracker } from "../utils/useRequestTracker";
 import React, { useCallback, useEffect, useState } from "react";
 import { Plug, RefreshCw, ToggleLeft, ToggleRight } from "lucide-react";
 import { useToast } from "../ToastContext";
 import { get, post, put } from "../api";
-
 const Plugins = () => {
   const [plugins, setPlugins] = useState([]);
   const [loading, setLoading] = useState(true);
   const { addToast } = useToast();
-
+  const beginRequest = useRequestTracker("" + ":" + "");
   const fetchPlugins = useCallback(async () => {
+    const requestTicket = beginRequest("fetchPlugins");
     setLoading(true);
     try {
       const data = await get("/api/plugins");
+      if (!requestTicket.current()) return false;
       if (data && data.status === "success" && data.plugins) {
         const pluginsArray = Object.entries(data.plugins).map(
           ([name, details]) => ({
@@ -26,16 +28,17 @@ const Plugins = () => {
         setPlugins([]);
       }
     } catch (error) {
+      if (!requestTicket.current()) return false;
       addToast(error.message || "Error fetching plugins", "error");
     } finally {
-      setLoading(false);
+      if (requestTicket.current()) {
+        setLoading(false);
+      }
     }
-  }, [addToast]);
-
+  }, [addToast, beginRequest]);
   useEffect(() => {
     fetchPlugins();
   }, [fetchPlugins]);
-
   const handleReload = async () => {
     addToast("Reloading plugins...", "info");
     try {
@@ -46,12 +49,13 @@ const Plugins = () => {
       addToast(error.message || "Failed to reload plugins", "error");
     }
   };
-
   const handleToggle = async (pluginName, currentEnabled) => {
     const newEnabled = !currentEnabled;
     try {
       // API expects POST for setting status
-      await post(`/api/plugins/${pluginName}`, { enabled: newEnabled });
+      await post(`/api/plugins/${pluginName}`, {
+        enabled: newEnabled,
+      });
       addToast(
         `Plugin ${pluginName} ${newEnabled ? "enabled" : "disabled"}.`,
         "success",
@@ -60,7 +64,12 @@ const Plugins = () => {
       // Optimistic update
       setPlugins((prev) =>
         prev.map((p) =>
-          p.name === pluginName ? { ...p, enabled: newEnabled } : p,
+          p.name === pluginName
+            ? {
+                ...p,
+                enabled: newEnabled,
+              }
+            : p,
         ),
       );
     } catch (error) {
@@ -71,7 +80,6 @@ const Plugins = () => {
       fetchPlugins(); // Fetch fresh state to be sure.
     }
   };
-
   return (
     <div className="container">
       <div
@@ -88,10 +96,13 @@ const Plugins = () => {
           onClick={handleReload}
           disabled={loading}
           title="Reload all plugins"
+          type="button"
         >
           <RefreshCw
             size={16}
-            style={{ marginRight: "5px" }}
+            style={{
+              marginRight: "5px",
+            }}
             className={loading ? "spin" : ""}
           />{" "}
           Reload Plugins
@@ -99,10 +110,18 @@ const Plugins = () => {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: "center", padding: "20px" }}>
+        <div
+          style={{
+            textAlign: "center",
+            padding: "20px",
+          }}
+        >
           <RefreshCw
             className="spin"
-            style={{ display: "inline-block", marginRight: "10px" }}
+            style={{
+              display: "inline-block",
+              marginRight: "10px",
+            }}
           />{" "}
           Loading plugins...
         </div>
@@ -110,13 +129,20 @@ const Plugins = () => {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+            gridTemplateColumns:
+              "repeat(auto-fill, minmax(min(100%, 300px), 1fr))",
             gap: "20px",
             marginTop: "20px",
           }}
         >
           {plugins.length === 0 ? (
-            <p style={{ color: "#aaa" }}>No plugins installed.</p>
+            <p
+              style={{
+                color: "var(--text-color-secondary)",
+              }}
+            >
+              No plugins installed.
+            </p>
           ) : (
             plugins.map((plugin) => (
               <div
@@ -145,7 +171,12 @@ const Plugins = () => {
                     }}
                   >
                     <Plug size={20} />
-                    <h3 style={{ margin: 0, fontSize: "1.1em" }}>
+                    <h3
+                      style={{
+                        margin: 0,
+                        fontSize: "1.1em",
+                      }}
+                    >
                       {plugin.name}
                     </h3>
                   </div>
@@ -158,9 +189,11 @@ const Plugins = () => {
                       cursor: "pointer",
                       color: plugin.enabled
                         ? "var(--primary-button-background-color)"
-                        : "#777",
+                        : "var(--text-color-secondary)",
                     }}
                     title={plugin.enabled ? "Disable" : "Enable"}
+                    type="button"
+                    aria-label={plugin.enabled ? "Disable" : "Enable"}
                   >
                     {plugin.enabled ? (
                       <ToggleRight size={32} />
@@ -173,7 +206,7 @@ const Plugins = () => {
                 <p
                   style={{
                     margin: "5px 0",
-                    color: "#ccc",
+                    color: "var(--text-color-secondary)",
                     fontSize: "0.9em",
                     flexGrow: 1,
                   }}
@@ -187,7 +220,7 @@ const Plugins = () => {
                     justifyContent: "space-between",
                     marginTop: "15px",
                     fontSize: "0.85em",
-                    color: "#888",
+                    color: "var(--text-color-secondary)",
                     borderTop: "1px solid var(--border-color, #555)",
                     paddingTop: "10px",
                   }}
@@ -203,5 +236,4 @@ const Plugins = () => {
     </div>
   );
 };
-
 export default Plugins;

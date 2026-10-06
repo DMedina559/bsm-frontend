@@ -8,6 +8,9 @@
 @import "./styles/controls.css";
 @import "./styles/layout.css";
 @import "./styles/animations.css";
+@import "./styles/tokens.css";
+@import "./styles/workspace.css";
+@import "./styles/density.css";
 
 body {
   margin: 0;

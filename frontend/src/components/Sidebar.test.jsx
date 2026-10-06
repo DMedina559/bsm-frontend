@@ -48,7 +48,7 @@ describe("Sidebar", () => {
       if (url === "/api/info")
         return Promise.resolve({
           status: "success",
-          info: { splash_text: "Splash!" },
+          info: { splash_text: "Splash!", app_version: "4.0.0b2.dev4" },
         });
       // Fallback for context calls if they use get
       if (url === "/api/account")
@@ -78,6 +78,33 @@ describe("Sidebar", () => {
     expect(screen.getByText("Install Server")).toBeInTheDocument();
   });
 
+  it("keeps Appearance and Account navigation states separate", async () => {
+    window.history.replaceState({}, "", "/appearance");
+    await act(async () => {
+      render(<Sidebar />);
+    });
+    const appearance = screen.getByRole("link", { name: "Appearance" });
+    const account = screen.getByRole("link", { name: "Account" });
+    expect(appearance).toHaveAttribute("href", "/appearance");
+    expect(appearance).toHaveAttribute("aria-current", "page");
+    expect(account).not.toHaveAttribute("aria-current");
+    fireEvent.click(account);
+    await waitFor(() =>
+      expect(account).toHaveAttribute("aria-current", "page"),
+    );
+    expect(appearance).not.toHaveAttribute("aria-current");
+    window.history.replaceState({}, "", "/");
+  });
+
+  it("shows the API backend version in the heading without duplicating it in the footer", async () => {
+    render(<Sidebar />);
+    await waitFor(() =>
+      expect(screen.getByText("Version 4.0.0b2.dev4")).toBeInTheDocument(),
+    );
+    expect(screen.queryByText("Version 4.0")).not.toBeInTheDocument();
+    expect(screen.queryByText("Backend 4.0.0b2.dev4")).not.toBeInTheDocument();
+    expect(screen.getByText(/Frontend/)).toBeInTheDocument();
+  });
   it("displays splash text", async () => {
     await act(async () => {
       render(<Sidebar />);
@@ -127,7 +154,7 @@ describe("Sidebar", () => {
     });
 
     await waitFor(() => {
-      expect(screen.queryByText("Overview")).not.toBeInTheDocument();
+      expect(screen.getByLabelText("Main navigation")).toHaveClass("collapsed");
     });
 
     const expandBtn = screen.getByRole("button", { name: "Expand Sidebar" });
@@ -171,7 +198,7 @@ describe("Sidebar", () => {
       if (url === "/api/info")
         return Promise.resolve({
           status: "success",
-          info: { splash_text: "Splash!" },
+          info: { splash_text: "Splash!", app_version: "4.0.0b2.dev4" },
         });
       if (url === "/api/account")
         return Promise.resolve({ username: "testuser", role: "admin" });

@@ -71,9 +71,6 @@ describe("ServerConfig", () => {
   });
 
   it("renders the delete button and handles deletion", async () => {
-    const confirmSpy = vi.spyOn(window, "confirm");
-    confirmSpy.mockReturnValue(true);
-
     render(<ServerConfig />);
 
     // Wait for the delete button to be fully visible and rendered
@@ -90,18 +87,12 @@ describe("ServerConfig", () => {
     const deleteBtn = screen.getByText("Delete Server").closest("button");
     fireEvent.click(deleteBtn);
 
-    // Wait for the confirmation dialog interaction
-    await waitFor(() => {
-      expect(confirmSpy).toHaveBeenCalledWith(
-        expect.stringContaining("TestServer"),
-      );
-    });
+    expect(await screen.findByRole("dialog")).toHaveTextContent("TestServer");
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
     // Wait for the API call
     await waitFor(() => {
       expect(api.del).toHaveBeenCalledWith("/api/server/TestServer/delete");
     });
-
-    confirmSpy.mockRestore();
   });
 });

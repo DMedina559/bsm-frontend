@@ -24,6 +24,7 @@ export const ServerProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const fetchRequestId = useRef(0);
+  const selectedServerRef = useRef(selectedServer);
 
   const {
     isConnected,
@@ -36,6 +37,7 @@ export const ServerProvider = ({ children }) => {
   // Wrapper for setting selected server to also persist to localStorage
   const setSelectedServer = useCallback((serverName) => {
     logger.debug(`[ServerContext] Setting selected server`, { serverName });
+    selectedServerRef.current = serverName;
     setSelectedServerState(serverName);
     if (serverName) {
       localStorage.setItem("selectedServer", serverName);
@@ -93,10 +95,10 @@ export const ServerProvider = ({ children }) => {
           if (serverList.length > 0) {
             // Check if currently selected server still exists
             const currentSelectionExists = serverList.some(
-              (s) => s.name === selectedServer,
+              (s) => s.name === selectedServerRef.current,
             );
 
-            if (!selectedServer || !currentSelectionExists) {
+            if (!selectedServerRef.current || !currentSelectionExists) {
               logger.debug(`[ServerContext] Auto-selecting first server`, {
                 firstServerName: serverList[0].name,
               });
@@ -120,22 +122,26 @@ export const ServerProvider = ({ children }) => {
         }
       } catch (err) {
         logger.error("[ServerContext] Error fetching servers", { error: err });
-        setError(err.message || "Failed to fetch servers");
+        if (currentRequestId === fetchRequestId.current)
+          setError(err.message || "Failed to fetch servers");
         return false;
       } finally {
-        if (!isBackground) {
+        if (currentRequestId === fetchRequestId.current) {
           setLoading(false);
         }
       }
     },
-    [user, selectedServer, setSelectedServer],
+    [user, setSelectedServer],
   );
 
   useEffect(() => {
     if (user) {
       fetchServers();
     } else {
-      // Clear sensitive state on logout
+      // Clear sensitive state and invalidate outstanding responses on logout.
+      fetchRequestId.current += 1;
+      setLoading(false);
+      setError(null);
       setServers([]);
       setSelectedServer(null);
     }
@@ -214,10 +220,10 @@ export const ServerProvider = ({ children }) => {
     };
   }, [fetchServers, addMessageListener]);
 
-  const refreshServers = () => {
+  const refreshServers = useCallback(() => {
     logger.debug("[ServerContext] Manually refreshing servers list");
     return fetchServers();
-  };
+  }, [fetchServers]);
 
   return (
     <ServerContext.Provider

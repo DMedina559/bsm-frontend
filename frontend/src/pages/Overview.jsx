@@ -1,3 +1,4 @@
+import { useDialog } from "../DialogContext";
 import React, { useState } from "react";
 import { useServer } from "../ServerContext";
 import { useAuth } from "../AuthContext";
@@ -7,6 +8,8 @@ import { useWebSocket } from "../WebSocketContext";
 import { useNavigate } from "react-router-dom";
 import { post, getApiBaseUrl } from "../api";
 import { logger } from "../utils/logger";
+import { sortServers, readServerSort, SERVER_SORTS } from "../utils/serverSort";
+import { summarizeFleet } from "../utils/fleetStatus";
 import {
   Play,
   Square,
@@ -15,44 +18,56 @@ import {
   Download,
   Terminal,
 } from "lucide-react";
-
 const Overview = () => {
-  const { servers, setSelectedServer, refreshServers } = useServer();
+  const { confirmAction, promptAction } = useDialog();
+  const { servers, setSelectedServer, refreshServers, loading, error } =
+    useServer();
   const { user } = useAuth();
   const { addToast } = useToast();
-  const { isConnected, reconnect } = useWebSocket();
+  const { isConnected, isFallback, reconnect } = useWebSocket();
   const navigate = useNavigate();
   const [actionLoading, setActionLoading] = useState({});
   const [refreshing, setRefreshing] = useState(false);
+  const [sort, setSort] = useState(readServerSort);
+  const sortedServers = sortServers(servers, sort.key, sort.direction);
+  const updateSort = (patch) => {
+    const next = { ...sort, ...patch };
+    setSort(next);
+    try {
+      localStorage.setItem("bsm.fleet-sort.v4", JSON.stringify(next));
+    } catch {
+      /* Sorting remains available without browser storage. */
+    }
+  };
 
   // Force refresh servers list when navigating back to Overview,
   // guaranteeing fresh status (e.g. after navigating back from Monitor)
   React.useEffect(() => {
     refreshServers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
+  }, [refreshServers]);
   const handleServerClick = (serverName) => {
     setSelectedServer(serverName);
     navigate("/monitor");
   };
-
   const handleRefresh = async () => {
     if (refreshing) return;
     setRefreshing(true);
     logger.debug("[Overview] Manually refreshing server list");
     addToast("Refreshing server list...", "info");
     try {
-      await refreshServers();
+      const refreshed = await refreshServers();
+      if (refreshed === false)
+        throw new Error("Server list could not be refreshed.");
       addToast("Server list refreshed.", "success");
     } catch (error) {
-      logger.error("[Overview] Failed to refresh server list", { error });
+      logger.error("[Overview] Failed to refresh server list", {
+        error,
+      });
       addToast("Failed to refresh server list.", "error");
     } finally {
       setRefreshing(false);
     }
   };
-
   const handleAction = async (e, serverName, action) => {
     // Prevent click from bubbling up to the card click handler
     e.stopPropagation();
@@ -61,16 +76,16 @@ const Overview = () => {
     if (!isConnected) {
       reconnect();
     }
-
     if (actionLoading[serverName]) return;
-
     logger.info("[Overview] Sending server action", {
       server: serverName,
       action,
     });
-    setActionLoading((prev) => ({ ...prev, [serverName]: true }));
+    setActionLoading((prev) => ({
+      ...prev,
+      [serverName]: true,
+    }));
     addToast(`Sending ${action} signal to ${serverName}...`, "info");
-
     try {
       await post(`/api/server/${serverName}/${action}`);
       addToast(`Signal ${action} sent to ${serverName}.`, "success");
@@ -82,12 +97,14 @@ const Overview = () => {
       });
       addToast(error.message || `Failed to ${action} server.`, "error");
     } finally {
-      setActionLoading((prev) => ({ ...prev, [serverName]: false }));
+      setActionLoading((prev) => ({
+        ...prev,
+        [serverName]: false,
+      }));
       // Ensure UI reflects the latest state, even if WS messages are missed
       refreshServers();
     }
   };
-
   const handleUpdate = async (e, serverName) => {
     e.stopPropagation();
 
@@ -95,16 +112,19 @@ const Overview = () => {
     if (!isConnected) {
       reconnect();
     }
-
     if (
-      !confirm(
+      !(await confirmAction(
         `Are you sure you want to update ${serverName}? The server will stop if running.`,
-      )
+      ))
     )
       return;
-
-    logger.info("[Overview] Initiating server update", { server: serverName });
-    setActionLoading((prev) => ({ ...prev, [serverName]: true }));
+    logger.info("[Overview] Initiating server update", {
+      server: serverName,
+    });
+    setActionLoading((prev) => ({
+      ...prev,
+      [serverName]: true,
+    }));
     addToast(`Updating ${serverName}...`, "info");
     try {
       await post(`/api/server/${serverName}/update`);
@@ -116,11 +136,13 @@ const Overview = () => {
       });
       addToast(error.message || `Failed to update ${serverName}.`, "error");
     } finally {
-      setActionLoading((prev) => ({ ...prev, [serverName]: false }));
+      setActionLoading((prev) => ({
+        ...prev,
+        [serverName]: false,
+      }));
       refreshServers();
     }
   };
-
   const handleSendCommand = async (e, serverName) => {
     e.stopPropagation();
     e.preventDefault();
@@ -129,17 +151,22 @@ const Overview = () => {
     if (!isConnected) {
       reconnect();
     }
-
-    const command = window.prompt(`Enter command to send to ${serverName}:`);
+    const command = await promptAction(
+      `Enter command to send to ${serverName}:`,
+    );
     if (!command) return;
-
     logger.info("[Overview] Sending console command", {
       server: serverName,
       command,
     });
-    setActionLoading((prev) => ({ ...prev, [serverName]: true }));
+    setActionLoading((prev) => ({
+      ...prev,
+      [serverName]: true,
+    }));
     try {
-      await post(`/api/server/${serverName}/send_command`, { command });
+      await post(`/api/server/${serverName}/send_command`, {
+        command,
+      });
       addToast(`Command sent to ${serverName}.`, "success");
     } catch (error) {
       logger.error("[Overview] Failed to send console command", {
@@ -152,27 +179,35 @@ const Overview = () => {
         "error",
       );
     } finally {
-      setActionLoading((prev) => ({ ...prev, [serverName]: false }));
+      setActionLoading((prev) => ({
+        ...prev,
+        [serverName]: false,
+      }));
     }
   };
-
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case "running":
-        return "#4CAF50";
+        return "var(--bsm-success)";
       case "stopped":
-        return "#D32F2F";
+        return "var(--bsm-danger)";
       case "starting":
       case "stopping":
       case "restarting":
-        return "#FFA000";
+        return "var(--bsm-warning)";
       default:
-        return "#777";
+        return "var(--text-color-secondary)";
     }
   };
-
+  const { running, stopped, playersKnown, players } = summarizeFleet(servers);
+  const connection = isConnected
+    ? "Live updates connected"
+    : isFallback
+      ? "Polling fallback"
+      : "Live updates disconnected";
+  const unavailable = (loading || error) && servers.length === 0;
   return (
-    <div className="container">
+    <div className="container workspace-overview">
       <div
         className="header"
         style={{
@@ -181,20 +216,129 @@ const Overview = () => {
           alignItems: "center",
         }}
       >
-        <h1>Server Overview</h1>
+        <div>
+          <p className="workspace-eyebrow">BEDROCK SERVER MANAGER</p>
+          <h1>Overview</h1>
+          <p className="workspace-subtitle">
+            Your server fleet. One control plane.
+          </p>
+        </div>
         <button
           className="action-button secondary"
           onClick={handleRefresh}
           disabled={refreshing}
+          type="button"
         >
           {refreshing ? "Refreshing..." : "Refresh"}
         </button>
       </div>
 
-      {servers.length === 0 ? (
+      <section className="workspace-hero" aria-label="Connection status">
+        <img
+          src={`${getApiProxyBasePath()}/app/image/icon/manager-logo.png`}
+          alt=""
+        />
+        <div>
+          <span className="workspace-eyebrow">FLEET CONTROL</span>
+          <h2>Built for your Bedrock worlds.</h2>
+          <p>
+            Manage servers, players, backups, and extensions from one workspace.
+          </p>
+          <div
+            className={`connection-pill ${isConnected ? "connected" : "degraded"}`}
+            role="status"
+          >
+            {connection}
+          </div>
+        </div>
+        {!isConnected && (
+          <button
+            className="action-button secondary"
+            onClick={reconnect}
+            type="button"
+          >
+            Reconnect
+          </button>
+        )}
+      </section>
+      <section className="workspace-metrics" aria-label="Fleet status">
+        {[
+          [
+            "Managed servers",
+            servers.length,
+            "Servers visible to your account",
+          ],
+          [
+            "Running",
+            running,
+            `${stopped} stopped · ${servers.length - running - stopped} other`,
+          ],
+          [
+            "Players online",
+            playersKnown ? players : "—",
+            playersKnown
+              ? "Across your visible fleet"
+              : "Some player counts unavailable",
+          ],
+          [
+            "Status source",
+            isConnected ? "Live" : isFallback ? "Polling" : "Offline",
+            "Connection status, not a health check",
+          ],
+        ].map(([label, value, detail]) => (
+          <article className="workspace-metric" key={label}>
+            <span>{label}</span>
+            <strong>{unavailable ? "—" : value}</strong>
+            <small>{detail}</small>
+          </article>
+        ))}
+      </section>
+      <div className="fleet-heading">
+        <h2>Server fleet</h2>
+        <div className="fleet-sort-controls">
+          <span>{servers.length} visible servers</span>
+          <label htmlFor="fleet-sort">Sort by</label>
+          <select
+            id="fleet-sort"
+            className="form-input"
+            value={sort.key}
+            onChange={(e) => updateSort({ key: e.target.value })}
+          >
+            {Object.entries(SERVER_SORTS).map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </select>
+          <label className="sr-only" htmlFor="fleet-sort-direction">
+            Sort direction
+          </label>
+          <select
+            id="fleet-sort-direction"
+            className="form-input"
+            value={sort.direction}
+            onChange={(e) => updateSort({ direction: e.target.value })}
+          >
+            <option value="asc">Ascending</option>
+            <option value="desc">Descending</option>
+          </select>
+        </div>
+      </div>
+      {error && (
+        <div className="message-box message-error" role="alert">
+          Unable to load fleet status: {error}. Displayed servers may be out of
+          date.
+        </div>
+      )}
+      {loading && servers.length === 0 ? (
+        <p role="status">Loading server fleet…</p>
+      ) : error && servers.length === 0 ? null : servers.length === 0 ? (
         <div
           className="message-box message-info"
-          style={{ textAlign: "center", padding: "40px" }}
+          style={{
+            textAlign: "center",
+            padding: "40px",
+          }}
         >
           <h3>No servers found.</h3>
           {user?.role === "admin" && (
@@ -208,11 +352,12 @@ const Overview = () => {
           className="server-grid"
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-            gap: "20px",
+            gridTemplateColumns:
+              "repeat(auto-fill, minmax(min(100%, var(--bsm-card-min-width)), 1fr))",
+            gap: "var(--bsm-grid-gap)",
           }}
         >
-          {servers.map((server) => (
+          {sortedServers.map((server) => (
             <div
               key={server.name}
               className="server-card"
@@ -237,9 +382,9 @@ const Overview = () => {
               <div
                 className="card-header"
                 style={{
-                  padding: "15px",
+                  padding: "var(--bsm-card-padding)",
                   display: "flex",
-                  gap: "15px",
+                  gap: "var(--bsm-grid-gap)",
                   alignItems: "center",
                   borderBottom: "1px solid var(--border-color)",
                 }}
@@ -248,18 +393,23 @@ const Overview = () => {
                   src={`${getApiBaseUrl()}/api/server/${server.name}/world/icon`}
                   alt={server.name}
                   style={{
-                    width: "48px",
-                    height: "48px",
+                    width: "var(--bsm-card-icon-size)",
+                    height: "var(--bsm-card-icon-size)",
                     objectFit: "cover",
                     borderRadius: "4px",
-                    background: "#333",
+                    background: "var(--bsm-surface-raised)",
                   }}
                   onError={(e) => {
                     e.target.onerror = null; // Prevent infinite loop
                     e.target.src = `${getApiProxyBasePath()}/app/image/icon/favicon-96x96.png`;
                   }}
                 />
-                <div style={{ flexGrow: 1, overflow: "hidden" }}>
+                <div
+                  style={{
+                    flexGrow: 1,
+                    overflow: "hidden",
+                  }}
+                >
                   <h3
                     style={{
                       margin: "0 0 5px 0",
@@ -268,7 +418,17 @@ const Overview = () => {
                       textOverflow: "ellipsis",
                     }}
                   >
-                    {server.name}
+                    <button
+                      type="button"
+                      className="server-name-button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleServerClick(server.name);
+                      }}
+                      aria-label={`Open ${server.name} monitor`}
+                    >
+                      {server.name}
+                    </button>
                   </h3>
                   <div
                     style={{
@@ -301,7 +461,11 @@ const Overview = () => {
 
               <div
                 className="card-body"
-                style={{ padding: "15px", fontSize: "0.9em", color: "#ccc" }}
+                style={{
+                  padding: "var(--bsm-card-padding)",
+                  fontSize: "0.9em",
+                  color: "var(--text-color-secondary)",
+                }}
               >
                 <div
                   style={{
@@ -311,7 +475,11 @@ const Overview = () => {
                   }}
                 >
                   <span>Version:</span>
-                  <span style={{ color: "#fff" }}>
+                  <span
+                    style={{
+                      color: "var(--text-color)",
+                    }}
+                  >
                     {server.version || "N/A"}
                   </span>
                 </div>
@@ -333,7 +501,7 @@ const Overview = () => {
                   </span>
                   <span
                     style={{
-                      color: "#fff",
+                      color: "var(--text-color)",
                       position: "relative",
                       cursor: "help",
                     }}
@@ -358,7 +526,7 @@ const Overview = () => {
               <div
                 className="card-actions"
                 style={{
-                  padding: "10px 15px",
+                  padding: "var(--bsm-card-padding)",
                   background: "rgba(0,0,0,0.2)",
                   display: "flex",
                   justifyContent: "space-around",
@@ -369,55 +537,80 @@ const Overview = () => {
               >
                 <button
                   className="action-button start-button"
-                  style={{ padding: "6px 12px", fontSize: "0.8em" }}
+                  style={{
+                    padding: "6px 12px",
+                    fontSize: "0.8em",
+                  }}
                   onClick={(e) => handleAction(e, server.name, "start")}
                   disabled={
                     actionLoading[server.name] || server.status === "running"
                   }
+                  aria-label={`Start ${server.name}`}
                   title="Start Server"
+                  type="button"
                 >
                   <Play size={14} />
                 </button>
                 <button
                   className="action-button danger-button"
-                  style={{ padding: "6px 12px", fontSize: "0.8em" }}
+                  style={{
+                    padding: "6px 12px",
+                    fontSize: "0.8em",
+                  }}
                   onClick={(e) => handleAction(e, server.name, "stop")}
                   disabled={
                     actionLoading[server.name] || server.status === "stopped"
                   }
+                  aria-label={`Stop ${server.name}`}
                   title="Stop Server"
+                  type="button"
                 >
                   <Square size={14} />
                 </button>
                 <button
                   className="action-button warning-button"
-                  style={{ padding: "6px 12px", fontSize: "0.8em" }}
+                  style={{
+                    padding: "6px 12px",
+                    fontSize: "0.8em",
+                  }}
                   onClick={(e) => handleAction(e, server.name, "restart")}
                   disabled={
                     actionLoading[server.name] || server.status === "stopped"
                   }
+                  aria-label={`Restart ${server.name}`}
                   title="Restart Server"
+                  type="button"
                 >
                   <RotateCcw size={14} />
                 </button>
                 <button
                   className="action-button secondary"
-                  style={{ padding: "6px 12px", fontSize: "0.8em" }}
+                  style={{
+                    padding: "6px 12px",
+                    fontSize: "0.8em",
+                  }}
                   onClick={(e) => handleUpdate(e, server.name)}
                   disabled={actionLoading[server.name]}
+                  aria-label={`Update ${server.name}`}
                   title="Update Server"
+                  type="button"
                 >
                   <Download size={14} />
                 </button>
                 <button
                   className="action-button secondary"
-                  style={{ padding: "6px 12px", fontSize: "0.8em" }}
+                  style={{
+                    padding: "6px 12px",
+                    fontSize: "0.8em",
+                  }}
                   onClick={(e) => handleSendCommand(e, server.name)}
                   disabled={
                     actionLoading[server.name] ||
                     server.status?.toLowerCase() !== "running"
                   }
+                  aria-label={`Send command to ${server.name}`}
                   title="Send Command"
+                  type="button"
                 >
                   <Terminal size={14} />
                 </button>
@@ -429,5 +622,4 @@ const Overview = () => {
     </div>
   );
 };
-
 export default Overview;

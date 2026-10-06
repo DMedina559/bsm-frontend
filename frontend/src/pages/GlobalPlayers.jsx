@@ -1,9 +1,9 @@
+import { useRequestTracker } from "../utils/useRequestTracker";
 import React, { useState, useEffect } from "react";
 import { get, post, put } from "../api";
 import { useToast } from "../ToastContext";
 import { RefreshCw, Plus, Scan } from "lucide-react";
 import { logger } from "../utils/logger";
-
 const GlobalPlayers = () => {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -14,39 +14,45 @@ const GlobalPlayers = () => {
   const [newPlayerString, setNewPlayerString] = useState(""); // Format: Name:XUID
 
   const { addToast } = useToast();
-
+  const beginRequest = useRequestTracker("" + ":" + "");
   const fetchPlayers = React.useCallback(async () => {
+    const requestTicket = beginRequest("fetchPlayers");
     setLoading(true);
     try {
       const response = await get("/api/players/get");
+      if (!requestTicket.current()) return false;
       if (response && response.status === "success") {
         setPlayers(response.players || []);
         return true;
       } else {
-        logger.warn("[GlobalPlayers] Failed to fetch players", { response });
+        logger.warn("[GlobalPlayers] Failed to fetch players", {
+          response,
+        });
         addToast(response?.message || "Failed to fetch players.", "error");
         return false;
       }
     } catch (error) {
-      logger.error("[GlobalPlayers] Error fetching players", { error });
+      if (!requestTicket.current()) return false;
+      logger.error("[GlobalPlayers] Error fetching players", {
+        error,
+      });
       addToast("Error fetching players.", "error");
       return false;
     } finally {
-      setLoading(false);
+      if (requestTicket.current()) {
+        setLoading(false);
+      }
     }
-  }, [addToast]);
-
+  }, [addToast, beginRequest]);
   useEffect(() => {
     fetchPlayers();
   }, [fetchPlayers]);
-
   const handleRefresh = async () => {
     const success = await fetchPlayers();
     if (success) {
       addToast("Players list refreshed.", "success");
     }
   };
-
   const handleScan = async () => {
     setScanLoading(true);
     try {
@@ -63,7 +69,6 @@ const GlobalPlayers = () => {
       setScanLoading(false);
     }
   };
-
   const handleAdd = async (e) => {
     e.preventDefault();
     if (!newPlayerString) return;
@@ -74,11 +79,12 @@ const GlobalPlayers = () => {
       .map((s) => s.trim())
       .filter((s) => s);
     if (inputs.length === 0) return;
-
     setAddLoading(true);
     try {
       // payload expects { players: ["Name:XUID", ...] }
-      const response = await post("/api/players/add", { players: inputs });
+      const response = await post("/api/players/add", {
+        players: inputs,
+      });
       if (response && response.status === "success") {
         addToast(response.message || "Players added/updated.", "success");
         setNewPlayerString("");
@@ -92,7 +98,6 @@ const GlobalPlayers = () => {
       setAddLoading(false);
     }
   };
-
   return (
     <div className="container">
       <div
@@ -104,16 +109,25 @@ const GlobalPlayers = () => {
         }}
       >
         <h1>Global Player Database</h1>
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "10px",
+          }}
+        >
           <button
             className="action-button secondary"
             onClick={handleScan}
             disabled={scanLoading}
             title="Scan server logs for players"
+            type="button"
+            aria-label="Scan server logs for players"
           >
             <Scan
               size={16}
-              style={{ marginRight: "5px" }}
+              style={{
+                marginRight: "5px",
+              }}
               className={scanLoading ? "spin" : ""}
             />
             {scanLoading ? "Scanning..." : "Scan Logs"}
@@ -122,10 +136,13 @@ const GlobalPlayers = () => {
             className="action-button secondary"
             onClick={handleRefresh}
             disabled={loading}
+            type="button"
           >
             <RefreshCw
               size={16}
-              style={{ marginRight: "5px" }}
+              style={{
+                marginRight: "5px",
+              }}
               className={loading ? "spin" : ""}
             />{" "}
             Refresh
@@ -142,7 +159,10 @@ const GlobalPlayers = () => {
         }}
       >
         <p
-          style={{ marginBottom: "20px", color: "var(--text-color-secondary)" }}
+          style={{
+            marginBottom: "20px",
+            color: "var(--text-color-secondary)",
+          }}
         >
           This is the central database of all known players across all servers.
           Adding players here makes them available for permissions management.
@@ -162,10 +182,18 @@ const GlobalPlayers = () => {
             borderRadius: "5px",
           }}
         >
-          <div style={{ flexGrow: 1 }}>
+          <div
+            style={{
+              flexGrow: 1,
+            }}
+          >
             <label
               className="form-label"
-              style={{ display: "block", marginBottom: "5px" }}
+              style={{
+                display: "block",
+                marginBottom: "5px",
+              }}
+              htmlFor="globalplayers-field-1"
             >
               Add Players (Format: <code>Gamertag:XUID</code>)
             </label>
@@ -175,7 +203,10 @@ const GlobalPlayers = () => {
               value={newPlayerString}
               onChange={(e) => setNewPlayerString(e.target.value)}
               placeholder="e.g. Steve:123456789, Alex:987654321"
-              style={{ width: "100%" }}
+              style={{
+                width: "100%",
+              }}
+              id="globalplayers-field-1"
             />
           </div>
           <button
@@ -183,7 +214,13 @@ const GlobalPlayers = () => {
             className="action-button"
             disabled={addLoading || !newPlayerString}
           >
-            <Plus size={16} style={{ marginRight: "5px" }} /> Add / Update
+            <Plus
+              size={16}
+              style={{
+                marginRight: "5px",
+              }}
+            />{" "}
+            Add / Update
           </button>
         </form>
 
@@ -191,14 +228,22 @@ const GlobalPlayers = () => {
         {loading ? (
           <div
             className="loader-container"
-            style={{ textAlign: "center", padding: "40px" }}
+            style={{
+              textAlign: "center",
+              padding: "40px",
+            }}
           >
             <div className="spinner"></div>
             <p>Loading players...</p>
           </div>
         ) : (
           <div className="table-responsive-wrapper">
-            <table className="server-table" style={{ width: "100%" }}>
+            <table
+              className="server-table"
+              style={{
+                width: "100%",
+              }}
+            >
               <thead>
                 <tr>
                   <th>Gamertag</th>
@@ -209,7 +254,13 @@ const GlobalPlayers = () => {
                 {players.length > 0 ? (
                   players.map((p, idx) => (
                     <tr key={idx}>
-                      <td style={{ fontWeight: "bold" }}>{p.name}</td>
+                      <td
+                        style={{
+                          fontWeight: "bold",
+                        }}
+                      >
+                        {p.name}
+                      </td>
                       <td className="mono-text">{p.xuid}</td>
                     </tr>
                   ))
@@ -237,5 +288,4 @@ const GlobalPlayers = () => {
     </div>
   );
 };
-
 export default GlobalPlayers;

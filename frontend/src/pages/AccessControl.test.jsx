@@ -42,6 +42,18 @@ describe("AccessControl", () => {
     api.post.mockResolvedValue({ status: "success" });
   });
 
+  it("scans players using the OpenAPI PUT operation", async () => {
+    api.put.mockResolvedValue({ status: "success" });
+    render(<AccessControl />);
+    await waitFor(() =>
+      expect(screen.getByText("Player1")).toBeInTheDocument(),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Scan" }));
+    await waitFor(() =>
+      expect(api.put).toHaveBeenCalledWith("/api/players/scan"),
+    );
+    expect(api.post).not.toHaveBeenCalledWith("/api/players/scan");
+  });
   it("renders allowlist", async () => {
     render(<AccessControl />);
 

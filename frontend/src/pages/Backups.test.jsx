@@ -57,13 +57,12 @@ describe("Backups", () => {
       expect(screen.getByText("World Backups")).toBeInTheDocument();
     });
 
-    vi.spyOn(window, "confirm").mockReturnValue(true);
-
     // Using getAllByText because "New World Backup" might appear or similar
     const createBtn = screen
       .getByRole("button", { name: /New World Backup/i })
       .closest("button");
     fireEvent.click(createBtn);
+    fireEvent.click(await screen.findByRole("button", { name: "Continue" }));
 
     await waitFor(() => {
       expect(api.post).toHaveBeenCalledWith(
@@ -78,10 +77,9 @@ describe("Backups", () => {
 
     expect(await screen.findByText("world_backup_1.zip")).toBeInTheDocument();
 
-    vi.spyOn(window, "confirm").mockReturnValue(true);
-
     const restoreBtn = screen.getAllByTitle("Restore")[0];
     fireEvent.click(restoreBtn);
+    fireEvent.click(await screen.findByRole("button", { name: "Continue" }));
 
     await waitFor(() => {
       expect(api.post).toHaveBeenCalledWith(
