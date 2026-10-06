@@ -75,7 +75,7 @@ export function paletteCss(value) {
   const compatibility = Object.entries(aliases)
     .map(([key, value]) => `  --${key}: var(--bsm-${value});`)
     .join("\n");
-  return `:root[data-mode] {\n  --bsm-accent: ${p.accent};\n  --bsm-accent-strong: ${p.accent};\n  --bsm-accent-hover: ${p.accent};\n  --bsm-on-accent: ${onAccent};\n  --bsm-focus: ${p.accent};\n  --bsm-page: ${p.page};\n  --bsm-surface: ${p.surface};\n  --bsm-surface-raised: ${p.surface};\n  --bsm-input: ${p.surface};\n  --bsm-text: ${p.text};\n  --bsm-muted: ${p.muted};\n  --bsm-border: color-mix(in srgb, ${p.muted} 35%, ${p.surface});\n${compatibility}\n}\n`;
+  return `:root[data-theme][data-mode][data-density] {\n  --bsm-accent: ${p.accent};\n  --bsm-accent-strong: ${p.accent};\n  --bsm-accent-hover: ${p.accent};\n  --bsm-on-accent: ${onAccent};\n  --bsm-focus: ${p.accent};\n  --bsm-page: ${p.page};\n  --bsm-surface: ${p.surface};\n  --bsm-surface-raised: ${p.surface};\n  --bsm-input: ${p.surface};\n  --bsm-text: ${p.text};\n  --bsm-muted: ${p.muted};\n  --bsm-border: color-mix(in srgb, ${p.muted} 35%, ${p.surface});\n${compatibility}\n}\n`;
 }
 export function readPaletteState() {
   try {
