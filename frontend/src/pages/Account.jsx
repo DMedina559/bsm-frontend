@@ -115,7 +115,7 @@ const Account = ({ appearanceOnly = false }) => {
     <div className="container account-page">
       <div className="header">
         <div>
-          <p className="platform-eyebrow">YOUR WORKSPACE</p>
+          <p className="workspace-eyebrow">YOUR WORKSPACE</p>
           <h1>{appearanceOnly ? "Appearance" : "My Account"}</h1>
         </div>
       </div>

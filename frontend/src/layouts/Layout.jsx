@@ -46,7 +46,7 @@ const Layout = () => {
     wasMobileOpen.current = mobileOpen;
   }, [mobileOpen, isMobile]);
   useEffect(() => {
-    document.title = `${title} · Bedrock Server Manager 4.0`;
+    document.title = `${title} · Bedrock Server Manager`;
     mainRef.current?.focus({ preventScroll: true });
   }, [pathname, title]);
 
@@ -79,7 +79,7 @@ const Layout = () => {
             onClick={() => setMobileOpen(true)}
             aria-label="Open navigation"
             aria-expanded={mobileOpen}
-            aria-controls="platform-navigation"
+            aria-controls="manager-navigation"
           >
             <Menu size={20} />
           </button>

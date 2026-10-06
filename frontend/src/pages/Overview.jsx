@@ -207,7 +207,7 @@ const Overview = () => {
       : "Live updates disconnected";
   const unavailable = (loading || error) && servers.length === 0;
   return (
-    <div className="container platform-overview">
+    <div className="container workspace-overview">
       <div
         className="header"
         style={{
@@ -217,9 +217,9 @@ const Overview = () => {
         }}
       >
         <div>
-          <p className="platform-eyebrow">BEDROCK SERVER MANAGER / 4.0</p>
+          <p className="workspace-eyebrow">BEDROCK SERVER MANAGER</p>
           <h1>Overview</h1>
-          <p className="platform-subtitle">
+          <p className="workspace-subtitle">
             Your server fleet. One control plane.
           </p>
         </div>
@@ -233,13 +233,13 @@ const Overview = () => {
         </button>
       </div>
 
-      <section className="platform-hero" aria-label="Connection status">
+      <section className="workspace-hero" aria-label="Connection status">
         <img
-          src={`${getApiProxyBasePath()}/app/image/icon/platform-logo.png`}
+          src={`${getApiProxyBasePath()}/app/image/icon/manager-logo.png`}
           alt=""
         />
         <div>
-          <span className="platform-eyebrow">FLEET CONTROL</span>
+          <span className="workspace-eyebrow">FLEET CONTROL</span>
           <h2>Built for your Bedrock worlds.</h2>
           <p>
             Manage servers, players, backups, and extensions from one workspace.
@@ -261,7 +261,7 @@ const Overview = () => {
           </button>
         )}
       </section>
-      <section className="platform-metrics" aria-label="Fleet status">
+      <section className="workspace-metrics" aria-label="Fleet status">
         {[
           [
             "Managed servers",
@@ -286,7 +286,7 @@ const Overview = () => {
             "Connection status, not a health check",
           ],
         ].map(([label, value, detail]) => (
-          <article className="platform-metric" key={label}>
+          <article className="workspace-metric" key={label}>
             <span>{label}</span>
             <strong>{unavailable ? "—" : value}</strong>
             <small>{detail}</small>

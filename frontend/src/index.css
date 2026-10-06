@@ -9,7 +9,7 @@
 @import "./styles/layout.css";
 @import "./styles/animations.css";
 @import "./styles/tokens.css";
-@import "./styles/platform.css";
+@import "./styles/workspace.css";
 @import "./styles/density.css";
 
 body {

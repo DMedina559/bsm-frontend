@@ -58,7 +58,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
         setSplashText(data?.info?.splash_text || data?.data?.splash_text || "");
       })
       .catch((error) =>
-        logger.warn("[Sidebar] Unable to load platform info", {
+        logger.warn("[Sidebar] Unable to load application info", {
           error,
         }),
       );
@@ -232,7 +232,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
     .filter((group) => group.items.length);
   return (
     <aside
-      id="platform-navigation"
+      id="manager-navigation"
       aria-label="Main navigation"
       className={`sidebar-nav ${effectiveCollapsed ? "collapsed" : ""} ${mobileOpen ? "mobile-open" : ""}`}
     >
@@ -247,7 +247,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
             <strong>
               Bedrock<span>Server Manager</span>
             </strong>
-            <small className="platform-brand-version">
+            <small className="workspace-brand-version">
               Version {appVersion}
             </small>
           </div>

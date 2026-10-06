@@ -9,14 +9,14 @@
 .sidebar-nav {
   border-right: 1px solid var(--border-color);
 }
-.platform-brand-version {
+.workspace-brand-version {
   display: block;
   color: var(--bsm-accent);
   letter-spacing: 0.04em;
   font-size: 11px;
   margin-top: 8px;
 }
-.platform-overview {
+.workspace-overview {
   max-width: 1440px;
   width: 100%;
   margin: 0 auto;
@@ -25,27 +25,27 @@
   box-shadow: none;
   padding: 0;
 }
-.platform-overview .header {
+.workspace-overview .header {
   gap: 20px;
   text-align: left;
 }
-.platform-overview .header h1 {
+.workspace-overview .header h1 {
   font-size: clamp(26px, 3vw, 38px);
   letter-spacing: -0.04em;
 }
-.platform-eyebrow {
+.workspace-eyebrow {
   font-size: 10px;
   letter-spacing: 0.16em;
   font-weight: 700;
   opacity: 0.72;
   margin: 0 0 12px;
 }
-.platform-subtitle {
+.workspace-subtitle {
   margin: 10px 0 0;
   opacity: 0.65;
   font-size: 14px;
 }
-.platform-hero {
+.workspace-hero {
   display: flex;
   align-items: center;
   gap: 18px;
@@ -57,22 +57,22 @@
     var(--container-background-color);
   margin-bottom: 24px;
 }
-.platform-hero img {
+.workspace-hero img {
   width: 80px;
   height: 80px;
   object-fit: contain;
 }
-.platform-hero h2 {
+.workspace-hero h2 {
   font-size: clamp(18px, 1.5vw, 22px);
   margin: 8px 0;
   letter-spacing: -0.03em;
 }
-.platform-hero p {
+.workspace-hero p {
   font-size: 14px;
   opacity: 0.7;
   line-height: 1.6;
 }
-.platform-hero > button {
+.workspace-hero > button {
   margin-left: auto;
 }
 .connection-pill {
@@ -98,13 +98,13 @@
   color: var(--bsm-warning);
   background: color-mix(in srgb, var(--bsm-warning) 10%, transparent);
 }
-.platform-metrics {
+.workspace-metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
   margin-bottom: 22px;
 }
-.platform-metric {
+.workspace-metric {
   padding: 14px 16px;
   border: 1px solid var(--border-color);
   border-radius: var(--bsm-radius-lg);
@@ -113,15 +113,15 @@
   flex-direction: column;
   gap: 6px;
 }
-.platform-metric > span {
+.workspace-metric > span {
   font-size: 12px;
   opacity: 0.7;
 }
-.platform-metric strong {
+.workspace-metric strong {
   font-size: 24px;
   letter-spacing: -0.04em;
 }
-.platform-metric small {
+.workspace-metric small {
   font-size: 11px;
   opacity: 0.65;
   line-height: 1.5;
@@ -153,7 +153,7 @@ pre.monitor-output {
   outline-offset: 4px;
 }
 @media (max-width: 1100px) {
-  .platform-metrics {
+  .workspace-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .main-content {
@@ -164,30 +164,30 @@ pre.monitor-output {
   .main-content {
     padding: 20px 16px;
   }
-  .platform-hero {
+  .workspace-hero {
     flex-wrap: wrap;
     padding: 20px;
     gap: 16px;
   }
-  .platform-hero img {
+  .workspace-hero img {
     width: 80px;
     height: 80px;
   }
-  .platform-hero > div {
+  .workspace-hero > div {
     flex: 1;
     min-width: 180px;
   }
-  .platform-hero > button {
+  .workspace-hero > button {
     margin-left: 0;
   }
-  .platform-overview .header {
+  .workspace-overview .header {
     flex-direction: row;
     align-items: flex-start !important;
   }
-  .platform-overview .server-grid {
+  .workspace-overview .server-grid {
     grid-template-columns: minmax(0, 1fr) !important;
   }
-  .platform-metric {
+  .workspace-metric {
     padding: 16px;
   }
 }
@@ -465,14 +465,14 @@ pre.monitor-output {
 .fleet-sort-controls .form-input {
   width: auto;
 }
-:root[data-density="compact"] .platform-overview .header {
+:root[data-density="compact"] .workspace-overview .header {
   margin-bottom: 16px;
   padding-bottom: 16px;
 }
-:root[data-density="compact"] .platform-hero {
+:root[data-density="compact"] .workspace-hero {
   margin-bottom: 16px;
 }
-:root[data-density="compact"] .platform-hero p {
+:root[data-density="compact"] .workspace-hero p {
   margin-block: 6px 10px;
 }
 

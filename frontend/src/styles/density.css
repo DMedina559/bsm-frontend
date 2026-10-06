@@ -42,16 +42,16 @@ body {
 .workspace-shell .main-content {
   padding: var(--bsm-page-padding);
 }
-.container:not(.platform-overview),
+.container:not(.workspace-overview),
 .settings-panel {
   padding: var(--bsm-panel-padding);
 }
 .container h1,
-.platform-overview .header h1 {
+.workspace-overview .header h1 {
   font-size: var(--bsm-heading-size);
 }
 .container h2,
-.platform-hero h2,
+.workspace-hero h2,
 .fleet-heading h2 {
   font-size: var(--bsm-section-size);
 }
@@ -73,12 +73,12 @@ body {
 .form-label-inline,
 .action-button,
 .theme-card strong,
-.platform-metric > span {
+.workspace-metric > span {
   font-size: var(--bsm-label-size);
 }
 .form-help-text,
 .theme-card small,
-.platform-metric small,
+.workspace-metric small,
 .page-context {
   font-size: var(--bsm-small-size);
 }
@@ -87,7 +87,7 @@ body {
 }
 .form-grid,
 .theme-grid,
-.platform-metrics {
+.workspace-metrics {
   gap: var(--bsm-grid-gap);
 }
 .theme-card {
@@ -96,27 +96,27 @@ body {
 .theme-swatch {
   height: calc(var(--bsm-card-icon-size) - 6px);
 }
-.platform-hero {
+.workspace-hero {
   padding: var(--bsm-card-padding);
   gap: var(--bsm-grid-gap);
   margin-bottom: var(--bsm-grid-gap);
 }
-.platform-hero img {
+.workspace-hero img {
   width: var(--bsm-hero-icon-size);
   height: var(--bsm-hero-icon-size);
 }
-.platform-hero p,
-.platform-subtitle {
+.workspace-hero p,
+.workspace-subtitle {
   font-size: var(--bsm-body-size);
 }
-.platform-metric {
+.workspace-metric {
   padding: var(--bsm-card-padding);
   gap: calc(var(--bsm-grid-gap) / 3);
 }
-.platform-metric strong {
+.workspace-metric strong {
   font-size: var(--bsm-stat-size);
 }
-.platform-metrics {
+.workspace-metrics {
   margin-bottom: var(--bsm-grid-gap);
 }
 .server-table,

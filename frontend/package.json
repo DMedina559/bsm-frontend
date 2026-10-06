@@ -1,6 +1,6 @@
 {
   "name": "bsm-frontend",
-  "description": "React interface for the Bedrock Server Manager 4.0 platform",
+  "description": "React interface for Bedrock Server Manager",
   "private": true,
   "version": "4.0.0",
   "type": "module",
