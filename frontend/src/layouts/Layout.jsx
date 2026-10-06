@@ -12,6 +12,19 @@ import { useFocusTrap } from "../utils/useFocusTrap";
 
 const Layout = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(
+    () => window.matchMedia?.("(max-width: 768px)").matches ?? false,
+  );
+  useEffect(() => {
+    const media = window.matchMedia?.("(max-width: 768px)");
+    if (!media) return;
+    const change = (event) => {
+      setIsMobile(event.matches);
+      setMobileOpen(false);
+    };
+    media.addEventListener("change", change);
+    return () => media.removeEventListener("change", change);
+  }, []);
   const { pathname } = useLocation();
   const { user } = useAuth();
   const { selectedServer } = useServer();
@@ -41,13 +54,20 @@ const Layout = () => {
           aria-hidden="true"
         />
       )}
-      <div ref={navigationRef} className="navigation-shell">
+      <div
+        ref={navigationRef}
+        className="navigation-shell"
+        inert={isMobile && !mobileOpen ? true : undefined}
+        aria-hidden={isMobile && !mobileOpen ? true : undefined}
+      >
         <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
       </div>
       <div className="workspace-shell" inert={mobileOpen ? true : undefined}>
         <header className="workspace-topbar">
           <button
             className="icon-button mobile-menu-toggle"
+            hidden={mobileOpen}
+            type="button"
             onClick={() => setMobileOpen(true)}
             aria-label="Open navigation"
             aria-expanded={mobileOpen}
