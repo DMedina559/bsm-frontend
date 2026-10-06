@@ -71,6 +71,10 @@ export const ThemeProvider = ({ children }) => {
   useEffect(() => {
     const root = document.documentElement;
     root.dataset.panorama = String(appearance.panorama);
+    root.style.setProperty(
+      "--bsm-panorama-overlay",
+      `${100 - appearance.panoramaVisibility}%`,
+    );
     if (appearance.panorama) {
       const base = getApiBaseUrl() || getApiProxyBasePath();
       root.style.setProperty(
@@ -80,9 +84,19 @@ export const ThemeProvider = ({ children }) => {
     } else root.style.removeProperty("--bsm-panorama-image");
     return () => {
       delete root.dataset.panorama;
+      root.style.removeProperty("--bsm-panorama-overlay");
       root.style.removeProperty("--bsm-panorama-image");
     };
-  }, [appearance.panorama]);
+  }, [appearance.panorama, appearance.panoramaVisibility]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty(
+      "--bsm-sidebar-opacity",
+      `${100 - appearance.sidebarTransparency}%`,
+    );
+    return () => root.style.removeProperty("--bsm-sidebar-opacity");
+  }, [appearance.sidebarTransparency]);
 
   useEffect(() => {
     let link = document.getElementById("theme-stylesheet");

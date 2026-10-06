@@ -25,10 +25,18 @@ export const DEFAULT_APPEARANCE = {
   mode: "theme",
   density: "compact",
   panorama: false,
+  panoramaVisibility: 18,
+  sidebarTransparency: 0,
 };
 export function normalizeAppearance(value) {
   return {
     panorama: value?.panorama === true,
+    sidebarTransparency: Number.isFinite(value?.sidebarTransparency)
+      ? Math.max(0, Math.min(100, Math.round(value.sidebarTransparency)))
+      : 0,
+    panoramaVisibility: Number.isFinite(value?.panoramaVisibility)
+      ? Math.max(0, Math.min(100, Math.round(value.panoramaVisibility)))
+      : 18,
     mode: ["theme", "system", "light", "dark"].includes(value?.mode)
       ? value.mode
       : "theme",

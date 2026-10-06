@@ -22,6 +22,9 @@ function Harness() {
       >
         Panorama
       </button>
+      <button onClick={() => updateAppearance({ panoramaVisibility: 75 })}>
+        Visibility
+      </button>
       <button onClick={() => changeTheme("blue").catch(() => {})}>
         Change
       </button>
@@ -110,6 +113,21 @@ describe("theme engine", () => {
     ).toBe("");
     unmount();
     expect(document.documentElement.dataset.panorama).toBeUndefined();
+  });
+  it("updates and saves panorama visibility independently of its toggle", () => {
+    render(
+      <ThemeProvider>
+        <Harness />
+      </ThemeProvider>,
+    );
+    fireEvent.click(screen.getByText("Visibility"));
+    expect(
+      document.documentElement.style.getPropertyValue("--bsm-panorama-overlay"),
+    ).toBe("25%");
+    expect(
+      JSON.parse(localStorage.getItem("bsm.appearance.v4")).panoramaVisibility,
+    ).toBe(75);
+    expect(document.documentElement.dataset.panorama).toBe("false");
   });
   it("surfaces stylesheet failures", async () => {
     render(

@@ -13,6 +13,8 @@ describe("theme preferences", () => {
       mode: "theme",
       density: "compact",
       panorama: false,
+      panoramaVisibility: 18,
+      sidebarTransparency: 0,
     });
   });
   it("rejects unknown preferences", () => {
@@ -20,6 +22,8 @@ describe("theme preferences", () => {
       mode: "theme",
       density: "compact",
       panorama: false,
+      panoramaVisibility: 18,
+      sidebarTransparency: 0,
     });
   });
   it("supports theme defaults, explicit modes, and OS changes", () => {
@@ -36,4 +40,32 @@ describe("theme preferences", () => {
       "/ingress/themes/custom%20name.css",
     );
   });
+});
+
+it("bounds panorama visibility and preserves zero", () => {
+  expect(
+    normalizeAppearance({ panoramaVisibility: 0 }).panoramaVisibility,
+  ).toBe(0);
+  expect(
+    normalizeAppearance({ panoramaVisibility: 120 }).panoramaVisibility,
+  ).toBe(100);
+  expect(
+    normalizeAppearance({ panoramaVisibility: -20 }).panoramaVisibility,
+  ).toBe(0);
+  expect(
+    normalizeAppearance({ panoramaVisibility: "invalid" }).panoramaVisibility,
+  ).toBe(18);
+});
+
+it("bounds sidebar transparency and defaults to opaque", () => {
+  expect(normalizeAppearance({}).sidebarTransparency).toBe(0);
+  expect(
+    normalizeAppearance({ sidebarTransparency: 50 }).sidebarTransparency,
+  ).toBe(50);
+  expect(
+    normalizeAppearance({ sidebarTransparency: 120 }).sidebarTransparency,
+  ).toBe(100);
+  expect(
+    normalizeAppearance({ sidebarTransparency: -5 }).sidebarTransparency,
+  ).toBe(0);
 });

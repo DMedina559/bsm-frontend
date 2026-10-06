@@ -281,6 +281,61 @@ const Account = ({ appearanceOnly = false }) => {
               default and saved only in this browser. Theme colors remain in use
               if the image is unavailable.
             </p>
+            <div className="panorama-visibility">
+              <label className="form-label" htmlFor="panorama-visibility">
+                Panorama visibility{" "}
+                <output htmlFor="panorama-visibility">
+                  {appearance.panoramaVisibility ?? 18}%
+                </output>
+              </label>
+              <input
+                id="panorama-visibility"
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value={appearance.panoramaVisibility ?? 18}
+                disabled={!appearance.panorama}
+                aria-valuetext={`${appearance.panoramaVisibility ?? 18}% visible`}
+                aria-describedby="panorama-visibility-help"
+                onChange={(event) =>
+                  updateAppearance({
+                    panoramaVisibility: Number(event.target.value),
+                  })
+                }
+              />
+              <small id="panorama-visibility-help" className="form-help-text">
+                Higher values make the image more prominent. Panel backgrounds
+                keep their theme colors.
+              </small>
+            </div>
+          </div>
+          <div className="form-group panorama-visibility">
+            <label className="form-label" htmlFor="sidebar-transparency">
+              Sidebar transparency{" "}
+              <output htmlFor="sidebar-transparency">
+                {appearance.sidebarTransparency ?? 0}%
+              </output>
+            </label>
+            <input
+              id="sidebar-transparency"
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value={appearance.sidebarTransparency ?? 0}
+              aria-valuetext={`${appearance.sidebarTransparency ?? 0}% transparent`}
+              aria-describedby="sidebar-transparency-help"
+              onChange={(event) =>
+                updateAppearance({
+                  sidebarTransparency: Number(event.target.value),
+                })
+              }
+            />
+            <small id="sidebar-transparency-help" className="form-help-text">
+              Higher values reveal more of the background through the sidebar.
+              Text and controls stay opaque.
+            </small>
           </div>
           <button
             className="action-button secondary"

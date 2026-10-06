@@ -7,7 +7,11 @@
   top: 0;
   height: 100dvh;
   overflow: auto;
-  background: var(--sidebar-bg-custom);
+  background: color-mix(
+    in srgb,
+    var(--sidebar-bg-custom) var(--bsm-sidebar-opacity, 100%),
+    transparent
+  );
   color: var(--text-color);
   border-right: 1px solid var(--border-color);
   scrollbar-width: thin;

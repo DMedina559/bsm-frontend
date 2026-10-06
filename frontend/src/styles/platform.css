@@ -483,8 +483,16 @@ pre.monitor-output {
 :root[data-panorama="true"] body {
   background-image:
     linear-gradient(
-      color-mix(in srgb, var(--bsm-page) 82%, transparent),
-      color-mix(in srgb, var(--bsm-page) 82%, transparent)
+      color-mix(
+        in srgb,
+        var(--bsm-page) var(--bsm-panorama-overlay, 82%),
+        transparent
+      ),
+      color-mix(
+        in srgb,
+        var(--bsm-page) var(--bsm-panorama-overlay, 82%),
+        transparent
+      )
     ),
     var(--bsm-panorama-image);
   background-size: cover;
@@ -609,4 +617,19 @@ pre.monitor-output {
 }
 .palette-editor-dialog .palette-preview > div {
   padding: 14px;
+}
+
+.panorama-visibility {
+  max-width: 420px;
+  margin-top: 16px;
+}
+.panorama-visibility input[type="range"] {
+  width: 100%;
+  accent-color: var(--bsm-accent-strong);
+  min-height: 28px;
+}
+.panorama-visibility output {
+  color: var(--bsm-muted);
+  font-variant-numeric: tabular-nums;
+  margin-left: 8px;
 }
