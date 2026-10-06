@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
 
   let appVersion = packageJson.version || "unknown";
   try {
-    const gitVersion = execSync("git describe --tags --always --dirty", {
+    const gitVersion = execSync("git describe --tags --always", {
       stdio: "pipe",
     })
       .toString()
