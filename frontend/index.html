@@ -2,6 +2,7 @@
 <html lang="en" data-mode="dark" data-density="compact">
   <head>
     <meta charset="UTF-8" />
+    <base id="app-asset-base" href="/app/" />
     <link rel="icon" type="image/svg+xml" href="./image/icon/favicon.svg" />
     <link
       rel="icon"
@@ -39,7 +40,9 @@
         var appIndex = path.search(/\/app(?:\/|$)/);
         if (appIndex !== -1) {
           var basePath = path.substring(0, appIndex + 4) + "/";
-          document.write('<base href="' + basePath + '" />');
+          document
+            .getElementById("app-asset-base")
+            .setAttribute("href", basePath);
           if (path.endsWith("/app")) {
             window.history.replaceState(
               null,
