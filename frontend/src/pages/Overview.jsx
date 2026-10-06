@@ -353,8 +353,8 @@ const Overview = () => {
           style={{
             display: "grid",
             gridTemplateColumns:
-              "repeat(auto-fill, minmax(min(100%, 300px), 1fr))",
-            gap: "20px",
+              "repeat(auto-fill, minmax(min(100%, var(--bsm-card-min-width)), 1fr))",
+            gap: "var(--bsm-grid-gap)",
           }}
         >
           {sortedServers.map((server) => (
@@ -382,9 +382,9 @@ const Overview = () => {
               <div
                 className="card-header"
                 style={{
-                  padding: "15px",
+                  padding: "var(--bsm-card-padding)",
                   display: "flex",
-                  gap: "15px",
+                  gap: "var(--bsm-grid-gap)",
                   alignItems: "center",
                   borderBottom: "1px solid var(--border-color)",
                 }}
@@ -393,8 +393,8 @@ const Overview = () => {
                   src={`${getApiBaseUrl()}/api/server/${server.name}/world/icon`}
                   alt={server.name}
                   style={{
-                    width: "48px",
-                    height: "48px",
+                    width: "var(--bsm-card-icon-size)",
+                    height: "var(--bsm-card-icon-size)",
                     objectFit: "cover",
                     borderRadius: "4px",
                     background: "var(--bsm-surface-raised)",
@@ -462,7 +462,7 @@ const Overview = () => {
               <div
                 className="card-body"
                 style={{
-                  padding: "15px",
+                  padding: "var(--bsm-card-padding)",
                   fontSize: "0.9em",
                   color: "var(--text-color-secondary)",
                 }}
@@ -526,7 +526,7 @@ const Overview = () => {
               <div
                 className="card-actions"
                 style={{
-                  padding: "10px 15px",
+                  padding: "var(--bsm-card-padding)",
                   background: "rgba(0,0,0,0.2)",
                   display: "flex",
                   justifyContent: "space-around",

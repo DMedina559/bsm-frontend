@@ -266,7 +266,8 @@ const Account = ({ appearanceOnly = false }) => {
                 <option value="compact">Compact</option>
               </select>
               <small className="form-help-text">
-                Adjust control heights and table spacing.
+                Adjust text sizes, cards, padding, navigation, and table
+                spacing.
               </small>
             </div>
           </div>

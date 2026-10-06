@@ -475,10 +475,6 @@ pre.monitor-output {
 :root[data-density="compact"] .platform-hero p {
   margin-block: 6px 10px;
 }
-:root[data-density="compact"] .platform-overview .card-header,
-:root[data-density="compact"] .platform-overview .card-body {
-  padding: 10px 12px !important;
-}
 
 :root[data-panorama="true"] body {
   background-image:

@@ -10,6 +10,7 @@
 @import "./styles/animations.css";
 @import "./styles/tokens.css";
 @import "./styles/platform.css";
+@import "./styles/density.css";
 
 body {
   margin: 0;
