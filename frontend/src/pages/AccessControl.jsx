@@ -15,7 +15,7 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
-import { del, get, post } from "../api";
+import { del, get, post, put } from "../api";
 import { logger } from "../utils/logger";
 const AccessControl = () => {
   const { confirmAction } = useDialog();
@@ -248,7 +248,7 @@ const AccessControl = () => {
   const handleScanPlayers = async () => {
     setActionLoading(true);
     try {
-      await post("/api/players/scan");
+      await put("/api/players/scan");
       addToast("Player scan initiated. Logs are being processed.", "success");
       // Optionally refresh, though scan is async and updates global DB, might not affect local list immediately
     } catch (error) {
