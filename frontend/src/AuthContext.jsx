@@ -71,8 +71,8 @@ export const AuthProvider = ({ children }) => {
       logger.error("[Auth] Failed to check user status", { error });
       if (error.status === 401) {
         logger.info("[Auth] Unauthorized", { error });
-        setUser(null);
       }
+      queryClient.clear();
       setUser(null);
     } finally {
       setLoading(false);
