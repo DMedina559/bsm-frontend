@@ -15,3 +15,10 @@
 - Commit SHA:
 - Blockers:
 - Next task:
+
+## 2026-10-08 — incremental runtime hardening
+- Updated `WebSocketContext.jsx` to retain desired topic subscriptions across connection cleanup and use the latest connect callback for manual reconnect.
+- Updated `AuthContext.jsx` to clear query cache on failed account verification.
+- These changes are committed, but T03 and T05 remain **in progress**, not complete.
+- Verification blocked: no successful local dependency installation, lint, tests or build in this session.
+- Next: regenerate `package-lock.json` in an npm-enabled checkout; run the complete test suite; then add connection-generation and account-switch regression tests.
