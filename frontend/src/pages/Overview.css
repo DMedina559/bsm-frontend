@@ -34,3 +34,25 @@
  .workspace-overview .overview-metrics .workspace-metric:last-child { grid-column: auto; }
  .workspace-overview .overview-card-actions .action-button { min-width: 70px; }
 }
+
+/* Metric icons and typography share the existing palette. */
+.workspace-overview .overview-metric-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-color-secondary);
+}
+.workspace-overview .overview-metric-heading svg { flex-shrink: 0; opacity: .75; }
+.workspace-overview .overview-server-card:focus-visible {
+  outline: 2px solid var(--bsm-primary, var(--text-color));
+  outline-offset: 3px;
+}
+.workspace-overview .overview-card-actions .action-button:focus-visible {
+  outline: 2px solid var(--text-color);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .workspace-overview .overview-server-card { transition: none; }
+  .workspace-overview .overview-server-card:hover { transform: none; }
+}
