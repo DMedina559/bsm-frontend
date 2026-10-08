@@ -22,3 +22,10 @@
 - These changes are committed, but T03 and T05 remain **in progress**, not complete.
 - Verification blocked: no successful local dependency installation, lint, tests or build in this session.
 - Next: regenerate `package-lock.json` in an npm-enabled checkout; run the complete test suite; then add connection-generation and account-switch regression tests.
+
+## 2026-10-08 — centralized event ownership
+- Removed the second player-event query write from `ServerContext.jsx`; its revision tracker still protects late HTTP responses.
+- Added a lifecycle invalidation test to `synchronizeServerEvent.test.js`.
+- T04 is partially addressed but remains open pending verified tests and broader event payload review.
+- Git clone from the available execution container still fails DNS resolution for `github.com`; no local npm verification was possible.
+- **Next:** repair lockfile in an environment with registry access and run CI gates; add WebSocket reconnect/identity-switch tests before marking T03 complete.
