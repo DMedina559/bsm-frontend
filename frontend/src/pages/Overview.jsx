@@ -281,8 +281,6 @@ const Overview = () => {
               ? "Across your visible fleet"
               : "Some player counts unavailable",
           ],
-          [
-
         ].map(([label, value, detail]) => (
           <article className="workspace-metric" key={label}>
             <span>{label}</span>
