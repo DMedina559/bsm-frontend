@@ -42,6 +42,17 @@ describe("server WebSocket query synchronization", () => {
     expect(queryClient.getQueryData(key)).toEqual(original);
   });
 
+  it("invalidates server queries after lifecycle changes", () => {
+    const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+    expect(synchronizeServerEvent({
+      type: "event",
+      topic: "event:after_server_stop",
+      data: { server_name: "alpha" },
+    })).toBe(true);
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.servers() });
+    invalidate.mockRestore();
+  });
+
   it("ignores unknown topics", () => {
     const invalidate = vi.spyOn(queryClient, "invalidateQueries");
     expect(synchronizeServerEvent({ type: "event", topic: "plugin:unknown" })).toBe(false);
