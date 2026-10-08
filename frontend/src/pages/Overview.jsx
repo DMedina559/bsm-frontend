@@ -1,3 +1,4 @@
+import "./Overview.css";
 import { useDialog } from "../DialogContext";
 import React, { useState } from "react";
 import { useServer } from "../ServerContext";
@@ -18,6 +19,8 @@ import {
   Download,
   Terminal,
   RefreshCw,
+  Server,
+  Activity,
 } from "lucide-react";
 const Overview = () => {
   const { confirmAction, promptAction } = useDialog();
@@ -283,7 +286,7 @@ const Overview = () => {
           ],
         ].map(([label, value, detail]) => (
           <article className="workspace-metric" key={label}>
-            <span>{label}</span>
+            <span className="overview-metric-title">{label}</span>
             <strong>{unavailable ? "—" : value}</strong>
             <small>{detail}</small>
           </article>
@@ -345,7 +348,7 @@ const Overview = () => {
         </div>
       ) : (
         <div
-          className="server-grid"
+          className="server-grid overview-server-grid"
           style={{
             display: "grid",
             gridTemplateColumns:
@@ -366,14 +369,7 @@ const Overview = () => {
                 position: "relative",
                 overflow: "hidden",
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.2)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "none";
-                e.currentTarget.style.boxShadow = "none";
-              }}
+
             >
               <div
                 className="card-header"
@@ -533,7 +529,7 @@ const Overview = () => {
                   e.stopPropagation()
                 } /* Extra safety: stop clicks in the action bar from bubbling to card */
               >
-                {server.status?.toLowerCase() !== "running" && <button
+                {server.status?.toLowerCase() === "stopped" && <button
                   className="action-button start-button"
                   style={{
                     padding: "6px 12px",
@@ -549,7 +545,7 @@ const Overview = () => {
                 >
                   <Play size={14} /> <span>Start</span>
                 </button>}
-                {server.status?.toLowerCase() !== "stopped" && <button
+                {server.status?.toLowerCase() === "running" && <button
                   className="action-button danger-button"
                   style={{
                     padding: "6px 12px",
@@ -565,7 +561,7 @@ const Overview = () => {
                 >
                   <Square size={14} /> <span>Stop</span>
                 </button>}
-                <button
+                {server.status?.toLowerCase() === "running" && <button
                   className="action-button warning-button"
                   style={{
                     padding: "6px 12px",
@@ -580,7 +576,7 @@ const Overview = () => {
                   type="button"
                 >
                   <RotateCcw size={14} /> <span>Restart</span>
-                </button>
+                </button>}
                 <button
                   className="action-button secondary"
                   style={{
@@ -588,7 +584,7 @@ const Overview = () => {
                     fontSize: "0.8em",
                   }}
                   onClick={(e) => handleUpdate(e, server.name)}
-                  disabled={actionLoading[server.name]}
+                  disabled={actionLoading[server.name] || !["running", "stopped"].includes(server.status?.toLowerCase())}
                   aria-label={`Update ${server.name}`}
                   title="Update Server"
                   type="button"
