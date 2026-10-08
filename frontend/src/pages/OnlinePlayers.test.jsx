@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import OnlinePlayers from "./OnlinePlayers";
 import { ServerProvider } from "../ServerContext";
@@ -25,14 +25,20 @@ vi.mock("../utils/logger", () => ({
   },
 }));
 
+const socket = vi.hoisted(() => ({
+  connected: true,
+  subscribe: vi.fn(),
+  unsubscribe: vi.fn(),
+  listeners: new Set(),
+  addMessageListener: vi.fn(),
+}));
 vi.mock("../WebSocketContext", () => ({
   useWebSocket: () => ({
-    isConnected: true,
+    isConnected: socket.connected,
     isFallback: false,
-    lastMessage: null,
-    subscribe: vi.fn(),
-    unsubscribe: vi.fn(),
-    addMessageListener: vi.fn(() => vi.fn()),
+    subscribe: socket.subscribe,
+    unsubscribe: socket.unsubscribe,
+    addMessageListener: socket.addMessageListener,
   }),
 }));
 
@@ -53,6 +59,12 @@ describe("OnlinePlayers", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    socket.connected = true;
+    socket.listeners.clear();
+    socket.addMessageListener.mockImplementation((listener) => {
+      socket.listeners.add(listener);
+      return () => socket.listeners.delete(listener);
+    });
 
     // Mock user so ServerProvider will fetch servers
     api.request.mockImplementation((url) => {
@@ -77,8 +89,8 @@ describe("OnlinePlayers", () => {
               status: "running",
               player_count: 2,
               players: [
-                { name: "PlayerOne", uuid: "123" },
-                { name: "PlayerTwo", uuid: "456" },
+                { name: "PlayerOne", xuid: "123" },
+                { name: "PlayerTwo", xuid: "456" },
               ],
             },
           ],
@@ -98,4 +110,71 @@ describe("OnlinePlayers", () => {
       expect(screen.getByText("PlayerTwo")).toBeInTheDocument();
     });
   });
+});
+
+function emitPlayers(server_name, players) {
+  act(() => {
+    for (const listener of socket.listeners) {
+      listener({
+        type: "event",
+        topic: "event:after_server_players_change",
+        data: {
+          result: {
+            status: "success",
+            server_name,
+            players,
+            player_count: players.length,
+          },
+        },
+      });
+    }
+  });
+}
+
+it("subscribes and updates joins, same-count replacements and the last departure", async () => {
+  localStorage.setItem("selectedServer", "TestServer");
+  socket.connected = true;
+  socket.listeners.clear();
+  socket.addMessageListener.mockImplementation((listener) => {
+    socket.listeners.add(listener);
+    return () => socket.listeners.delete(listener);
+  });
+  api.request.mockImplementation((url) =>
+    Promise.resolve(
+      url === "/api/account"
+        ? { username: "admin", role: "admin" }
+        : url === "/api/servers"
+          ? {
+              status: "success",
+              servers: [{ name: "TestServer", players: [] }],
+            }
+          : { needs_setup: false },
+    ),
+  );
+  const { unmount } = renderWithProviders(<OnlinePlayers />);
+  await waitFor(() =>
+    expect(socket.subscribe).toHaveBeenCalledWith(
+      "event:after_server_players_change",
+    ),
+  );
+  await waitFor(() => expect(screen.getByText("0 Online")).toBeInTheDocument());
+  const requests = api.request.mock.calls.length;
+  emitPlayers("TestServer", [{ name: "Joined", xuid: "999" }]);
+  expect(screen.getByText("Joined")).toBeInTheDocument();
+  expect(screen.getByText("XUID: 999")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Ban" })).toBeEnabled();
+  emitPlayers("OtherServer", []);
+  expect(screen.getByText("Joined")).toBeInTheDocument();
+  emitPlayers("TestServer", [{ name: "Replacement", xuid: "888" }]);
+  expect(screen.queryByText("Joined")).not.toBeInTheDocument();
+  expect(screen.getByText("Replacement")).toBeInTheDocument();
+  emitPlayers("TestServer", []);
+  expect(screen.getByText("0 Online")).toBeInTheDocument();
+  expect(screen.queryByText("Replacement")).not.toBeInTheDocument();
+  expect(api.request.mock.calls.length).toBe(requests);
+  unmount();
+  expect(socket.unsubscribe).toHaveBeenCalledWith(
+    "event:after_server_players_change",
+  );
+  expect(socket.listeners.size).toBe(0);
 });

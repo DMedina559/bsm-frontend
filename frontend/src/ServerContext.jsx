@@ -24,6 +24,8 @@ export const ServerProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const fetchRequestId = useRef(0);
+  const playerRevision = useRef(0);
+  const playerUpdates = useRef(new Map());
   const selectedServerRef = useRef(selectedServer);
 
   const {
@@ -60,6 +62,7 @@ export const ServerProvider = ({ children }) => {
 
       // Increment fetch request ID to track latest request
       const currentRequestId = ++fetchRequestId.current;
+      const currentPlayerRevision = playerRevision.current;
 
       try {
         logger.debug(`[ServerContext] Fetching servers list`, {
@@ -89,7 +92,18 @@ export const ServerProvider = ({ children }) => {
           logger.info(`[ServerContext] Loaded servers successfully`, {
             serverCount: data.servers.length,
           });
-          setServers(data.servers);
+          setServers(
+            data.servers.map((server) => {
+              const update = playerUpdates.current.get(server.name);
+              return update && update.revision > currentPlayerRevision
+                ? {
+                    ...server,
+                    players: update.players,
+                    player_count: update.player_count,
+                  }
+                : server;
+            }),
+          );
 
           const serverList = data.servers;
           if (serverList.length > 0) {
@@ -140,6 +154,7 @@ export const ServerProvider = ({ children }) => {
     } else {
       // Clear sensitive state and invalidate outstanding responses on logout.
       fetchRequestId.current += 1;
+      playerUpdates.current.clear();
       setLoading(false);
       setError(null);
       setServers([]);
@@ -162,12 +177,14 @@ export const ServerProvider = ({ children }) => {
       ];
 
       refreshTopics.forEach((topic) => subscribe(topic));
+      // Recover player changes that happened while the socket was disconnected.
+      fetchServers(true);
 
       return () => {
         refreshTopics.forEach((topic) => unsubscribe(topic));
       };
     }
-  }, [isConnected, user, subscribe, unsubscribe]);
+  }, [isConnected, user, subscribe, unsubscribe, fetchServers]);
 
   // Handle polling when in fallback mode
   useEffect(() => {
@@ -191,7 +208,7 @@ export const ServerProvider = ({ children }) => {
   // Handle incoming WebSocket messages bypassing React state batching
   useEffect(() => {
     const handleWsMessage = (message) => {
-      if (message) {
+      if (user && message) {
         const refreshTopics = [
           "event:after_server_status_change",
           "event:after_server_start",
@@ -202,6 +219,43 @@ export const ServerProvider = ({ children }) => {
           "event:after_server_install",
           "event:after_server_players_change",
         ];
+
+        if (
+          message.type === "event" &&
+          message.topic === "event:after_server_players_change"
+        ) {
+          const data = message.data?.result ?? message.data;
+          if (
+            data?.server_name &&
+            Array.isArray(data.players) &&
+            Number.isInteger(data.player_count) &&
+            data.player_count === data.players.length &&
+            data.players.every(
+              (player) =>
+                typeof player?.name === "string" &&
+                typeof player?.xuid === "string",
+            )
+          ) {
+            const update = {
+              players: data.players,
+              player_count: data.player_count,
+              revision: ++playerRevision.current,
+            };
+            playerUpdates.current.set(data.server_name, update);
+            setServers((current) =>
+              current.map((server) =>
+                server.name === data.server_name
+                  ? {
+                      ...server,
+                      players: update.players,
+                      player_count: update.player_count,
+                    }
+                  : server,
+              ),
+            );
+            return;
+          }
+        }
 
         if (refreshTopics.includes(message.topic)) {
           logger.info(`[ServerContext] Refreshing servers due to WS event`, {
@@ -218,7 +272,7 @@ export const ServerProvider = ({ children }) => {
     return () => {
       removeListener();
     };
-  }, [fetchServers, addMessageListener]);
+  }, [user, fetchServers, addMessageListener]);
 
   const refreshServers = useCallback(() => {
     logger.debug("[ServerContext] Manually refreshing servers list");

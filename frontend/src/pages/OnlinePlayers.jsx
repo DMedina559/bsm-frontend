@@ -231,9 +231,9 @@ const OnlinePlayers = () => {
               gap: "10px",
             }}
           >
-            {players.map((player, idx) => (
+            {players.map((player) => (
               <div
-                key={idx}
+                key={player.xuid || player.uuid || player.name}
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
@@ -259,7 +259,7 @@ const OnlinePlayers = () => {
                   >
                     {player.name}
                   </span>
-                  {player.uuid && (
+                  {(player.xuid || player.uuid) && (
                     <span
                       style={{
                         fontSize: "0.8em",
@@ -267,7 +267,7 @@ const OnlinePlayers = () => {
                         fontFamily: "monospace",
                       }}
                     >
-                      XUID: {player.uuid}
+                      XUID: {player.xuid || player.uuid}
                     </span>
                   )}
                 </div>
@@ -296,9 +296,18 @@ const OnlinePlayers = () => {
                   </button>
                   <button
                     className="action-button danger-button"
-                    onClick={() => handleOpenBanModal(player.name, player.uuid)}
-                    disabled={loadingAction || !player.uuid}
-                    title={!player.uuid ? "XUID required to ban" : "Ban Player"}
+                    onClick={() =>
+                      handleOpenBanModal(
+                        player.name,
+                        player.xuid || player.uuid,
+                      )
+                    }
+                    disabled={loadingAction || !(player.xuid || player.uuid)}
+                    title={
+                      !(player.xuid || player.uuid)
+                        ? "XUID required to ban"
+                        : "Ban Player"
+                    }
                     type="button"
                   >
                     Ban
