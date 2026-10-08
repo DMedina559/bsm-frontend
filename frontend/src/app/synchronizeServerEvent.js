@@ -28,7 +28,7 @@ export function synchronizeServerEvent(message) {
     data.player_count === data.players.length &&
     data.players.every((player) => typeof player?.name === "string" && typeof player?.xuid === "string")
   ) {
-    queryClient.setQueryData(queryKeys.servers(), (current) => {
+    queryClient.setQueriesData({ queryKey: queryKeys.servers() }, (current) => {
       if (!current || !Array.isArray(current.servers)) return current;
       return {
         ...current,
