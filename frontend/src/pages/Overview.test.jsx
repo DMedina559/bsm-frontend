@@ -67,4 +67,16 @@ describe("Overview", () => {
     // Overview.jsx calls post with 1 argument.
     expect(api.post).toHaveBeenCalledWith("/api/server/Server1/start");
   });
+  it("shows only actions appropriate to each server state", async () => {
+    render(<Overview />);
+    await waitFor(() => expect(screen.getByText("Server1")).toBeInTheDocument());
+    expect(screen.getAllByTitle("Start Server")).toHaveLength(1);
+    expect(screen.getAllByTitle("Stop Server")).toHaveLength(1);
+    expect(screen.getAllByTitle("Restart Server")).toHaveLength(1);
+    expect(screen.getAllByTitle("Update Server")).toHaveLength(2);
+    expect(screen.getAllByTitle("Send Command")).toHaveLength(2);
+    expect(screen.getByRole("button", { name: "Send command to Server1" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Send command to Server2" })).toBeEnabled();
+  });
+
 });
