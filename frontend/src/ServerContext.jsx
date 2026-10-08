@@ -60,6 +60,11 @@ export const ServerProvider = ({ children }) => {
   const playerRevision = useRef(0);
   const playerUpdates = useRef(new Map());
 
+  useEffect(() => {
+    playerUpdates.current.clear();
+    playerRevision.current = 0;
+  }, [identity]);
+
   const serverQuery = useQuery({
     queryKey: [...queryKeys.servers(), identity],
     queryFn: async ({ signal }) => {
