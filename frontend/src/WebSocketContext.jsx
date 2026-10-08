@@ -141,7 +141,6 @@ export const WebSocketProvider = ({ children }) => {
     connectRef.current = connect;
   }, [connect]);
   useEffect(() => {
-    const currentSubscriptions = subscriptions.current;
     setIsConnected(false);
     setIsFallback(false);
     setLastMessage(null);
@@ -157,9 +156,8 @@ export const WebSocketProvider = ({ children }) => {
     reconnectAttempts.current = 0;
     setIsConnected(false);
     // Keep the polling fallback until an authenticated connection is established.
-    // Allow disconnect cleanup to settle before opening the next generation.
     connectRef.current?.();
-  }, [connect, disconnect]);
+  }, [disconnect]);
   reconnectNowRef.current = reconnect;
   useEffect(() => {
     const visibility = () => {
