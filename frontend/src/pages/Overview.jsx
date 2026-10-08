@@ -17,6 +17,7 @@ import {
   Users,
   Download,
   Terminal,
+  RefreshCw,
 } from "lucide-react";
 const Overview = () => {
   const { confirmAction, promptAction } = useDialog();
@@ -229,11 +230,11 @@ const Overview = () => {
           disabled={refreshing}
           type="button"
         >
-          {refreshing ? "Refreshing..." : "Refresh"}
+          <RefreshCw size={16} aria-hidden="true" /> {refreshing ? "Refreshing..." : "Refresh"}
         </button>
       </div>
 
-      <section className="workspace-hero" aria-label="Connection status">
+      <section className="workspace-hero overview-intro" aria-label="Connection status">
         <img
           src={`${getApiProxyBasePath()}/app/image/icon/manager-logo.png`}
           alt=""
@@ -261,7 +262,7 @@ const Overview = () => {
           </button>
         )}
       </section>
-      <section className="workspace-metrics" aria-label="Fleet status">
+      <section className="workspace-metrics overview-metrics" aria-label="Fleet status">
         {[
           [
             "Managed servers",
@@ -281,10 +282,7 @@ const Overview = () => {
               : "Some player counts unavailable",
           ],
           [
-            "Status source",
-            isConnected ? "Live" : isFallback ? "Polling" : "Offline",
-            "Connection status, not a health check",
-          ],
+
         ].map(([label, value, detail]) => (
           <article className="workspace-metric" key={label}>
             <span>{label}</span>
@@ -360,7 +358,7 @@ const Overview = () => {
           {sortedServers.map((server) => (
             <div
               key={server.name}
-              className="server-card"
+              className="server-card overview-server-card"
               onClick={() => handleServerClick(server.name)}
               style={{
                 background: "var(--container-background-color)",
@@ -524,18 +522,20 @@ const Overview = () => {
                                 `e.stopPropagation()` was already there, but let's double check if there are other overlays or if the button itself is causing navigation.
                             */}
               <div
-                className="card-actions"
+                className="card-actions overview-card-actions"
                 style={{
                   padding: "var(--bsm-card-padding)",
                   background: "rgba(0,0,0,0.2)",
                   display: "flex",
-                  justifyContent: "space-around",
+                  justifyContent: "flex-start",
+                  flexWrap: "wrap",
+                  gap: "8px",
                 }}
                 onClick={(e) =>
                   e.stopPropagation()
                 } /* Extra safety: stop clicks in the action bar from bubbling to card */
               >
-                <button
+                {server.status?.toLowerCase() !== "running" && <button
                   className="action-button start-button"
                   style={{
                     padding: "6px 12px",
@@ -549,9 +549,9 @@ const Overview = () => {
                   title="Start Server"
                   type="button"
                 >
-                  <Play size={14} />
-                </button>
-                <button
+                  <Play size={14} /> <span>Start</span>
+                </button>}
+                {server.status?.toLowerCase() !== "stopped" && <button
                   className="action-button danger-button"
                   style={{
                     padding: "6px 12px",
@@ -565,8 +565,8 @@ const Overview = () => {
                   title="Stop Server"
                   type="button"
                 >
-                  <Square size={14} />
-                </button>
+                  <Square size={14} /> <span>Stop</span>
+                </button>}
                 <button
                   className="action-button warning-button"
                   style={{
@@ -581,7 +581,7 @@ const Overview = () => {
                   title="Restart Server"
                   type="button"
                 >
-                  <RotateCcw size={14} />
+                  <RotateCcw size={14} /> <span>Restart</span>
                 </button>
                 <button
                   className="action-button secondary"
@@ -595,7 +595,7 @@ const Overview = () => {
                   title="Update Server"
                   type="button"
                 >
-                  <Download size={14} />
+                  <Download size={14} /> <span>Update</span>
                 </button>
                 <button
                   className="action-button secondary"
@@ -612,7 +612,7 @@ const Overview = () => {
                   title="Send Command"
                   type="button"
                 >
-                  <Terminal size={14} />
+                  <Terminal size={14} /> <span>Command</span>
                 </button>
               </div>
             </div>
