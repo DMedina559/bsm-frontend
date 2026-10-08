@@ -1,5 +1,6 @@
 import "./Overview.css";
 import OverviewServerCard from "./OverviewServerCard";
+import OverviewFleetMetrics from "./OverviewFleetMetrics";
 import { useDialog } from "../DialogContext";
 import React, { useState } from "react";
 import { useServer } from "../ServerContext";
@@ -11,9 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { post } from "../api";
 import { logger } from "../utils/logger";
 import { sortServers, readServerSort, SERVER_SORTS } from "../utils/serverSort";
-import { summarizeFleet } from "../utils/fleetStatus";
 import {
-  Users,
   RefreshCw,
 } from "lucide-react";
 const Overview = () => {
@@ -183,7 +182,6 @@ const Overview = () => {
       }));
     }
   };
-  const { running, stopped, playersKnown, players } = summarizeFleet(servers);
   const connection = isConnected
     ? "Live updates connected"
     : isFallback
@@ -192,14 +190,7 @@ const Overview = () => {
   const unavailable = (loading || error) && servers.length === 0;
   return (
     <div className="container workspace-overview">
-      <div
-        className="header"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+      <div className="header">
         <div>
           <p className="workspace-eyebrow">BEDROCK SERVER MANAGER</p>
           <h1>Overview</h1>
@@ -245,33 +236,7 @@ const Overview = () => {
           </button>
         )}
       </section>
-      <section className="workspace-metrics overview-metrics" aria-label="Fleet status">
-        {[
-          [
-            "Managed servers",
-            servers.length,
-            "Servers visible to your account",
-          ],
-          [
-            "Running",
-            running,
-            `${stopped} stopped · ${servers.length - running - stopped} other`,
-          ],
-          [
-            "Players online",
-            playersKnown ? players : "—",
-            playersKnown
-              ? "Across your visible fleet"
-              : "Some player counts unavailable",
-          ],
-        ].map(([label, value, detail]) => (
-          <article className="workspace-metric" key={label}>
-            <span className="overview-metric-title">{label}</span>
-            <strong>{unavailable ? "—" : value}</strong>
-            <small>{detail}</small>
-          </article>
-        ))}
-      </section>
+      <OverviewFleetMetrics servers={servers} unavailable={unavailable} />
       <div className="fleet-heading">
         <h2>Server fleet</h2>
         <div className="fleet-sort-controls">
@@ -338,7 +303,8 @@ const Overview = () => {
         >
           {sortedServers.map((server) => (
             <OverviewServerCard key={server.name} server={server} busy={Boolean(actionLoading[server.name])} onOpen={handleServerClick} onAction={handleAction} onUpdate={handleUpdate} onCommand={handleSendCommand} />
-          ))}        </div>
+          ))}
+        </div>
       )}
     </div>
   );
