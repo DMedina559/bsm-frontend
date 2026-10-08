@@ -3,294 +3,186 @@ import React, {
   useCallback,
   useContext,
   useEffect,
-  useState,
+  useMemo,
   useRef,
+  useState,
 } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { request } from "./api";
 import { useAuth } from "./AuthContext";
 import { useWebSocket } from "./WebSocketContext";
+import { queryKeys } from "./app/queryKeys";
 import { logger } from "./utils/logger";
 
-const ServerContext = createContext();
-
+const ServerContext = createContext(null);
 export const useServer = () => useContext(ServerContext);
 
+const SERVER_TOPICS = [
+  "event:after_server_status_change",
+  "event:after_server_start",
+  "event:after_server_stop",
+  "event:before_server_stop",
+  "event:after_delete_server_data",
+  "event:after_server_update",
+  "event:after_server_install",
+  "event:after_server_players_change",
+];
+
+async function loadServers({ signal }) {
+  const data = await request("/api/servers", {
+    method: "GET",
+    signal,
+    headers: {
+      "Cache-Control": "no-store, no-cache, must-revalidate",
+      Pragma: "no-cache",
+    },
+  });
+  if (data?.status !== "success" || !Array.isArray(data.servers)) {
+    throw new Error("Invalid server data received.");
+  }
+  return data;
+}
+
+/**
+ * Compatibility provider: query cache owns server data; context exposes the
+ * existing useServer() interface until consumers are migrated to query hooks.
+ */
 export const ServerProvider = ({ children }) => {
   const { user } = useAuth();
-  const [servers, setServers] = useState([]);
+  const identity = user?.id ?? user?.username ?? null;
+  const queryClient = useQueryClient();
+  const { isConnected, isFallback, subscribe, unsubscribe, addMessageListener } =
+    useWebSocket();
   const [selectedServer, setSelectedServerState] = useState(
-    localStorage.getItem("selectedServer") || null,
+    () => localStorage.getItem("selectedServer") || null,
   );
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const fetchRequestId = useRef(0);
+  const selectedServerRef = useRef(selectedServer);
   const playerRevision = useRef(0);
   const playerUpdates = useRef(new Map());
-  const selectedServerRef = useRef(selectedServer);
 
-  const {
-    isConnected,
-    isFallback,
-    subscribe,
-    unsubscribe,
-    addMessageListener,
-  } = useWebSocket();
+  const serverQuery = useQuery({
+    queryKey: [...queryKeys.servers(), identity],
+    queryFn: async ({ signal }) => {
+      const revisionAtStart = playerRevision.current;
+      const data = await loadServers({ signal });
+      // A late HTTP response must not overwrite newer player WebSocket data.
+      return {
+        ...data,
+        servers: data.servers.map((server) => {
+          const update = playerUpdates.current.get(server.name);
+          return update && update.revision > revisionAtStart
+            ? { ...server, players: update.players, player_count: update.player_count }
+            : server;
+        }),
+      };
+    },
+    enabled: identity !== null,
+    staleTime: 15_000,
+    refetchOnWindowFocus: true,
+  });
 
-  // Wrapper for setting selected server to also persist to localStorage
-  const setSelectedServer = useCallback((serverName) => {
-    logger.debug(`[ServerContext] Setting selected server`, { serverName });
-    selectedServerRef.current = serverName;
-    setSelectedServerState(serverName);
-    if (serverName) {
-      localStorage.setItem("selectedServer", serverName);
-    } else {
-      localStorage.removeItem("selectedServer");
-    }
+  const servers = useMemo(() => serverQuery.data?.servers ?? [], [serverQuery.data]);
+  const setSelectedServer = useCallback((name) => {
+    selectedServerRef.current = name;
+    setSelectedServerState(name);
+    if (name) localStorage.setItem("selectedServer", name);
+    else localStorage.removeItem("selectedServer");
   }, []);
 
-  const fetchServers = useCallback(
-    async (isBackground = false) => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-
-      if (!isBackground) {
-        setLoading(true);
-      }
-      setError(null);
-
-      // Increment fetch request ID to track latest request
-      const currentRequestId = ++fetchRequestId.current;
-      const currentPlayerRevision = playerRevision.current;
-
-      try {
-        logger.debug(`[ServerContext] Fetching servers list`, {
-          isBackground,
-          currentRequestId,
-        });
-        // Use the API client we just created.
-        // Pass cache-busting headers to completely bypass browser or proxy (e.g. Ingress) caching.
-        const data = await request("/api/servers", {
-          method: "GET",
-          headers: {
-            "Cache-Control": "no-store, no-cache, must-revalidate",
-            Pragma: "no-cache",
-          },
-        });
-
-        // Prevent race condition: ignore response if a newer fetch request was started
-        if (currentRequestId !== fetchRequestId.current) {
-          logger.debug("[ServerContext] Ignoring outdated fetch response", {
-            currentRequestId,
-            latestRequestId: fetchRequestId.current,
-          });
-          return false;
-        }
-
-        if (data && data.status === "success" && Array.isArray(data.servers)) {
-          logger.info(`[ServerContext] Loaded servers successfully`, {
-            serverCount: data.servers.length,
-          });
-          setServers(
-            data.servers.map((server) => {
-              const update = playerUpdates.current.get(server.name);
-              return update && update.revision > currentPlayerRevision
-                ? {
-                    ...server,
-                    players: update.players,
-                    player_count: update.player_count,
-                  }
-                : server;
-            }),
-          );
-
-          const serverList = data.servers;
-          if (serverList.length > 0) {
-            // Check if currently selected server still exists
-            const currentSelectionExists = serverList.some(
-              (s) => s.name === selectedServerRef.current,
-            );
-
-            if (!selectedServerRef.current || !currentSelectionExists) {
-              logger.debug(`[ServerContext] Auto-selecting first server`, {
-                firstServerName: serverList[0].name,
-              });
-              // Default to the first server if selection is invalid or missing
-              setSelectedServer(serverList[0].name);
-            }
-          } else {
-            logger.debug("[ServerContext] No servers available to select");
-            // No servers available
-            setSelectedServer(null);
-          }
-          return true;
-        } else {
-          setServers([]);
-          logger.error("[ServerContext] Error: Invalid server data received", {
-            data,
-          });
-          // If data.servers is missing, something is wrong.
-          setError("Invalid server data received.");
-          return false;
-        }
-      } catch (err) {
-        logger.error("[ServerContext] Error fetching servers", { error: err });
-        if (currentRequestId === fetchRequestId.current)
-          setError(err.message || "Failed to fetch servers");
-        return false;
-      } finally {
-        if (currentRequestId === fetchRequestId.current) {
-          setLoading(false);
-        }
-      }
-    },
-    [user, setSelectedServer],
-  );
-
   useEffect(() => {
-    if (user) {
-      fetchServers();
-    } else {
-      // Clear sensitive state and invalidate outstanding responses on logout.
-      fetchRequestId.current += 1;
+    if (identity === null) {
       playerUpdates.current.clear();
-      setLoading(false);
-      setError(null);
-      setServers([]);
+      playerRevision.current = 0;
       setSelectedServer(null);
+      return;
     }
-  }, [user, fetchServers, setSelectedServer]);
+    if (!serverQuery.isSuccess) return;
+    if (!servers.some((server) => server.name === selectedServerRef.current)) {
+      setSelectedServer(servers[0]?.name ?? null);
+    }
+  }, [identity, serverQuery.isSuccess, servers, setSelectedServer]);
 
-  // Handle WebSocket subscriptions for server updates
+  // Subscriptions are ref-counted by WebSocketContext; it also resubscribes on reconnect.
   useEffect(() => {
-    if (isConnected && user) {
-      const refreshTopics = [
-        "event:after_server_status_change",
-        "event:after_server_start",
-        "event:after_server_stop",
-        "event:before_server_stop",
-        "event:after_delete_server_data",
-        "event:after_server_update",
-        "event:after_server_install",
-        "event:after_server_players_change",
-      ];
+    if (identity === null) return;
+    SERVER_TOPICS.forEach(subscribe);
+    return () => SERVER_TOPICS.forEach(unsubscribe);
+  }, [identity, subscribe, unsubscribe]);
 
-      refreshTopics.forEach((topic) => subscribe(topic));
-      // Recover player changes that happened while the socket was disconnected.
-      fetchServers(true);
-
-      return () => {
-        refreshTopics.forEach((topic) => unsubscribe(topic));
+  useEffect(() => {
+    if (identity === null) return;
+    const removeListener = addMessageListener((message) => {
+      if (message?.type !== "event" ||
+          message.topic !== "event:after_server_players_change") return;
+      const data = message.data?.result ?? message.data;
+      if (
+        typeof data?.server_name !== "string" ||
+        !Array.isArray(data.players) ||
+        !Number.isInteger(data.player_count) ||
+        data.player_count !== data.players.length ||
+        !data.players.every(
+          (player) => typeof player?.name === "string" && typeof player?.xuid === "string",
+        )
+      ) return;
+      const update = {
+        players: data.players,
+        player_count: data.player_count,
+        revision: ++playerRevision.current,
       };
-    }
-  }, [isConnected, user, subscribe, unsubscribe, fetchServers]);
-
-  // Handle polling when in fallback mode
-  useEffect(() => {
-    let intervalId = null;
-    if (isFallback && user) {
-      logger.info(
-        "[ServerContext] WebSocket fallback active: polling servers",
-        { interval: "60s" },
-      );
-      // Initial poll
-      fetchServers(true);
-      intervalId = setInterval(() => {
-        fetchServers(true);
-      }, 60000);
-    }
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [isFallback, user, fetchServers]);
-
-  // Handle incoming WebSocket messages bypassing React state batching
-  useEffect(() => {
-    const handleWsMessage = (message) => {
-      if (user && message) {
-        const refreshTopics = [
-          "event:after_server_status_change",
-          "event:after_server_start",
-          "event:after_server_stop",
-          "event:before_server_stop",
-          "event:after_delete_server_data",
-          "event:after_server_update",
-          "event:after_server_install",
-          "event:after_server_players_change",
-        ];
-
-        if (
-          message.type === "event" &&
-          message.topic === "event:after_server_players_change"
-        ) {
-          const data = message.data?.result ?? message.data;
-          if (
-            data?.server_name &&
-            Array.isArray(data.players) &&
-            Number.isInteger(data.player_count) &&
-            data.player_count === data.players.length &&
-            data.players.every(
-              (player) =>
-                typeof player?.name === "string" &&
-                typeof player?.xuid === "string",
-            )
-          ) {
-            const update = {
-              players: data.players,
-              player_count: data.player_count,
-              revision: ++playerRevision.current,
-            };
-            playerUpdates.current.set(data.server_name, update);
-            setServers((current) =>
-              current.map((server) =>
+      playerUpdates.current.set(data.server_name, update);
+      queryClient.setQueryData([...queryKeys.servers(), identity], (current) =>
+        current?.servers
+          ? {
+              ...current,
+              servers: current.servers.map((server) =>
                 server.name === data.server_name
-                  ? {
-                      ...server,
-                      players: update.players,
-                      player_count: update.player_count,
-                    }
+                  ? { ...server, players: update.players, player_count: update.player_count }
                   : server,
               ),
-            );
-            return;
-          }
-        }
+            }
+          : current,
+      );
+    });
+    return removeListener;
+  }, [identity, addMessageListener, queryClient]);
 
-        if (refreshTopics.includes(message.topic)) {
-          logger.info(`[ServerContext] Refreshing servers due to WS event`, {
-            topic: message.topic,
-          });
-          fetchServers(true); // Treat WS updates as background updates to avoid flicker
-        }
-      }
+  useEffect(() => {
+    if (identity === null || !isConnected) return;
+    // Reconcile any events missed while disconnected.
+    void queryClient.invalidateQueries({ queryKey: queryKeys.servers() });
+  }, [identity, isConnected, queryClient]);
+
+  useEffect(() => {
+    if (identity === null || !isFallback) return;
+    const refresh = () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.servers() });
     };
+    refresh();
+    const timer = setInterval(refresh, 60_000);
+    return () => clearInterval(timer);
+  }, [identity, isFallback, queryClient]);
 
-    // Register listener which is called synchronously upon WS message
-    const removeListener = addMessageListener(handleWsMessage);
-
-    return () => {
-      removeListener();
-    };
-  }, [user, fetchServers, addMessageListener]);
-
-  const refreshServers = useCallback(() => {
-    logger.debug("[ServerContext] Manually refreshing servers list");
-    return fetchServers();
-  }, [fetchServers]);
-
-  return (
-    <ServerContext.Provider
-      value={{
-        servers,
-        selectedServer,
-        setSelectedServer,
-        loading,
-        error,
-        refreshServers,
-      }}
-    >
-      {children}
-    </ServerContext.Provider>
+  const refreshServers = useCallback(
+    async () => {
+      logger.debug("[ServerContext] Refreshing servers");
+      const result = await serverQuery.refetch();
+      return result.isSuccess;
+    },
+    [serverQuery],
   );
+
+  const value = useMemo(
+    () => ({
+      servers,
+      selectedServer,
+      setSelectedServer,
+      loading: identity !== null && serverQuery.isPending,
+      error: serverQuery.error?.message ?? null,
+      refreshServers,
+    }),
+    [servers, selectedServer, setSelectedServer, identity, serverQuery.isPending,
+      serverQuery.error, refreshServers],
+  );
+
+  return <ServerContext.Provider value={value}>{children}</ServerContext.Provider>;
 };
