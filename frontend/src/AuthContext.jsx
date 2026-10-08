@@ -1,3 +1,4 @@
+import { queryClient } from "./app/queryClient";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { request, get } from "./api";
 import { logger } from "./utils/logger";
@@ -60,7 +61,12 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
-      setUser(userData);
+      setUser((previous) => {
+        if (previous?.id !== userData?.id || previous?.username !== userData?.username) {
+          queryClient.clear();
+        }
+        return userData;
+      });
     } catch (error) {
       logger.error("[Auth] Failed to check user status", { error });
       if (error.status === 401) {
@@ -119,6 +125,7 @@ export const AuthProvider = ({ children }) => {
     }
     localStorage.removeItem("access_token");
     sessionStorage.removeItem("access_token");
+    queryClient.clear();
     setUser(null);
   };
 
