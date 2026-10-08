@@ -79,4 +79,13 @@ describe("Overview", () => {
     expect(screen.getByRole("button", { name: "Send command to Server2" })).toBeEnabled();
   });
 
+  it("shows the branded intro and three fleet metrics", async () => {
+    render(<Overview />);
+    await waitFor(() => expect(screen.getByText("Server1")).toBeInTheDocument());
+    expect(screen.getByRole("region", { name: "Fleet status" })).toBeInTheDocument();
+    expect(screen.getByText("Managed servers")).toBeInTheDocument();
+    expect(screen.getByText("Players online")).toBeInTheDocument();
+    expect(screen.getByText("Built for your Bedrock worlds.")).toBeInTheDocument();
+  });
+
 });
