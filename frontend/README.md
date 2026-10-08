@@ -57,3 +57,15 @@ Density now scales typography and card geometry throughout the interface. Comfor
 Personal palettes can include an optional description (up to 160 characters), shown on their cards and retained in saved and exported palette JSON. Existing palettes without descriptions still work.
 
 Reset appearance restores the account’s BSM Default theme and clears the active personal palette, then restores theme-default mode, Comfortable density, panorama off with 18% visibility, and an opaque sidebar. Saved palettes are retained. If the account theme request fails, current preferences stay in place and an error is shown.
+
+## Pre-commit hooks
+
+Install the hooks from the repository root with `pre-commit install`, then
+run `pre-commit run --all-files`. Prettier 3.9.9 runs in an isolated Node environment, matching the frontend
+dependency; keep the hook version
+in sync when updating Prettier. Formatting runs serially to avoid concurrent
+formatter processes.
+
+The ESLint hook uses this project's dependencies. Run `npm ci --prefix frontend`
+from the repository root before committing. pre-commit.ci skips this system
+hook; the Build Lint Test GitHub Actions workflow runs the full frontend lint.
