@@ -135,18 +135,8 @@ export const ServerProvider = ({ children }) => {
         revision: ++playerRevision.current,
       };
       playerUpdates.current.set(data.server_name, update);
-      queryClient.setQueryData([...queryKeys.servers(), identity], (current) =>
-        current?.servers
-          ? {
-              ...current,
-              servers: current.servers.map((server) =>
-                server.name === data.server_name
-                  ? { ...server, players: update.players, player_count: update.player_count }
-                  : server,
-              ),
-            }
-          : current,
-      );
+      // The central WebSocket dispatcher updates the query cache once.
+      // This provider only tracks revisions to protect in-flight HTTP responses.
     });
     return removeListener;
   }, [identity, addMessageListener, queryClient]);
