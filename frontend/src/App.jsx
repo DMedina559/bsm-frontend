@@ -1,3 +1,5 @@
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./app/queryClient";
 import { DialogProvider } from "./DialogContext";
 import React, { Suspense, lazy } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -129,7 +131,8 @@ const App = () => {
   }, []);
 
   return (
-    <AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
       <ThemeProvider>
         <ToastProvider>
           <DialogProvider>
@@ -151,7 +154,8 @@ const App = () => {
           </DialogProvider>
         </ToastProvider>
       </ThemeProvider>
-    </AuthProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 };
 
