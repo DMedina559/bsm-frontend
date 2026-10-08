@@ -1,5 +1,5 @@
 import { useDialog } from "../DialogContext";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useToast } from "../ToastContext";
 import { post, get } from "../api";
 import { useServer } from "../ServerContext";
@@ -22,7 +22,9 @@ const ServerInstall = () => {
   const { addToast } = useToast();
   const navigate = useNavigate();
   const { refreshServers, setSelectedServer } = useServer();
-  const { isFallback, lastMessage, subscribe, unsubscribe } = useWebSocket();
+  const { subscribe, unsubscribe, addMessageListener } = useWebSocket();
+  const handledTask = useRef(null);
+
   const handleInstallSuccess = useCallback(async () => {
     await refreshServers();
     setSelectedServer(formData.server_name);
@@ -59,78 +61,90 @@ const ServerInstall = () => {
     fetchCustomZips();
   }, []);
 
-  // Monitor WebSocket messages for task updates
-  useEffect(() => {
-    if (installTaskId && lastMessage) {
-      const topic = `task:${installTaskId}`;
-      if (lastMessage.topic === topic && lastMessage.type === "task_update") {
-        const taskData = lastMessage.data;
-        if (taskData.status === "success") {
-          addToast("Installation completed successfully!", "success");
-          handleInstallSuccess();
-        } else if (taskData.status === "error") {
-          addToast(`Installation failed: ${taskData.message}`, "error");
-          setLoading(false);
-          setInstallTaskId(null);
-          unsubscribe(topic);
-        } else if (taskData.message) {
-          // Progress update or similar
-        }
+  const handleTaskUpdate = useCallback(
+    (taskData) => {
+      if (!installTaskId || handledTask.current === installTaskId) return;
+      const completed = ["completed", "success"].includes(taskData.status);
+      const failed = ["failed", "cancelled", "error"].includes(taskData.status);
+      if (!completed && !failed) return;
+
+      handledTask.current = installTaskId;
+      setInstallTaskId(null);
+      unsubscribe(`task:${installTaskId}`);
+      if (
+        completed &&
+        !["error", "skipped"].includes(taskData.result?.status)
+      ) {
+        addToast("Installation completed successfully!", "success");
+        handleInstallSuccess();
+      } else {
+        addToast(
+          `Installation failed: ${taskData.error?.message || taskData.result?.message || taskData.message}`,
+          "error",
+        );
+        setLoading(false);
       }
-    }
-  }, [lastMessage, installTaskId, addToast, handleInstallSuccess, unsubscribe]);
+    },
+    [installTaskId, unsubscribe, addToast, handleInstallSuccess],
+  );
 
-  // Fallback Polling for Task Status
+  // Listen directly so another topic cannot overwrite completion in a React batch.
   useEffect(() => {
-    let intervalId = null;
-    if (isFallback && installTaskId) {
-      logger.debug(
-        `[ServerInstall] WebSocket fallback active: polling status for task`,
-        {
-          installTaskId,
-        },
-      );
-      const pollStatus = async () => {
-        try {
-          // taskData is the task object directly, e.g. { status: "in_progress", ... }
-          const taskData = await get(`/api/tasks/status/${installTaskId}`);
-          if (taskData) {
-            if (taskData.status === "success") {
-              addToast("Installation completed successfully!", "success");
-              handleInstallSuccess();
-              setInstallTaskId(null); // Stop polling
-            } else if (taskData.status === "error") {
-              addToast(`Installation failed: ${taskData.message}`, "error");
-              setLoading(false);
-              setInstallTaskId(null); // Stop polling
-            } else {
-              // In progress
-            }
-          }
-        } catch (error) {
-          logger.warn("[ServerInstall] Polling task status failed", {
-            error,
-            installTaskId,
-          });
-          // If 404, maybe task is gone? Or error?
-          if (error.status === 404) {
-            // Treat as failure if task not found during install
-            addToast("Installation task lost.", "error");
-            setLoading(false);
-            setInstallTaskId(null);
-          }
-        }
-      };
-
-      // Poll every 2 seconds
-      intervalId = setInterval(pollStatus, 2000);
-      // Initial check
-      pollStatus();
-    }
+    if (!installTaskId) return;
+    const topic = `task:${installTaskId}`;
+    const removeListener = addMessageListener((message) => {
+      if (message.topic === topic && message.type === "task_update") {
+        handleTaskUpdate(message.data);
+      }
+    });
+    subscribe(topic);
     return () => {
-      if (intervalId) clearInterval(intervalId);
+      removeListener();
+      unsubscribe(topic);
     };
-  }, [isFallback, installTaskId, addToast, handleInstallSuccess]);
+  }, [
+    installTaskId,
+    addMessageListener,
+    subscribe,
+    unsubscribe,
+    handleTaskUpdate,
+  ]);
+
+  // Reconcile even with an active socket: completion may precede subscription
+  // or occur during reconnection. The same handler makes delivery idempotent.
+  useEffect(() => {
+    if (!installTaskId) return;
+    let disposed = false;
+    let polling = false;
+    const pollStatus = async () => {
+      if (polling) return;
+      polling = true;
+      try {
+        const taskData = await get(`/api/tasks/status/${installTaskId}`);
+        if (!disposed && taskData) handleTaskUpdate(taskData);
+      } catch (error) {
+        logger.warn("[ServerInstall] Polling task status failed", {
+          error,
+          installTaskId,
+        });
+        if (!disposed && error.status === 404) {
+          handleTaskUpdate({
+            status: "failed",
+            message: "Installation task lost.",
+          });
+        }
+      } finally {
+        polling = false;
+      }
+    };
+    const intervalId = setInterval(pollStatus, 2000);
+    pollStatus();
+    return () => {
+      disposed = true;
+      clearInterval(intervalId);
+    };
+  }, [installTaskId, handleTaskUpdate]);
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -160,9 +174,7 @@ const ServerInstall = () => {
       const response = await post("/api/server/install", payload);
       const initiateMonitoring = (taskId) => {
         setInstallTaskId(taskId);
-        if (!isFallback) {
-          subscribe(`task:${taskId}`);
-        }
+        handledTask.current = null;
         addToast("Installation started. Please wait...", "info");
       };
       if (response && response.status === "confirm_needed") {
