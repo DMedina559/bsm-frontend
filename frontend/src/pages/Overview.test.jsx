@@ -69,23 +69,53 @@ describe("Overview", () => {
   });
   it("shows only actions appropriate to each server state", async () => {
     render(<Overview />);
-    await waitFor(() => expect(screen.getByText("Server1")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Server1")).toBeInTheDocument(),
+    );
     expect(screen.getAllByTitle("Start Server")).toHaveLength(1);
     expect(screen.getAllByTitle("Stop Server")).toHaveLength(1);
     expect(screen.getAllByTitle("Restart Server")).toHaveLength(1);
     expect(screen.getAllByTitle("Update Server")).toHaveLength(2);
     expect(screen.getAllByTitle("Send Command")).toHaveLength(2);
-    expect(screen.getByRole("button", { name: "Send command to Server1" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Send command to Server2" })).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "Send command to Server1" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Send command to Server2" }),
+    ).toBeEnabled();
+  });
+
+  it("defaults to grid and lets users change the saved layout", async () => {
+    localStorage.removeItem("bsm.overview-layout.v1");
+    render(<Overview />);
+    await waitFor(() =>
+      expect(screen.getByText("Server1")).toBeInTheDocument(),
+    );
+    expect(screen.getByRole("button", { name: "Grid" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "List" }));
+    expect(screen.getByRole("button", { name: "List" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(localStorage.getItem("bsm.overview-layout.v1")).toBe("list");
+    expect(document.querySelector(".overview-layout-list")).toBeInTheDocument();
   });
 
   it("shows the branded intro and three fleet metrics", async () => {
     render(<Overview />);
-    await waitFor(() => expect(screen.getByText("Server1")).toBeInTheDocument());
-    expect(screen.getByRole("region", { name: "Fleet status" })).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByText("Server1")).toBeInTheDocument(),
+    );
+    expect(
+      screen.getByRole("region", { name: "Fleet status" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Managed servers")).toBeInTheDocument();
     expect(screen.getByText("Players online")).toBeInTheDocument();
-    expect(screen.getByText("Built for your Bedrock worlds.")).toBeInTheDocument();
+    expect(
+      screen.getByText("Built for your Bedrock worlds."),
+    ).toBeInTheDocument();
   });
-
 });

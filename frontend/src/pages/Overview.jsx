@@ -12,9 +12,14 @@ import { useNavigate } from "react-router-dom";
 import { post } from "../api";
 import { logger } from "../utils/logger";
 import { sortServers, readServerSort, SERVER_SORTS } from "../utils/serverSort";
-import {
-  RefreshCw,
-} from "lucide-react";
+import { RefreshCw, LayoutGrid, List, Grid2X2 } from "lucide-react";
+const LAYOUT_STORAGE_KEY = "bsm.overview-layout.v1";
+const LAYOUTS = [
+  { id: "grid", label: "Grid", Icon: LayoutGrid },
+  { id: "compact", label: "Compact", Icon: Grid2X2 },
+  { id: "list", label: "List", Icon: List },
+];
+
 const Overview = () => {
   const { confirmAction, promptAction } = useDialog();
   const { servers, setSelectedServer, refreshServers, loading, error } =
@@ -25,6 +30,22 @@ const Overview = () => {
   const navigate = useNavigate();
   const [actionLoading, setActionLoading] = useState({});
   const [refreshing, setRefreshing] = useState(false);
+  const [layout, setLayout] = useState(() => {
+    try {
+      const stored = localStorage.getItem(LAYOUT_STORAGE_KEY);
+      return LAYOUTS.some(({ id }) => id === stored) ? stored : "grid";
+    } catch {
+      return "grid";
+    }
+  });
+  const updateLayout = (next) => {
+    setLayout(next);
+    try {
+      localStorage.setItem(LAYOUT_STORAGE_KEY, next);
+    } catch {
+      /* Private mode */
+    }
+  };
   const [sort, setSort] = useState(readServerSort);
   const sortedServers = sortServers(servers, sort.key, sort.direction);
   const updateSort = (patch) => {
@@ -190,61 +211,85 @@ const Overview = () => {
   const unavailable = (loading || error) && servers.length === 0;
   return (
     <div className="container workspace-overview">
-      <div className="header">
-        <div>
-          <p className="workspace-eyebrow">BEDROCK SERVER MANAGER</p>
+      <header className="overview-page-heading">
+        <div className="overview-heading-copy">
           <h1>Overview</h1>
-          <p className="workspace-subtitle">
-            Your server fleet. One control plane.
-          </p>
         </div>
         <button
-          className="action-button secondary"
+          className="action-button secondary overview-refresh"
           onClick={handleRefresh}
           disabled={refreshing}
           type="button"
         >
-          <RefreshCw size={16} aria-hidden="true" /> {refreshing ? "Refreshing..." : "Refresh"}
+          <RefreshCw size={16} aria-hidden="true" />
+          {refreshing ? "Refreshing..." : "Refresh"}
         </button>
-      </div>
+      </header>
 
-      <section className="workspace-hero overview-intro" aria-label="Connection status">
-        <img
-          src={`${getApiProxyBasePath()}/app/image/icon/manager-logo.png`}
-          alt=""
-        />
-        <div>
-          <span className="workspace-eyebrow">FLEET CONTROL</span>
-          <h2>Built for your Bedrock worlds.</h2>
-          <p>
-            Manage servers, players, backups, and extensions from one workspace.
-          </p>
-          <div
-            className={`connection-pill ${isConnected ? "connected" : "degraded"}`}
-            role="status"
-          >
-            {connection}
+      <div className="overview-dashboard-top">
+        <section
+          className="workspace-hero overview-intro"
+          aria-label="Application overview"
+        >
+          <img
+            src={`${getApiProxyBasePath()}/app/image/icon/manager-logo.png`}
+            alt=""
+          />
+          <div>
+            <span className="workspace-eyebrow">BEDROCK SERVER MANAGER</span>
+            <h2>Your Bedrock workspace</h2>
+            <p>Manage servers, players, backups, and extensions.</p>
+            <div
+              className={`connection-pill ${isConnected ? "connected" : "degraded"}`}
+              role="status"
+            >
+              {connection}
+            </div>
           </div>
-        </div>
-        {!isConnected && (
-          <button
-            className="action-button secondary"
-            onClick={reconnect}
-            type="button"
-          >
-            Reconnect
-          </button>
-        )}
-      </section>
-      <OverviewFleetMetrics servers={servers} unavailable={unavailable} />
+          {!isConnected && (
+            <button
+              className="action-button secondary"
+              onClick={reconnect}
+              type="button"
+            >
+              Reconnect
+            </button>
+          )}
+        </section>
+        <OverviewFleetMetrics servers={servers} unavailable={unavailable} />
+      </div>
       <div className="fleet-heading">
         <h2>Server fleet</h2>
         <div className="fleet-sort-controls">
-          <span>{servers.length} visible servers</span>
-          <label htmlFor="fleet-sort">Sort by</label>
+          <div
+            className="overview-layout-switch"
+            role="group"
+            aria-label="Server layout"
+          >
+            {LAYOUTS.map(({ id, label, Icon }) => (
+              <button
+                key={id}
+                type="button"
+                className={`overview-layout-button ${layout === id ? "is-active" : ""}`}
+                aria-pressed={layout === id}
+                onClick={() => updateLayout(id)}
+                title={`${label} layout`}
+              >
+                <Icon size={16} aria-hidden="true" />
+                <span>{label}</span>
+              </button>
+            ))}
+          </div>
+          <span className="overview-server-count">
+            {servers.length} servers
+          </span>
+          <label className="sr-only" htmlFor="fleet-sort">
+            Sort by
+          </label>
           <select
             id="fleet-sort"
             className="form-input"
+            aria-label="Sort servers by"
             value={sort.key}
             onChange={(e) => updateSort({ key: e.target.value })}
           >
@@ -260,6 +305,7 @@ const Overview = () => {
           <select
             id="fleet-sort-direction"
             className="form-input"
+            aria-label="Sort direction"
             value={sort.direction}
             onChange={(e) => updateSort({ direction: e.target.value })}
           >
@@ -277,13 +323,7 @@ const Overview = () => {
       {loading && servers.length === 0 ? (
         <p role="status">Loading server fleet…</p>
       ) : error && servers.length === 0 ? null : servers.length === 0 ? (
-        <div
-          className="message-box message-info"
-          style={{
-            textAlign: "center",
-            padding: "40px",
-          }}
-        >
+        <div className="message-box message-info overview-empty">
           <h3>No servers found.</h3>
           {user?.role === "admin" && (
             <p>
@@ -293,16 +333,18 @@ const Overview = () => {
         </div>
       ) : (
         <div
-          className="server-grid overview-server-grid"
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fill, minmax(min(100%, var(--bsm-card-min-width)), 1fr))",
-            gap: "var(--bsm-grid-gap)",
-          }}
+          className={`server-grid overview-server-grid overview-layout-${layout}`}
         >
           {sortedServers.map((server) => (
-            <OverviewServerCard key={server.name} server={server} busy={Boolean(actionLoading[server.name])} onOpen={handleServerClick} onAction={handleAction} onUpdate={handleUpdate} onCommand={handleSendCommand} />
+            <OverviewServerCard
+              key={server.name}
+              server={server}
+              busy={Boolean(actionLoading[server.name])}
+              onOpen={handleServerClick}
+              onAction={handleAction}
+              onUpdate={handleUpdate}
+              onCommand={handleSendCommand}
+            />
           ))}
         </div>
       )}
