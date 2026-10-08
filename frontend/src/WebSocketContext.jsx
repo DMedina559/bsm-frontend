@@ -34,12 +34,14 @@ export const WebSocketProvider = ({ children }) => {
   const subscriptions = useRef(new Map());
   const listeners = useRef(new Set());
   const connectRef = useRef(null);
+  const reconnectNowRef = useRef(null);
 
   const disconnect = useCallback(() => {
     generation.current += 1;
     clearTimeout(retryTimer.current);
     clearTimeout(authTimer.current);
     authenticatedRef.current = false;
+    setIsConnected(false);
     const socket = socketRef.current;
     socketRef.current = null;
     if (socket) {
@@ -147,7 +149,7 @@ export const WebSocketProvider = ({ children }) => {
     connect();
     return () => {
       disconnect();
-      currentSubscriptions.clear();
+      // Keep desired subscriptions: mounted consumers own their lifetimes.
     };
   }, [connect, disconnect]);
   const reconnect = useCallback(() => {
@@ -155,12 +157,14 @@ export const WebSocketProvider = ({ children }) => {
     reconnectAttempts.current = 0;
     setIsConnected(false);
     // Keep the polling fallback until an authenticated connection is established.
-    connect();
+    // Allow disconnect cleanup to settle before opening the next generation.
+    connectRef.current?.();
   }, [connect, disconnect]);
+  reconnectNowRef.current = reconnect;
   useEffect(() => {
     const visibility = () => {
       if (document.visibilityState === "visible" && !socketRef.current)
-        reconnect();
+        reconnectNowRef.current?.();
     };
     document.addEventListener("visibilitychange", visibility);
     return () => document.removeEventListener("visibilitychange", visibility);
