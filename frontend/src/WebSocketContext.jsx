@@ -194,6 +194,37 @@ export const WebSocketProvider = ({ children }) => {
     },
     [sendMessage],
   );
+  // Backend task topics replay the latest task snapshot upon subscription.
+  // Keep subscriptions tied to registered operations, including after reconnect.
+  useEffect(() => {
+    if (identity === null) return;
+    const subscribed = new Set();
+    const syncTasks = (operations) => {
+      const desired = new Set(
+        operations
+          .filter((operation) => operation.kind && !operation.terminal)
+          .map((operation) => `task:${operation.id}`),
+      );
+      desired.forEach((topic) => {
+        if (!subscribed.has(topic)) {
+          subscribed.add(topic);
+          subscribe(topic);
+        }
+      });
+      [...subscribed].forEach((topic) => {
+        if (!desired.has(topic)) {
+          subscribed.delete(topic);
+          unsubscribe(topic);
+        }
+      });
+    };
+    const stop = operationCoordinator.subscribe(syncTasks);
+    return () => {
+      stop();
+      subscribed.forEach((topic) => unsubscribe(topic));
+    };
+  }, [identity, subscribe, unsubscribe]);
+
   const addMessageListener = useCallback((listener) => {
     listeners.current.add(listener);
     return () => listeners.current.delete(listener);
