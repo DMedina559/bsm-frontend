@@ -1,6 +1,6 @@
 import { queryClient } from "./app/queryClient";
 import { operationCoordinator } from "./app/operationCoordinator";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { request, get } from "./api";
 import { logger } from "./utils/logger";
 
@@ -10,6 +10,7 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const identityRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [needsSetup, setNeedsSetup] = useState(false);
 
@@ -64,8 +65,12 @@ export const AuthProvider = ({ children }) => {
 
       // Clear session-owned state before publishing the authenticated identity.
       // Do not perform cache mutations inside a React state updater.
-      queryClient.clear();
-      operationCoordinator.clear();
+      const nextIdentity = userData?.id ?? userData?.username ?? null;
+      if (identityRef.current !== nextIdentity) {
+        queryClient.clear();
+        operationCoordinator.clear();
+      }
+      identityRef.current = nextIdentity;
       setUser(userData);
     } catch (error) {
       logger.error("[Auth] Failed to check user status", { error });
@@ -74,6 +79,7 @@ export const AuthProvider = ({ children }) => {
       }
       queryClient.clear();
       operationCoordinator.clear();
+      identityRef.current = null;
       setUser(null);
     } finally {
       setLoading(false);
@@ -128,6 +134,7 @@ export const AuthProvider = ({ children }) => {
     sessionStorage.removeItem("access_token");
     queryClient.clear();
     operationCoordinator.clear();
+    identityRef.current = null;
     setUser(null);
   };
 
