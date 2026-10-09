@@ -36,10 +36,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "code",
-          "message"
-        ],
+        "required": ["code", "message"],
         "title": "APIErrorResponse",
         "type": "object"
       },
@@ -52,17 +49,12 @@
           },
           "status": {
             "default": "success",
-            "enum": [
-              "success",
-              "skipped"
-            ],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": [
-          "message"
-        ],
+        "required": ["message"],
         "title": "ActionResponse",
         "type": "object"
       },
@@ -79,9 +71,7 @@
             "type": "array"
           }
         },
-        "required": [
-          "players"
-        ],
+        "required": ["players"],
         "title": "AddPlayersPayload",
         "type": "object"
       },
@@ -122,17 +112,12 @@
             "title": "Message"
           },
           "status": {
-            "enum": [
-              "success",
-              "skipped"
-            ],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": [
-          "status"
-        ],
+        "required": ["status"],
         "title": "AddPlayersResponse",
         "type": "object"
       },
@@ -145,17 +130,12 @@
           },
           "status": {
             "default": "success",
-            "enum": [
-              "success",
-              "skipped"
-            ],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": [
-          "message"
-        ],
+        "required": ["message"],
         "title": "AddServerBanResponse",
         "type": "object"
       },
@@ -165,10 +145,7 @@
         "properties": {
           "pack_type": {
             "description": "The type of the pack: 'behavior' or 'resource'.",
-            "enum": [
-              "behavior",
-              "resource"
-            ],
+            "enum": ["behavior", "resource"],
             "title": "Pack Type",
             "type": "string"
           },
@@ -180,10 +157,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "pack_uuid",
-          "pack_type"
-        ],
+        "required": ["pack_uuid", "pack_type"],
         "title": "AddonActionPayload",
         "type": "object"
       },
@@ -213,17 +187,12 @@
             "title": "Message"
           },
           "status": {
-            "enum": [
-              "success",
-              "skipped"
-            ],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": [
-          "status"
-        ],
+        "required": ["status"],
         "title": "AddonListResponse",
         "type": "object"
       },
@@ -233,10 +202,7 @@
         "properties": {
           "pack_type": {
             "description": "The type of the pack: 'behavior' or 'resource'.",
-            "enum": [
-              "behavior",
-              "resource"
-            ],
+            "enum": ["behavior", "resource"],
             "title": "Pack Type",
             "type": "string"
           },
@@ -251,10 +217,7 @@
             "type": "array"
           }
         },
-        "required": [
-          "pack_type",
-          "uuids"
-        ],
+        "required": ["pack_type", "uuids"],
         "title": "AddonReorderPayload",
         "type": "object"
       },
@@ -264,10 +227,7 @@
         "properties": {
           "pack_type": {
             "description": "The type of the pack: 'behavior' or 'resource'.",
-            "enum": [
-              "behavior",
-              "resource"
-            ],
+            "enum": ["behavior", "resource"],
             "title": "Pack Type",
             "type": "string"
           },
@@ -286,11 +246,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "pack_uuid",
-          "pack_type",
-          "subpack_name"
-        ],
+        "required": ["pack_uuid", "pack_type", "subpack_name"],
         "title": "AddonSubpackPayload",
         "type": "object"
       },
@@ -313,9 +269,7 @@
             "type": "array"
           }
         },
-        "required": [
-          "players"
-        ],
+        "required": ["players"],
         "title": "AllowlistAddPayload",
         "type": "object"
       },
@@ -345,9 +299,7 @@
             "title": "Xuid"
           }
         },
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "title": "AllowlistPlayer",
         "type": "object"
       },
@@ -364,9 +316,7 @@
             "type": "array"
           }
         },
-        "required": [
-          "players"
-        ],
+        "required": ["players"],
         "title": "AllowlistRemovePayload",
         "type": "object"
       },
@@ -398,17 +348,12 @@
             "title": "Message"
           },
           "status": {
-            "enum": [
-              "success",
-              "skipped"
-            ],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": [
-          "status"
-        ],
+        "required": ["status"],
         "title": "AppInfoResponse",
         "type": "object"
       },
@@ -444,12 +389,7 @@
             "type": "integer"
           }
         },
-        "required": [
-          "id",
-          "user_id",
-          "action",
-          "timestamp"
-        ],
+        "required": ["id", "user_id", "action", "timestamp"],
         "title": "AuditLogResponse",
         "type": "object"
       },
@@ -475,9 +415,7 @@
             "title": "File To Backup"
           }
         },
-        "required": [
-          "backup_type"
-        ],
+        "required": ["backup_type"],
         "title": "BackupActionPayload",
         "type": "object"
       },
@@ -522,9 +460,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "backups"
-        ],
+        "required": ["backups"],
         "title": "BackupFilesResponse",
         "type": "object"
       },
@@ -551,10 +487,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "player_name",
-          "xuid"
-        ],
+        "required": ["player_name", "xuid"],
         "title": "BanAddRequest",
         "type": "object"
       },
@@ -592,10 +525,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "player_name",
-          "xuid"
-        ],
+        "required": ["player_name", "xuid"],
         "title": "BanInfo",
         "type": "object"
       },
@@ -607,9 +537,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "xuid"
-        ],
+        "required": ["xuid"],
         "title": "BanRemoveRequest",
         "type": "object"
       },
@@ -628,17 +556,12 @@
             "title": "Message"
           },
           "status": {
-            "enum": [
-              "success",
-              "skipped"
-            ],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": [
-          "status"
-        ],
+        "required": ["status"],
         "title": "BaseApiResponse",
         "type": "object"
       },
@@ -699,10 +622,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "username",
-          "password"
-        ],
+        "required": ["username", "password"],
         "title": "Body_login",
         "type": "object"
       },
@@ -719,10 +639,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "current_password",
-          "new_password"
-        ],
+        "required": ["current_password", "new_password"],
         "title": "ChangePasswordPayload",
         "type": "object"
       },
@@ -737,9 +654,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "command"
-        ],
+        "required": ["command"],
         "title": "CommandPayload",
         "type": "object"
       },
@@ -773,17 +688,12 @@
             "title": "Message"
           },
           "status": {
-            "enum": [
-              "success",
-              "skipped"
-            ],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": [
-          "status"
-        ],
+        "required": ["status"],
         "title": "ContentListResponse",
         "type": "object"
       },
@@ -810,18 +720,12 @@
             "title": "Message"
           },
           "status": {
-            "enum": [
-              "success",
-              "skipped"
-            ],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": [
-          "status",
-          "custom_zips"
-        ],
+        "required": ["status", "custom_zips"],
         "title": "CustomZipsResponse",
         "type": "object"
       },
@@ -834,9 +738,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "filename"
-        ],
+        "required": ["filename"],
         "title": "FileNamePayload",
         "type": "object"
       },
@@ -845,18 +747,12 @@
         "description": "Request payload for generating a registration token.\n\nAttributes:\n    role (str): The role to assign to the user registering with this token.",
         "properties": {
           "role": {
-            "enum": [
-              "admin",
-              "moderator",
-              "user"
-            ],
+            "enum": ["admin", "moderator", "user"],
             "title": "Role",
             "type": "string"
           }
         },
-        "required": [
-          "role"
-        ],
+        "required": ["role"],
         "title": "GenerateTokenPayload",
         "type": "object"
       },
@@ -888,9 +784,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "players"
-        ],
+        "required": ["players"],
         "title": "GetAllowlistResponse",
         "type": "object"
       },
@@ -922,9 +816,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "permissions"
-        ],
+        "required": ["permissions"],
         "title": "GetPermissionsResponse",
         "type": "object"
       },
@@ -960,10 +852,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "properties",
-          "raw_content"
-        ],
+        "required": ["properties", "raw_content"],
         "title": "GetPropertiesResponse",
         "type": "object"
       },
@@ -995,9 +884,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "bans"
-        ],
+        "required": ["bans"],
         "title": "GetServerBansResponse",
         "type": "object"
       },
@@ -1032,10 +919,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "message",
-          "server_name"
-        ],
+        "required": ["message", "server_name"],
         "title": "InstallConfirmationResponse",
         "type": "object"
       },
@@ -1058,9 +942,7 @@
           },
           "server_name": {
             "description": "Name for the new server.",
-            "examples": [
-              "example"
-            ],
+            "examples": ["example"],
             "maxLength": 50,
             "minLength": 1,
             "pattern": "^[a-zA-Z0-9_-]+$",
@@ -1086,9 +968,7 @@
             "title": "Server Zip Path"
           }
         },
-        "required": [
-          "server_name"
-        ],
+        "required": ["server_name"],
         "title": "InstallServerPayload",
         "type": "object"
       },
@@ -1114,11 +994,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "message",
-          "task_id",
-          "server_name"
-        ],
+        "required": ["message", "task_id", "server_name"],
         "title": "InstallationAcceptedResponse",
         "type": "object"
       },
@@ -1163,11 +1039,7 @@
             "title": "Path"
           },
           "status": {
-            "enum": [
-              "ACTIVE",
-              "INACTIVE",
-              "ORPHANED"
-            ],
+            "enum": ["ACTIVE", "INACTIVE", "ORPHANED"],
             "title": "Status",
             "type": "string"
           },
@@ -1190,12 +1062,7 @@
             "type": "array"
           }
         },
-        "required": [
-          "name",
-          "uuid",
-          "version",
-          "status"
-        ],
+        "required": ["name", "uuid", "version", "status"],
         "title": "InstalledAddon",
         "type": "object"
       },
@@ -1249,9 +1116,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "files"
-        ],
+        "required": ["files"],
         "title": "ListAvailableAddonsResponse",
         "type": "object"
       },
@@ -1268,9 +1133,7 @@
             "type": "array"
           }
         },
-        "required": [
-          "permissions"
-        ],
+        "required": ["permissions"],
         "title": "PermissionsSetPayload",
         "type": "object"
       },
@@ -1304,17 +1167,12 @@
             "title": "Message"
           },
           "status": {
-            "enum": [
-              "success",
-              "skipped"
-            ],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": [
-          "status"
-        ],
+        "required": ["status"],
         "title": "PermissionsUpdateResponse",
         "type": "object"
       },
@@ -1330,10 +1188,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "name",
-          "xuid"
-        ],
+        "required": ["name", "xuid"],
         "title": "PlayerInfo",
         "type": "object"
       },
@@ -1367,17 +1222,12 @@
             "title": "Players"
           },
           "status": {
-            "enum": [
-              "success",
-              "skipped"
-            ],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": [
-          "status"
-        ],
+        "required": ["status"],
         "title": "PlayerListResponse",
         "type": "object"
       },
@@ -1397,11 +1247,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "xuid",
-          "name",
-          "permission_level"
-        ],
+        "required": ["xuid", "name", "permission_level"],
         "title": "PlayerPermission",
         "type": "object"
       },
@@ -1414,11 +1260,7 @@
             "type": "string"
           },
           "permission_level": {
-            "enum": [
-              "visitor",
-              "member",
-              "operator"
-            ],
+            "enum": ["visitor", "member", "operator"],
             "title": "Permission Level",
             "type": "string"
           },
@@ -1427,11 +1269,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "xuid",
-          "name",
-          "permission_level"
-        ],
+        "required": ["xuid", "name", "permission_level"],
         "title": "PlayerPermissionPayload",
         "type": "object"
       },
@@ -1482,10 +1320,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "server",
-          "error"
-        ],
+        "required": ["server", "error"],
         "title": "PlayerScanError",
         "type": "object"
       },
@@ -1517,9 +1352,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "enabled"
-        ],
+        "required": ["enabled"],
         "title": "PluginInfo",
         "type": "object"
       },
@@ -1554,17 +1387,12 @@
             "title": "Pages"
           },
           "status": {
-            "enum": [
-              "success",
-              "skipped"
-            ],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": [
-          "status"
-        ],
+        "required": ["status"],
         "title": "PluginPagesResponse",
         "type": "object"
       },
@@ -1578,9 +1406,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "enabled"
-        ],
+        "required": ["enabled"],
         "title": "PluginStatusSetPayload",
         "type": "object"
       },
@@ -1614,17 +1440,12 @@
             "title": "Plugins"
           },
           "status": {
-            "enum": [
-              "success",
-              "skipped"
-            ],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": [
-          "status"
-        ],
+        "required": ["status"],
         "title": "PluginStatusesResponse",
         "type": "object"
       },
@@ -1648,12 +1469,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "pid",
-          "cpu_percent",
-          "memory_mb",
-          "uptime"
-        ],
+        "required": ["pid", "cpu_percent", "memory_mb", "uptime"],
         "title": "ProcessInfo",
         "type": "object"
       },
@@ -1670,10 +1486,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "full_name",
-          "email"
-        ],
+        "required": ["full_name", "email"],
         "title": "ProfileUpdatePayload",
         "type": "object"
       },
@@ -1690,9 +1503,7 @@
             "type": "object"
           }
         },
-        "required": [
-          "properties"
-        ],
+        "required": ["properties"],
         "title": "PropertiesPayload",
         "type": "object"
       },
@@ -1720,9 +1531,7 @@
             "title": "Keep"
           }
         },
-        "required": [
-          "directory"
-        ],
+        "required": ["directory"],
         "title": "PruneDownloadsPayload",
         "type": "object"
       },
@@ -1764,17 +1573,12 @@
             "title": "Message"
           },
           "status": {
-            "enum": [
-              "success",
-              "skipped"
-            ],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": [
-          "status"
-        ],
+        "required": ["status"],
         "title": "PruneDownloadsResponse",
         "type": "object"
       },
@@ -1803,9 +1607,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "registration_url"
-        ],
+        "required": ["registration_url"],
         "title": "RegistrationResponse",
         "type": "object"
       },
@@ -1818,17 +1620,12 @@
           },
           "status": {
             "default": "success",
-            "enum": [
-              "success",
-              "skipped"
-            ],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": [
-          "message"
-        ],
+        "required": ["message"],
         "title": "RemoveServerBanResponse",
         "type": "object"
       },
@@ -1840,17 +1637,12 @@
             "type": "string"
           },
           "outcome": {
-            "enum": [
-              "restarted",
-              "started"
-            ],
+            "enum": ["restarted", "started"],
             "title": "Outcome",
             "type": "string"
           },
           "server_name": {
-            "examples": [
-              "example"
-            ],
+            "examples": ["example"],
             "minLength": 1,
             "pattern": "^[a-zA-Z0-9_-]+$",
             "title": "Server Name",
@@ -1863,11 +1655,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "server_name",
-          "outcome",
-          "message"
-        ],
+        "required": ["server_name", "outcome", "message"],
         "title": "RestartServerResponse",
         "type": "object"
       },
@@ -1893,9 +1681,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "restore_type"
-        ],
+        "required": ["restore_type"],
         "title": "RestoreActionPayload",
         "type": "object"
       },
@@ -1925,17 +1711,12 @@
             ]
           },
           "status": {
-            "enum": [
-              "success",
-              "skipped"
-            ],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": [
-          "status"
-        ],
+        "required": ["status"],
         "title": "ServerProcessInfoResponse",
         "type": "object"
       },
@@ -1966,17 +1747,12 @@
             "title": "Running"
           },
           "status": {
-            "enum": [
-              "success",
-              "skipped"
-            ],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": [
-          "status"
-        ],
+        "required": ["status"],
         "title": "ServerRunningStatusResponse",
         "type": "object"
       },
@@ -1994,10 +1770,7 @@
             "description": "The new value for the setting."
           }
         },
-        "required": [
-          "key",
-          "value"
-        ],
+        "required": ["key", "value"],
         "title": "ServerSettingItemPayload",
         "type": "object"
       },
@@ -2039,17 +1812,12 @@
             "title": "Settings"
           },
           "status": {
-            "enum": [
-              "success",
-              "skipped"
-            ],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": [
-          "status"
-        ],
+        "required": ["status"],
         "title": "ServerSettingsResponse",
         "type": "object"
       },
@@ -2082,11 +1850,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "name",
-          "status",
-          "version"
-        ],
+        "required": ["name", "status", "version"],
         "title": "ServerSummary",
         "type": "object"
       },
@@ -2120,17 +1884,12 @@
             "title": "Servers"
           },
           "status": {
-            "enum": [
-              "success",
-              "skipped"
-            ],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": [
-          "status"
-        ],
+        "required": ["status"],
         "title": "ServersListResponse",
         "type": "object"
       },
@@ -2148,10 +1907,7 @@
             "description": "The new value for the setting."
           }
         },
-        "required": [
-          "key",
-          "value"
-        ],
+        "required": ["key", "value"],
         "title": "SettingItemResponse",
         "type": "object"
       },
@@ -2193,17 +1949,12 @@
             "title": "Settings"
           },
           "status": {
-            "enum": [
-              "success",
-              "skipped"
-            ],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": [
-          "status"
-        ],
+        "required": ["status"],
         "title": "SettingsResponse",
         "type": "object"
       },
@@ -2215,17 +1966,12 @@
             "type": "string"
           },
           "outcome": {
-            "enum": [
-              "started",
-              "already_running"
-            ],
+            "enum": ["started", "already_running"],
             "title": "Outcome",
             "type": "string"
           },
           "server_name": {
-            "examples": [
-              "example"
-            ],
+            "examples": ["example"],
             "minLength": 1,
             "pattern": "^[a-zA-Z0-9_-]+$",
             "title": "Server Name",
@@ -2238,11 +1984,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "server_name",
-          "outcome",
-          "message"
-        ],
+        "required": ["server_name", "outcome", "message"],
         "title": "StartServerResponse",
         "type": "object"
       },
@@ -2254,17 +1996,12 @@
             "type": "string"
           },
           "outcome": {
-            "enum": [
-              "stopped",
-              "already_stopped"
-            ],
+            "enum": ["stopped", "already_stopped"],
             "title": "Outcome",
             "type": "string"
           },
           "server_name": {
-            "examples": [
-              "example"
-            ],
+            "examples": ["example"],
             "minLength": 1,
             "pattern": "^[a-zA-Z0-9_-]+$",
             "title": "Server Name",
@@ -2277,11 +2014,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "server_name",
-          "outcome",
-          "message"
-        ],
+        "required": ["server_name", "outcome", "message"],
         "title": "StopServerResponse",
         "type": "object"
       },
@@ -2315,9 +2048,7 @@
             "title": "Name"
           }
         },
-        "required": [
-          "folder_name"
-        ],
+        "required": ["folder_name"],
         "title": "Subpack",
         "type": "object"
       },
@@ -2339,10 +2070,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "message",
-          "task_id"
-        ],
+        "required": ["message", "task_id"],
         "title": "TaskAcceptedResponse",
         "type": "object"
       },
@@ -2383,11 +2111,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "status",
-          "message"
-        ],
+        "required": ["id", "status", "message"],
         "title": "TaskSnapshot",
         "type": "object"
       },
@@ -2407,10 +2131,7 @@
             "title": "Message"
           },
           "status": {
-            "enum": [
-              "success",
-              "skipped"
-            ],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           },
@@ -2429,9 +2150,7 @@
             "title": "Themes"
           }
         },
-        "required": [
-          "status"
-        ],
+        "required": ["status"],
         "title": "ThemeListResponse",
         "type": "object"
       },
@@ -2444,9 +2163,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "theme"
-        ],
+        "required": ["theme"],
         "title": "ThemeUpdatePayload",
         "type": "object"
       },
@@ -2473,10 +2190,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "access_token",
-          "token_type"
-        ],
+        "required": ["access_token", "token_type"],
         "title": "TokenResponse",
         "type": "object"
       },
@@ -2506,9 +2220,7 @@
             "title": "Payload"
           }
         },
-        "required": [
-          "event_name"
-        ],
+        "required": ["event_name"],
         "title": "TriggerEventPayload",
         "type": "object"
       },
@@ -2540,17 +2252,12 @@
             "title": "Message"
           },
           "status": {
-            "enum": [
-              "success",
-              "skipped"
-            ],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": [
-          "status"
-        ],
+        "required": ["status"],
         "title": "TriggerEventResponse",
         "type": "object"
       },
@@ -2559,18 +2266,12 @@
         "description": "Request payload for updating a user's role.\n\nAttributes:\n    role (str): The new role.",
         "properties": {
           "role": {
-            "enum": [
-              "admin",
-              "moderator",
-              "user"
-            ],
+            "enum": ["admin", "moderator", "user"],
             "title": "Role",
             "type": "string"
           }
         },
-        "required": [
-          "role"
-        ],
+        "required": ["role"],
         "title": "UpdateUserRolePayload",
         "type": "object"
       },
@@ -2595,10 +2296,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "username",
-          "password"
-        ],
+        "required": ["username", "password"],
         "title": "UserLoginPayload",
         "type": "object"
       },
@@ -2625,11 +2323,7 @@
             "type": "boolean"
           },
           "role": {
-            "enum": [
-              "admin",
-              "moderator",
-              "user"
-            ],
+            "enum": ["admin", "moderator", "user"],
             "title": "Role",
             "type": "string"
           },
@@ -2643,12 +2337,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "username",
-          "role",
-          "is_active"
-        ],
+        "required": ["id", "username", "role", "is_active"],
         "title": "UserResponse",
         "type": "object"
       },
@@ -2684,11 +2373,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
+        "required": ["loc", "msg", "type"],
         "title": "ValidationError",
         "type": "object"
       }
@@ -2741,9 +2426,7 @@
           }
         ],
         "summary": "Get Account Api",
-        "tags": [
-          "Account Management"
-        ]
+        "tags": ["Account Management"]
       }
     },
     "/api/account/change-password": {
@@ -2791,11 +2474,7 @@
           }
         ],
         "summary": "Post Change Password",
-        "tags": [
-          "Account Management",
-          "Password",
-          "Authentication"
-        ]
+        "tags": ["Account Management", "Password", "Authentication"]
       }
     },
     "/api/account/profile": {
@@ -2843,9 +2522,7 @@
           }
         ],
         "summary": "Post Update Profile",
-        "tags": [
-          "Account Management"
-        ]
+        "tags": ["Account Management"]
       }
     },
     "/api/account/theme": {
@@ -2893,10 +2570,7 @@
           }
         ],
         "summary": "Post Update Theme",
-        "tags": [
-          "Account Management",
-          "Themes"
-        ]
+        "tags": ["Account Management", "Themes"]
       }
     },
     "/api/content/addons": {
@@ -2924,10 +2598,7 @@
           }
         ],
         "summary": "Get Addons",
-        "tags": [
-          "Addon Management",
-          "Content Management"
-        ]
+        "tags": ["Addon Management", "Content Management"]
       }
     },
     "/api/content/worlds": {
@@ -2955,10 +2626,7 @@
           }
         ],
         "summary": "Get Worlds List",
-        "tags": [
-          "World Management",
-          "Content Management"
-        ]
+        "tags": ["World Management", "Content Management"]
       }
     },
     "/api/downloads/list": {
@@ -2985,10 +2653,7 @@
           }
         ],
         "summary": "Get Custom Zips",
-        "tags": [
-          "Application",
-          "Downloads"
-        ]
+        "tags": ["Application", "Downloads"]
       }
     },
     "/api/downloads/prune": {
@@ -3036,10 +2701,7 @@
           }
         ],
         "summary": "Put Prune Downloads",
-        "tags": [
-          "Cleanup",
-          "Downloads"
-        ]
+        "tags": ["Cleanup", "Downloads"]
       }
     },
     "/api/info": {
@@ -3059,9 +2721,7 @@
           }
         },
         "summary": "Get System Info",
-        "tags": [
-          "Application"
-        ]
+        "tags": ["Application"]
       }
     },
     "/api/info/themes": {
@@ -3081,9 +2741,7 @@
           }
         },
         "summary": "Get Themes",
-        "tags": [
-          "Themes"
-        ]
+        "tags": ["Themes"]
       }
     },
     "/api/panorama": {
@@ -3096,9 +2754,7 @@
           }
         },
         "summary": "Serve Custom Panorama Api",
-        "tags": [
-          "Application"
-        ]
+        "tags": ["Application"]
       }
     },
     "/api/players/add": {
@@ -3146,11 +2802,7 @@
           }
         ],
         "summary": "Post Add Players",
-        "tags": [
-          "Global Players",
-          "Application",
-          "Player Management"
-        ]
+        "tags": ["Global Players", "Application", "Player Management"]
       }
     },
     "/api/players/get": {
@@ -3178,11 +2830,7 @@
           }
         ],
         "summary": "Get All Players",
-        "tags": [
-          "Global Players",
-          "Player Management",
-          "Application"
-        ]
+        "tags": ["Global Players", "Player Management", "Application"]
       }
     },
     "/api/players/scan": {
@@ -3210,11 +2858,7 @@
           }
         ],
         "summary": "Put Scan Players",
-        "tags": [
-          "Global Players",
-          "Player Management",
-          "Application"
-        ]
+        "tags": ["Global Players", "Player Management", "Application"]
       }
     },
     "/api/plugins": {
@@ -3242,10 +2886,7 @@
           }
         ],
         "summary": "Get Plugins Status",
-        "tags": [
-          "Plugin Management",
-          "Application"
-        ]
+        "tags": ["Plugin Management", "Application"]
       }
     },
     "/api/plugins/pages": {
@@ -3273,10 +2914,7 @@
           }
         ],
         "summary": "Get Plugin Pages",
-        "tags": [
-          "Plugin Management",
-          "Application"
-        ]
+        "tags": ["Plugin Management", "Application"]
       }
     },
     "/api/plugins/reload": {
@@ -3304,10 +2942,7 @@
           }
         ],
         "summary": "Put Reload Plugins",
-        "tags": [
-          "Plugin Management",
-          "Application"
-        ]
+        "tags": ["Plugin Management", "Application"]
       }
     },
     "/api/plugins/trigger_event": {
@@ -3355,10 +2990,7 @@
           }
         ],
         "summary": "Post Trigger Event",
-        "tags": [
-          "Plugin Management",
-          "Application"
-        ]
+        "tags": ["Plugin Management", "Application"]
       }
     },
     "/api/plugins/{plugin_name}": {
@@ -3417,10 +3049,7 @@
           }
         ],
         "summary": "Post Set Plugin Status",
-        "tags": [
-          "Plugin Management",
-          "Application"
-        ]
+        "tags": ["Plugin Management", "Application"]
       }
     },
     "/api/plugins/{plugin_name}/reload": {
@@ -3469,10 +3098,7 @@
           }
         ],
         "summary": "Post Reload Single Plugin",
-        "tags": [
-          "Plugin Management",
-          "Application"
-        ]
+        "tags": ["Plugin Management", "Application"]
       }
     },
     "/api/register/generate-token": {
@@ -3520,10 +3146,7 @@
           }
         ],
         "summary": "Generate Token",
-        "tags": [
-          "Registration",
-          "User Management"
-        ]
+        "tags": ["Registration", "User Management"]
       }
     },
     "/api/register/validate/{token}": {
@@ -3562,10 +3185,7 @@
           }
         },
         "summary": "Validate Token",
-        "tags": [
-          "Registration",
-          "User Management"
-        ]
+        "tags": ["Registration", "User Management"]
       }
     },
     "/api/register/{token}": {
@@ -3614,10 +3234,7 @@
           }
         },
         "summary": "Register User",
-        "tags": [
-          "Registration",
-          "User Management"
-        ]
+        "tags": ["Registration", "User Management"]
       }
     },
     "/api/server/install": {
@@ -3672,9 +3289,7 @@
           }
         ],
         "summary": "Post Install Server",
-        "tags": [
-          "Server Installation"
-        ]
+        "tags": ["Server Installation"]
       }
     },
     "/api/server/{server_name}/addon/disable": {
@@ -3734,10 +3349,7 @@
           }
         ],
         "summary": "Post Disable Addon",
-        "tags": [
-          "Addon Management",
-          "Content Management"
-        ]
+        "tags": ["Addon Management", "Content Management"]
       }
     },
     "/api/server/{server_name}/addon/enable": {
@@ -3797,10 +3409,7 @@
           }
         ],
         "summary": "Post Enable Addon",
-        "tags": [
-          "Addon Management",
-          "Content Management"
-        ]
+        "tags": ["Addon Management", "Content Management"]
       }
     },
     "/api/server/{server_name}/addon/icon": {
@@ -3858,10 +3467,7 @@
           }
         },
         "summary": "Get Server Addon Icon",
-        "tags": [
-          "Addon Management",
-          "Content Management"
-        ]
+        "tags": ["Addon Management", "Content Management"]
       }
     },
     "/api/server/{server_name}/addon/install": {
@@ -3921,10 +3527,7 @@
           }
         ],
         "summary": "Post Install Addon",
-        "tags": [
-          "Addon Management",
-          "Content Management"
-        ]
+        "tags": ["Addon Management", "Content Management"]
       }
     },
     "/api/server/{server_name}/addon/reorder": {
@@ -3984,10 +3587,7 @@
           }
         ],
         "summary": "Post Reorder Addons",
-        "tags": [
-          "Addon Management",
-          "Content Management"
-        ]
+        "tags": ["Addon Management", "Content Management"]
       }
     },
     "/api/server/{server_name}/addon/subpack": {
@@ -4047,10 +3647,7 @@
           }
         ],
         "summary": "Post Update Subpack",
-        "tags": [
-          "Addon Management",
-          "Content Management"
-        ]
+        "tags": ["Addon Management", "Content Management"]
       }
     },
     "/api/server/{server_name}/addon/uninstall": {
@@ -4110,10 +3707,7 @@
           }
         ],
         "summary": "Delete Uninstall Addon",
-        "tags": [
-          "Addon Management",
-          "Content Management"
-        ]
+        "tags": ["Addon Management", "Content Management"]
       }
     },
     "/api/server/{server_name}/addons": {
@@ -4163,10 +3757,7 @@
           }
         ],
         "summary": "Get Server Addons",
-        "tags": [
-          "Addon Management",
-          "Content Management"
-        ]
+        "tags": ["Addon Management", "Content Management"]
       }
     },
     "/api/server/{server_name}/allowlist/add": {
@@ -4405,10 +3996,7 @@
           }
         ],
         "summary": "Post Backup Action",
-        "tags": [
-          "Backup & Restore",
-          "Backup"
-        ]
+        "tags": ["Backup & Restore", "Backup"]
       }
     },
     "/api/server/{server_name}/backup/list/{backup_type}": {
@@ -4467,10 +4055,7 @@
           }
         ],
         "summary": "Get List Server Backups",
-        "tags": [
-          "Backup & Restore",
-          "Backup"
-        ]
+        "tags": ["Backup & Restore", "Backup"]
       }
     },
     "/api/server/{server_name}/backups/prune": {
@@ -4520,11 +4105,7 @@
           }
         ],
         "summary": "Put Prune Backups",
-        "tags": [
-          "Backup & Restore",
-          "Backup",
-          "Cleanup"
-        ]
+        "tags": ["Backup & Restore", "Backup", "Cleanup"]
       }
     },
     "/api/server/{server_name}/bans/add": {
@@ -4584,10 +4165,7 @@
           }
         ],
         "summary": "Post Add Server Ban",
-        "tags": [
-          "Server Bans",
-          "Player Management"
-        ]
+        "tags": ["Server Bans", "Player Management"]
       }
     },
     "/api/server/{server_name}/bans/get": {
@@ -4637,10 +4215,7 @@
           }
         ],
         "summary": "Get Server Bans",
-        "tags": [
-          "Server Bans",
-          "Player Management"
-        ]
+        "tags": ["Server Bans", "Player Management"]
       }
     },
     "/api/server/{server_name}/bans/remove": {
@@ -4700,10 +4275,7 @@
           }
         ],
         "summary": "Delete Remove Server Ban",
-        "tags": [
-          "Server Bans",
-          "Player Management"
-        ]
+        "tags": ["Server Bans", "Player Management"]
       }
     },
     "/api/server/{server_name}/delete": {
@@ -4753,10 +4325,7 @@
           }
         ],
         "summary": "Delete Server",
-        "tags": [
-          "Server Mannagement",
-          "Server Installation"
-        ]
+        "tags": ["Server Mannagement", "Server Installation"]
       }
     },
     "/api/server/{server_name}/permissions/get": {
@@ -4922,10 +4491,7 @@
           }
         ],
         "summary": "Get Server Process Info",
-        "tags": [
-          "Server Management",
-          "Process Info"
-        ]
+        "tags": ["Server Management", "Process Info"]
       }
     },
     "/api/server/{server_name}/properties/get": {
@@ -4974,10 +4540,7 @@
           }
         ],
         "summary": "Get Properties",
-        "tags": [
-          "Properties Management",
-          "Server Management"
-        ]
+        "tags": ["Properties Management", "Server Management"]
       }
     },
     "/api/server/{server_name}/properties/set": {
@@ -5036,10 +4599,7 @@
           }
         ],
         "summary": "Post Properties Set",
-        "tags": [
-          "Properties Management",
-          "Server Management"
-        ]
+        "tags": ["Properties Management", "Server Management"]
       }
     },
     "/api/server/{server_name}/restart": {
@@ -5089,10 +4649,7 @@
           }
         ],
         "summary": "Post Restart Server",
-        "tags": [
-          "Server Mannagement",
-          "Process Management"
-        ]
+        "tags": ["Server Mannagement", "Process Management"]
       }
     },
     "/api/server/{server_name}/restore/action": {
@@ -5152,10 +4709,7 @@
           }
         ],
         "summary": "Post Restore Action",
-        "tags": [
-          "Backup & Restore",
-          "Restore"
-        ]
+        "tags": ["Backup & Restore", "Restore"]
       }
     },
     "/api/server/{server_name}/send_command": {
@@ -5215,10 +4769,7 @@
           }
         ],
         "summary": "Post Send Command",
-        "tags": [
-          "Server Mannagement",
-          "Send Command"
-        ]
+        "tags": ["Server Mannagement", "Send Command"]
       }
     },
     "/api/server/{server_name}/settings/get": {
@@ -5268,9 +4819,7 @@
           }
         ],
         "summary": "Get Server Settings",
-        "tags": [
-          "Server Settings"
-        ]
+        "tags": ["Server Settings"]
       }
     },
     "/api/server/{server_name}/settings/set": {
@@ -5330,9 +4879,7 @@
           }
         ],
         "summary": "Post Set Server Setting",
-        "tags": [
-          "Server Settings"
-        ]
+        "tags": ["Server Settings"]
       }
     },
     "/api/server/{server_name}/start": {
@@ -5382,10 +4929,7 @@
           }
         ],
         "summary": "Post Start Server",
-        "tags": [
-          "Server Mannagement",
-          "Process Management"
-        ]
+        "tags": ["Server Mannagement", "Process Management"]
       }
     },
     "/api/server/{server_name}/status": {
@@ -5435,10 +4979,7 @@
           }
         ],
         "summary": "Get Server Running Status",
-        "tags": [
-          "Server Management",
-          "Process Info"
-        ]
+        "tags": ["Server Management", "Process Info"]
       }
     },
     "/api/server/{server_name}/stop": {
@@ -5488,10 +5029,7 @@
           }
         ],
         "summary": "Post Stop Server",
-        "tags": [
-          "Server Mannagement",
-          "Process Management"
-        ]
+        "tags": ["Server Mannagement", "Process Management"]
       }
     },
     "/api/server/{server_name}/summary": {
@@ -5541,10 +5079,7 @@
           }
         ],
         "summary": "Get Server Summary",
-        "tags": [
-          "Server Mannagement",
-          "Server Information"
-        ]
+        "tags": ["Server Mannagement", "Server Information"]
       }
     },
     "/api/server/{server_name}/update": {
@@ -5594,10 +5129,7 @@
           }
         ],
         "summary": "Post Update Server",
-        "tags": [
-          "Server Mannagement",
-          "Server Installation"
-        ]
+        "tags": ["Server Mannagement", "Server Installation"]
       }
     },
     "/api/server/{server_name}/validate": {
@@ -5646,9 +5178,7 @@
           }
         ],
         "summary": "Get Validate Server",
-        "tags": [
-          "Server Management"
-        ]
+        "tags": ["Server Management"]
       }
     },
     "/api/server/{server_name}/world/export": {
@@ -5698,10 +5228,7 @@
           }
         ],
         "summary": "Post World Export",
-        "tags": [
-          "World Management",
-          "Content Management"
-        ]
+        "tags": ["World Management", "Content Management"]
       }
     },
     "/api/server/{server_name}/world/icon": {
@@ -5736,9 +5263,7 @@
           }
         },
         "summary": "Get World Icon",
-        "tags": [
-          "World Management"
-        ]
+        "tags": ["World Management"]
       }
     },
     "/api/server/{server_name}/world/install": {
@@ -5798,10 +5323,7 @@
           }
         ],
         "summary": "Post World Install",
-        "tags": [
-          "World Management",
-          "Content Management"
-        ]
+        "tags": ["World Management", "Content Management"]
       }
     },
     "/api/server/{server_name}/world/reset": {
@@ -5851,10 +5373,7 @@
           }
         ],
         "summary": "Delete World Reset",
-        "tags": [
-          "World Management",
-          "Server Management"
-        ]
+        "tags": ["World Management", "Server Management"]
       }
     },
     "/api/servers": {
@@ -5882,10 +5401,7 @@
           }
         ],
         "summary": "Get Servers List",
-        "tags": [
-          "Server Management",
-          "Application"
-        ]
+        "tags": ["Server Management", "Application"]
       }
     },
     "/api/settings/get": {
@@ -5913,9 +5429,7 @@
           }
         ],
         "summary": "Get All Settings",
-        "tags": [
-          "Application Settings"
-        ]
+        "tags": ["Application Settings"]
       }
     },
     "/api/settings/reload": {
@@ -5943,9 +5457,7 @@
           }
         ],
         "summary": "Put Reload Settings",
-        "tags": [
-          "Application Settings"
-        ]
+        "tags": ["Application Settings"]
       }
     },
     "/api/settings/set": {
@@ -5993,9 +5505,7 @@
           }
         ],
         "summary": "Post Set Setting",
-        "tags": [
-          "Application Settings"
-        ]
+        "tags": ["Application Settings"]
       }
     },
     "/api/tasks/list": {
@@ -6027,9 +5537,7 @@
           }
         ],
         "summary": "List Tasks",
-        "tags": [
-          "Background Tasks"
-        ]
+        "tags": ["Background Tasks"]
       }
     },
     "/api/tasks/status/{task_id}": {
@@ -6078,9 +5586,7 @@
           }
         ],
         "summary": "Get Task Status",
-        "tags": [
-          "Background Tasks"
-        ]
+        "tags": ["Background Tasks"]
       }
     },
     "/api/users/list": {
@@ -6112,9 +5618,7 @@
           }
         ],
         "summary": "List Users Api",
-        "tags": [
-          "User Management"
-        ]
+        "tags": ["User Management"]
       }
     },
     "/api/users/{user_id}/delete": {
@@ -6163,9 +5667,7 @@
           }
         ],
         "summary": "Delete User",
-        "tags": [
-          "User Management"
-        ]
+        "tags": ["User Management"]
       }
     },
     "/api/users/{user_id}/disable": {
@@ -6213,9 +5715,7 @@
           }
         ],
         "summary": "Disable User",
-        "tags": [
-          "User Management"
-        ]
+        "tags": ["User Management"]
       }
     },
     "/api/users/{user_id}/enable": {
@@ -6263,9 +5763,7 @@
           }
         ],
         "summary": "Enable User",
-        "tags": [
-          "User Management"
-        ]
+        "tags": ["User Management"]
       }
     },
     "/api/users/{user_id}/role": {
@@ -6323,9 +5821,7 @@
           }
         ],
         "summary": "Update User Role",
-        "tags": [
-          "User Management"
-        ]
+        "tags": ["User Management"]
       }
     },
     "/audit-log/list": {
@@ -6357,10 +5853,7 @@
           }
         ],
         "summary": "List Audit Logs Api",
-        "tags": [
-          "Audit Logs",
-          "Application"
-        ]
+        "tags": ["Audit Logs", "Application"]
       }
     },
     "/auth/logout": {
@@ -6386,9 +5879,7 @@
           }
         ],
         "summary": "Logout",
-        "tags": [
-          "Authentication"
-        ]
+        "tags": ["Authentication"]
       }
     },
     "/auth/reauth": {
@@ -6444,10 +5935,7 @@
           }
         ],
         "summary": "Reauth",
-        "tags": [
-          "Authentication",
-          "Login"
-        ]
+        "tags": ["Authentication", "Login"]
       }
     },
     "/auth/token": {
@@ -6487,10 +5975,7 @@
           }
         },
         "summary": "Api Login For Access Token",
-        "tags": [
-          "Authentication",
-          "Login"
-        ]
+        "tags": ["Authentication", "Login"]
       }
     }
   }
