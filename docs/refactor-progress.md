@@ -29,3 +29,13 @@
 - T04 is partially addressed but remains open pending verified tests and broader event payload review.
 - Git clone from the available execution container still fails DNS resolution for `github.com`; no local npm verification was possible.
 - **Next:** repair lockfile in an environment with registry access and run CI gates; add WebSocket reconnect/identity-switch tests before marking T03 complete.
+
+## 2026-10-08 — session and operation infrastructure
+- Added `app/sessionBoundary.js` with query cancellation/clear helper and account-scoped storage keys, plus unit tests.
+- Changed `ServerContext` selected-server preference storage to use an identity-specific key.
+- Added `app/operationCoordinator.js` and tests for task updates, terminal states, and clearing.
+- Connected authenticated WebSocket task frames to the operation coordinator.
+- Clear registered operations on auth failure, account change and logout.
+- **Not complete:** task subscriptions and correlation IDs are not yet wired into page-level operations; generated OpenAPI client, versioned UI store and migrations remain outstanding.
+- **Verification:** no clean npm install/lint/test/build has been executed for these commits. Lockfile remains outdated.
+- **Next:** run clean build and tests in Codespaces; inspect backend task snapshot shapes, add task subscriptions, and migrate install lifecycle with integration coverage.
