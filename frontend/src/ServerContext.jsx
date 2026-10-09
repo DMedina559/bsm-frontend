@@ -12,10 +12,11 @@ import { request } from "./api";
 import { useAuth } from "./AuthContext";
 import { useWebSocket } from "./WebSocketContext";
 import { queryKeys } from "./app/queryKeys";
-import { getSessionStorageKey } from "./app/sessionBoundary";
+import { createPreferenceStore } from "./app/preferenceStore";
 import { logger } from "./utils/logger";
 
 const ServerContext = createContext(null);
+const preferences = createPreferenceStore();
 export const useServer = () => useContext(ServerContext);
 
 const SERVER_TOPICS = [
@@ -56,12 +57,13 @@ export const ServerProvider = ({ children }) => {
     useWebSocket();
   const [selectedServer, setSelectedServerState] = useState(null);
   const selectedServerRef = useRef(selectedServer);
-  const selectionKey = getSessionStorageKey(identity, "selectedServer");
+
   useEffect(() => {
-    const saved = selectionKey ? localStorage.getItem(selectionKey) : null;
+    const saved = preferences.read(identity, "selectedServer", null,
+      (value) => typeof value === "string" && value.length > 0);
     selectedServerRef.current = saved;
     setSelectedServerState(saved);
-  }, [selectionKey]);
+  }, [identity]);
   const playerRevision = useRef(0);
   const playerUpdates = useRef(new Map());
 
@@ -95,11 +97,9 @@ export const ServerProvider = ({ children }) => {
   const setSelectedServer = useCallback((name) => {
     selectedServerRef.current = name;
     setSelectedServerState(name);
-    if (selectionKey) {
-      if (name) localStorage.setItem(selectionKey, name);
-      else localStorage.removeItem(selectionKey);
-    }
-  }, [selectionKey]);
+    if (name) preferences.write(identity, "selectedServer", name);
+    else preferences.remove(identity, "selectedServer");
+  }, [identity]);
 
   useEffect(() => {
     if (identity === null) {
