@@ -52,3 +52,10 @@
 - Added operation coordinator tests for initial terminal status and backend `task_id` snapshots.
 - Simplified server selection initialization and removed an unused event-listener effect dependency.
 - These commits are **not verified by npm test, lint, or build**. Lockfile regeneration and actual backend task integration remain the next gates.
+
+## 2026-10-09 — versioned UI preference foundation
+- Added `app/preferenceStore.js`: account-scoped, versioned JSON persistence with validation and fallback handling.
+- Added tests for account isolation and value validation.
+- Migrated selected-server persistence in `ServerContext` to the new store.
+- Existing legacy selected-server key is intentionally not imported across accounts to avoid leaking prior selection.
+- **Verification outstanding:** regenerate npm lockfile, run lint/test/build, and check all frontend callers. Overview/theme/density migrations and backend operation integration remain open.
