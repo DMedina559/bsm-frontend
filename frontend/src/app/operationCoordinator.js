@@ -22,7 +22,15 @@ export function createOperationCoordinator() {
       if (id === null || id === undefined || id === "") throw new Error("Operation ID required");
       const key = String(id);
       const previous = operations.get(key);
-      const next = { ...previous, id: key, kind, serverName, status, ...extra };
+      const next = {
+        ...previous,
+        id: key,
+        kind,
+        serverName,
+        status,
+        terminal: TERMINAL.has(String(status).toLowerCase()),
+        ...extra,
+      };
       operations.set(key, next);
       notify();
       return next;
