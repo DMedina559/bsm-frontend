@@ -1,5 +1,9 @@
 import { callOperation } from "./operations";
 async function contracts() {
+  const history = await callOperation("get_log_history", {
+    query: { topic: "app_log" },
+  });
+  history.data.toUpperCase();
   const servers = await callOperation("list_servers");
   servers.servers?.forEach((server) => server.name.toUpperCase());
   await callOperation("get_properties", { path: { server_name: "server" } });

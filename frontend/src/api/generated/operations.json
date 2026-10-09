@@ -39,6 +39,10 @@
     "method": "GET",
     "path": "/api/info/themes"
   },
+  "get_log_history": {
+    "method": "GET",
+    "path": "/api/logs/history"
+  },
   "get_panorama": {
     "method": "GET",
     "path": "/api/panorama"

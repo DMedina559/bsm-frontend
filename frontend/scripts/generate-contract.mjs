@@ -1,4 +1,6 @@
 import fs from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import * as prettier from "prettier";
 import openapiTS, { astToString } from "openapi-typescript";
 const source = new URL("../src/api/generated/openapi.json", import.meta.url);
 const schema = JSON.parse(await fs.readFile(source, "utf8"));
@@ -12,7 +14,14 @@ for (const [path, methods] of Object.entries(schema.paths)) {
   }
 }
 const files = {
-  "contract.d.ts": astToString(await openapiTS(schema)),
+  "contract.d.ts": await prettier.format(astToString(await openapiTS(schema)), {
+    ...(await prettier.resolveConfig(
+      fileURLToPath(
+        new URL("../src/api/generated/contract.d.ts", import.meta.url),
+      ),
+    )),
+    parser: "typescript",
+  }),
   "operations.json": `${JSON.stringify(operations, null, 2)}\n`,
 };
 for (const [name, content] of Object.entries(files)) {
