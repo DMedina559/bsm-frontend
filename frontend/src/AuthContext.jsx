@@ -62,13 +62,11 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
-      setUser((previous) => {
-        if (previous?.id !== userData?.id || previous?.username !== userData?.username) {
-          queryClient.clear();
-          operationCoordinator.clear();
-        }
-        return userData;
-      });
+      // Clear session-owned state before publishing the authenticated identity.
+      // Do not perform cache mutations inside a React state updater.
+      queryClient.clear();
+      operationCoordinator.clear();
+      setUser(userData);
     } catch (error) {
       logger.error("[Auth] Failed to check user status", { error });
       if (error.status === 401) {
