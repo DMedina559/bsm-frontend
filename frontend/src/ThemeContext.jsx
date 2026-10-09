@@ -1,3 +1,4 @@
+import { usePreference } from "./app/usePreference";
 import React, {
   createContext,
   useContext,
@@ -9,20 +10,13 @@ import { useAuth } from "./AuthContext";
 import { request, getApiBaseUrl } from "./api";
 import { getApiProxyBasePath } from "./utils/basePath";
 import {
-  APPEARANCE_KEY,
   DEFAULT_APPEARANCE,
   normalizeAppearance,
-  readAppearance,
   resolveMode,
   themeStylesheetUrl,
 } from "./utils/theme";
 
-import {
-  PALETTE_KEY,
-  readPaletteState,
-  validatePalette,
-  paletteCss,
-} from "./utils/palettes";
+import { validatePalette, paletteCss } from "./utils/palettes";
 
 const ThemeContext = createContext();
 export const useTheme = () => useContext(ThemeContext);
@@ -34,8 +28,14 @@ export const ThemeProvider = ({ children }) => {
     savedTheme && savedTheme.username === user?.username
       ? savedTheme.theme
       : user?.theme || "default";
-  const [paletteState, setPaletteState] = useState(readPaletteState);
-  const [appearance, setAppearance] = useState(readAppearance);
+  const [paletteState, setPaletteState] = usePreference("palettes", {
+    palettes: [],
+    active: null,
+  });
+  const [appearance, setAppearance] = usePreference(
+    "appearance",
+    DEFAULT_APPEARANCE,
+  );
   const [systemDark, setSystemDark] = useState(
     () => window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? true,
   );
@@ -50,15 +50,6 @@ export const ThemeProvider = ({ children }) => {
     const change = (event) => setSystemDark(event.matches);
     media.addEventListener("change", change);
     return () => media.removeEventListener("change", change);
-  }, []);
-
-  useEffect(() => {
-    const sync = (event) => {
-      if (event.key === PALETTE_KEY) setPaletteState(readPaletteState());
-      if (event.key === APPEARANCE_KEY) setAppearance(readAppearance());
-    };
-    window.addEventListener("storage", sync);
-    return () => window.removeEventListener("storage", sync);
   }, []);
 
   useEffect(() => {
@@ -135,12 +126,8 @@ export const ThemeProvider = ({ children }) => {
     return () => style.remove();
   }, [paletteState, theme]);
   const storePalettes = (next) => {
-    try {
-      localStorage.setItem(PALETTE_KEY, JSON.stringify(next));
-    } catch {
+    if (!setPaletteState(next))
       throw new Error("This browser could not save your palette.");
-    }
-    setPaletteState(next);
   };
   const savePalette = (value) => {
     const palette = validatePalette(value);
@@ -159,10 +146,7 @@ export const ThemeProvider = ({ children }) => {
 
   const updateAppearance = (patch) => {
     const next = normalizeAppearance({ ...appearance, ...patch });
-    setAppearance(next);
-    try {
-      localStorage.setItem(APPEARANCE_KEY, JSON.stringify(next));
-    } catch {
+    if (!setAppearance(next)) {
       setThemeError(
         "Appearance was applied, but this browser could not save it for your next visit.",
       );

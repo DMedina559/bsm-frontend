@@ -15,24 +15,33 @@ describe("server WebSocket query synchronization", () => {
         { name: "beta", player_count: 2, players: [] },
       ],
     });
-    expect(synchronizeServerEvent({
-      type: "event",
-      topic: "event:after_server_players_change",
-      data: {
-        server_name: "alpha",
+    expect(
+      synchronizeServerEvent({
+        type: "event",
+        topic: "event:after_server_players_change",
+        data: {
+          server_name: "alpha",
+          player_count: 1,
+          players: [{ name: "Steve", xuid: "123" }],
+        },
+      }),
+    ).toBe(true);
+    expect(queryClient.getQueryData(key).servers).toEqual([
+      {
+        name: "alpha",
         player_count: 1,
         players: [{ name: "Steve", xuid: "123" }],
       },
-    })).toBe(true);
-    expect(queryClient.getQueryData(key).servers).toEqual([
-      { name: "alpha", player_count: 1, players: [{ name: "Steve", xuid: "123" }] },
       { name: "beta", player_count: 2, players: [] },
     ]);
   });
 
   it("rejects malformed player updates without poisoning cache", () => {
     const key = [...queryKeys.servers(), "user-1"];
-    const original = { status: "success", servers: [{ name: "alpha", player_count: 0 }] };
+    const original = {
+      status: "success",
+      servers: [{ name: "alpha", player_count: 0 }],
+    };
     queryClient.setQueryData(key, original);
     synchronizeServerEvent({
       type: "event",
@@ -44,19 +53,44 @@ describe("server WebSocket query synchronization", () => {
 
   it("invalidates server queries after lifecycle changes", () => {
     const invalidate = vi.spyOn(queryClient, "invalidateQueries");
-    expect(synchronizeServerEvent({
-      type: "event",
-      topic: "event:after_server_stop",
-      data: { server_name: "alpha" },
-    })).toBe(true);
+    expect(
+      synchronizeServerEvent({
+        type: "event",
+        topic: "event:after_server_stop",
+        data: { server_name: "alpha" },
+      }),
+    ).toBe(true);
     expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.servers() });
     invalidate.mockRestore();
   });
 
   it("ignores unknown topics", () => {
     const invalidate = vi.spyOn(queryClient, "invalidateQueries");
-    expect(synchronizeServerEvent({ type: "event", topic: "plugin:unknown" })).toBe(false);
+    expect(
+      synchronizeServerEvent({ type: "event", topic: "plugin:unknown" }),
+    ).toBe(false);
     expect(invalidate).not.toHaveBeenCalled();
     invalidate.mockRestore();
   });
+});
+
+it("uses backend revisions to reject reordered player snapshots", () => {
+  queryClient.setQueryData(["servers", "ordered"], {
+    servers: [{ name: "Ordered", players: [] }],
+  });
+  const frame = (revision, name) => ({
+    type: "event",
+    topic: "event:after_server_players_change",
+    revision,
+    data: {
+      server_name: "Ordered",
+      players: [{ name, xuid: "1" }],
+      player_count: 1,
+    },
+  });
+  expect(synchronizeServerEvent(frame(2, "New"))).toBe(true);
+  expect(synchronizeServerEvent(frame(1, "Old"))).toBe(false);
+  expect(
+    queryClient.getQueryData(["servers", "ordered"]).servers[0].players[0].name,
+  ).toBe("New");
 });

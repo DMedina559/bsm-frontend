@@ -1,3 +1,5 @@
+import { useResourceMutation } from "../app/resourceQueries";
+import { queryKeys } from "../app/queryKeys";
 import Modal from "../components/Modal";
 import React, { useState } from "react";
 import { useServer } from "../ServerContext";
@@ -24,6 +26,15 @@ const OnlinePlayers = () => {
   const [transferPort, setTransferPort] = useState("19132");
   const currentServerObj = servers.find((s) => s.name === selectedServer);
   const players = currentServerObj?.players || [];
+  const write = useResourceMutation(
+    ({ method, url, body }) => {
+      if (method === "post")
+        return body === undefined ? post(url) : post(url, body);
+    },
+    [queryKeys.servers(), queryKeys.access([selectedServer, "bans"])],
+  );
+  const writePost = (url, body) =>
+    write.mutateAsync({ url, body, method: "post" });
   const handleOpenKickModal = (playerName) => {
     setSelectedPlayer(playerName);
     setKickReason("");
@@ -66,7 +77,7 @@ const OnlinePlayers = () => {
     });
     setLoadingAction(true);
     try {
-      await post(`/api/server/${selectedServer}/bans/add`, {
+      await writePost(`/api/server/${selectedServer}/bans/add`, {
         player_name: selectedPlayer,
         xuid: selectedPlayerXuid,
         reason: banReason || null,
@@ -96,7 +107,7 @@ const OnlinePlayers = () => {
     });
     setLoadingAction(true);
     try {
-      await post(`/api/server/${selectedServer}/send_command`, {
+      await writePost(`/api/server/${selectedServer}/send_command`, {
         command: commandToExecute,
       });
       addToast(`Kick command sent for ${selectedPlayer}.`, "success");
@@ -139,7 +150,7 @@ const OnlinePlayers = () => {
     });
     setLoadingAction(true);
     try {
-      await post(`/api/server/${selectedServer}/send_command`, {
+      await writePost(`/api/server/${selectedServer}/send_command`, {
         command: commandToExecute,
       });
       addToast(`Transfer command sent for ${selectedPlayer}.`, "success");

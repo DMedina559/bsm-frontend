@@ -12,13 +12,17 @@
     "format": "prettier --write .",
     "preview": "vite preview",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "api:generate": "node scripts/generate-contract.mjs",
+    "api:check": "node scripts/generate-contract.mjs --check",
+    "typecheck": "tsc --noEmit --strict --skipLibCheck --lib es2022,dom src/api/contract-check.ts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.90.0",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@tanstack/react-query": "^5.90.0",
     "json5": "^2.2.3",
     "lucide-react": "^1.47.0",
     "react": "^19.2.7",
@@ -29,6 +33,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.64.0",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
@@ -46,7 +51,9 @@
     "eslint-plugin-react-refresh": "^0.5.7",
     "globals": "^17.12.0",
     "jsdom": "^30.0.1",
+    "openapi-typescript": "^7.13.0",
     "prettier": "^3.9.9",
+    "typescript": "^5.9.3",
     "vite": "^8.3.2",
     "vitest": "^5.0.2"
   },

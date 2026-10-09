@@ -1,4 +1,7 @@
-import { useRequestTracker } from "../utils/useRequestTracker";
+import { queryKeys } from "../app/queryKeys";
+import { useEditableDraft } from "../app/useEditableDraft";
+import QueryStatus from "../components/QueryStatus";
+import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
 import SettingsField from "../components/SettingsField";
 import {
   flattenSettings,
@@ -6,19 +9,30 @@ import {
   isSafeSettingPath,
 } from "../utils/settings";
 import { useDialog } from "../DialogContext";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { CheckCircle, Download, RefreshCw, Save, Trash2 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
-import { get, post, del } from "../api";
+import { post, del } from "../api";
+const EMPTY_SETTINGS = {};
 const ServerConfig = () => {
   const { confirmAction } = useDialog();
   const { selectedServer } = useServer();
-  const [settings, setSettings] = useState({});
-  const [loading, setLoading] = useState(true);
+  const resourceQuery = useResourceQuery("serverSettings", selectedServer);
+  const draft = useEditableDraft(
+    selectedServer,
+    resourceQuery.data,
+    EMPTY_SETTINGS,
+  );
+  const {
+    value: settings,
+    setValue: setSettings,
+    savedSnapshot,
+    markSaved,
+  } = draft;
+  const loading = resourceQuery.isFetching;
   const [saving, setSaving] = useState(false);
-  const [savedSnapshot, setSavedSnapshot] = useState(null);
   const [loadError, setLoadError] = useState(null);
   const [newKey, setNewKey] = useState("");
   const [newValue, setNewValue] = useState("");
@@ -26,42 +40,30 @@ const ServerConfig = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const setupFlow = location.state?.setupFlow;
-  const beginRequest = useRequestTracker(selectedServer + ":" + "");
-  const fetchSettings = useCallback(async () => {
-    const requestTicket = beginRequest("fetchSettings");
-    setLoading(true);
-    setLoadError(null);
-    try {
-      const data = await get(`/api/server/${selectedServer}/settings/get`);
-      if (!requestTicket.current()) return false;
-      if (data && data.status === "success" && data.settings) {
-        setSettings(data.settings);
-        setSavedSnapshot(JSON.stringify(data.settings));
-        return true;
-      } else {
-        setLoadError("Failed to load server settings");
-        addToast("Failed to load server settings", "error");
-        setSettings({});
-        return false;
+  const write = useResourceMutation(
+    async ({ method, url, body, options, entries }) => {
+      if (entries) {
+        for (const [key, value] of entries) await post(url, { key, value });
+        return;
       }
-    } catch (error) {
-      if (!requestTicket.current()) return false;
-      setLoadError(error.message || "Error fetching server settings");
-      addToast(error.message || "Error fetching server settings", "error");
-      return false;
-    } finally {
-      if (requestTicket.current()) {
-        setLoading(false);
-      }
-    }
-  }, [selectedServer, addToast, beginRequest]);
+      if (method === "post") return post(url, body);
+      if (method === "del")
+        return options === undefined ? del(url) : del(url, options);
+    },
+    [queryKeys.serverSettings(selectedServer), queryKeys.servers()],
+  );
+  const writePost = (url, body) =>
+    write.mutateAsync({ url, body, method: "post" });
+  const writeDelete = (url, options) =>
+    write.mutateAsync({ url, options, method: "del" });
   useEffect(() => {
-    if (selectedServer) {
-      fetchSettings();
-    }
-  }, [selectedServer, fetchSettings]);
+    setLoadError(resourceQuery.error?.message ?? null);
+  }, [resourceQuery.error]);
   const handleRefresh = async () => {
-    const success = await fetchSettings();
+    const success = await draft.refresh(async () => {
+      const result = await resourceQuery.refetch();
+      return { ...result, data: result.data };
+    });
     if (success) {
       addToast("Settings refreshed", "success");
     }
@@ -73,16 +75,14 @@ const ServerConfig = () => {
     setSaving(true);
     try {
       const flattened = flattenSettings(settings);
-      for (const [key, value] of Object.entries(flattened)) {
-        if (key === "config_schema_version") continue;
-        await post(`/api/server/${selectedServer}/settings/set`, {
-          key: key,
-          value: value,
-        });
-      }
-      setSavedSnapshot(JSON.stringify(settings));
+      await write.mutateAsync({
+        url: `/api/server/${selectedServer}/settings/set`,
+        entries: Object.entries(flattened).filter(
+          ([key]) => key !== "config_schema_version",
+        ),
+      });
+      markSaved(settings);
       addToast("Server settings saved successfully.", "success");
-      fetchSettings();
     } catch (error) {
       addToast(error.message || "Failed to save settings.", "error");
     } finally {
@@ -97,7 +97,7 @@ const ServerConfig = () => {
     ) {
       addToast("Starting server...", "info");
       try {
-        await post(`/api/server/${selectedServer}/start`);
+        await writePost(`/api/server/${selectedServer}/start`);
         addToast("Server start signal sent.", "success");
       } catch (error) {
         addToast("Failed to start server: " + error.message, "error");
@@ -116,7 +116,7 @@ const ServerConfig = () => {
       return;
     addToast("Updating server...", "info");
     try {
-      await post(`/api/server/${selectedServer}/update`, {});
+      await writePost(`/api/server/${selectedServer}/update`, {});
       addToast("Update task started. Check logs.", "success");
     } catch (error) {
       addToast(error.message || "Failed to start update.", "error");
@@ -128,15 +128,15 @@ const ServerConfig = () => {
       `Are you sure you want to delete server "${selectedServer}"?\n\nThis action cannot be undone. All server data will be permanently lost.`,
     );
     if (!confirmed) return;
-    setLoading(true);
+    setSaving(true);
     addToast(`Deleting server "${selectedServer}"...`, "info");
     try {
-      await del(`/api/server/${selectedServer}/delete`);
+      await writeDelete(`/api/server/${selectedServer}/delete`);
       addToast(`Server "${selectedServer}" deletion started.`, "success");
       navigate("/");
     } catch (error) {
       addToast(error.message || "Failed to delete server.", "error");
-      setLoading(false);
+      setSaving(false);
     }
   };
   const handleChange = (path, value) =>
@@ -235,6 +235,7 @@ const ServerConfig = () => {
   }
   return (
     <div className="container">
+      <QueryStatus query={resourceQuery} />
       <div
         className="header"
         style={{

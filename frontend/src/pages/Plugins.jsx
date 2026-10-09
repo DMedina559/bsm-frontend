@@ -1,48 +1,34 @@
-import { useRequestTracker } from "../utils/useRequestTracker";
-import React, { useCallback, useEffect, useState } from "react";
+import QueryStatus from "../components/QueryStatus";
+import { queryKeys } from "../app/queryKeys";
+import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
+import React from "react";
 import { Plug, RefreshCw, ToggleLeft, ToggleRight } from "lucide-react";
 import { useToast } from "../ToastContext";
-import { get, post, put } from "../api";
+import { post, put } from "../api";
 const Plugins = () => {
-  const [plugins, setPlugins] = useState([]);
-  const [loading, setLoading] = useState(true);
   const { addToast } = useToast();
-  const beginRequest = useRequestTracker("" + ":" + "");
-  const fetchPlugins = useCallback(async () => {
-    const requestTicket = beginRequest("fetchPlugins");
-    setLoading(true);
-    try {
-      const data = await get("/api/plugins");
-      if (!requestTicket.current()) return false;
-      if (data && data.status === "success" && data.plugins) {
-        const pluginsArray = Object.entries(data.plugins).map(
-          ([name, details]) => ({
-            name,
-            ...details,
-          }),
-        );
-        pluginsArray.sort((a, b) => a.name.localeCompare(b.name));
-        setPlugins(pluginsArray);
-      } else {
-        addToast("Failed to fetch plugins", "error");
-        setPlugins([]);
-      }
-    } catch (error) {
-      if (!requestTicket.current()) return false;
-      addToast(error.message || "Error fetching plugins", "error");
-    } finally {
-      if (requestTicket.current()) {
-        setLoading(false);
-      }
-    }
-  }, [addToast, beginRequest]);
-  useEffect(() => {
-    fetchPlugins();
-  }, [fetchPlugins]);
+  const write = useResourceMutation(
+    ({ method, url, body }) =>
+      method === "put" ? put(url, body) : post(url, body),
+    [queryKeys.plugins()],
+  );
+  const writePost = (url, body) =>
+    write.mutateAsync({ method: "post", url, body });
+  const writePut = (url, body) =>
+    write.mutateAsync({ method: "put", url, body });
+
+  const resourceQuery = useResourceQuery("plugins", undefined);
+  const plugins = resourceQuery.data ?? [];
+  const loading = resourceQuery.isFetching;
+  const fetchPlugins = async () => {
+    const result = await resourceQuery.refetch();
+    if (result.error) addToast(result.error.message, "error");
+    return result.isSuccess;
+  };
   const handleReload = async () => {
     addToast("Reloading plugins...", "info");
     try {
-      await put("/api/plugins/reload");
+      await writePut("/api/plugins/reload");
       addToast("Plugins reloaded successfully", "success");
       fetchPlugins();
     } catch (error) {
@@ -53,7 +39,7 @@ const Plugins = () => {
     const newEnabled = !currentEnabled;
     try {
       // API expects POST for setting status
-      await post(`/api/plugins/${pluginName}`, {
+      await writePost(`/api/plugins/${pluginName}`, {
         enabled: newEnabled,
       });
       addToast(
@@ -61,17 +47,7 @@ const Plugins = () => {
         "success",
       );
 
-      // Optimistic update
-      setPlugins((prev) =>
-        prev.map((p) =>
-          p.name === pluginName
-            ? {
-                ...p,
-                enabled: newEnabled,
-              }
-            : p,
-        ),
-      );
+      await fetchPlugins();
     } catch (error) {
       addToast(
         error.message || `Failed to toggle plugin ${pluginName}`,
@@ -82,6 +58,7 @@ const Plugins = () => {
   };
   return (
     <div className="container">
+      <QueryStatus query={resourceQuery} />
       <div
         className="header"
         style={{

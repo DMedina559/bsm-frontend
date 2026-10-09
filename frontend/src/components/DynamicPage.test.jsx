@@ -9,14 +9,12 @@ import * as api from "../api";
 vi.mock("../api");
 
 describe("DynamicPage", () => {
-  let fetchSpy;
-
   beforeEach(() => {
     vi.clearAllMocks();
     api.resolveApiUrl.mockImplementation((url) => url);
 
     // Mock global fetch for download test and setup status
-    fetchSpy = vi.spyOn(window, "fetch").mockImplementation((url) => {
+    vi.spyOn(window, "fetch").mockImplementation((url) => {
       if (url === "/api/setup/status") {
         return Promise.resolve({
           ok: true,
@@ -229,11 +227,10 @@ describe("DynamicPage", () => {
     fireEvent.click(screen.getByText("Download Me"));
 
     await waitFor(() => {
-      expect(fetchSpy).toHaveBeenCalledWith(
+      expect(api.downloadFile).toHaveBeenCalledWith(
         "/api/download/file.txt",
-        expect.any(Object),
+        "file.txt",
       );
-      expect(window.URL.createObjectURL).toHaveBeenCalled();
     });
   });
 

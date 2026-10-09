@@ -1,3 +1,6 @@
+import { useResourceMutation } from "../app/resourceQueries";
+import { queryKeys } from "../app/queryKeys";
+import { usePreference } from "../app/usePreference";
 import "./Overview.css";
 import OverviewServerCard from "./OverviewServerCard";
 import OverviewFleetMetrics from "./OverviewFleetMetrics";
@@ -11,9 +14,8 @@ import { useWebSocket } from "../WebSocketContext";
 import { useNavigate } from "react-router-dom";
 import { post } from "../api";
 import { logger } from "../utils/logger";
-import { sortServers, readServerSort, SERVER_SORTS } from "../utils/serverSort";
+import { sortServers, SERVER_SORTS } from "../utils/serverSort";
 import { RefreshCw, LayoutGrid, List, Grid2X2 } from "lucide-react";
-const LAYOUT_STORAGE_KEY = "bsm.overview-layout.v1";
 const LAYOUTS = [
   { id: "grid", label: "Grid", Icon: LayoutGrid },
   { id: "compact", label: "Compact", Icon: Grid2X2 },
@@ -30,39 +32,23 @@ const Overview = () => {
   const navigate = useNavigate();
   const [actionLoading, setActionLoading] = useState({});
   const [refreshing, setRefreshing] = useState(false);
-  const [layout, setLayout] = useState(() => {
-    try {
-      const stored = localStorage.getItem(LAYOUT_STORAGE_KEY);
-      return LAYOUTS.some(({ id }) => id === stored) ? stored : "grid";
-    } catch {
-      return "grid";
-    }
+  const [layout, updateLayout] = usePreference("overviewLayout", "grid");
+  const [sort, setSort] = usePreference("serverSort", {
+    key: "name",
+    direction: "asc",
   });
-  const updateLayout = (next) => {
-    setLayout(next);
-    try {
-      localStorage.setItem(LAYOUT_STORAGE_KEY, next);
-    } catch {
-      /* Private mode */
-    }
-  };
-  const [sort, setSort] = useState(readServerSort);
   const sortedServers = sortServers(servers, sort.key, sort.direction);
-  const updateSort = (patch) => {
-    const next = { ...sort, ...patch };
-    setSort(next);
-    try {
-      localStorage.setItem("bsm.fleet-sort.v4", JSON.stringify(next));
-    } catch {
-      /* Sorting remains available without browser storage. */
-    }
-  };
+  const updateSort = (patch) => setSort({ ...sort, ...patch });
 
-  // Force refresh servers list when navigating back to Overview,
-  // guaranteeing fresh status (e.g. after navigating back from Monitor)
-  React.useEffect(() => {
-    refreshServers();
-  }, [refreshServers]);
+  const write = useResourceMutation(
+    ({ method, url, body }) => {
+      if (method === "post")
+        return body === undefined ? post(url) : post(url, body);
+    },
+    [queryKeys.servers()],
+  );
+  const writePost = (url, body) =>
+    write.mutateAsync({ url, body, method: "post" });
   const handleServerClick = (serverName) => {
     setSelectedServer(serverName);
     navigate("/monitor");
@@ -105,7 +91,7 @@ const Overview = () => {
     }));
     addToast(`Sending ${action} signal to ${serverName}...`, "info");
     try {
-      await post(`/api/server/${serverName}/${action}`);
+      await writePost(`/api/server/${serverName}/${action}`);
       addToast(`Signal ${action} sent to ${serverName}.`, "success");
     } catch (error) {
       logger.error("[Overview] Failed to send server action", {
@@ -120,7 +106,6 @@ const Overview = () => {
         [serverName]: false,
       }));
       // Ensure UI reflects the latest state, even if WS messages are missed
-      refreshServers();
     }
   };
   const handleUpdate = async (e, serverName) => {
@@ -145,7 +130,7 @@ const Overview = () => {
     }));
     addToast(`Updating ${serverName}...`, "info");
     try {
-      await post(`/api/server/${serverName}/update`);
+      await writePost(`/api/server/${serverName}/update`);
       addToast(`Update initiated for ${serverName}.`, "success");
     } catch (error) {
       logger.error("[Overview] Failed to initiate update", {
@@ -158,7 +143,6 @@ const Overview = () => {
         ...prev,
         [serverName]: false,
       }));
-      refreshServers();
     }
   };
   const handleSendCommand = async (e, serverName) => {
@@ -182,7 +166,7 @@ const Overview = () => {
       [serverName]: true,
     }));
     try {
-      await post(`/api/server/${serverName}/send_command`, {
+      await writePost(`/api/server/${serverName}/send_command`, {
         command,
       });
       addToast(`Command sent to ${serverName}.`, "success");

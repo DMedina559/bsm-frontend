@@ -1,76 +1,63 @@
+import { useResourceQuery } from "../app/resourceQueries";
+import { operationCoordinator } from "../app/operationCoordinator";
 import { useDialog } from "../DialogContext";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useToast } from "../ToastContext";
-import { post, get } from "../api";
+import { post } from "../api";
 import { useServer } from "../ServerContext";
 import { useNavigate } from "react-router-dom";
 import { PlusSquare, RefreshCw } from "lucide-react";
-import { useWebSocket } from "../WebSocketContext";
-import { logger } from "../utils/logger";
 const ServerInstall = () => {
   const { confirmAction } = useDialog();
+  const [restoredOperation] = useState(() =>
+    operationCoordinator
+      .list()
+      .find(
+        (operation) => operation.kind === "install" && !operation.acknowledged,
+      ),
+  );
   const [formData, setFormData] = useState({
-    server_name: "",
+    server_name: restoredOperation?.serverName ?? "",
     server_version: "LATEST",
     server_zip_path: "",
     overwrite: false,
   });
   const [specificVersion, setSpecificVersion] = useState("");
-  const [customZips, setCustomZips] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [installTaskId, setInstallTaskId] = useState(null);
+  const downloadsQuery = useResourceQuery("downloads");
+  const customZips = downloadsQuery.data ?? [];
+  const [loading, setLoading] = useState(Boolean(restoredOperation));
+  const [installTaskId, setInstallTaskId] = useState(
+    restoredOperation?.id ?? null,
+  );
   const { addToast } = useToast();
   const navigate = useNavigate();
   const { refreshServers, setSelectedServer } = useServer();
-  const { subscribe, unsubscribe, addMessageListener } = useWebSocket();
   const handledTask = useRef(null);
 
   const handleInstallSuccess = useCallback(async () => {
     await refreshServers();
     setSelectedServer(formData.server_name);
-    if (installTaskId) {
-      unsubscribe(`task:${installTaskId}`);
-    }
     setLoading(false);
     navigate("/server-properties", {
       state: {
         setupFlow: true,
       },
     });
-  }, [
-    formData.server_name,
-    installTaskId,
-    navigate,
-    refreshServers,
-    setSelectedServer,
-    unsubscribe,
-  ]);
-  useEffect(() => {
-    const fetchCustomZips = async () => {
-      try {
-        const data = await get("/api/downloads/list");
-        if (data && data.status === "success") {
-          setCustomZips(data.custom_zips || []);
-        }
-      } catch (error) {
-        logger.warn("[ServerInstall] Failed to fetch custom zips", {
-          error,
-        });
-      }
-    };
-    fetchCustomZips();
-  }, []);
-
+  }, [formData.server_name, navigate, refreshServers, setSelectedServer]);
   const handleTaskUpdate = useCallback(
     (taskData) => {
       if (!installTaskId || handledTask.current === installTaskId) return;
-      const completed = ["completed", "success"].includes(taskData.status);
-      const failed = ["failed", "cancelled", "error"].includes(taskData.status);
+      const completed = ["completed", "complete", "success"].includes(
+        taskData.status,
+      );
+      const failed = ["failed", "cancelled", "canceled", "error"].includes(
+        taskData.status,
+      );
       if (!completed && !failed) return;
 
       handledTask.current = installTaskId;
+      operationCoordinator.acknowledge(installTaskId);
       setInstallTaskId(null);
-      unsubscribe(`task:${installTaskId}`);
       if (
         completed &&
         !["error", "skipped"].includes(taskData.result?.status)
@@ -85,65 +72,26 @@ const ServerInstall = () => {
         setLoading(false);
       }
     },
-    [installTaskId, unsubscribe, addToast, handleInstallSuccess],
+    [installTaskId, addToast, handleInstallSuccess],
   );
 
-  // Listen directly so another topic cannot overwrite completion in a React batch.
+  // The session runtime owns task topics and HTTP recovery across navigation.
   useEffect(() => {
     if (!installTaskId) return;
-    const topic = `task:${installTaskId}`;
-    const removeListener = addMessageListener((message) => {
-      if (message.topic === topic && message.type === "task_update") {
-        handleTaskUpdate(message.data);
-      }
+    return operationCoordinator.subscribe((operations) => {
+      const operation = operations.find(
+        (item) => item.id === String(installTaskId),
+      );
+      if (operation?.status === "unknown") {
+        setLoading(false);
+        setInstallTaskId(null);
+        addToast(
+          "Installation status is unavailable. Check the server before retrying.",
+          "error",
+        );
+      } else if (operation?.task) handleTaskUpdate(operation.task);
     });
-    subscribe(topic);
-    return () => {
-      removeListener();
-      unsubscribe(topic);
-    };
-  }, [
-    installTaskId,
-    addMessageListener,
-    subscribe,
-    unsubscribe,
-    handleTaskUpdate,
-  ]);
-
-  // Reconcile even with an active socket: completion may precede subscription
-  // or occur during reconnection. The same handler makes delivery idempotent.
-  useEffect(() => {
-    if (!installTaskId) return;
-    let disposed = false;
-    let polling = false;
-    const pollStatus = async () => {
-      if (polling) return;
-      polling = true;
-      try {
-        const taskData = await get(`/api/tasks/status/${installTaskId}`);
-        if (!disposed && taskData) handleTaskUpdate(taskData);
-      } catch (error) {
-        logger.warn("[ServerInstall] Polling task status failed", {
-          error,
-          installTaskId,
-        });
-        if (!disposed && error.status === 404) {
-          handleTaskUpdate({
-            status: "failed",
-            message: "Installation task lost.",
-          });
-        }
-      } finally {
-        polling = false;
-      }
-    };
-    const intervalId = setInterval(pollStatus, 2000);
-    pollStatus();
-    return () => {
-      disposed = true;
-      clearInterval(intervalId);
-    };
-  }, [installTaskId, handleTaskUpdate]);
+  }, [installTaskId, handleTaskUpdate, addToast]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -173,6 +121,11 @@ const ServerInstall = () => {
     try {
       const response = await post("/api/server/install", payload);
       const initiateMonitoring = (taskId) => {
+        operationCoordinator.register({
+          id: taskId,
+          kind: "install",
+          serverName: formData.server_name,
+        });
         setInstallTaskId(taskId);
         handledTask.current = null;
         addToast("Installation started. Please wait...", "info");

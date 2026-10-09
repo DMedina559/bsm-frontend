@@ -1,0 +1,310 @@
+{
+  "get_account": {
+    "method": "GET",
+    "path": "/api/account"
+  },
+  "change_password": {
+    "method": "POST",
+    "path": "/api/account/change-password"
+  },
+  "update_account_profile": {
+    "method": "POST",
+    "path": "/api/account/profile"
+  },
+  "update_account_theme": {
+    "method": "POST",
+    "path": "/api/account/theme"
+  },
+  "list_available_addons": {
+    "method": "GET",
+    "path": "/api/content/addons"
+  },
+  "list_available_worlds": {
+    "method": "GET",
+    "path": "/api/content/worlds"
+  },
+  "list_downloads": {
+    "method": "GET",
+    "path": "/api/downloads/list"
+  },
+  "prune_downloads": {
+    "method": "PUT",
+    "path": "/api/downloads/prune"
+  },
+  "get_system_info": {
+    "method": "GET",
+    "path": "/api/info"
+  },
+  "list_themes": {
+    "method": "GET",
+    "path": "/api/info/themes"
+  },
+  "get_panorama": {
+    "method": "GET",
+    "path": "/api/panorama"
+  },
+  "add_players": {
+    "method": "POST",
+    "path": "/api/players/add"
+  },
+  "list_players": {
+    "method": "GET",
+    "path": "/api/players/get"
+  },
+  "scan_players": {
+    "method": "PUT",
+    "path": "/api/players/scan"
+  },
+  "list_plugins": {
+    "method": "GET",
+    "path": "/api/plugins"
+  },
+  "get_plugin_pages": {
+    "method": "GET",
+    "path": "/api/plugins/pages"
+  },
+  "reload_plugins": {
+    "method": "PUT",
+    "path": "/api/plugins/reload"
+  },
+  "trigger_plugin_event": {
+    "method": "POST",
+    "path": "/api/plugins/trigger_event"
+  },
+  "set_plugin_status": {
+    "method": "POST",
+    "path": "/api/plugins/{plugin_name}"
+  },
+  "reload_plugin": {
+    "method": "POST",
+    "path": "/api/plugins/{plugin_name}/reload"
+  },
+  "generate_registration_token": {
+    "method": "POST",
+    "path": "/api/register/generate-token"
+  },
+  "validate_registration_token": {
+    "method": "GET",
+    "path": "/api/register/validate/{token}"
+  },
+  "register_user": {
+    "method": "POST",
+    "path": "/api/register/{token}"
+  },
+  "install_server": {
+    "method": "POST",
+    "path": "/api/server/install"
+  },
+  "disable_addon": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/addon/disable"
+  },
+  "enable_addon": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/addon/enable"
+  },
+  "get_server_addon_icon": {
+    "method": "GET",
+    "path": "/api/server/{server_name}/addon/icon"
+  },
+  "install_addon": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/addon/install"
+  },
+  "reorder_addons": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/addon/reorder"
+  },
+  "update_addon_subpack": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/addon/subpack"
+  },
+  "uninstall_addon": {
+    "method": "DELETE",
+    "path": "/api/server/{server_name}/addon/uninstall"
+  },
+  "list_server_addons": {
+    "method": "GET",
+    "path": "/api/server/{server_name}/addons"
+  },
+  "add_allowlist_players": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/allowlist/add"
+  },
+  "get_allowlist": {
+    "method": "GET",
+    "path": "/api/server/{server_name}/allowlist/get"
+  },
+  "remove_allowlist_players": {
+    "method": "DELETE",
+    "path": "/api/server/{server_name}/allowlist/remove"
+  },
+  "create_backup": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/backup/action"
+  },
+  "list_server_backups": {
+    "method": "GET",
+    "path": "/api/server/{server_name}/backup/list/{backup_type}"
+  },
+  "prune_backups": {
+    "method": "PUT",
+    "path": "/api/server/{server_name}/backups/prune"
+  },
+  "add_server_ban": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/bans/add"
+  },
+  "get_server_bans": {
+    "method": "GET",
+    "path": "/api/server/{server_name}/bans/get"
+  },
+  "remove_server_ban": {
+    "method": "DELETE",
+    "path": "/api/server/{server_name}/bans/remove"
+  },
+  "delete_server": {
+    "method": "DELETE",
+    "path": "/api/server/{server_name}/delete"
+  },
+  "get_permissions": {
+    "method": "GET",
+    "path": "/api/server/{server_name}/permissions/get"
+  },
+  "set_permissions": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/permissions/set"
+  },
+  "get_server_process_info": {
+    "method": "GET",
+    "path": "/api/server/{server_name}/process_info"
+  },
+  "get_properties": {
+    "method": "GET",
+    "path": "/api/server/{server_name}/properties/get"
+  },
+  "set_properties": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/properties/set"
+  },
+  "restart_server": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/restart"
+  },
+  "restore_backup": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/restore/action"
+  },
+  "send_command": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/send_command"
+  },
+  "get_server_settings": {
+    "method": "GET",
+    "path": "/api/server/{server_name}/settings/get"
+  },
+  "set_server_setting": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/settings/set"
+  },
+  "start_server": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/start"
+  },
+  "get_server_status": {
+    "method": "GET",
+    "path": "/api/server/{server_name}/status"
+  },
+  "stop_server": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/stop"
+  },
+  "get_server_summary": {
+    "method": "GET",
+    "path": "/api/server/{server_name}/summary"
+  },
+  "update_server": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/update"
+  },
+  "validate_server": {
+    "method": "GET",
+    "path": "/api/server/{server_name}/validate"
+  },
+  "export_world": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/world/export"
+  },
+  "get_world_icon": {
+    "method": "GET",
+    "path": "/api/server/{server_name}/world/icon"
+  },
+  "install_world": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/world/install"
+  },
+  "reset_world": {
+    "method": "DELETE",
+    "path": "/api/server/{server_name}/world/reset"
+  },
+  "list_servers": {
+    "method": "GET",
+    "path": "/api/servers"
+  },
+  "get_settings": {
+    "method": "GET",
+    "path": "/api/settings/get"
+  },
+  "reload_settings": {
+    "method": "PUT",
+    "path": "/api/settings/reload"
+  },
+  "set_setting": {
+    "method": "POST",
+    "path": "/api/settings/set"
+  },
+  "list_tasks": {
+    "method": "GET",
+    "path": "/api/tasks/list"
+  },
+  "get_task_status": {
+    "method": "GET",
+    "path": "/api/tasks/status/{task_id}"
+  },
+  "list_users": {
+    "method": "GET",
+    "path": "/api/users/list"
+  },
+  "delete_user": {
+    "method": "POST",
+    "path": "/api/users/{user_id}/delete"
+  },
+  "disable_user": {
+    "method": "POST",
+    "path": "/api/users/{user_id}/disable"
+  },
+  "enable_user": {
+    "method": "POST",
+    "path": "/api/users/{user_id}/enable"
+  },
+  "update_user_role": {
+    "method": "POST",
+    "path": "/api/users/{user_id}/role"
+  },
+  "list_audit_logs": {
+    "method": "GET",
+    "path": "/audit-log/list"
+  },
+  "logout": {
+    "method": "GET",
+    "path": "/auth/logout"
+  },
+  "reauthenticate": {
+    "method": "POST",
+    "path": "/auth/reauth"
+  },
+  "login": {
+    "method": "POST",
+    "path": "/auth/token"
+  }
+}

@@ -1,52 +1,55 @@
-import { useRequestTracker } from "../utils/useRequestTracker";
+import { useEditableDraft } from "../app/useEditableDraft";
+import QueryStatus from "../components/QueryStatus";
+import { queryKeys } from "../app/queryKeys";
+import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
 import SettingsField from "../components/SettingsField";
 import {
   flattenSettings,
   updateSetting,
   isSafeSettingPath,
 } from "../utils/settings";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { RefreshCw, Save } from "lucide-react";
 import { useToast } from "../ToastContext";
-import { get, post, put } from "../api";
+import { post, put } from "../api";
 import { logger } from "../utils/logger";
+const EMPTY_SETTINGS = {};
 const BSMSettings = () => {
-  const [settings, setSettings] = useState({});
-  const [loading, setLoading] = useState(true);
+  const resourceQuery = useResourceQuery("settings");
+  const draft = useEditableDraft(
+    "settings",
+    resourceQuery.data,
+    EMPTY_SETTINGS,
+  );
+  const {
+    value: settings,
+    setValue: setSettings,
+    savedSnapshot,
+    markSaved,
+  } = draft;
+  const loading = resourceQuery.isFetching;
   const [saving, setSaving] = useState(false);
-  const [savedSnapshot, setSavedSnapshot] = useState(null);
   const [loadError, setLoadError] = useState(null);
   const [newKey, setNewKey] = useState("");
   const [newValue, setNewValue] = useState("");
   const { addToast } = useToast();
-  const beginRequest = useRequestTracker("" + ":" + "");
-  const fetchSettings = useCallback(async () => {
-    const requestTicket = beginRequest("fetchSettings");
-    setLoading(true);
-    setLoadError(null);
-    try {
-      const data = await get("/api/settings/get");
-      if (!requestTicket.current()) return false;
-      if (data && data.settings) {
-        setSettings(data.settings);
-        setSavedSnapshot(JSON.stringify(data.settings));
-      } else {
-        setLoadError("Failed to load settings");
-        addToast("Failed to load settings", "error");
+  const write = useResourceMutation(
+    async ({ method, url, body, entries }) => {
+      if (entries) {
+        for (const [key, value] of entries)
+          await post("/api/settings/set", { key, value });
+        return;
       }
-    } catch (error) {
-      if (!requestTicket.current()) return false;
-      setLoadError(error.message || "Error fetching settings");
-      addToast(error.message || "Error fetching settings", "error");
-    } finally {
-      if (requestTicket.current()) {
-        setLoading(false);
-      }
-    }
-  }, [addToast, beginRequest]);
+      return method === "put" ? put(url, body) : post(url, body);
+    },
+    [queryKeys.settings()],
+  );
+  const writePut = (url, body) =>
+    write.mutateAsync({ method: "put", url, body });
+
   useEffect(() => {
-    fetchSettings();
-  }, [fetchSettings]);
+    setLoadError(resourceQuery.error?.message ?? null);
+  }, [resourceQuery.error]);
   const handleSave = async (e) => {
     e.preventDefault();
     if (saving) return;
@@ -56,22 +59,11 @@ const BSMSettings = () => {
 
       // Iterate through keys and save each one individually as the API expects
       // POST /api/settings/set with body { key: "...", value: ... }
-      for (const [key, value] of Object.entries(flattened)) {
-        try {
-          await post("/api/settings/set", {
-            key: key,
-            value: value,
-          });
-        } catch (err) {
-          logger.error(`[BSMSettings] Failed to save setting`, {
-            error: err,
-            key,
-            value,
-          });
-          throw err; // Re-throw to be caught by outer block
-        }
-      }
-      setSavedSnapshot(JSON.stringify(settings));
+      await write.mutateAsync({
+        url: "/api/settings/set",
+        entries: Object.entries(flattened),
+      });
+      markSaved(settings);
       addToast("Settings saved successfully.", "success");
     } catch (error) {
       logger.error("[BSMSettings] Save settings error", {
@@ -83,14 +75,17 @@ const BSMSettings = () => {
     }
   };
   const handleReload = async () => {
-    setLoading(true);
+    setSaving(true);
     try {
-      await put("/api/settings/reload");
-      addToast("Settings reloaded from disk.", "success");
-      fetchSettings();
+      const refreshed = await draft.refresh(async () => {
+        await writePut("/api/settings/reload");
+        return resourceQuery.refetch();
+      });
+      if (refreshed) addToast("Settings reloaded from disk.", "success");
     } catch (error) {
       addToast(error.message || "Failed to reload settings.", "error");
-      setLoading(false);
+    } finally {
+      setSaving(false);
     }
   };
   const handleChange = (path, value) =>
@@ -158,6 +153,7 @@ const BSMSettings = () => {
   };
   return (
     <div className="container">
+      <QueryStatus query={resourceQuery} />
       <div
         className="header"
         style={{

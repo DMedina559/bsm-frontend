@@ -1,3 +1,4 @@
+import { sessionRuntime } from "./app/sessionRuntime";
 import React, {
   createContext,
   useCallback,
@@ -14,6 +15,7 @@ const ToastContext = createContext();
 export const useToast = () => useContext(ToastContext);
 export const ToastProvider = ({ children }) => {
   const { user } = useAuth() || {};
+  const generation = sessionRuntime.capture().generation;
   let backend = "";
   try {
     backend =
@@ -41,6 +43,7 @@ export const ToastProvider = ({ children }) => {
   }, []);
   const addToast = useCallback(
     (message, type = "info") => {
+      if (sessionRuntime.capture().generation !== generation) return;
       const id = ++counter.current;
       const entry = {
         id:
@@ -65,7 +68,7 @@ export const ToastProvider = ({ children }) => {
         setTimeout(() => removeToast(id), type === "error" ? 10000 : 6000),
       );
     },
-    [removeToast, scope],
+    [removeToast, scope, generation],
   );
   useEffect(() => {
     const current = timers.current;

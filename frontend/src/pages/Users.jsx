@@ -1,9 +1,11 @@
-import { useRequestTracker } from "../utils/useRequestTracker";
+import QueryStatus from "../components/QueryStatus";
+import { queryKeys } from "../app/queryKeys";
+import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
 import Modal from "../components/Modal";
 import { useDialog } from "../DialogContext";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useToast } from "../ToastContext";
-import { get, post } from "../api";
+import { post } from "../api";
 import {
   Trash2,
   UserPlus,
@@ -20,8 +22,6 @@ import { useAuth } from "../AuthContext";
 import { logger } from "../utils/logger";
 const Users = () => {
   const { confirmAction } = useDialog();
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -36,38 +36,22 @@ const Users = () => {
   const [editRole, setEditRole] = useState("");
   const [editActive, setEditActive] = useState(true);
   const { addToast } = useToast();
+  const write = useResourceMutation(
+    ({ url, body }) => post(url, body),
+    [queryKeys.users()],
+  );
+  const writePost = (url, body) =>
+    write.mutateAsync({ method: "post", url, body });
+
   const { user: currentUser } = useAuth();
-  const beginRequest = useRequestTracker("" + ":" + "");
-  const fetchUsers = useCallback(async () => {
-    const requestTicket = beginRequest("fetchUsers");
-    setLoading(true);
-    try {
-      const data = await get("/api/users/list");
-      if (!requestTicket.current()) return false;
-      if (Array.isArray(data)) {
-        setUsers(data);
-        return true;
-      } else {
-        addToast("Failed to fetch users", "error");
-        setUsers([]);
-        return false;
-      }
-    } catch (error) {
-      if (!requestTicket.current()) return false;
-      logger.error("[Users] Error fetching users", {
-        error,
-      });
-      addToast(error.message || "Error fetching users", "error");
-      return false;
-    } finally {
-      if (requestTicket.current()) {
-        setLoading(false);
-      }
-    }
-  }, [addToast, beginRequest]);
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+  const resourceQuery = useResourceQuery("users", undefined);
+  const users = resourceQuery.data ?? [];
+  const loading = resourceQuery.isFetching;
+  const fetchUsers = async () => {
+    const result = await resourceQuery.refetch();
+    if (result.error) addToast(result.error.message, "error");
+    return result.isSuccess;
+  };
   const handleRefresh = async () => {
     const success = await fetchUsers();
     if (success) {
@@ -95,7 +79,7 @@ const Users = () => {
       return;
     setActionLoading(true);
     try {
-      await post(`/api/users/${userToDelete.id}/delete`);
+      await writePost(`/api/users/${userToDelete.id}/delete`);
       addToast(`User ${userToDelete.username} deleted.`, "success");
       await fetchUsers();
     } catch (error) {
@@ -113,7 +97,7 @@ const Users = () => {
     e.preventDefault();
     setActionLoading(true);
     try {
-      const response = await post("/api/register/generate-token", {
+      const response = await writePost("/api/register/generate-token", {
         role: inviteRole,
       });
       logger.debug("[Users] Generate token response", {
@@ -162,7 +146,7 @@ const Users = () => {
 
       // Update Role if changed
       if (editRole !== editingUser.role) {
-        await post(`/api/users/${editingUser.id}/role`, {
+        await writePost(`/api/users/${editingUser.id}/role`, {
           role: editRole,
         });
         updated = true;
@@ -171,7 +155,7 @@ const Users = () => {
       // Update Status if changed
       if (editActive !== editingUser.is_active) {
         const endpoint = editActive ? "enable" : "disable";
-        await post(`/api/users/${editingUser.id}/${endpoint}`);
+        await writePost(`/api/users/${editingUser.id}/${endpoint}`);
         updated = true;
       }
       if (updated) {
@@ -220,6 +204,7 @@ const Users = () => {
   const isAdmin = currentUser?.role === "admin";
   return (
     <div className="container">
+      <QueryStatus query={resourceQuery} />
       <div
         className="header"
         style={{

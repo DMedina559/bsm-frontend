@@ -36,6 +36,38 @@ describe("preference storage", () => {
   it("rejects invalid preference values", () => {
     const store = createPreferenceStore(storage());
     store.write("alice", "layout", "grid");
-    expect(store.read("alice", "layout", "list", (value) => value === "list")).toBe("list");
+    expect(
+      store.read("alice", "layout", "list", (value) => value === "list"),
+    ).toBe("list");
   });
+});
+
+it("migrates and validates before persisting a new schema", () => {
+  const backend = storage();
+  backend.setItem(
+    "bsm:alice:preference:layout",
+    JSON.stringify({ version: 1, value: "cards" }),
+  );
+  const store = createPreferenceStore(backend, {
+    layout: {
+      version: 2,
+      validate: (value) => value === "grid",
+      migrations: { 1: (value) => (value === "cards" ? "grid" : value) },
+    },
+  });
+  expect(store.read("alice", "layout", "list")).toBe("grid");
+  expect(
+    JSON.parse(backend.getItem("bsm:alice:preference:layout")).version,
+  ).toBe(2);
+  expect(store.write("alice", "layout", "bad")).toBe(false);
+});
+it("notifies subscribers and releases them", () => {
+  const store = createPreferenceStore(storage());
+  let calls = 0;
+  const stop = store.subscribe("alice", "layout", () => calls++);
+  store.write("alice", "layout", "grid");
+  store.remove("alice", "layout");
+  stop();
+  store.write("alice", "layout", "list");
+  expect(calls).toBe(2);
 });

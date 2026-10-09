@@ -37,7 +37,7 @@ describe("BSMSettings", () => {
       expect(screen.getByText("Global Settings")).toBeInTheDocument();
     });
     // Section headers
-    expect(screen.getByText("server")).toBeInTheDocument();
+    expect(await screen.findByText("server")).toBeInTheDocument();
     // Inputs
     expect(screen.getByDisplayValue("Bedrock Server")).toBeInTheDocument();
     expect(screen.getByDisplayValue("19132")).toBeInTheDocument();

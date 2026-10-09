@@ -1,3 +1,7 @@
+import {
+  captureServerRevision,
+  reconcileServerSnapshot,
+} from "./app/synchronizeServerEvent";
 import React, {
   createContext,
   useCallback,
@@ -50,63 +54,60 @@ async function loadServers({ signal }) {
  * existing useServer() interface until consumers are migrated to query hooks.
  */
 export const ServerProvider = ({ children }) => {
-  const { user } = useAuth();
+  const { user, sessionGeneration } = useAuth();
   const identity = user?.id ?? user?.username ?? null;
   const queryClient = useQueryClient();
-  const { isConnected, isFallback, subscribe, unsubscribe, addMessageListener } =
-    useWebSocket();
+  const { isConnected, isFallback, subscribe, unsubscribe } = useWebSocket();
   const [selectedServer, setSelectedServerState] = useState(null);
   const selectedServerRef = useRef(selectedServer);
   const [selectionIdentity, setSelectionIdentity] = useState(null);
 
   useEffect(() => {
-    const saved = preferences.read(identity, "selectedServer", null,
-      (value) => typeof value === "string" && value.length > 0);
-    selectedServerRef.current = saved;
-    setSelectedServerState(saved);
-    setSelectionIdentity(identity);
+    const restore = () => {
+      const saved = preferences.read(
+        identity,
+        "selectedServer",
+        null,
+        (value) => typeof value === "string" && value.length > 0,
+      );
+      selectedServerRef.current = saved;
+      setSelectedServerState(saved);
+      setSelectionIdentity(identity);
+    };
+    restore();
+    return preferences.subscribe(identity, "selectedServer", restore);
   }, [identity]);
-  const playerRevision = useRef(0);
-  const playerUpdates = useRef(new Map());
-
-  useEffect(() => {
-    playerUpdates.current.clear();
-    playerRevision.current = 0;
-  }, [identity]);
-
   const serverQuery = useQuery({
-    queryKey: [...queryKeys.servers(), identity],
+    queryKey: [
+      ...queryKeys.servers(),
+      { identity, generation: sessionGeneration ?? 0 },
+    ],
     queryFn: async ({ signal }) => {
-      const revisionAtStart = playerRevision.current;
+      const revisionAtStart = captureServerRevision();
       const data = await loadServers({ signal });
-      // A late HTTP response must not overwrite newer player WebSocket data.
-      return {
-        ...data,
-        servers: data.servers.map((server) => {
-          const update = playerUpdates.current.get(server.name);
-          return update && update.revision > revisionAtStart
-            ? { ...server, players: update.players, player_count: update.player_count }
-            : server;
-        }),
-      };
+      return reconcileServerSnapshot(data, revisionAtStart);
     },
     enabled: identity !== null,
     staleTime: 15_000,
     refetchOnWindowFocus: true,
   });
 
-  const servers = useMemo(() => serverQuery.data?.servers ?? [], [serverQuery.data]);
-  const setSelectedServer = useCallback((name) => {
-    selectedServerRef.current = name;
-    setSelectedServerState(name);
-    if (name) preferences.write(identity, "selectedServer", name);
-    else preferences.remove(identity, "selectedServer");
-  }, [identity]);
+  const servers = useMemo(
+    () => serverQuery.data?.servers ?? [],
+    [serverQuery.data],
+  );
+  const setSelectedServer = useCallback(
+    (name) => {
+      selectedServerRef.current = name;
+      setSelectedServerState(name);
+      if (name) preferences.write(identity, "selectedServer", name);
+      else preferences.remove(identity, "selectedServer");
+    },
+    [identity],
+  );
 
   useEffect(() => {
     if (identity === null) {
-      playerUpdates.current.clear();
-      playerRevision.current = 0;
       setSelectedServer(null);
       return;
     }
@@ -114,41 +115,20 @@ export const ServerProvider = ({ children }) => {
     if (!servers.some((server) => server.name === selectedServerRef.current)) {
       setSelectedServer(servers[0]?.name ?? null);
     }
-  }, [identity, selectionIdentity, serverQuery.isSuccess, servers, setSelectedServer]);
+  }, [
+    identity,
+    selectionIdentity,
+    serverQuery.isSuccess,
+    servers,
+    setSelectedServer,
+  ]);
 
   // Subscriptions are ref-counted by WebSocketContext; it also resubscribes on reconnect.
   useEffect(() => {
     if (identity === null) return;
-    SERVER_TOPICS.forEach(subscribe);
-    return () => SERVER_TOPICS.forEach(unsubscribe);
+    SERVER_TOPICS.forEach((topic) => subscribe(topic));
+    return () => SERVER_TOPICS.forEach((topic) => unsubscribe(topic));
   }, [identity, subscribe, unsubscribe]);
-
-  useEffect(() => {
-    if (identity === null) return;
-    const removeListener = addMessageListener((message) => {
-      if (message?.type !== "event" ||
-          message.topic !== "event:after_server_players_change") return;
-      const data = message.data?.result ?? message.data;
-      if (
-        typeof data?.server_name !== "string" ||
-        !Array.isArray(data.players) ||
-        !Number.isInteger(data.player_count) ||
-        data.player_count !== data.players.length ||
-        !data.players.every(
-          (player) => typeof player?.name === "string" && typeof player?.xuid === "string",
-        )
-      ) return;
-      const update = {
-        players: data.players,
-        player_count: data.player_count,
-        revision: ++playerRevision.current,
-      };
-      playerUpdates.current.set(data.server_name, update);
-      // The central WebSocket dispatcher updates the query cache once.
-      // This provider only tracks revisions to protect in-flight HTTP responses.
-    });
-    return removeListener;
-  }, [identity, addMessageListener]);
 
   useEffect(() => {
     if (identity === null || !isConnected) return;
@@ -166,14 +146,12 @@ export const ServerProvider = ({ children }) => {
     return () => clearInterval(timer);
   }, [identity, isFallback, queryClient]);
 
-  const refreshServers = useCallback(
-    async () => {
-      logger.debug("[ServerContext] Refreshing servers");
-      const result = await serverQuery.refetch();
-      return result.isSuccess;
-    },
-    [serverQuery],
-  );
+  const { refetch } = serverQuery;
+  const refreshServers = useCallback(async () => {
+    logger.debug("[ServerContext] Refreshing servers");
+    const result = await refetch();
+    return result.isSuccess;
+  }, [refetch]);
 
   const value = useMemo(
     () => ({
@@ -184,9 +162,18 @@ export const ServerProvider = ({ children }) => {
       error: serverQuery.error?.message ?? null,
       refreshServers,
     }),
-    [servers, selectedServer, setSelectedServer, identity, serverQuery.isPending,
-      serverQuery.error, refreshServers],
+    [
+      servers,
+      selectedServer,
+      setSelectedServer,
+      identity,
+      serverQuery.isPending,
+      serverQuery.error,
+      refreshServers,
+    ],
   );
 
-  return <ServerContext.Provider value={value}>{children}</ServerContext.Provider>;
+  return (
+    <ServerContext.Provider value={value}>{children}</ServerContext.Provider>
+  );
 };

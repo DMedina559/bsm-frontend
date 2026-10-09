@@ -65,7 +65,9 @@ describe("Overview", () => {
     // post helper: post(url, body, options)
     // If body is undefined, it might pass undefined.
     // Overview.jsx calls post with 1 argument.
-    expect(api.post).toHaveBeenCalledWith("/api/server/Server1/start");
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith("/api/server/Server1/start"),
+    );
   });
   it("shows only actions appropriate to each server state", async () => {
     render(<Overview />);
@@ -100,7 +102,10 @@ describe("Overview", () => {
       "aria-pressed",
       "true",
     );
-    expect(localStorage.getItem("bsm.overview-layout.v1")).toBe("list");
+    expect(
+      JSON.parse(localStorage.getItem("bsm:admin:preference:overviewLayout"))
+        .value,
+    ).toBe("list");
     expect(document.querySelector(".overview-layout-list")).toBeInTheDocument();
   });
 
@@ -114,8 +119,6 @@ describe("Overview", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Managed servers")).toBeInTheDocument();
     expect(screen.getByText("Players online")).toBeInTheDocument();
-    expect(
-      screen.getByText("Built for your Bedrock worlds."),
-    ).toBeInTheDocument();
+    expect(document.querySelector(".overview-intro")).toBeInTheDocument();
   });
 });

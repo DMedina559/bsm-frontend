@@ -1,3 +1,4 @@
+import OperationsStatus from "../components/OperationsStatus";
 import React, { useEffect, useRef, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import NotificationHistory from "../components/NotificationHistory";
@@ -119,6 +120,7 @@ const Layout = () => {
               </span>
             )}
           </div>
+          <OperationsStatus />
           <Outlet />
           <Footer />
         </main>

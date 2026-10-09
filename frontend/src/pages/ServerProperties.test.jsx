@@ -1,3 +1,11 @@
+vi.mock("../DialogContext", () => ({
+  useDialog: () => ({ confirmAction: vi.fn().mockResolvedValue(true) }),
+}));
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "../app/queryClient";
+vi.mock("../AuthContext", () => ({
+  useAuth: () => ({ user: { username: "admin" } }),
+}));
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
@@ -24,15 +32,18 @@ vi.mock("../api", () => ({
 
 const renderWithProviders = (ui) => {
   return render(
-    <BrowserRouter>
-      <ToastProvider>{ui}</ToastProvider>
-    </BrowserRouter>,
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <ToastProvider>{ui}</ToastProvider>
+      </BrowserRouter>
+    </QueryClientProvider>,
   );
 };
 
 describe("ServerProperties", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    queryClient.clear();
 
     // Mock useServer return value
     useServer.mockReturnValue({
@@ -60,6 +71,7 @@ describe("ServerProperties", () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+    queryClient.clear();
   });
 
   it("renders properties form and saves changes", async () => {

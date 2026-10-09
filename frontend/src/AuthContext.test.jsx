@@ -247,3 +247,73 @@ describe("AuthContext", () => {
     expect(screen.getByText("No User")).toBeInTheDocument();
   });
 });
+
+it("rejects an old authentication response after logout", async () => {
+  let account;
+  let context;
+  function Capture() {
+    const value = useAuth();
+    React.useEffect(() => {
+      context = value;
+    }, [value]);
+    return <span>{value.user?.username ?? "anonymous"}</span>;
+  }
+  api.get.mockResolvedValue({ needs_setup: false });
+  api.request.mockImplementation((url) =>
+    url === "/api/account"
+      ? new Promise((resolve) => {
+          account = resolve;
+        })
+      : Promise.resolve({}),
+  );
+  sessionStorage.setItem("access_token", "token");
+  await act(async () => {
+    render(
+      <AuthProvider>
+        <Capture />
+      </AuthProvider>,
+    );
+  });
+  await act(async () => {
+    await context.logout();
+  });
+  await act(async () => {
+    account({ username: "old-account" });
+  });
+  expect(screen.getByText("anonymous")).toBeInTheDocument();
+  expect(sessionStorage.getItem("access_token")).toBeNull();
+});
+it("applies only the newest concurrent authentication check", async () => {
+  const requests = [];
+  let context;
+  function Capture() {
+    const value = useAuth();
+    React.useEffect(() => {
+      context = value;
+    }, [value]);
+    return <span>{value.user?.username ?? "anonymous"}</span>;
+  }
+  api.get.mockResolvedValue({ needs_setup: false });
+  api.request.mockImplementation(
+    () => new Promise((resolve) => requests.push(resolve)),
+  );
+  sessionStorage.setItem("access_token", "token");
+  await act(async () => {
+    render(
+      <AuthProvider>
+        <Capture />
+      </AuthProvider>,
+    );
+  });
+  act(() => {
+    void context.checkUser();
+  });
+  await act(async () => {});
+  await act(async () => {
+    requests[1]({ username: "latest" });
+  });
+  await act(async () => {
+    requests[0]({ username: "obsolete" });
+  });
+  expect(screen.getByText("latest")).toBeInTheDocument();
+});

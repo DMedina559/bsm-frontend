@@ -12,6 +12,8 @@ describe("Backups", () => {
 
     // Need to mock ServerContext requirements too
     api.request.mockImplementation((url) => {
+      if (url === "/api/account")
+        return Promise.resolve({ username: "testuser", role: "admin" });
       if (url === "/api/servers")
         return Promise.resolve({
           status: "success",

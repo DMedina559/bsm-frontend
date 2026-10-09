@@ -1,9 +1,12 @@
-import { useRequestTracker } from "../utils/useRequestTracker";
+import { useEditableDraft } from "../app/useEditableDraft";
+import QueryStatus from "../components/QueryStatus";
+import { queryKeys } from "../app/queryKeys";
+import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
 import Modal from "../components/Modal";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
-import { get, post } from "../api";
+import { post } from "../api";
 import {
   Save,
   RefreshCw,
@@ -74,16 +77,39 @@ const PROPERTY_GROUPS = {
     "enable-profiler",
   ],
 };
+const EMPTY_PROPERTIES = [];
 const ServerProperties = () => {
   const { selectedServer } = useServer();
-  const [properties, setProperties] = useState([]);
   const [rawContent, setRawContent] = useState("");
-  const [loading, setLoading] = useState(false);
+  const resourceQuery = useResourceQuery("properties", selectedServer);
+  const draftData = useMemo(
+    () =>
+      resourceQuery.data?.properties
+        ? Object.entries(resourceQuery.data.properties)
+            .map(([key, value]) => ({ key, value: String(value) }))
+            .sort((a, b) => a.key.localeCompare(b.key))
+        : undefined,
+    [resourceQuery.data],
+  );
+  const draft = useEditableDraft(selectedServer, draftData, EMPTY_PROPERTIES);
+  const {
+    value: properties,
+    setValue: setProperties,
+    savedSnapshot,
+    markSaved,
+  } = draft;
+  const loading = resourceQuery.isFetching;
   const [saving, setSaving] = useState(false);
-  const [savedSnapshot, setSavedSnapshot] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showRawModal, setShowRawModal] = useState(false);
   const { addToast } = useToast();
+  const write = useResourceMutation(
+    ({ url, body }) => post(url, body),
+    [queryKeys.serverProperties(selectedServer)],
+  );
+  const writePost = (url, body) =>
+    write.mutateAsync({ method: "post", url, body });
+
   const location = useLocation();
   const navigate = useNavigate();
   const setupFlow = location.state?.setupFlow;
@@ -94,51 +120,21 @@ const ServerProperties = () => {
 
   // Collapsible state for sections
   const [collapsedSections, setCollapsedSections] = useState({});
-  const beginRequest = useRequestTracker(selectedServer + ":" + "");
-  const fetchProperties = useCallback(async () => {
-    const requestTicket = beginRequest("fetchProperties");
-    setLoading(true);
-    try {
-      const data = await get(`/api/server/${selectedServer}/properties/get`);
-      if (!requestTicket.current()) return false;
-      if (data && data.status === "success" && data.properties) {
-        // Convert object to array for mapping
-        const propsArray = Object.entries(data.properties).map(
-          ([key, value]) => ({
-            key,
-            value: String(value), // Ensure string for inputs
-          }),
-        );
-        propsArray.sort((a, b) => a.key.localeCompare(b.key));
-        setProperties(propsArray);
-        setSavedSnapshot(JSON.stringify(propsArray));
-        if (data.raw_content !== undefined) {
-          setRawContent(data.raw_content);
-        }
-        return true;
-      } else {
-        addToast("Failed to load server properties", "error");
-        setProperties([]);
-        return false;
-      }
-    } catch (error) {
-      if (!requestTicket.current()) return false;
-      addToast(error.message || "Error fetching properties", "error");
-      return false;
-    } finally {
-      if (requestTicket.current()) {
-        setLoading(false);
-      }
-    }
-  }, [selectedServer, addToast, beginRequest]);
   useEffect(() => {
-    if (selectedServer) {
-      // Initial fetch
-      fetchProperties();
-    }
-  }, [selectedServer, fetchProperties]);
+    setRawContent(resourceQuery.data?.raw_content ?? "");
+  }, [resourceQuery.data, selectedServer]);
   const handleRefresh = async () => {
-    const success = await fetchProperties();
+    const success = await draft.refresh(async () => {
+      const result = await resourceQuery.refetch();
+      return {
+        ...result,
+        data: result.data?.properties
+          ? Object.entries(result.data.properties)
+              .map(([key, value]) => ({ key, value: String(value) }))
+              .sort((a, b) => a.key.localeCompare(b.key))
+          : undefined,
+      };
+    });
     if (success) {
       addToast("Properties refreshed", "success");
     }
@@ -153,10 +149,10 @@ const ServerProperties = () => {
       return acc;
     }, {});
     try {
-      await post(`/api/server/${selectedServer}/properties/set`, {
+      await writePost(`/api/server/${selectedServer}/properties/set`, {
         properties: propsObj,
       });
-      setSavedSnapshot(JSON.stringify(properties));
+      markSaved(properties);
       addToast("Server properties saved successfully.", "success");
       if (setupFlow) {
         navigate("/access-control", {
@@ -441,6 +437,7 @@ const ServerProperties = () => {
   }
   return (
     <div className="container">
+      <QueryStatus query={resourceQuery} />
       <div
         className="header"
         style={{

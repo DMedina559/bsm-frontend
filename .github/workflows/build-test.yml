@@ -3,11 +3,19 @@
 name: Build Lint Test
 
 on:
+  workflow_dispatch:
+    inputs:
+      backend_ref:
+        description: Backend commit or branch to check for contract drift
+        default: c539addeadd1860aa49e917c71143749f01cb267
+        required: true
+        type: string
   push:
     branches-ignore:
       - 'main'
     paths:
       - 'frontend/**'
+      - '.github/workflows/build-test.yml'
   #pull_request:
   #  paths:
   #    - 'frontend/**'
@@ -33,7 +41,9 @@ jobs:
     - name: Install dependencies and build
       run: |
         cd frontend
-        npm install
+        npm ci
+        npm run api:check
+        npm run typecheck
         npm run build
 
     - name: Run Frontend Lint
@@ -43,3 +53,32 @@ jobs:
     - name: Run Frontend Tests
       working-directory: ./frontend
       run: npm run test:run
+
+    - name: Install browser
+      working-directory: ./frontend
+      run: npx playwright install --with-deps chromium
+
+    - name: Run full app browser tests
+      working-directory: ./frontend
+      run: npm run test:e2e
+
+  backend-contract:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@v7
+    - uses: actions/checkout@v7
+      with:
+        repository: DMedina559/bedrock-server-manager
+        ref: ${{ inputs.backend_ref || 'c539addeadd1860aa49e917c71143749f01cb267' }}
+        path: backend-contract
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+    - name: Install backend and schema tooling
+      run: python -m pip install ./backend-contract fastapi==0.142.4 pydantic==2.14.0
+    - name: Export actual registered backend routers and compare
+      run: |
+        python frontend/scripts/export-openapi.py /tmp/backend-openapi.json
+        python frontend/scripts/check-backend-contract.py /tmp/backend-openapi.json

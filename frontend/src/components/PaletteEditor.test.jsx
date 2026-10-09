@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ThemeProvider } from "../ThemeContext";
 import PaletteEditor from "./PaletteEditor";
-import { PALETTE_KEY } from "../utils/palettes";
+const PALETTE_KEY = "bsm:test:preference:palettes";
 vi.mock("../AuthContext", () => ({
   useAuth: () => ({
     user: { username: "test", theme: "default" },
@@ -35,19 +35,22 @@ describe("palette editor", () => {
         "#2266bb",
       ),
     );
-    expect(JSON.parse(localStorage.getItem(PALETTE_KEY)).active).toBe(
+    expect(JSON.parse(localStorage.getItem(PALETTE_KEY)).value.active).toBe(
       "Ocean custom",
     );
     expect(
       screen.getByText("Selected · Blue evening tones"),
     ).toBeInTheDocument();
     expect(
-      JSON.parse(localStorage.getItem(PALETTE_KEY)).palettes[0].description,
+      JSON.parse(localStorage.getItem(PALETTE_KEY)).value.palettes[0]
+        .description,
     ).toBe("Blue evening tones");
     fireEvent.click(screen.getByText("Use account theme"));
     expect(document.getElementById("personal-palette").textContent).toBe("");
     fireEvent.click(screen.getByLabelText("Remove Ocean custom"));
-    expect(JSON.parse(localStorage.getItem(PALETTE_KEY)).palettes).toEqual([]);
+    expect(
+      JSON.parse(localStorage.getItem(PALETTE_KEY)).value.palettes,
+    ).toEqual([]);
   });
   it("shows low-contrast feedback", () => {
     render(

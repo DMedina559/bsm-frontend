@@ -1,6 +1,8 @@
-import { useRequestTracker } from "../utils/useRequestTracker";
+import QueryStatus from "../components/QueryStatus";
+import { queryKeys } from "../app/queryKeys";
+import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
 import { useDialog } from "../DialogContext";
-import React, { useCallback, useEffect, useState } from "react";
+import React from "react";
 import {
   Archive,
   Layers,
@@ -11,50 +13,29 @@ import {
 } from "lucide-react";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
-import { get, post, put } from "../api";
+import { post, put } from "../api";
 const Backups = () => {
   const { confirmAction } = useDialog();
   const { selectedServer } = useServer();
-  const [backups, setBackups] = useState({});
-  const [loading, setLoading] = useState(false);
   const { addToast } = useToast();
-  const beginRequest = useRequestTracker(selectedServer + ":" + "");
-  const fetchBackups = useCallback(async () => {
-    const requestTicket = beginRequest("fetchBackups");
-    setLoading(true);
-    try {
-      const data = await get(`/api/server/${selectedServer}/backup/list/all`);
-      if (!requestTicket.current()) return false;
-      if (data && data.status === "success" && data.details?.all_backups) {
-        // Map API keys to local keys
-        const apiBackups = data.details.all_backups;
-        setBackups({
-          world: apiBackups.world_backups || [],
-          properties: apiBackups.properties_backups || [],
-          allowlist: apiBackups.allowlist_backups || [],
-          permissions: apiBackups.permissions_backups || [],
-        });
-        return true;
-      } else {
-        addToast("Failed to fetch backups list", "error");
-        setBackups({});
-        return false;
-      }
-    } catch (error) {
-      if (!requestTicket.current()) return false;
-      addToast(error.message || "Error fetching backups", "error");
-      return false;
-    } finally {
-      if (requestTicket.current()) {
-        setLoading(false);
-      }
-    }
-  }, [selectedServer, addToast, beginRequest]);
-  useEffect(() => {
-    if (selectedServer) {
-      fetchBackups();
-    }
-  }, [selectedServer, fetchBackups]);
+  const write = useResourceMutation(
+    ({ method, url, body }) =>
+      method === "put" ? put(url, body) : post(url, body),
+    [queryKeys.serverBackups(selectedServer)],
+  );
+  const writePost = (url, body) =>
+    write.mutateAsync({ method: "post", url, body });
+  const writePut = (url, body) =>
+    write.mutateAsync({ method: "put", url, body });
+
+  const resourceQuery = useResourceQuery("backups", selectedServer);
+  const backups = resourceQuery.data ?? {};
+  const loading = resourceQuery.isFetching;
+  const fetchBackups = async () => {
+    const result = await resourceQuery.refetch();
+    if (result.error) addToast(result.error.message, "error");
+    return result.isSuccess;
+  };
   const handleRefresh = async () => {
     const success = await fetchBackups();
     if (success) {
@@ -100,7 +81,7 @@ const Backups = () => {
         backup_type: backupType,
       };
       if (fileToBackup) payload.file_to_backup = fileToBackup;
-      await post(`/api/server/${selectedServer}/backup/action`, payload);
+      await writePost(`/api/server/${selectedServer}/backup/action`, payload);
       addToast("Backup task started. Check logs for completion.", "success");
     } catch (error) {
       addToast(error.message || "Failed to start backup.", "error");
@@ -121,7 +102,7 @@ const Backups = () => {
       if (type !== "all") {
         payload.backup_file = filename;
       }
-      await post(`/api/server/${selectedServer}/restore/action`, payload);
+      await writePost(`/api/server/${selectedServer}/restore/action`, payload);
       addToast("Restore task started.", "success");
     } catch (error) {
       addToast(error.message || "Failed to start restore.", "error");
@@ -132,7 +113,7 @@ const Backups = () => {
     if (!(await confirmAction("Prune old backups based on retention policy?")))
       return;
     try {
-      await put(`/api/server/${selectedServer}/backups/prune`, {});
+      await writePut(`/api/server/${selectedServer}/backups/prune`, {});
       addToast("Pruning task started.", "success");
     } catch (error) {
       addToast(error.message || "Failed to prune backups.", "error");
@@ -293,6 +274,7 @@ const Backups = () => {
   );
   return (
     <div className="container">
+      <QueryStatus query={resourceQuery} />
       <div
         className="header"
         style={{

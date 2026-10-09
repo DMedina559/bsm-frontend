@@ -1,25 +1,31 @@
-import { useRequestTracker } from "../utils/useRequestTracker";
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useResourceQuery } from "../app/resourceQueries";
+import React, { useState, useEffect, useRef } from "react";
 import { useToast } from "../ToastContext";
-import { get } from "../api";
 import { useWebSocket } from "../WebSocketContext";
 import { RefreshCw, Activity, User, FileText } from "lucide-react";
 const AuditLog = () => {
   const [activeTab, setActiveTab] = useState("users");
-  const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const logsQuery = useResourceQuery("audit", undefined, {
+    enabled: activeTab === "users",
+  });
+  const tasksQuery = useResourceQuery("tasks", undefined, {
+    enabled: activeTab === "tasks",
+  });
+  const logs = logsQuery.data ?? [];
+  const tasks = tasksQuery.data ?? [];
+  const loading =
+    activeTab === "users" ? logsQuery.isFetching : tasksQuery.isFetching;
 
   // App Log State
   const [appLogLines, setAppLogLines] = useState([]);
   const appLogEndRef = useRef(null);
 
   // Tasks State
-  const [tasks, setTasks] = useState([]);
   const { addToast } = useToast();
-  const { isConnected, lastMessage, subscribe, unsubscribe } = useWebSocket();
+  const { isConnected, addMessageListener, subscribe, unsubscribe } =
+    useWebSocket();
 
   // App Log Subscription
-  const beginRequest = useRequestTracker("" + ":" + activeTab);
   useEffect(() => {
     if (activeTab === "app_log" && isConnected) {
       subscribe("app_log");
@@ -27,21 +33,21 @@ const AuditLog = () => {
     }
   }, [activeTab, isConnected, subscribe, unsubscribe]);
 
-  // Handle WS Messages
+  // Consume each subscribed frame directly and keep a bounded log history.
   useEffect(() => {
-    if (!lastMessage) return;
-    if (lastMessage.topic === "app_log" && lastMessage.type === "log_update") {
-      if (lastMessage.data) {
-        setAppLogLines((prev) => {
-          const newLines = lastMessage.data.split("\n");
-          if (newLines.length > 0 && newLines[newLines.length - 1] === "") {
-            newLines.pop();
-          }
-          return [...prev, ...newLines].slice(-1000);
-        });
-      }
-    }
-  }, [lastMessage]);
+    if (activeTab !== "app_log") return;
+    return addMessageListener((message) => {
+      if (
+        message.topic !== "app_log" ||
+        message.type !== "log_update" ||
+        typeof message.data !== "string"
+      )
+        return;
+      setAppLogLines((previous) =>
+        [...previous, ...message.data.split("\n").filter(Boolean)].slice(-1000),
+      );
+    });
+  }, [activeTab, addMessageListener]);
 
   // Auto-scroll App Log
   useEffect(() => {
@@ -52,61 +58,8 @@ const AuditLog = () => {
       }
     }
   }, [appLogLines, activeTab]);
-  const fetchLogs = useCallback(async () => {
-    const requestTicket = beginRequest("fetchLogs");
-    setLoading(true);
-    try {
-      const data = await get("/audit-log/list");
-      if (!requestTicket.current()) return false;
-      if (Array.isArray(data)) {
-        setLogs(data);
-        return true;
-      } else {
-        addToast("Failed to fetch audit logs", "error");
-        setLogs([]);
-        return false;
-      }
-    } catch (error) {
-      if (!requestTicket.current()) return false;
-      addToast(error.message || "Error fetching audit logs", "error");
-      return false;
-    } finally {
-      if (requestTicket.current()) {
-        setLoading(false);
-      }
-    }
-  }, [addToast, beginRequest]);
-  const fetchTasks = useCallback(async () => {
-    const requestTicket = beginRequest("fetchTasks");
-    setLoading(true);
-    try {
-      const data = await get("/api/tasks/list");
-      if (!requestTicket.current()) return false;
-      if (Array.isArray(data)) {
-        setTasks(data);
-        return true;
-      } else {
-        setTasks([]);
-        return false;
-      }
-    } catch {
-      if (!requestTicket.current()) return false;
-      addToast("Error fetching tasks", "error");
-      setTasks([]);
-      return false;
-    } finally {
-      if (requestTicket.current()) {
-        setLoading(false);
-      }
-    }
-  }, [addToast, beginRequest]);
-  useEffect(() => {
-    if (activeTab === "users") {
-      fetchLogs();
-    } else if (activeTab === "tasks") {
-      fetchTasks();
-    }
-  }, [activeTab, fetchLogs, fetchTasks]);
+  const fetchLogs = async () => (await logsQuery.refetch()).isSuccess;
+  const fetchTasks = async () => (await tasksQuery.refetch()).isSuccess;
   const handleRefresh = async () => {
     if (activeTab === "users") {
       const success = await fetchLogs();

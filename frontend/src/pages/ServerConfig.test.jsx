@@ -11,6 +11,8 @@ describe("ServerConfig", () => {
     localStorage.setItem("selectedServer", "TestServer");
 
     api.request.mockImplementation((url) => {
+      if (url === "/api/account")
+        return Promise.resolve({ username: "testuser", role: "admin" });
       if (url === "/api/servers")
         return Promise.resolve({
           status: "success",

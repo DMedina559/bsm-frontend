@@ -1,7 +1,9 @@
-import { useRequestTracker } from "../utils/useRequestTracker";
+import { queryKeys } from "../app/queryKeys";
+import QueryStatus from "../components/QueryStatus";
+import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
 import Modal from "../components/Modal";
 import { useDialog } from "../DialogContext";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ArrowRight,
   Plus,
@@ -15,14 +17,19 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
-import { del, get, post, put } from "../api";
+import { del, post, put } from "../api";
 import { logger } from "../utils/logger";
 const AccessControl = () => {
   const { confirmAction } = useDialog();
   const { selectedServer } = useServer();
   const [activeTab, setActiveTab] = useState("allowlist");
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const resourceQuery = useResourceQuery(
+    "access",
+    [selectedServer, activeTab],
+    { enabled: Boolean(selectedServer) },
+  );
+  const items = resourceQuery.data ?? [];
+  const loading = resourceQuery.isFetching;
 
   // Add Form State
   const [playerName, setPlayerName] = useState("");
@@ -40,53 +47,32 @@ const AccessControl = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const setupFlow = location.state?.setupFlow;
-  const beginRequest = useRequestTracker(selectedServer + ":" + activeTab);
   useEffect(() => {
     if (location.state?.tab) {
       setActiveTab(location.state.tab);
     }
   }, [location.state]);
-  const fetchItems = useCallback(async () => {
-    const requestTicket = beginRequest("fetchItems");
-    if (!selectedServer) return;
-    setLoading(true);
-    try {
-      let endpoint = "";
-      if (activeTab === "allowlist")
-        endpoint = `/api/server/${selectedServer}/allowlist/get`;
-      else if (activeTab === "permissions")
-        endpoint = `/api/server/${selectedServer}/permissions/get`;
-      else if (activeTab === "bans")
-        endpoint = `/api/server/${selectedServer}/bans/get`;
-      const data = await get(endpoint);
-      if (!requestTicket.current()) return false;
-      if (data) {
-        if (activeTab === "allowlist") setItems(data.players || []);
-        else if (activeTab === "permissions") setItems(data.permissions || []);
-        else if (activeTab === "bans") setItems(data.bans || []);
-      } else {
-        setItems([]);
-      }
-    } catch (error) {
-      if (!requestTicket.current()) return false;
-      logger.error(`[AccessControl] Error fetching ${activeTab}`, {
-        error,
-        activeTab,
-        selectedServer,
-      });
-      addToast(error.message || `Error fetching ${activeTab}`, "error");
-      setItems([]);
-    } finally {
-      if (requestTicket.current()) {
-        setLoading(false);
-      }
-    }
-  }, [selectedServer, activeTab, addToast, beginRequest]);
-  useEffect(() => {
-    if (selectedServer) {
-      fetchItems();
-    }
-  }, [selectedServer, activeTab, fetchItems]);
+  const write = useResourceMutation(
+    ({ method, url, body, options }) => {
+      if (method === "post") return post(url, body);
+      if (method === "put")
+        return body === undefined ? put(url) : put(url, body);
+      if (method === "del")
+        return options === undefined ? del(url) : del(url, options);
+    },
+    [queryKeys.access([selectedServer, activeTab]), queryKeys.globalPlayers()],
+  );
+  const writePost = (url, body) =>
+    write.mutateAsync({ url, body, method: "post" });
+  const writePut = (url, body) =>
+    write.mutateAsync({ url, body, method: "put" });
+  const writeDelete = (url, options) =>
+    write.mutateAsync({ url, options, method: "del" });
+  const fetchItems = async () => {
+    const result = await resourceQuery.refetch();
+    if (result.error) addToast(result.error.message, "error");
+    return result.isSuccess;
+  };
   const handleNextStep = () => {
     // In setup flow, permissions usually follows allowlist, then bans, then config
     if (activeTab === "allowlist") {
@@ -111,18 +97,18 @@ const AccessControl = () => {
     setActionLoading(true);
     try {
       if (activeTab === "allowlist") {
-        await post(`/api/server/${selectedServer}/allowlist/add`, {
+        await writePost(`/api/server/${selectedServer}/allowlist/add`, {
           players: [playerName],
           ignoresPlayerLimit: ignoresPlayerLimit,
         });
       } else if (activeTab === "bans") {
-        await post(`/api/server/${selectedServer}/bans/add`, {
+        await writePost(`/api/server/${selectedServer}/bans/add`, {
           player_name: playerName,
           xuid: playerXuid,
           reason: banReason || null,
         });
       } else {
-        await post(`/api/server/${selectedServer}/permissions/set`, {
+        await writePost(`/api/server/${selectedServer}/permissions/set`, {
           // Permission endpoint expects a list of objects
           permissions: [
             {
@@ -138,7 +124,6 @@ const AccessControl = () => {
       setPlayerXuid("");
       setBanReason("");
       setIgnoresPlayerLimit(false);
-      fetchItems();
     } catch (error) {
       addToast(error.message || "Failed to add item.", "error");
     } finally {
@@ -158,7 +143,7 @@ const AccessControl = () => {
     });
     setActionLoading(true);
     try {
-      await post(`/api/server/${selectedServer}/send_command`, {
+      await writePost(`/api/server/${selectedServer}/send_command`, {
         command: commandToExecute,
       });
       addToast(`Kick command sent for ${kickPlayerName}.`, "success");
@@ -185,21 +170,19 @@ const AccessControl = () => {
     setActionLoading(true);
     try {
       if (activeTab === "allowlist") {
-        await del(`/api/server/${selectedServer}/allowlist/remove`, {
+        await writeDelete(`/api/server/${selectedServer}/allowlist/remove`, {
           body: {
             players: [item.name || item.xuid],
           },
         });
         addToast("Player removed from allowlist.", "success");
-        fetchItems();
       } else if (activeTab === "bans") {
-        await del(`/api/server/${selectedServer}/bans/remove`, {
+        await writeDelete(`/api/server/${selectedServer}/bans/remove`, {
           body: {
             xuid: item.xuid || item.uuid,
           },
         });
         addToast("Player removed from ban list.", "success");
-        fetchItems();
       } else {
         addToast(
           "To remove permission, please set level to 'Member' (Default).",
@@ -216,7 +199,7 @@ const AccessControl = () => {
     if (!selectedServer) return;
     setActionLoading(true);
     try {
-      await post(`/api/server/${selectedServer}/permissions/set`, {
+      await writePost(`/api/server/${selectedServer}/permissions/set`, {
         permissions: [
           {
             xuid: item.xuid,
@@ -226,18 +209,6 @@ const AccessControl = () => {
         ],
       });
       addToast(`Updated permission for ${item.name} to ${newLevel}`, "success");
-      // Optimistically update the list or refetch
-      setItems((prev) =>
-        prev.map((p) =>
-          p.xuid === item.xuid
-            ? {
-                ...p,
-                permission_level: newLevel,
-                permission: newLevel,
-              }
-            : p,
-        ),
-      );
     } catch (error) {
       addToast(error.message || "Failed to update permission.", "error");
       fetchItems(); // Revert on error
@@ -248,7 +219,7 @@ const AccessControl = () => {
   const handleScanPlayers = async () => {
     setActionLoading(true);
     try {
-      await put("/api/players/scan");
+      await writePut("/api/players/scan");
       addToast("Player scan initiated. Logs are being processed.", "success");
       // Optionally refresh, though scan is async and updates global DB, might not affect local list immediately
     } catch (error) {
@@ -260,7 +231,6 @@ const AccessControl = () => {
 
   // New helper to handle refresh with user feedback
   const handleRefresh = async () => {
-    setLoading(true);
     addToast(`Refreshing ${activeTab}...`, "info");
     await fetchItems();
     addToast(`${activeTab} refreshed.`, "success");
@@ -285,6 +255,7 @@ const AccessControl = () => {
   }
   return (
     <div className="container">
+      <QueryStatus query={resourceQuery} />
       <div
         className="header"
         style={{

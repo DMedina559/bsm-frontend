@@ -1,12 +1,14 @@
-import { useRequestTracker } from "../utils/useRequestTracker";
-import React, { useState, useEffect } from "react";
-import { get, post, put } from "../api";
+import { queryKeys } from "../app/queryKeys";
+import QueryStatus from "../components/QueryStatus";
+import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
+import React, { useState } from "react";
+import { post, put } from "../api";
 import { useToast } from "../ToastContext";
 import { RefreshCw, Plus, Scan } from "lucide-react";
-import { logger } from "../utils/logger";
 const GlobalPlayers = () => {
-  const [players, setPlayers] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const resourceQuery = useResourceQuery("globalPlayers");
+  const players = resourceQuery.data ?? [];
+  const loading = resourceQuery.isFetching;
   const [scanLoading, setScanLoading] = useState(false);
   const [addLoading, setAddLoading] = useState(false);
 
@@ -14,39 +16,24 @@ const GlobalPlayers = () => {
   const [newPlayerString, setNewPlayerString] = useState(""); // Format: Name:XUID
 
   const { addToast } = useToast();
-  const beginRequest = useRequestTracker("" + ":" + "");
-  const fetchPlayers = React.useCallback(async () => {
-    const requestTicket = beginRequest("fetchPlayers");
-    setLoading(true);
-    try {
-      const response = await get("/api/players/get");
-      if (!requestTicket.current()) return false;
-      if (response && response.status === "success") {
-        setPlayers(response.players || []);
-        return true;
-      } else {
-        logger.warn("[GlobalPlayers] Failed to fetch players", {
-          response,
-        });
-        addToast(response?.message || "Failed to fetch players.", "error");
-        return false;
-      }
-    } catch (error) {
-      if (!requestTicket.current()) return false;
-      logger.error("[GlobalPlayers] Error fetching players", {
-        error,
-      });
-      addToast("Error fetching players.", "error");
-      return false;
-    } finally {
-      if (requestTicket.current()) {
-        setLoading(false);
-      }
-    }
-  }, [addToast, beginRequest]);
-  useEffect(() => {
-    fetchPlayers();
-  }, [fetchPlayers]);
+  const write = useResourceMutation(
+    ({ method, url, body }) => {
+      if (method === "post")
+        return body === undefined ? post(url) : post(url, body);
+      if (method === "put")
+        return body === undefined ? put(url) : put(url, body);
+    },
+    [queryKeys.globalPlayers()],
+  );
+  const writePost = (url, body) =>
+    write.mutateAsync({ url, body, method: "post" });
+  const writePut = (url, body) =>
+    write.mutateAsync({ url, body, method: "put" });
+  const fetchPlayers = async () => {
+    const result = await resourceQuery.refetch();
+    if (result.error) addToast(result.error.message, "error");
+    return result.isSuccess;
+  };
   const handleRefresh = async () => {
     const success = await fetchPlayers();
     if (success) {
@@ -56,10 +43,9 @@ const GlobalPlayers = () => {
   const handleScan = async () => {
     setScanLoading(true);
     try {
-      const response = await put("/api/players/scan");
+      const response = await writePut("/api/players/scan");
       if (response && response.status === "success") {
         addToast(response.message || "Scan started.", "success");
-        setTimeout(fetchPlayers, 2000);
       } else {
         addToast(response?.message || "Scan failed.", "error");
       }
@@ -82,13 +68,12 @@ const GlobalPlayers = () => {
     setAddLoading(true);
     try {
       // payload expects { players: ["Name:XUID", ...] }
-      const response = await post("/api/players/add", {
+      const response = await writePost("/api/players/add", {
         players: inputs,
       });
       if (response && response.status === "success") {
         addToast(response.message || "Players added/updated.", "success");
         setNewPlayerString("");
-        fetchPlayers();
       } else {
         addToast(response?.message || "Failed to add players.", "error");
       }
@@ -100,6 +85,7 @@ const GlobalPlayers = () => {
   };
   return (
     <div className="container">
+      <QueryStatus query={resourceQuery} />
       <div
         className="header"
         style={{

@@ -1,38 +1,85 @@
 import { getSessionStorageKey } from "./sessionBoundary";
-
-const CURRENT_VERSION = 1;
-
-/**
- * Versioned per-account preference storage. Invalid/old payloads fall back
- * safely instead of breaking application bootstrap.
- */
-export function createPreferenceStore(storage) {
+/** Versioned, validated preferences with safe migrations and tab subscriptions. */
+export function createPreferenceStore(storage, definitions = {}) {
+  const listeners = new Map();
   const getStorage = () => {
-    if (storage) return storage;
-    try { return globalThis.localStorage; } catch { return null; }
+    try {
+      return storage ?? globalThis.localStorage;
+    } catch {
+      return null;
+    }
   };
-  const keyFor = (identity, name) => getSessionStorageKey(identity, `preference:${name}`);
-  return {
+  const keyFor = (identity, name) =>
+    getSessionStorageKey(identity, `preference:${name}`);
+  const notify = (key) => listeners.get(key)?.forEach((listener) => listener());
+  const onStorage = (event) => {
+    if (event.key === null)
+      listeners.forEach((callbacks) =>
+        callbacks.forEach((listener) => listener()),
+      );
+    else notify(event.key);
+  };
+  const store = {
+    subscribe(identity, name, listener) {
+      const key = keyFor(identity, name);
+      if (!key) return () => {};
+      if (!listeners.size) globalThis.addEventListener?.("storage", onStorage);
+      if (!listeners.has(key)) listeners.set(key, new Set());
+      listeners.get(key).add(listener);
+      return () => {
+        listeners.get(key)?.delete(listener);
+        if (!listeners.get(key)?.size) listeners.delete(key);
+        if (!listeners.size)
+          globalThis.removeEventListener?.("storage", onStorage);
+      };
+    },
     read(identity, name, fallback, validate = () => true) {
       const key = keyFor(identity, name);
       if (!key) return fallback;
       try {
         const raw = getStorage()?.getItem(key);
         if (raw == null) return fallback;
-        const parsed = JSON.parse(raw);
-        if (parsed?.version !== CURRENT_VERSION || !validate(parsed.value)) return fallback;
-        return parsed.value;
+        let parsed = JSON.parse(raw);
+        const definition = definitions[name];
+        const version = definition?.version ?? 1;
+        const valid = (value) =>
+          validate(value) &&
+          (!definition?.validate || definition.validate(value));
+        if (Number.isInteger(parsed?.version) && parsed.version < version) {
+          while (parsed.version < version) {
+            const migrate = definition?.migrations?.[parsed.version];
+            if (!migrate) return fallback;
+            parsed = {
+              version: parsed.version + 1,
+              value: migrate(parsed.value),
+            };
+          }
+          if (
+            !valid(parsed.value) ||
+            !store.write(identity, name, parsed.value)
+          )
+            return fallback;
+        }
+        return parsed?.version === version && valid(parsed.value)
+          ? parsed.value
+          : fallback;
       } catch {
         return fallback;
       }
     },
     write(identity, name, value) {
       const key = keyFor(identity, name);
-      if (!key) return false;
+      const definition = definitions[name];
+      if (!key || (definition?.validate && !definition.validate(value)))
+        return false;
       try {
         const target = getStorage();
         if (!target) return false;
-        target.setItem(key, JSON.stringify({ version: CURRENT_VERSION, value }));
+        target.setItem(
+          key,
+          JSON.stringify({ version: definition?.version ?? 1, value }),
+        );
+        notify(key);
         return true;
       } catch {
         return false;
@@ -40,8 +87,17 @@ export function createPreferenceStore(storage) {
     },
     remove(identity, name) {
       const key = keyFor(identity, name);
-      if (!key) return;
-      try { getStorage()?.removeItem(key); } catch { /* storage may be unavailable */ }
+      if (!key) return false;
+      try {
+        const target = getStorage();
+        if (!target) return false;
+        target.removeItem(key);
+        notify(key);
+        return true;
+      } catch {
+        return false;
+      }
     },
   };
+  return store;
 }

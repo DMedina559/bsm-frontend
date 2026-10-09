@@ -1,7 +1,7 @@
 import { useRequestTracker } from "../utils/useRequestTracker";
 import Modal from "./Modal";
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { get, post, resolveApiUrl } from "../api";
+import { get, post, downloadFile } from "../api";
 import { useToast } from "../ToastContext";
 import { useSearchParams } from "react-router-dom";
 import { useServer } from "../ServerContext";
@@ -937,7 +937,8 @@ const DynamicPage = ({ schemaJson }) => {
   const [error, setError] = useState(null);
   const { addToast } = useToast();
   const { selectedServer } = useServer();
-  const { isConnected, subscribe, unsubscribe, lastMessage } = useWebSocket();
+  const { isConnected, subscribe, unsubscribe, addMessageListener } =
+    useWebSocket();
 
   // State for inputs (basic form handling)
   // We'll store input values in a map: { [inputId]: value }
@@ -1056,19 +1057,20 @@ const DynamicPage = ({ schemaJson }) => {
     };
   }, [schema, isConnected, selectedServer, subscribe, unsubscribe]);
 
-  // Handle incoming WebSocket messages
+  // Plugin pages only retain snapshots for their declared subscriptions.
   useEffect(() => {
-    if (!lastMessage) return;
-
-    // Update socketData map
-    setSocketData((prev) => {
-      const topic = lastMessage.topic;
-      return {
-        ...prev,
-        [topic]: lastMessage,
-      };
+    setSocketData({});
+    const topics = new Set(
+      (schema?.websocketSubscriptions ?? []).map((topic) =>
+        topic.replace("{server}", selectedServer || ""),
+      ),
+    );
+    if (!topics.size) return;
+    return addMessageListener((message) => {
+      if (!topics.has(message.topic)) return;
+      setSocketData((previous) => ({ ...previous, [message.topic]: message }));
     });
-  }, [lastMessage]);
+  }, [schema, selectedServer, addMessageListener]);
   const handleAction = async (actionDef) => {
     if (!actionDef) return;
     if (actionDef.type === "api_call") {
@@ -1116,27 +1118,10 @@ const DynamicPage = ({ schemaJson }) => {
       }
     } else if (actionDef.type === "download_file") {
       try {
-        const headers = {};
-        const token =
-          sessionStorage.getItem("access_token") ||
-          localStorage.getItem("access_token");
-        if (token) {
-          headers["Authorization"] = `Bearer ${token}`;
-        }
-        const response = await fetch(resolveApiUrl(actionDef.endpoint), {
-          headers,
-        });
-        if (!response.ok) throw new Error("Download failed");
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        // Simple filename fallback
-        a.download = actionDef.filename || "download";
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+        await downloadFile(
+          actionDef.endpoint,
+          actionDef.filename || "download",
+        );
       } catch (err) {
         addToast("Download failed: " + err.message, "error");
       }

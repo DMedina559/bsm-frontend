@@ -213,3 +213,63 @@ describe("authenticated API URL routing", () => {
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 });
+it("binary downloads reject stale sessions after reading the response body", async () => {
+  const { getBlob } = await import("./api");
+  const { sessionRuntime } = await import("./app/sessionRuntime");
+  let finish;
+  globalThis.fetch = vi.fn().mockResolvedValue({
+    ok: true,
+    status: 200,
+    headers: new Headers(),
+    blob: () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  });
+  const promise = getBlob("/api/download/test");
+  const assertion = expect(promise).rejects.toMatchObject({
+    name: "AbortError",
+  });
+  await vi.waitFor(() => expect(finish).toBeTypeOf("function"));
+  sessionRuntime.reset();
+  finish(new Blob(["old account"]));
+  await assertion;
+});
+it("binary requests normalize backend validation failures", async () => {
+  const { getBlob } = await import("./api");
+  globalThis.fetch = vi.fn().mockResolvedValue({
+    ok: false,
+    status: 422,
+    headers: new Headers({ "content-type": "application/json" }),
+    json: async () => ({
+      detail: [{ loc: ["query", "file"], msg: "Required" }],
+    }),
+  });
+  await expect(getBlob("/api/download/test")).rejects.toMatchObject({
+    category: "validation",
+    message: "query.file: Required",
+  });
+});
+
+it("downloads revoke object URLs even if clicking the link fails", async () => {
+  const { downloadFile } = await import("./api");
+  globalThis.fetch = vi.fn().mockResolvedValue({
+    ok: true,
+    status: 200,
+    headers: new Headers(),
+    blob: async () => new Blob(["data"]),
+  });
+  URL.createObjectURL = vi.fn(() => "blob:test");
+  URL.revokeObjectURL = vi.fn();
+  const click = vi
+    .spyOn(HTMLAnchorElement.prototype, "click")
+    .mockImplementation(() => {
+      throw new Error("click failed");
+    });
+  await expect(downloadFile("/api/download/test")).rejects.toThrow(
+    "click failed",
+  );
+  expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:test");
+  expect(document.querySelector('a[href="blob:test"]')).toBeNull();
+  click.mockRestore();
+});

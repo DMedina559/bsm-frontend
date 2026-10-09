@@ -1,3 +1,6 @@
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "../app/queryClient";
+import { synchronizeServerEvent } from "../app/synchronizeServerEvent";
 import React from "react";
 import { render, screen, waitFor, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -45,19 +48,22 @@ vi.mock("../WebSocketContext", () => ({
 // Create a wrapper with necessary providers
 const renderWithProviders = (ui, { initialRoute = "/" } = {}) => {
   return render(
-    <MemoryRouter initialEntries={[initialRoute]}>
-      <AuthProvider>
-        <ToastProvider>
-          <ServerProvider>{ui}</ServerProvider>
-        </ToastProvider>
-      </AuthProvider>
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={[initialRoute]}>
+        <AuthProvider>
+          <ToastProvider>
+            <ServerProvider>{ui}</ServerProvider>
+          </ToastProvider>
+        </AuthProvider>
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 };
 
 describe("OnlinePlayers", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    queryClient.clear();
     localStorage.clear();
     socket.connected = true;
     socket.listeners.clear();
@@ -76,8 +82,7 @@ describe("OnlinePlayers", () => {
       }
       if (url === "/api/account") {
         return Promise.resolve({
-          status: "success",
-          data: { user: { username: "testuser" } },
+          username: "testuser",
         });
       }
       if (url === "/api/servers") {
@@ -113,22 +118,13 @@ describe("OnlinePlayers", () => {
 });
 
 function emitPlayers(server_name, players) {
-  act(() => {
-    for (const listener of socket.listeners) {
-      listener({
-        type: "event",
-        topic: "event:after_server_players_change",
-        data: {
-          result: {
-            status: "success",
-            server_name,
-            players,
-            player_count: players.length,
-          },
-        },
-      });
-    }
-  });
+  act(() =>
+    synchronizeServerEvent({
+      type: "event",
+      topic: "event:after_server_players_change",
+      data: { result: { server_name, players, player_count: players.length } },
+    }),
+  );
 }
 
 it("subscribes and updates joins, same-count replacements and the last departure", async () => {
@@ -160,16 +156,18 @@ it("subscribes and updates joins, same-count replacements and the last departure
   await waitFor(() => expect(screen.getByText("0 Online")).toBeInTheDocument());
   const requests = api.request.mock.calls.length;
   emitPlayers("TestServer", [{ name: "Joined", xuid: "999" }]);
-  expect(screen.getByText("Joined")).toBeInTheDocument();
+  await waitFor(() => expect(screen.getByText("Joined")).toBeInTheDocument());
   expect(screen.getByText("XUID: 999")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Ban" })).toBeEnabled();
   emitPlayers("OtherServer", []);
-  expect(screen.getByText("Joined")).toBeInTheDocument();
+  await waitFor(() => expect(screen.getByText("Joined")).toBeInTheDocument());
   emitPlayers("TestServer", [{ name: "Replacement", xuid: "888" }]);
-  expect(screen.queryByText("Joined")).not.toBeInTheDocument();
+  await waitFor(() =>
+    expect(screen.queryByText("Joined")).not.toBeInTheDocument(),
+  );
   expect(screen.getByText("Replacement")).toBeInTheDocument();
   emitPlayers("TestServer", []);
-  expect(screen.getByText("0 Online")).toBeInTheDocument();
+  await waitFor(() => expect(screen.getByText("0 Online")).toBeInTheDocument());
   expect(screen.queryByText("Replacement")).not.toBeInTheDocument();
   expect(api.request.mock.calls.length).toBe(requests);
   unmount();

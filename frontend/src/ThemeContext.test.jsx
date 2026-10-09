@@ -103,9 +103,10 @@ describe("theme engine", () => {
     expect(
       document.documentElement.style.getPropertyValue("--bsm-panorama-image"),
     ).toContain("/api/panorama");
-    expect(JSON.parse(localStorage.getItem("bsm.appearance.v4")).panorama).toBe(
-      true,
-    );
+    expect(
+      JSON.parse(localStorage.getItem("bsm:admin:preference:appearance")).value
+        .panorama,
+    ).toBe(true);
     expect(request).not.toHaveBeenCalled();
     fireEvent.click(screen.getByText("Panorama"));
     expect(
@@ -125,7 +126,8 @@ describe("theme engine", () => {
       document.documentElement.style.getPropertyValue("--bsm-panorama-overlay"),
     ).toBe("25%");
     expect(
-      JSON.parse(localStorage.getItem("bsm.appearance.v4")).panoramaVisibility,
+      JSON.parse(localStorage.getItem("bsm:admin:preference:appearance")).value
+        .panoramaVisibility,
     ).toBe(75);
     expect(document.documentElement.dataset.panorama).toBe("false");
   });
@@ -198,14 +200,18 @@ describe("appearance reset", () => {
       method: "POST",
       body: { theme: "default" },
     });
-    expect(JSON.parse(localStorage.getItem("bsm.appearance.v4"))).toEqual({
+    expect(
+      JSON.parse(localStorage.getItem("bsm:admin:preference:appearance")).value,
+    ).toEqual({
       mode: "theme",
       density: "comfortable",
       panorama: false,
       panoramaVisibility: 18,
       sidebarTransparency: 0,
     });
-    const palettes = JSON.parse(localStorage.getItem("bsm.palettes.v4"));
+    const palettes = JSON.parse(
+      localStorage.getItem("bsm:admin:preference:palettes"),
+    ).value;
     expect(palettes.active).toBeNull();
     expect(palettes.palettes).toHaveLength(1);
     expect(document.getElementById("personal-palette").textContent).toBe("");
@@ -222,11 +228,13 @@ describe("appearance reset", () => {
     fireEvent.click(screen.getByText("Reset"));
     await waitFor(() => expect(request).toHaveBeenCalled());
     expect(document.documentElement.dataset.theme).toBe("blue");
-    expect(JSON.parse(localStorage.getItem("bsm.appearance.v4")).panorama).toBe(
-      true,
-    );
-    expect(JSON.parse(localStorage.getItem("bsm.palettes.v4")).active).toBe(
-      "Custom",
-    );
+    expect(
+      JSON.parse(localStorage.getItem("bsm:admin:preference:appearance")).value
+        .panorama,
+    ).toBe(true);
+    expect(
+      JSON.parse(localStorage.getItem("bsm:admin:preference:palettes")).value
+        .active,
+    ).toBe("Custom");
   });
 });

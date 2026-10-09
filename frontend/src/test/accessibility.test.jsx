@@ -1,3 +1,5 @@
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "../app/queryClient";
 import React from "react";
 import { render, screen, waitFor, act } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
@@ -107,22 +109,24 @@ describe("page accessibility structure with fixture data", () => {
       async () => {
         stable.anonymous = name === "Login";
         const { container } = render(
-          <MemoryRouter initialEntries={["/register/test"]}>
-            <DialogProvider>
-              <ToastProvider>
-                <Routes>
-                  <Route
-                    path="/register/:token"
-                    element={
-                      <main>
-                        <Page />
-                      </main>
-                    }
-                  />
-                </Routes>
-              </ToastProvider>
-            </DialogProvider>
-          </MemoryRouter>,
+          <QueryClientProvider client={queryClient}>
+            <MemoryRouter initialEntries={["/register/test"]}>
+              <DialogProvider>
+                <ToastProvider>
+                  <Routes>
+                    <Route
+                      path="/register/:token"
+                      element={
+                        <main>
+                          <Page />
+                        </main>
+                      }
+                    />
+                  </Routes>
+                </ToastProvider>
+              </DialogProvider>
+            </MemoryRouter>
+          </QueryClientProvider>,
         );
         await act(async () => {});
         await waitFor(() =>

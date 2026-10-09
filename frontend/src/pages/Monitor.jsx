@@ -1,9 +1,11 @@
-import { useRequestTracker } from "../utils/useRequestTracker";
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import { queryKeys } from "../app/queryKeys";
+import QueryStatus from "../components/QueryStatus";
+import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
+import React, { useState, useEffect, useRef } from "react";
 import { useWebSocket } from "../WebSocketContext";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
-import { post, get } from "../api";
+import { post } from "../api";
 import {
   LineChart,
   Line,
@@ -23,18 +25,25 @@ import {
 } from "lucide-react";
 import { logger } from "../utils/logger";
 const Monitor = () => {
-  const { isConnected, isFallback, lastMessage, subscribe, unsubscribe } =
-    useWebSocket();
+  const {
+    isConnected,
+    isFallback,
+    subscribe,
+    unsubscribe,
+    addMessageListener,
+  } = useWebSocket();
   const { selectedServer, servers } = useServer();
   const { addToast } = useToast();
-  const [processInfo, setProcessInfo] = useState(null);
+  const monitorQuery = useResourceQuery("monitor", selectedServer, {
+    refetchInterval: isFallback ? 2000 : false,
+  });
+  const processInfo = monitorQuery.data ?? null;
   const [usageHistory, setUsageHistory] = useState([]);
   const [command, setCommand] = useState("");
   const [chartReady, setChartReady] = useState(false);
   const chartContainerRef = useRef(null);
 
   // Use a ResizeObserver to wait until the chart container actually has dimensions
-  const beginRequest = useRequestTracker(selectedServer + ":" + "");
   useEffect(() => {
     if (!chartContainerRef.current) return;
     const observer = new ResizeObserver((entries) => {
@@ -54,48 +63,20 @@ const Monitor = () => {
   const [loadingAction, setLoadingAction] = useState(false);
   const [logLines, setLogLines] = useState([]);
   const logEndRef = useRef(null);
-  const fetchStatus = useCallback(async () => {
-    const requestTicket = beginRequest("fetchStatus");
-    if (!selectedServer) return;
-    try {
-      logger.debug(`[Monitor] Fetching process status`, {
-        server: selectedServer,
-      });
-      const data = await get(`/api/server/${selectedServer}/process_info`);
-      if (!requestTicket.current()) return false;
-      if (data && data.status === "success" && data.process_info) {
-        setProcessInfo(data.process_info);
-        // Only update history on polling if we want, or rely on WS
-        // If polling, we should update history here too
-        if (isFallback) {
-          const info = data.process_info;
-          setUsageHistory((prev) => {
-            const newPoint = {
-              time: new Date().toLocaleTimeString(),
-              cpu: info.cpu_percent || 0,
-              memory: info.memory_mb || 0,
-            };
-            // Limit history
-            const newData = [...prev, newPoint];
-            if (newData.length > 20) newData.shift();
-            return newData;
-          });
-        }
-      } else {
-        setProcessInfo(null);
-      }
-    } catch (error) {
-      if (!requestTicket.current()) return false;
-      if (error.status === 404) {
-        setProcessInfo(null);
-      } else {
-        logger.warn(`[Monitor] Failed to fetch initial status`, {
-          error,
-          server: selectedServer,
-        });
-      }
-    }
-  }, [selectedServer, isFallback, beginRequest]);
+  const { refetch: fetchStatus } = monitorQuery;
+  useEffect(() => {
+    if (!isFallback || !processInfo) return;
+    setUsageHistory((previous) =>
+      [
+        ...previous,
+        {
+          time: new Date().toLocaleTimeString(),
+          cpu: processInfo.cpu_percent || 0,
+          memory: processInfo.memory_mb || 0,
+        },
+      ].slice(-20),
+    );
+  }, [isFallback, processInfo, monitorQuery.dataUpdatedAt]);
 
   // Auto-scroll logs
   useEffect(() => {
@@ -111,7 +92,6 @@ const Monitor = () => {
   useEffect(() => {
     setLogLines([]);
     setUsageHistory([]);
-    setProcessInfo(null);
   }, [selectedServer]);
 
   // Handle WebSocket subscriptions
@@ -131,25 +111,10 @@ const Monitor = () => {
     }
   }, [isConnected, selectedServer, subscribe, unsubscribe, fetchStatus]);
 
-  // Handle Polling fallback
+  // Direct listeners preserve every log frame even when React batches renders.
   useEffect(() => {
-    let intervalId = null;
-    if (isFallback && selectedServer) {
-      logger.debug("[Monitor] WebSocket fallback active: polling stats", {
-        interval: "2s",
-        server: selectedServer,
-      });
-      fetchStatus();
-      intervalId = setInterval(fetchStatus, 2000);
-    }
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [isFallback, selectedServer, fetchStatus]);
-
-  // Handle incoming WebSocket messages
-  useEffect(() => {
-    if (lastMessage && selectedServer) {
+    if (!selectedServer) return;
+    return addMessageListener((lastMessage) => {
       const resourceTopic = `resource-monitor:${selectedServer}`;
       const logTopic = `server_log:${selectedServer}`;
       if (
@@ -158,7 +123,6 @@ const Monitor = () => {
       ) {
         const info = lastMessage.data?.process_info;
         if (info) {
-          setProcessInfo(info);
           setUsageHistory((prev) => {
             const newPoint = {
               time: new Date().toLocaleTimeString(),
@@ -170,14 +134,12 @@ const Monitor = () => {
             if (newData.length > 20) newData.shift();
             return newData;
           });
-        } else {
-          setProcessInfo(null);
         }
       } else if (
         lastMessage.topic === logTopic &&
         lastMessage.type === "log_update"
       ) {
-        if (lastMessage.data) {
+        if (typeof lastMessage.data === "string") {
           setLogLines((prev) => {
             // Split by newline but keep empty lines if needed, or filter.
             // Usually log files end with newline, so split gives empty string at end.
@@ -191,8 +153,17 @@ const Monitor = () => {
           });
         }
       }
-    }
-  }, [lastMessage, selectedServer]);
+    });
+  }, [addMessageListener, selectedServer]);
+  const write = useResourceMutation(
+    ({ method, url, body }) => {
+      if (method === "post")
+        return body === undefined ? post(url) : post(url, body);
+    },
+    [queryKeys.servers(), queryKeys.serverMonitor(selectedServer)],
+  );
+  const writePost = (url, body) =>
+    write.mutateAsync({ url, body, method: "post" });
   const handleCommand = async (e) => {
     e.preventDefault();
     if (!command.trim()) return;
@@ -203,7 +174,7 @@ const Monitor = () => {
     });
     setLoadingAction(true);
     try {
-      await post(`/api/server/${selectedServer}/send_command`, {
+      await writePost(`/api/server/${selectedServer}/send_command`, {
         command: command.trim(),
       });
       addToast("Command sent successfully.", "success");
@@ -229,7 +200,7 @@ const Monitor = () => {
     addToast(`Sending ${action} signal...`, "info");
     try {
       // Pass empty body explicitely to ensure headers are set if needed, though usually not required for this endpoint
-      await post(`/api/server/${selectedServer}/${action}`, {});
+      await writePost(`/api/server/${selectedServer}/${action}`, {});
       addToast(`Server ${action} signal sent.`, "success");
     } catch (error) {
       logger.error(`[Monitor] Action failed`, {
@@ -263,6 +234,7 @@ const Monitor = () => {
   const isRunning = processInfo && processInfo.pid;
   return (
     <div className="container">
+      <QueryStatus query={monitorQuery} />
       <div
         className="header"
         style={{

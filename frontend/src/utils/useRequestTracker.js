@@ -1,3 +1,4 @@
+import { sessionRuntime } from "../app/sessionRuntime";
 import { useCallback, useEffect, useRef } from "react";
 /** Separate request channels prevent stale results from overwriting a newer page/server. */
 export function useRequestTracker(resourceKey = "") {
@@ -16,11 +17,13 @@ export function useRequestTracker(resourceKey = "") {
   }, [resourceKey]);
   return useCallback(
     (channel) => {
+      const session = sessionRuntime.capture();
       const version = (channels.current.get(channel) || 0) + 1;
       const requestEpoch = epoch.current;
       channels.current.set(channel, version);
       return {
         current: () =>
+          sessionRuntime.isCurrent(session) &&
           keyRef.current === resourceKey &&
           epoch.current === requestEpoch &&
           channels.current.get(channel) === version,

@@ -1,7 +1,10 @@
+import { queryKeys } from "../app/queryKeys";
+import QueryStatus from "../components/QueryStatus";
+import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
 import { useRequestTracker } from "../utils/useRequestTracker";
 import Modal from "../components/Modal";
 import { useDialog } from "../DialogContext";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
 import { getApiBaseUrl } from "../api";
@@ -23,10 +26,23 @@ const Content = () => {
   const { confirmAction } = useDialog();
   const { selectedServer } = useServer();
   const [activeTab, setActiveTab] = useState("worlds");
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const contentQuery = useResourceQuery(
+    "content",
+    activeTab === "worlds" ? "worlds" : "addons",
+    { enabled: Boolean(selectedServer) },
+  );
+  const items = (contentQuery.data ?? []).map((item) => ({
+    ...item,
+    type: activeTab,
+  }));
+  const loading = contentQuery.isFetching;
+  const pluginQuery = useResourceQuery("plugins");
   const [actionLoading, setActionLoading] = useState(false);
-  const [isUploadEnabled, setIsUploadEnabled] = useState(false);
+  const isUploadEnabled = Boolean(
+    pluginQuery.data?.find(
+      (plugin) => plugin.name === "content_uploader_plugin",
+    )?.enabled,
+  );
   const [isAddonModalOpen, setIsAddonModalOpen] = useState(false);
   const [addonModalTab, setAddonModalTab] = useState("behavior");
   const [installedAddons, setInstalledAddons] = useState({
@@ -36,85 +52,26 @@ const Content = () => {
   const [addonsLoading, setAddonsLoading] = useState(false);
   const [orderChanged, setOrderChanged] = useState(false);
   const { addToast } = useToast();
-  const checkUploadPluginStatus = React.useCallback(async () => {
-    try {
-      const response = await get("/api/plugins");
-      if (
-        response &&
-        response.status === "success" &&
-        (response.plugins || response.data)
-      ) {
-        const plugin = (response.plugins || response.data)[
-          "content_uploader_plugin"
-        ];
-        if (plugin && plugin.enabled) {
-          setIsUploadEnabled(true);
-        } else {
-          setIsUploadEnabled(false);
-        }
-      }
-    } catch (error) {
-      logger.warn("[Content] Failed to check upload plugin status", {
-        error,
-        selectedServer,
-      });
-      setIsUploadEnabled(false);
-    }
-  }, [selectedServer]);
   const beginRequest = useRequestTracker(selectedServer + ":" + activeTab);
-  const fetchItems = React.useCallback(async () => {
-    const requestTicket = beginRequest("fetchItems");
-    if (!selectedServer) return false;
-    setLoading(true);
-    try {
-      let endpoint = "";
-      if (activeTab === "worlds") {
-        endpoint = `/api/content/worlds`;
-      } else {
-        endpoint = `/api/content/addons`;
-      }
-      const data = await get(endpoint);
-      if (!requestTicket.current()) return false;
-      if (data && data.status === "success") {
-        // Backend returns "files": ["filename.mcworld", ...]
-        // We need to map this to objects for the table
-        const fileList = data.files || [];
-        const mappedItems = fileList.map((filename) => ({
-          name: filename,
-          type: activeTab,
-        }));
-        setItems(mappedItems);
-        return true;
-      } else {
-        addToast(
-          `Failed to load ${activeTab}: ${data?.message || "Unknown error"}`,
-          "error",
-        );
-        setItems([]);
-        return false;
-      }
-    } catch (error) {
-      if (!requestTicket.current()) return false;
-      logger.error(`[Content] Error fetching ${activeTab}`, {
-        error,
-        activeTab,
-        selectedServer,
-      });
-      addToast(`Error fetching ${activeTab}`, "error");
-      setItems([]);
-      return false;
-    } finally {
-      if (requestTicket.current()) {
-        setLoading(false);
-      }
-    }
-  }, [selectedServer, activeTab, addToast, beginRequest]);
-  useEffect(() => {
-    checkUploadPluginStatus();
-    if (selectedServer) {
-      fetchItems();
-    }
-  }, [selectedServer, activeTab, fetchItems, checkUploadPluginStatus]);
+  const write = useResourceMutation(
+    ({ method, url, body, options }) => {
+      if (method === "post") return post(url, body);
+      if (method === "del") return del(url, options);
+      if (method === "request") return request(url, options);
+    },
+    [queryKeys.content(), queryKeys.servers()],
+  );
+  const writePost = (url, body) =>
+    write.mutateAsync({ url, body, method: "post" });
+  const writeDelete = (url, options) =>
+    write.mutateAsync({ url, options, method: "del" });
+  const writeRequest = (url, options) =>
+    write.mutateAsync({ url, options, method: "request" });
+  const fetchItems = async () => {
+    const result = await contentQuery.refetch();
+    if (result.error) addToast(result.error.message, "error");
+    return result.isSuccess;
+  };
   const handleRefresh = async () => {
     const success = await fetchItems();
     if (success) {
@@ -137,7 +94,7 @@ const Content = () => {
         activeTab === "worlds"
           ? `/api/server/${selectedServer}/world/install`
           : `/api/server/${selectedServer}/addon/install`;
-      await post(endpoint, {
+      await writePost(endpoint, {
         filename: item.name,
       });
       addToast(`Installation of ${item.name} started.`, "success");
@@ -156,7 +113,7 @@ const Content = () => {
       return;
     setActionLoading(true);
     try {
-      await del(`/api/server/${selectedServer}/world/reset`);
+      await writeDelete(`/api/server/${selectedServer}/world/reset`);
       addToast(`World reset initiated for ${selectedServer}.`, "success");
     } catch (error) {
       addToast(error.message || "World reset failed.", "error");
@@ -167,7 +124,7 @@ const Content = () => {
   const handleExportWorld = async () => {
     setActionLoading(true);
     try {
-      await post(`/api/server/${selectedServer}/world/export`);
+      await writePost(`/api/server/${selectedServer}/world/export`);
       addToast(`World export initiated for ${selectedServer}.`, "success");
       // Optionally refresh list after a delay, but it's async background task
     } catch (error) {
@@ -245,7 +202,7 @@ const Content = () => {
           .filter((p) => p.status === "ACTIVE" && p.uuid)
           .map((p) => p.uuid);
         if (behaviorUuids.length > 0) {
-          await post(`/api/server/${selectedServer}/addon/reorder`, {
+          await writePost(`/api/server/${selectedServer}/addon/reorder`, {
             pack_type: "behavior",
             uuids: behaviorUuids,
           });
@@ -256,7 +213,7 @@ const Content = () => {
           .filter((p) => p.status === "ACTIVE" && p.uuid)
           .map((p) => p.uuid);
         if (resourceUuids.length > 0) {
-          await post(`/api/server/${selectedServer}/addon/reorder`, {
+          await writePost(`/api/server/${selectedServer}/addon/reorder`, {
             pack_type: "resource",
             uuids: resourceUuids,
           });
@@ -280,14 +237,14 @@ const Content = () => {
     setActionLoading(true);
     try {
       if (action === "uninstall") {
-        await del(`/api/server/${selectedServer}/addon/uninstall`, {
+        await writeDelete(`/api/server/${selectedServer}/addon/uninstall`, {
           body: {
             pack_uuid: pack.uuid,
             pack_type: packType,
           },
         });
       } else {
-        await post(`/api/server/${selectedServer}/addon/${action}`, {
+        await writePost(`/api/server/${selectedServer}/addon/${action}`, {
           pack_uuid: pack.uuid,
           pack_type: packType,
         });
@@ -304,7 +261,7 @@ const Content = () => {
     setActionLoading(true);
     try {
       // The old UI used dynamic form state with names like `subpack_${uuid}`
-      await post(`/api/server/${selectedServer}/addon/subpack`, {
+      await writePost(`/api/server/${selectedServer}/addon/subpack`, {
         pack_uuid: pack.uuid,
         pack_type: packType,
         [`subpack_${pack.uuid}`]: newSubpackFolderName,
@@ -573,21 +530,20 @@ const Content = () => {
     const type = activeTab === "worlds" ? "world" : "addon";
     formData.append("type", type);
     try {
-      setLoading(true);
-      const data = await request(`/api/content/upload`, {
+      setActionLoading(true);
+      const data = await writeRequest(`/api/content/upload`, {
         method: "POST",
         body: formData,
       });
       if (data && data.status === "success") {
         addToast("Upload successful.", "success");
-        fetchItems();
       } else {
         addToast(`Upload failed: ${data?.message || "Unknown error"}`, "error");
       }
     } catch {
       addToast("Upload failed.", "error");
     } finally {
-      setLoading(false);
+      setActionLoading(false);
       e.target.value = null; // Reset input
     }
   };
@@ -611,6 +567,7 @@ const Content = () => {
   }
   return (
     <div className="container">
+      <QueryStatus query={contentQuery} />
       <div
         className="header"
         style={{

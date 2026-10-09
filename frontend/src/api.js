@@ -1,7 +1,9 @@
+import { operationCoordinator } from "./app/operationCoordinator";
 /**
  * @fileoverview Core API client for making HTTP requests.
  * Handles fetch logic, headers, authentication, and response parsing.
  */
+import { sessionRuntime } from "./app/sessionRuntime";
 import { getApiProxyBasePath } from "./utils/basePath";
 
 import { logger } from "./utils/logger";
@@ -12,6 +14,18 @@ export class ApiError extends Error {
     this.name = "ApiError";
     this.status = status;
     this.data = data;
+    this.category =
+      status === 401
+        ? "unauthorized"
+        : status === 403
+          ? "forbidden"
+          : status === 409
+            ? "conflict"
+            : status === 422
+              ? "validation"
+              : status === 0
+                ? "network"
+                : "server";
   }
 }
 
@@ -74,16 +88,37 @@ export function resolveApiUrl(url) {
  * @throws {ApiError} If the response status is not 2xx.
  */
 export async function request(url, options = {}) {
-  const { method = "GET", body, headers = {}, ...restOptions } = options;
+  const {
+    method = "GET",
+    body,
+    headers = {},
+    timeout = 30000,
+    responseType = "json",
+    ...restOptions
+  } = options;
+  const session = sessionRuntime.capture();
+  const timeoutSignal = AbortSignal.timeout(timeout);
+  const signal = AbortSignal.any([
+    session.signal,
+    timeoutSignal,
+    ...(restOptions.signal ? [restOptions.signal] : []),
+  ]);
+  const assertCurrent = () => {
+    if (!sessionRuntime.isCurrent(session)) {
+      throw new DOMException("Session changed", "AbortError");
+    }
+    signal.throwIfAborted();
+  };
 
   const defaultHeaders = {
-    Accept: "application/json",
+    Accept: responseType === "blob" ? "*/*" : "application/json",
   };
 
   const config = {
     method: method.toUpperCase(),
     headers: { ...defaultHeaders, ...headers },
     ...restOptions,
+    signal,
   };
 
   const token =
@@ -112,10 +147,14 @@ export async function request(url, options = {}) {
     logger.debug(`[API] Request: ${config.method} ${finalUrl}`, {
       method: config.method,
       url: finalUrl,
-      headers: config.headers,
+      headers: {
+        ...config.headers,
+        Authorization: token ? "[redacted]" : undefined,
+      },
     });
 
     const response = await fetch(finalUrl, config);
+    assertCurrent();
 
     if (response.status === 204) {
       logger.debug(`[API] Response (No Content)`, {
@@ -128,7 +167,11 @@ export async function request(url, options = {}) {
     const contentType = response.headers.get("content-type");
     let data;
 
-    if (contentType && contentType.includes("application/json")) {
+    if (response.ok && responseType === "blob") {
+      if (contentType?.includes("text/html"))
+        throw new ApiError("Session expired (Redirected to App)", 401, null);
+      data = await response.blob();
+    } else if (contentType && contentType.includes("application/json")) {
       try {
         data = await response.json();
       } catch (err) {
@@ -181,13 +224,21 @@ export async function request(url, options = {}) {
       }
     }
 
+    assertCurrent();
     if (!response.ok) {
       let errorMessage = `Request failed with status ${response.status}`;
       if (typeof data === "object" && data !== null && data.message) {
         errorMessage = data.message;
       } else if (typeof data === "object" && data !== null && data.detail) {
         // FastAPI often returns 'detail'
-        errorMessage = data.detail;
+        errorMessage = Array.isArray(data.detail)
+          ? data.detail
+              .map(
+                (issue) =>
+                  `${issue.loc?.join(".") || "Request"}: ${issue.msg || "Invalid value"}`,
+              )
+              .join("; ")
+          : String(data.detail);
       } else if (typeof data === "string" && data.length > 0) {
         errorMessage = data.substring(0, 200);
       }
@@ -225,8 +276,20 @@ export async function request(url, options = {}) {
       status: response.status,
       responseType: typeof data,
     });
+    if (config.method !== "GET" && data?.task_id) {
+      const server = url.match(/\/api\/server\/([^/]+)/)?.[1];
+      operationCoordinator.register({
+        id: data.task_id,
+        kind: url.split("/").filter(Boolean).slice(-2).join(":"),
+        serverName:
+          body?.server_name ?? (server ? decodeURIComponent(server) : null),
+        status: "pending",
+      });
+    }
     return data;
   } catch (error) {
+    if (error.name === "AbortError" || error.name === "TimeoutError")
+      throw error;
     if (error instanceof ApiError) {
       throw error;
     }
@@ -255,4 +318,23 @@ export function put(url, body, options = {}) {
 
 export function del(url, options = {}) {
   return request(url, { ...options, method: "DELETE" });
+}
+
+/** Binary responses share authentication, cancellation, timeouts and API errors. */
+export function getBlob(url, options = {}) {
+  return request(url, { ...options, method: "GET", responseType: "blob" });
+}
+export async function downloadFile(url, filename = "download", options = {}) {
+  const blob = await getBlob(url, options);
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  try {
+    anchor.href = objectUrl;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+  } finally {
+    anchor.remove();
+    URL.revokeObjectURL(objectUrl);
+  }
 }

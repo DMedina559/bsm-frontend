@@ -6,16 +6,19 @@ import {
   waitFor,
   act,
 } from "@testing-library/react";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { it, expect, vi, beforeEach } from "vitest";
 import { ServerProvider, useServer } from "./ServerContext";
+import { queryClient } from "./app/queryClient";
+import { synchronizeServerEvent } from "./app/synchronizeServerEvent";
+import { sessionRuntime } from "./app/sessionRuntime";
+import { createPreferenceStore } from "./app/preferenceStore";
 import { request } from "./api";
 const state = vi.hoisted(() => ({
   user: { username: "admin" },
   subscribe: vi.fn(),
   unsubscribe: vi.fn(),
-  listener: null,
   connected: false,
-  addMessageListener: vi.fn(),
 }));
 vi.mock("./AuthContext", () => ({ useAuth: () => ({ user: state.user }) }));
 vi.mock("./WebSocketContext", () => ({
@@ -24,7 +27,6 @@ vi.mock("./WebSocketContext", () => ({
     isFallback: false,
     subscribe: state.subscribe,
     unsubscribe: state.unsubscribe,
-    addMessageListener: state.addMessageListener,
   }),
 }));
 vi.mock("./api", () => ({ request: vi.fn() }));
@@ -47,32 +49,33 @@ function Harness() {
       <span data-testid="servers">{servers.map((s) => s.name).join(",")}</span>
       <span data-testid="selection">{selectedServer || "none"}</span>
       <span data-testid="loading">{String(loading)}</span>
-      <button onClick={() => refreshServers()}>Refresh</button>
+      <button onClick={refreshServers}>Refresh</button>
       <button onClick={() => setSelectedServer("First")}>Select</button>
     </>
   );
 }
+const tree = () => (
+  <QueryClientProvider client={queryClient}>
+    <ServerProvider>
+      <Harness />
+    </ServerProvider>
+  </QueryClientProvider>
+);
 beforeEach(() => {
   localStorage.clear();
   vi.clearAllMocks();
+  queryClient.clear();
+  sessionRuntime.reset();
   state.user = { username: "admin" };
   state.connected = false;
-  state.addMessageListener.mockImplementation((callback) => {
-    state.listener = callback;
-    return () => {};
-  });
 });
-it("changing selection does not refetch the fleet", async () => {
+it("restores account selection without refetching on selection changes", async () => {
   request.mockResolvedValue({
     status: "success",
     servers: [{ name: "First" }, { name: "Second" }],
   });
-  localStorage.setItem("selectedServer", "Second");
-  render(
-    <ServerProvider>
-      <Harness />
-    </ServerProvider>,
-  );
+  createPreferenceStore().write("admin", "selectedServer", "Second");
+  render(tree());
   await waitFor(() =>
     expect(screen.getByTestId("selection")).toHaveTextContent("Second"),
   );
@@ -80,7 +83,7 @@ it("changing selection does not refetch the fleet", async () => {
   expect(screen.getByTestId("selection")).toHaveTextContent("First");
   expect(request).toHaveBeenCalledTimes(1);
 });
-it("does not restore a previous user's fleet after logout", async () => {
+it("isolates a late fleet response when the account changes", async () => {
   let finish;
   request.mockImplementation(
     () =>
@@ -88,76 +91,24 @@ it("does not restore a previous user's fleet after logout", async () => {
         finish = resolve;
       }),
   );
-  const { rerender } = render(
-    <ServerProvider>
-      <Harness />
-    </ServerProvider>,
-  );
+  const { rerender } = render(tree());
   state.user = null;
-  rerender(
-    <ServerProvider>
-      <Harness />
-    </ServerProvider>,
-  );
+  sessionRuntime.reset();
+  queryClient.clear();
+  rerender(tree());
   await act(async () =>
-    finish({ status: "success", servers: [{ name: "Private server" }] }),
+    finish({ status: "success", servers: [{ name: "Private" }] }),
   );
   expect(screen.getByTestId("servers")).toBeEmptyDOMElement();
 });
-
-it("clears foreground loading when a newer background event refresh wins", async () => {
-  request.mockResolvedValue({
-    status: "success",
-    servers: [{ name: "First" }],
-  });
-  render(
-    <ServerProvider>
-      <Harness />
-    </ServerProvider>,
-  );
-  await waitFor(() =>
-    expect(screen.getByTestId("loading")).toHaveTextContent("false"),
-  );
-  let finishForeground, finishBackground;
-  request
-    .mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          finishForeground = resolve;
-        }),
-    )
-    .mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          finishBackground = resolve;
-        }),
-    );
-  fireEvent.click(screen.getByText("Refresh"));
-  expect(screen.getByTestId("loading")).toHaveTextContent("true");
-  act(() => state.listener({ topic: "event:after_server_stop" }));
-  await act(async () =>
-    finishBackground({ status: "success", servers: [{ name: "Updated" }] }),
-  );
-  expect(screen.getByTestId("loading")).toHaveTextContent("false");
-  expect(screen.getByTestId("servers")).toHaveTextContent("Updated");
-  await act(async () =>
-    finishForeground({ status: "success", servers: [{ name: "Old" }] }),
-  );
-  expect(screen.getByTestId("servers")).toHaveTextContent("Updated");
-});
-
-it("keeps newer socket player snapshots when an older HTTP refresh finishes", async () => {
+it("reconciles socket players arriving during an HTTP refresh", async () => {
   request.mockResolvedValue({
     status: "success",
     servers: [{ name: "First", players: [], player_count: 0 }],
   });
-  render(
-    <ServerProvider>
-      <Harness />
-    </ServerProvider>,
-  );
+  render(tree());
   await waitFor(() =>
-    expect(screen.getByTestId("loading")).toHaveTextContent("false"),
+    expect(screen.getByTestId("servers")).toHaveTextContent("First"),
   );
   let finish;
   request.mockImplementationOnce(
@@ -168,7 +119,7 @@ it("keeps newer socket player snapshots when an older HTTP refresh finishes", as
   );
   fireEvent.click(screen.getByText("Refresh"));
   act(() =>
-    state.listener({
+    synchronizeServerEvent({
       type: "event",
       topic: "event:after_server_players_change",
       data: {
@@ -186,46 +137,29 @@ it("keeps newer socket player snapshots when an older HTTP refresh finishes", as
       servers: [{ name: "First", players: [], player_count: 0 }],
     }),
   );
-  expect(screen.getByTestId("players")).toHaveTextContent("Joined");
+  await waitFor(() =>
+    expect(screen.getByTestId("players")).toHaveTextContent("Joined"),
+  );
 });
-
-it("resubscribes and reconciles players after reconnecting", async () => {
+it("reconciles an authoritative snapshot after reconnect", async () => {
   request.mockResolvedValue({
     status: "success",
     servers: [{ name: "First", players: [] }],
   });
-  const { rerender } = render(
-    <ServerProvider>
-      <Harness />
-    </ServerProvider>,
-  );
+  const { rerender, unmount } = render(tree());
   await waitFor(() =>
-    expect(screen.getByTestId("loading")).toHaveTextContent("false"),
+    expect(screen.getByTestId("servers")).toHaveTextContent("First"),
   );
   request.mockResolvedValue({
     status: "success",
-    servers: [
-      { name: "First", players: [{ name: "Reconnected", xuid: "42" }] },
-    ],
+    servers: [{ name: "First", players: [{ name: "Recovered", xuid: "42" }] }],
   });
   state.connected = true;
-  rerender(
-    <ServerProvider>
-      <Harness />
-    </ServerProvider>,
-  );
+  rerender(tree());
   await waitFor(() =>
-    expect(screen.getByTestId("players")).toHaveTextContent("Reconnected"),
+    expect(screen.getByTestId("players")).toHaveTextContent("Recovered"),
   );
-  expect(state.subscribe).toHaveBeenCalledWith(
-    "event:after_server_players_change",
-  );
-  state.connected = false;
-  rerender(
-    <ServerProvider>
-      <Harness />
-    </ServerProvider>,
-  );
+  unmount();
   expect(state.unsubscribe).toHaveBeenCalledWith(
     "event:after_server_players_change",
   );
