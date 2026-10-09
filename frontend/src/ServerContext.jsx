@@ -54,9 +54,7 @@ export const ServerProvider = ({ children }) => {
   const queryClient = useQueryClient();
   const { isConnected, isFallback, subscribe, unsubscribe, addMessageListener } =
     useWebSocket();
-  const [selectedServer, setSelectedServerState] = useState(
-    () => null,
-  );
+  const [selectedServer, setSelectedServerState] = useState(null);
   const selectedServerRef = useRef(selectedServer);
   const selectionKey = getSessionStorageKey(identity, "selectedServer");
   useEffect(() => {
@@ -148,7 +146,7 @@ export const ServerProvider = ({ children }) => {
       // This provider only tracks revisions to protect in-flight HTTP responses.
     });
     return removeListener;
-  }, [identity, addMessageListener, queryClient]);
+  }, [identity, addMessageListener]);
 
   useEffect(() => {
     if (identity === null || !isConnected) return;
