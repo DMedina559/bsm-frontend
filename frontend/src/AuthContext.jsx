@@ -1,4 +1,5 @@
 import { queryClient } from "./app/queryClient";
+import { operationCoordinator } from "./app/operationCoordinator";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { request, get } from "./api";
 import { logger } from "./utils/logger";
@@ -64,6 +65,7 @@ export const AuthProvider = ({ children }) => {
       setUser((previous) => {
         if (previous?.id !== userData?.id || previous?.username !== userData?.username) {
           queryClient.clear();
+          operationCoordinator.clear();
         }
         return userData;
       });
@@ -73,6 +75,7 @@ export const AuthProvider = ({ children }) => {
         logger.info("[Auth] Unauthorized", { error });
       }
       queryClient.clear();
+      operationCoordinator.clear();
       setUser(null);
     } finally {
       setLoading(false);
@@ -126,6 +129,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("access_token");
     sessionStorage.removeItem("access_token");
     queryClient.clear();
+    operationCoordinator.clear();
     setUser(null);
   };
 
