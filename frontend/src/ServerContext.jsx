@@ -57,12 +57,14 @@ export const ServerProvider = ({ children }) => {
     useWebSocket();
   const [selectedServer, setSelectedServerState] = useState(null);
   const selectedServerRef = useRef(selectedServer);
+  const [selectionIdentity, setSelectionIdentity] = useState(null);
 
   useEffect(() => {
     const saved = preferences.read(identity, "selectedServer", null,
       (value) => typeof value === "string" && value.length > 0);
     selectedServerRef.current = saved;
     setSelectedServerState(saved);
+    setSelectionIdentity(identity);
   }, [identity]);
   const playerRevision = useRef(0);
   const playerUpdates = useRef(new Map());
@@ -108,11 +110,11 @@ export const ServerProvider = ({ children }) => {
       setSelectedServer(null);
       return;
     }
-    if (!serverQuery.isSuccess) return;
+    if (selectionIdentity !== identity || !serverQuery.isSuccess) return;
     if (!servers.some((server) => server.name === selectedServerRef.current)) {
       setSelectedServer(servers[0]?.name ?? null);
     }
-  }, [identity, serverQuery.isSuccess, servers, setSelectedServer]);
+  }, [identity, selectionIdentity, serverQuery.isSuccess, servers, setSelectedServer]);
 
   // Subscriptions are ref-counted by WebSocketContext; it also resubscribes on reconnect.
   useEffect(() => {
