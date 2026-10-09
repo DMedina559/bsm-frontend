@@ -35,7 +35,6 @@ export const WebSocketProvider = ({ children }) => {
   const subscriptions = useRef(new Map());
   const listeners = useRef(new Set());
   const connectRef = useRef(null);
-  const reconnectNowRef = useRef(null);
 
   const disconnect = useCallback(() => {
     generation.current += 1;
@@ -154,17 +153,16 @@ export const WebSocketProvider = ({ children }) => {
     };
   }, [connect, disconnect]);
   const reconnect = useCallback(() => {
+    if (identity === null) return;
     disconnect();
     reconnectAttempts.current = 0;
-    setIsConnected(false);
     // Keep the polling fallback until an authenticated connection is established.
     connectRef.current?.();
-  }, [disconnect]);
-  reconnectNowRef.current = reconnect;
+  }, [disconnect, identity]);
   useEffect(() => {
     const visibility = () => {
       if (document.visibilityState === "visible" && !socketRef.current)
-        reconnectNowRef.current?.();
+        reconnect();
     };
     document.addEventListener("visibilitychange", visibility);
     return () => document.removeEventListener("visibilitychange", visibility);
