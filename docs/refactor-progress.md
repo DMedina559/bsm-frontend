@@ -39,3 +39,10 @@
 - **Not complete:** task subscriptions and correlation IDs are not yet wired into page-level operations; generated OpenAPI client, versioned UI store and migrations remain outstanding.
 - **Verification:** no clean npm install/lint/test/build has been executed for these commits. Lockfile remains outdated.
 - **Next:** run clean build and tests in Codespaces; inspect backend task snapshot shapes, add task subscriptions, and migrate install lifecycle with integration coverage.
+
+## 2026-10-09 — operation subscription lifecycle and React state safety
+- WebSocket runtime now tracks active registered operation IDs and reference-counts `task:<id>` subscriptions, including replay after reconnect.
+- Operation coordinator recognizes terminal status at registration, not just subsequent updates.
+- Auth identity tracking moved outside the React state updater; cache/operation cleanup happens on actual identity transitions, auth failure, and logout.
+- No build/test execution was possible in this session; task subscription semantics still require backend integration coverage.
+- Next: update npm lockfile, verify CI, and migrate actual install/backup operation callers to register backend task IDs.
