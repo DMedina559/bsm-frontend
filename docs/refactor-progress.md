@@ -46,3 +46,9 @@
 - Auth identity tracking moved outside the React state updater; cache/operation cleanup happens on actual identity transitions, auth failure, and logout.
 - No build/test execution was possible in this session; task subscription semantics still require backend integration coverage.
 - Next: update npm lockfile, verify CI, and migrate actual install/backup operation callers to register backend task IDs.
+
+## 2026-10-09 — reconnect guard and operation edge-case coverage
+- Guarded manual/visibility-triggered WebSocket reconnect when there is no authenticated identity.
+- Added operation coordinator tests for initial terminal status and backend `task_id` snapshots.
+- Simplified server selection initialization and removed an unused event-listener effect dependency.
+- These commits are **not verified by npm test, lint, or build**. Lockfile regeneration and actual backend task integration remain the next gates.
