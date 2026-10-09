@@ -1,4 +1,5 @@
 import { synchronizeServerEvent } from "./app/synchronizeServerEvent";
+import { operationCoordinator } from "./app/operationCoordinator";
 import React, {
   createContext,
   useContext,
@@ -107,6 +108,7 @@ export const WebSocketProvider = ({ children }) => {
           }
           if (!authenticatedRef.current) return;
           synchronizeServerEvent(message);
+          operationCoordinator.reconcileTask(message);
           listeners.current.forEach((listener) => {
             try {
               listener(message);
