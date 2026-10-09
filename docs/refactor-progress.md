@@ -59,3 +59,9 @@
 - Migrated selected-server persistence in `ServerContext` to the new store.
 - Existing legacy selected-server key is intentionally not imported across accounts to avoid leaking prior selection.
 - **Verification outstanding:** regenerate npm lockfile, run lint/test/build, and check all frontend callers. Overview/theme/density migrations and backend operation integration remain open.
+
+## 2026-10-09 — preference hydration and storage robustness
+- Prevented selected-server fallback selection until the active account's stored preference has been hydrated.
+- Preference store now resolves localStorage lazily, avoiding eager browser global access in non-browser environments.
+- Expanded preference tests for malformed JSON, unsupported versions and anonymous sessions.
+- **Still pending:** npm lockfile synchronization, clean lint/build/test, page-level operation integration, typed API generation and remaining preference migrations.
