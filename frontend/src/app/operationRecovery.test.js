@@ -4,7 +4,7 @@ import { operationCoordinator } from "./operationCoordinator";
 import { startOperationRecovery } from "./operationRecovery";
 import { sessionRuntime } from "./sessionRuntime";
 import { get } from "../test/httpFixtures";
-vi.mock("../api", async (importOriginal) => {
+vi.mock("../api/transport", async (importOriginal) => {
   const { createHttpTransport, configureHttpFixtures } =
     await import("../test/httpFixtures");
   const fixtures = { get: vi.fn() };

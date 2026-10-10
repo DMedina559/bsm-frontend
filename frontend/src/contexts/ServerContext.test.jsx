@@ -1,4 +1,4 @@
-import { getPreferenceIdentity } from "./app/backendIdentity";
+import { getPreferenceIdentity } from "../app/backendIdentity";
 import React from "react";
 import {
   render,
@@ -10,11 +10,11 @@ import {
 import { QueryClientProvider } from "@tanstack/react-query";
 import { it, expect, vi, beforeEach } from "vitest";
 import { ServerProvider, useServer } from "./ServerContext";
-import { queryClient } from "./app/queryClient";
-import { synchronizeServerEvent } from "./app/applicationState";
-import { sessionRuntime } from "./app/sessionRuntime";
-import { createPreferenceStore } from "./app/preferenceStore";
-import { request } from "./api";
+import { queryClient } from "../app/queryClient";
+import { synchronizeServerEvent } from "../app/applicationState";
+import { sessionRuntime } from "../app/sessionRuntime";
+import { createPreferenceStore } from "../app/preferenceStore";
+import { request } from "../api/transport";
 const state = vi.hoisted(() => ({
   user: { username: "admin" },
   subscribe: vi.fn(),
@@ -30,7 +30,7 @@ vi.mock("./WebSocketContext", () => ({
     unsubscribe: state.unsubscribe,
   }),
 }));
-vi.mock("./api", () => ({ request: vi.fn() }));
+vi.mock("../api/transport", () => ({ request: vi.fn() }));
 function Harness() {
   const {
     servers,

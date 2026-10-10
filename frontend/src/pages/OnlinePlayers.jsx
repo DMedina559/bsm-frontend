@@ -3,8 +3,8 @@ import { useResourceMutation } from "../app/resourceQueries";
 import { queryKeys } from "../app/queryKeys";
 import Modal from "../components/Modal";
 import React, { useState } from "react";
-import { useServer } from "../ServerContext";
-import { useToast } from "../ToastContext";
+import { useServer } from "../contexts/ServerContext";
+import { useToast } from "../contexts/ToastContext";
 
 import { logger } from "../utils/logger";
 import { Users, X } from "lucide-react";

@@ -1,9 +1,9 @@
 import { callOperation } from "../api/operations";
 import React, { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { useAuth } from "../AuthContext";
-import { useServer } from "../ServerContext";
-import { useToast } from "../ToastContext";
+import { useAuth } from "../contexts/AuthContext";
+import { useServer } from "../contexts/ServerContext";
+import { useToast } from "../contexts/ToastContext";
 import { getApiProxyBasePath } from "../utils/basePath";
 import { logger } from "../utils/logger";
 import {
@@ -29,7 +29,7 @@ import {
   Code,
   Search,
 } from "lucide-react";
-import "../styles/SidebarEnhanced.css";
+import "../styles/sidebar.css";
 const Sidebar = ({ mobileOpen, setMobileOpen }) => {
   const location = useLocation();
   const { logout, user } = useAuth();

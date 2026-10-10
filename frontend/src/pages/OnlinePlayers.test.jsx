@@ -5,14 +5,14 @@ import React from "react";
 import { render, screen, waitFor, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import OnlinePlayers from "./OnlinePlayers";
-import { ServerProvider } from "../ServerContext";
-import { ToastProvider } from "../ToastContext";
-import { AuthProvider } from "../AuthContext";
+import { ServerProvider } from "../contexts/ServerContext";
+import { ToastProvider } from "../contexts/ToastContext";
+import { AuthProvider } from "../contexts/AuthContext";
 import { MemoryRouter } from "react-router-dom";
 import * as api from "../test/httpFixtures";
 
 // Mock the API calls
-vi.mock("../api", async (importOriginal) => {
+vi.mock("../api/transport", async (importOriginal) => {
   const { createHttpTransport, configureHttpFixtures } =
     await import("../test/httpFixtures");
   const fixtures = {
@@ -41,7 +41,7 @@ const socket = vi.hoisted(() => ({
   listeners: new Set(),
   addMessageListener: vi.fn(),
 }));
-vi.mock("../WebSocketContext", () => ({
+vi.mock("../contexts/WebSocketContext", () => ({
   useWebSocket: () => ({
     isConnected: socket.connected,
     isFallback: false,

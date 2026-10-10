@@ -2,7 +2,7 @@ import { callOperation } from "../api/operations";
 import QueryStatus from "../components/QueryStatus";
 import { queryKeys } from "../app/queryKeys";
 import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
-import { useDialog } from "../DialogContext";
+import { useDialog } from "../contexts/DialogContext";
 import React from "react";
 import {
   Archive,
@@ -12,8 +12,8 @@ import {
   RotateCcw,
   Trash2,
 } from "lucide-react";
-import { useServer } from "../ServerContext";
-import { useToast } from "../ToastContext";
+import { useServer } from "../contexts/ServerContext";
+import { useToast } from "../contexts/ToastContext";
 
 const Backups = () => {
   const { confirmAction } = useDialog();

@@ -2,7 +2,7 @@ import { startOperationRecovery } from "../app/operationRecovery";
 import { operationCoordinator } from "../app/operationCoordinator";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../app/queryClient";
-vi.mock("../AuthContext", () => ({
+vi.mock("../contexts/AuthContext", () => ({
   useAuth: () => ({ user: { username: "admin" } }),
 }));
 import {
@@ -26,17 +26,17 @@ const mocks = vi.hoisted(() => ({
   listeners: new Set(),
   addMessageListener: vi.fn(),
 }));
-vi.mock("../api", async (importOriginal) => {
+vi.mock("../api/transport", async (importOriginal) => {
   const { createHttpTransport } = await import("../test/httpFixtures");
   return createHttpTransport(await importOriginal());
 });
-vi.mock("../DialogContext", () => ({
+vi.mock("../contexts/DialogContext", () => ({
   useDialog: () => ({ confirmAction: vi.fn() }),
 }));
 vi.mock("react-router-dom", () => ({ useNavigate: () => mocks.navigate }));
-vi.mock("../ToastContext", () => ({ useToast: () => mocks }));
-vi.mock("../ServerContext", () => ({ useServer: () => mocks }));
-vi.mock("../WebSocketContext", () => ({ useWebSocket: () => mocks }));
+vi.mock("../contexts/ToastContext", () => ({ useToast: () => mocks }));
+vi.mock("../contexts/ServerContext", () => ({ useServer: () => mocks }));
+vi.mock("../contexts/WebSocketContext", () => ({ useWebSocket: () => mocks }));
 
 describe("ServerInstall", () => {
   beforeEach(() => {
@@ -90,6 +90,24 @@ describe("ServerInstall", () => {
     );
     expect(screen.getByText("Install New Server")).toBeInTheDocument();
   });
+  it("restores active installation progress after revisiting the page", async () => {
+    operationCoordinator.register({
+      id: "install-task",
+      kind: "install",
+      serverName: "NewServer",
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ServerInstall />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByLabelText("Server Name")).toHaveValue("NewServer");
+    expect(screen.getByRole("button", { name: /Installing/i })).toBeDisabled();
+    emit("completed", { status: "success" });
+    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledTimes(1));
+    expect(mocks.setSelectedServer).toHaveBeenCalledWith("NewServer");
+  });
+
   it("handles installation submission", async () => {
     render(
       <QueryClientProvider client={queryClient}>

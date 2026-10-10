@@ -1,7 +1,7 @@
 import { draftRegistry } from "./draftRegistry";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useAuth } from "../AuthContext";
-import { useDialog } from "../DialogContext";
+import { useAuth } from "../contexts/AuthContext";
+import { useDialog } from "../contexts/DialogContext";
 const serialize = (value) => JSON.stringify(value);
 /** Keeps background reads and completed saves from replacing newer edits. */
 export function useEditableDraft(resource, data, empty) {

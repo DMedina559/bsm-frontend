@@ -3,7 +3,7 @@ import Sidebar from "./Sidebar";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import * as api from "../test/httpFixtures";
 
-vi.mock("../api", async (importOriginal) => {
+vi.mock("../api/transport", async (importOriginal) => {
   const { createHttpTransport } = await import("../test/httpFixtures");
   return createHttpTransport(await importOriginal());
 });
@@ -182,7 +182,7 @@ describe("Sidebar", () => {
       fireEvent.click(logoutBtn);
     });
 
-    const api = await import("../api");
+    const api = await import("../api/transport");
     expect(api.request).toHaveBeenCalledWith(
       "/auth/logout",
       expect.objectContaining({ method: "GET" }),

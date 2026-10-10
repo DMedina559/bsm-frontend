@@ -1,13 +1,15 @@
+import { queryClient } from "../app/queryClient";
+import { sessionRuntime } from "../app/sessionRuntime";
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, act } from "@testing-library/react";
 import { AuthProvider, useAuth } from "./AuthContext";
-import * as api from "./test/httpFixtures";
+import * as api from "../test/httpFixtures";
 
 // Mock api
-vi.mock("./api", async (importOriginal) => {
+vi.mock("../api/transport", async (importOriginal) => {
   const { createHttpTransport, configureHttpFixtures } =
-    await import("./test/httpFixtures");
+    await import("../test/httpFixtures");
   const fixtures = {
     get: vi.fn(),
     request: vi.fn(),
@@ -45,6 +47,8 @@ const TestComponent = () => {
 describe("AuthContext", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    queryClient.clear();
+    sessionRuntime.reset();
     localStorage.clear();
     sessionStorage.clear();
   });

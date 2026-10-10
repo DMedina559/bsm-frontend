@@ -1,12 +1,13 @@
+import { queryClient } from "../app/queryClient";
 import { render, screen, fireEvent, waitFor } from "../test/utils";
-import DynamicPage from "../components/DynamicPage";
-import { ToastProvider } from "../ToastContext";
-import { ServerProvider } from "../ServerContext";
-import { WebSocketProvider } from "../WebSocketContext";
+import DynamicPage from "./DynamicPage";
+import { ToastProvider } from "../contexts/ToastContext";
+import { ServerProvider } from "../contexts/ServerContext";
+import { WebSocketProvider } from "../contexts/WebSocketContext";
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 import * as api from "../test/httpFixtures";
 
-vi.mock("../api", async (importOriginal) => {
+vi.mock("../api/transport", async (importOriginal) => {
   const { createHttpTransport } = await import("../test/httpFixtures");
   return createHttpTransport(await importOriginal());
 });
@@ -153,6 +154,30 @@ describe("DynamicPage", () => {
     vi.restoreAllMocks();
   });
 
+  it("preserves entered values when the page definition refetches", async () => {
+    window.history.pushState(
+      {},
+      "Test",
+      "/plugin-native-view?url=/api/test/native",
+    );
+    render(<DynamicPage />);
+    const input = await screen.findByPlaceholderText("Enter text");
+    fireEvent.change(input, { target: { value: "unsaved draft" } });
+    const before = api.get.mock.calls.filter(([url]) =>
+      url.startsWith("/api/test/native"),
+    ).length;
+    await queryClient.invalidateQueries({ queryKey: ["plugin-page"] });
+    await waitFor(() =>
+      expect(
+        api.get.mock.calls.filter(([url]) => url.startsWith("/api/test/native"))
+          .length,
+      ).toBeGreaterThan(before),
+    );
+    expect(screen.getByPlaceholderText("Enter text")).toHaveValue(
+      "unsaved draft",
+    );
+  });
+
   it("renders from schema and handles text input", async () => {
     window.history.pushState(
       {},
@@ -233,6 +258,7 @@ describe("DynamicPage", () => {
       expect(api.downloadFile).toHaveBeenCalledWith(
         "/api/download/file.txt",
         "file.txt",
+        expect.objectContaining({ signal: expect.any(AbortSignal) }),
       );
     });
   });

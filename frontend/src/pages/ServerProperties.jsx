@@ -6,8 +6,8 @@ import { queryKeys } from "../app/queryKeys";
 import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
 import Modal from "../components/Modal";
 import React, { useEffect, useMemo, useState } from "react";
-import { useServer } from "../ServerContext";
-import { useToast } from "../ToastContext";
+import { useServer } from "../contexts/ServerContext";
+import { useToast } from "../contexts/ToastContext";
 
 import {
   Save,

@@ -11,7 +11,7 @@ import {
   useMutationState,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useAuth } from "../AuthContext";
+import { useAuth } from "../contexts/AuthContext";
 import { queryKeys, resourceInvalidation } from "./queryKeys";
 
 const array = (value, resource) => {
@@ -25,6 +25,11 @@ const object = (value, resource) => {
   return value;
 };
 const resources = {
+  themes: {
+    key: queryKeys.themes,
+    load: (_target, options) => callOperation("list_themes", options),
+    select: (data) => array(data?.themes, "themes"),
+  },
   installedAddons: {
     key: queryKeys.serverAddons,
     load: (name, options) =>

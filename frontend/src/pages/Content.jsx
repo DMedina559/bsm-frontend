@@ -5,11 +5,11 @@ import QueryStatus from "../components/QueryStatus";
 import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
 import { useEditableDraft } from "../app/useEditableDraft";
 import Modal from "../components/Modal";
-import { useDialog } from "../DialogContext";
+import { useDialog } from "../contexts/DialogContext";
 import React, { useState } from "react";
-import { useServer } from "../ServerContext";
-import { useToast } from "../ToastContext";
-import { request, resolveApiUrl } from "../api";
+import { useServer } from "../contexts/ServerContext";
+import { useToast } from "../contexts/ToastContext";
+import { request, resolveApiUrl } from "../api/transport";
 import { resolveOperationUrl } from "../api/operations";
 
 import {

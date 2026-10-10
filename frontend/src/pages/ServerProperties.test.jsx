@@ -1,9 +1,9 @@
-vi.mock("../DialogContext", () => ({
+vi.mock("../contexts/DialogContext", () => ({
   useDialog: () => ({ confirmAction: vi.fn().mockResolvedValue(true) }),
 }));
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../app/queryClient";
-vi.mock("../AuthContext", () => ({
+vi.mock("../contexts/AuthContext", () => ({
   useAuth: () => ({ user: { username: "admin" } }),
 }));
 import { render, screen, waitFor } from "@testing-library/react";
@@ -12,19 +12,19 @@ import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 import ServerProperties from "./ServerProperties";
 import * as api from "../test/httpFixtures";
 import { BrowserRouter } from "react-router-dom";
-import { ToastProvider } from "../ToastContext";
-import { ServerContext } from "../ServerContext";
+import { ToastProvider } from "../contexts/ToastContext";
+import { ServerContext } from "../contexts/ServerContext";
 
 // Mock the useServer hook
-vi.mock("../ServerContext", () => ({
+vi.mock("../contexts/ServerContext", () => ({
   useServer: vi.fn(),
   ServerProvider: ({ children }) => <div>{children}</div>,
 }));
 
-import { useServer } from "../ServerContext";
+import { useServer } from "../contexts/ServerContext";
 
 // Mock API
-vi.mock("../api", async (importOriginal) => {
+vi.mock("../api/transport", async (importOriginal) => {
   const { createHttpTransport, configureHttpFixtures } =
     await import("../test/httpFixtures");
   const fixtures = {

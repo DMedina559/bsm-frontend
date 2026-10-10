@@ -124,8 +124,8 @@ it("delivers stream messages without rerendering connection consumers", () => {
   expect(renders).toBe(before);
 });
 it("owns core subscriptions and refreshes resources on authenticated reconnect", async () => {
-  const { coreEventTopics } = await import("./app/coreEvents");
-  const { queryClient } = await import("./app/queryClient");
+  const { coreEventTopics } = await import("../app/coreEvents");
+  const { queryClient } = await import("../app/queryClient");
   const invalidate = vi.spyOn(queryClient, "invalidateQueries");
   const { unmount } = render(
     <WebSocketProvider>

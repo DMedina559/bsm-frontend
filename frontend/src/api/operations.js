@@ -1,6 +1,6 @@
 import operations from "./generated/operations.json";
 import { buildOperationRegistry } from "./operationRegistry";
-import { request } from "../api";
+import { request } from "./transport";
 function operationFor(registry, id) {
   if (!Object.hasOwn(registry, id))
     throw new Error(`Unknown API operation: ${id}`);

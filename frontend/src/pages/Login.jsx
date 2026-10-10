@@ -1,9 +1,9 @@
 import AuthBrand from "../components/AuthBrand";
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../AuthContext";
+import { useAuth } from "../contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import RemoteConfigModal from "../components/RemoteConfigModal";
-import { getApiBaseUrl } from "../api";
+import { getApiBaseUrl } from "../api/transport";
 import { Globe } from "lucide-react";
 const Login = () => {
   const [showRemoteModal, setShowRemoteModal] = useState(false);

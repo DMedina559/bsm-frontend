@@ -1,4 +1,4 @@
-import { sessionRuntime } from "./app/sessionRuntime";
+import { sessionRuntime } from "../app/sessionRuntime";
 import React, {
   createContext,
   useCallback,
@@ -8,14 +8,14 @@ import React, {
   useState,
 } from "react";
 import { X, Info, CircleCheck, TriangleAlert } from "lucide-react";
-import { getApiProxyBasePath } from "./utils/basePath";
+import { getApiProxyBasePath } from "../utils/basePath";
 import { useAuth } from "./AuthContext";
 import {
   readHistory,
   writeHistoryEntry,
   clearStoredHistory,
   HISTORY_LIMIT,
-} from "./utils/notificationHistory";
+} from "../utils/notificationHistory";
 const VISIBLE_LIMIT = 8;
 const ToastContext = createContext();
 export const useToast = () => useContext(ToastContext);

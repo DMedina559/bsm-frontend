@@ -3,7 +3,7 @@ import { queryKeys } from "../app/queryKeys";
 import QueryStatus from "../components/QueryStatus";
 import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
 import Modal from "../components/Modal";
-import { useDialog } from "../DialogContext";
+import { useDialog } from "../contexts/DialogContext";
 import React, { useEffect, useState } from "react";
 import {
   ArrowRight,
@@ -16,8 +16,8 @@ import {
   X,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useServer } from "../ServerContext";
-import { useToast } from "../ToastContext";
+import { useServer } from "../contexts/ServerContext";
+import { useToast } from "../contexts/ToastContext";
 
 import { logger } from "../utils/logger";
 const AccessControl = () => {

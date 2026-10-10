@@ -1,15 +1,15 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./app/queryClient";
-import DraftNavigationGuard from "./app/DraftNavigationGuard";
-import { DialogProvider } from "./DialogContext";
+import DraftNavigationGuard from "./components/DraftNavigationGuard";
+import { DialogProvider } from "./contexts/DialogContext";
 import React, { Suspense, lazy } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { useAuth, AuthProvider } from "./AuthContext";
-import { ToastProvider } from "./ToastContext";
-import { ServerProvider } from "./ServerContext";
-import { WebSocketProvider } from "./WebSocketContext";
-import { ThemeProvider } from "./ThemeContext";
+import { useAuth, AuthProvider } from "./contexts/AuthContext";
+import { ToastProvider } from "./contexts/ToastContext";
+import { ServerProvider } from "./contexts/ServerContext";
+import { WebSocketProvider } from "./contexts/WebSocketContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import Layout from "./layouts/Layout";
 import Login from "./pages/Login";
 import Setup from "./pages/Setup";
@@ -29,7 +29,7 @@ const AccessControl = lazy(() => import("./pages/AccessControl"));
 const ServerInstall = lazy(() => import("./pages/ServerInstall"));
 const GlobalPlayers = lazy(() => import("./pages/GlobalPlayers"));
 const OnlinePlayers = lazy(() => import("./pages/OnlinePlayers"));
-const DynamicPage = lazy(() => import("./components/DynamicPage"));
+const DynamicPage = lazy(() => import("./pages/DynamicPage"));
 const Playground = lazy(() => import("./pages/Playground"));
 
 const PrivateRoute = ({ children }) => {

@@ -3,9 +3,9 @@ import QueryStatus from "../components/QueryStatus";
 import { queryKeys } from "../app/queryKeys";
 import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
 import Modal from "../components/Modal";
-import { useDialog } from "../DialogContext";
+import { useDialog } from "../contexts/DialogContext";
 import React, { useState } from "react";
-import { useToast } from "../ToastContext";
+import { useToast } from "../contexts/ToastContext";
 
 import {
   Trash2,
@@ -19,7 +19,7 @@ import {
   Lock,
   Unlock,
 } from "lucide-react";
-import { useAuth } from "../AuthContext";
+import { useAuth } from "../contexts/AuthContext";
 import { logger } from "../utils/logger";
 const Users = () => {
   const { confirmAction } = useDialog();

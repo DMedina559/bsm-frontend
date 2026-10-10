@@ -1,8 +1,9 @@
+import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
 import { callOperation } from "../api/operations";
-import React, { useEffect, useState } from "react";
-import { useAuth } from "../AuthContext";
-import { useTheme } from "../ThemeContext";
-import { useToast } from "../ToastContext";
+import React, { useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import { useTheme } from "../contexts/ThemeContext";
+import { useToast } from "../contexts/ToastContext";
 
 import { Save, User, Palette, RotateCcw } from "lucide-react";
 import { BUILT_IN_THEMES, THEME_LABELS } from "../utils/theme";
@@ -26,40 +27,24 @@ const Account = ({ appearanceOnly = false }) => {
     newPassword: "",
     confirmPassword: "",
   });
-  const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordError, setPasswordError] = useState(null);
-  const [availableThemes, setAvailableThemes] = useState(BUILT_IN_THEMES);
-  const [themesNotice, setThemesNotice] = useState(null);
-  useEffect(() => {
-    let active = true;
-    callOperation("list_themes")
-      .then((response) => {
-        if (!active) return;
-        if (Array.isArray(response?.themes))
-          setAvailableThemes([
-            ...new Set([
-              ...BUILT_IN_THEMES,
-              ...(theme && !BUILT_IN_THEMES.includes(theme) ? [theme] : []),
-              ...response.themes.filter(
-                (item) => typeof item === "string" && item.trim(),
-              ),
-            ]),
-          ]);
-        else
-          setThemesNotice(
-            "Custom themes are unavailable. Built-in themes are shown below.",
-          );
-      })
-      .catch(() => {
-        if (active)
-          setThemesNotice(
-            "Custom themes could not be loaded. Built-in themes are available.",
-          );
-      });
-    return () => {
-      active = false;
-    };
-  }, [theme]);
+  const themesQuery = useResourceQuery("themes");
+  const availableThemes = [
+    ...new Set([
+      ...BUILT_IN_THEMES,
+      ...(theme && !BUILT_IN_THEMES.includes(theme) ? [theme] : []),
+      ...(themesQuery.data ?? []),
+    ]),
+  ];
+  const themesNotice = themesQuery.error
+    ? "Custom themes could not be loaded. Built-in themes are available."
+    : null;
+  const passwordWrite = useResourceMutation(
+    (passwords, { session }) =>
+      callOperation("change_password", { body: passwords, session }),
+    [],
+  );
+  const passwordSaving = passwordWrite.isPending;
   const handleThemeChange = async (newTheme) => {
     try {
       if (await changeTheme(newTheme))
@@ -78,14 +63,11 @@ const Account = ({ appearanceOnly = false }) => {
       setPasswordError("New passwords do not match");
       return;
     }
-    setPasswordSaving(true);
     setPasswordError(null);
     try {
-      await callOperation("change_password", {
-        body: {
-          current_password: passwords.currentPassword,
-          new_password: passwords.newPassword,
-        },
+      await passwordWrite.mutateAsync({
+        current_password: passwords.currentPassword,
+        new_password: passwords.newPassword,
       });
       addToast("Password updated successfully.", "success");
       setPasswords({
@@ -95,8 +77,6 @@ const Account = ({ appearanceOnly = false }) => {
       });
     } catch (error) {
       setPasswordError(error.message || "Failed to update password.");
-    } finally {
-      setPasswordSaving(false);
     }
   };
   const fields = [

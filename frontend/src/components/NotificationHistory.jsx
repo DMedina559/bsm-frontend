@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Bell } from "lucide-react";
-import { useToast } from "../ToastContext";
+import { useToast } from "../contexts/ToastContext";
 import Modal from "./Modal";
 export default function NotificationHistory() {
   const {

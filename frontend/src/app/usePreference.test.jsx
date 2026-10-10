@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, expect, it, vi } from "vitest";
 import { usePreference } from "./usePreference";
-vi.mock("../AuthContext", () => ({
+vi.mock("../contexts/AuthContext", () => ({
   useAuth: () => ({ user: { username: "admin" } }),
 }));
 beforeEach(() => localStorage.clear());

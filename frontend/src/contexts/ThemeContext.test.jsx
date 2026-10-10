@@ -1,11 +1,18 @@
-import { getPreferenceIdentity } from "./app/backendIdentity";
-import { getSessionStorageKey } from "./app/sessionBoundary";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "../app/queryClient";
+import { getPreferenceIdentity } from "../app/backendIdentity";
+import { getSessionStorageKey } from "../app/sessionBoundary";
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import {
+  render as renderUI,
+  screen,
+  fireEvent,
+  waitFor,
+} from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { ThemeProvider, useTheme } from "./ThemeContext";
-import { request } from "./api";
-vi.mock("./api", () => ({
+import { request } from "../api/transport";
+vi.mock("../api/transport", () => ({
   request: vi.fn(),
   getApiBaseUrl: () => "",
   resolveApiUrl: (url) => url,
@@ -13,6 +20,9 @@ vi.mock("./api", () => ({
 const auth = vi.hoisted(() => ({
   user: { username: "admin", theme: "default" },
   checkUser: vi.fn(),
+  updateAccount: vi.fn((patch) => {
+    auth.user = { ...auth.user, ...patch };
+  }),
 }));
 vi.mock("./AuthContext", () => ({ useAuth: () => auth }));
 function Harness() {
@@ -68,6 +78,26 @@ describe("theme engine", () => {
         body: { theme: "blue" },
       }),
     );
+  });
+  it("uses a later backend theme after a successful local save", async () => {
+    const view = render(
+      <ThemeProvider>
+        <Harness />
+      </ThemeProvider>,
+    );
+    fireEvent.click(screen.getByText("Change"));
+    await waitFor(() =>
+      expect(screen.getByTestId("theme")).toHaveTextContent("blue"),
+    );
+    auth.user = { ...auth.user, theme: "green" };
+    view.rerender(
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <Harness />
+        </ThemeProvider>
+      </QueryClientProvider>,
+    );
+    expect(screen.getByTestId("theme")).toHaveTextContent("green");
   });
   it("preserves current theme on a failed save", async () => {
     request.mockRejectedValue(new Error("Save failed"));
@@ -286,3 +316,9 @@ describe("appearance reset", () => {
     ).toBe("Custom");
   });
 });
+
+function render(element) {
+  return renderUI(
+    <QueryClientProvider client={queryClient}>{element}</QueryClientProvider>,
+  );
+}

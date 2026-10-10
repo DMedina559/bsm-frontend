@@ -7,10 +7,10 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ToastProvider, useToast } from "../ToastContext";
+import { ToastProvider, useToast } from "../contexts/ToastContext";
 import NotificationHistory from "./NotificationHistory";
 const auth = vi.hoisted(() => ({ user: { username: "admin" } }));
-vi.mock("../AuthContext", () => ({ useAuth: () => auth }));
+vi.mock("../contexts/AuthContext", () => ({ useAuth: () => auth }));
 function App() {
   const { addToast } = useToast();
   return (

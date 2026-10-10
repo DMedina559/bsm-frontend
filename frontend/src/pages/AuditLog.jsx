@@ -2,7 +2,7 @@ import { useResourceQuery } from "../app/resourceQueries";
 import React, { useState } from "react";
 import LogViewer from "../components/LogViewer";
 import QueryStatus from "../components/QueryStatus";
-import { useToast } from "../ToastContext";
+import { useToast } from "../contexts/ToastContext";
 import { RefreshCw, Activity, User, FileText } from "lucide-react";
 const AuditLog = () => {
   const [activeTab, setActiveTab] = useState("users");

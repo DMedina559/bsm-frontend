@@ -1,7 +1,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { callOperation } from "../api/operations";
-import { useAuth } from "../AuthContext";
-import { useWebSocket } from "../WebSocketContext";
+import { useAuth } from "../contexts/AuthContext";
+import { useWebSocket } from "../contexts/WebSocketContext";
 
 const EMPTY = { data: "", start: 0, end: 0, file_id: null, has_more: false };
 

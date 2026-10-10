@@ -1,21 +1,31 @@
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "../app/queryClient";
 import { getPreferenceIdentity } from "../app/backendIdentity";
 import { getSessionStorageKey } from "../app/sessionBoundary";
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import {
+  render as renderUI,
+  screen,
+  fireEvent,
+  waitFor,
+} from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ThemeProvider } from "../ThemeContext";
+import { ThemeProvider } from "../contexts/ThemeContext";
 import PaletteEditor from "./PaletteEditor";
 const PALETTE_KEY = getSessionStorageKey(
   getPreferenceIdentity({ username: "test" }),
   "preference:palettes",
 );
-vi.mock("../AuthContext", () => ({
+vi.mock("../contexts/AuthContext", () => ({
   useAuth: () => ({
     user: { username: "test", theme: "default" },
     checkUser: vi.fn(),
   }),
 }));
-vi.mock("../api", () => ({ request: vi.fn(), getApiBaseUrl: () => "" }));
+vi.mock("../api/transport", () => ({
+  request: vi.fn(),
+  getApiBaseUrl: () => "",
+}));
 describe("palette editor", () => {
   beforeEach(() => localStorage.clear());
   it("saves, applies, and removes a palette without an account theme request", async () => {
@@ -70,3 +80,9 @@ describe("palette editor", () => {
     expect(screen.getByText(/below the recommended/)).toBeInTheDocument();
   });
 });
+
+function render(element) {
+  return renderUI(
+    <QueryClientProvider client={queryClient}>{element}</QueryClientProvider>,
+  );
+}

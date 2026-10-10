@@ -17,20 +17,20 @@ const socket = vi.hoisted(() => ({
   unsubscribe: vi.fn(),
   addMessageListener: vi.fn(),
 }));
-vi.mock("../api", async (importOriginal) => {
+vi.mock("../api/transport", async (importOriginal) => {
   const { createHttpTransport, configureHttpFixtures } =
     await import("../test/httpFixtures");
   const fixtures = { get: vi.fn(), request: vi.fn() };
   configureHttpFixtures(fixtures);
   return createHttpTransport(await importOriginal());
 });
-vi.mock("../AuthContext", () => ({
+vi.mock("../contexts/AuthContext", () => ({
   useAuth: () => ({
     user: auth.identity === null ? null : { id: auth.identity },
     sessionGeneration: auth.generation,
   }),
 }));
-vi.mock("../WebSocketContext", () => ({
+vi.mock("../contexts/WebSocketContext", () => ({
   useWebSocket: () => ({ isConnected: true, ...socket }),
 }));
 

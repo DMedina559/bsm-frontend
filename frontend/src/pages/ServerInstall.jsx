@@ -1,24 +1,27 @@
-import { callOperation } from "../api/operations";
 import { useResourceQuery } from "../app/resourceQueries";
-import { operationCoordinator } from "../app/operationCoordinator";
-import { useDialog } from "../DialogContext";
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useToast } from "../ToastContext";
-
-import { useServer } from "../ServerContext";
+import { useServerInstallation } from "../features/servers/useServerInstallation";
+import React, { useState, useCallback } from "react";
+import { useToast } from "../contexts/ToastContext";
+import { useServer } from "../contexts/ServerContext";
 import { useNavigate } from "react-router-dom";
 import { PlusSquare, RefreshCw } from "lucide-react";
 const ServerInstall = () => {
-  const { confirmAction } = useDialog();
-  const [restoredOperation] = useState(() =>
-    operationCoordinator
-      .list()
-      .find(
-        (operation) => operation.kind === "install" && !operation.acknowledged,
-      ),
+  const { addToast } = useToast();
+  const navigate = useNavigate();
+  const { refreshServers, setSelectedServer } = useServer();
+  const onInstalled = useCallback(
+    async (name, assertCurrent) => {
+      await refreshServers();
+      assertCurrent();
+      setSelectedServer(name);
+      navigate("/server-properties", { state: { setupFlow: true } });
+    },
+    [navigate, refreshServers, setSelectedServer],
   );
+  const installation = useServerInstallation(onInstalled);
+  const loading = installation.loading;
   const [formData, setFormData] = useState({
-    server_name: restoredOperation?.serverName ?? "",
+    server_name: installation.serverName ?? "",
     server_version: "LATEST",
     server_zip_path: "",
     overwrite: false,
@@ -26,83 +29,15 @@ const ServerInstall = () => {
   const [specificVersion, setSpecificVersion] = useState("");
   const downloadsQuery = useResourceQuery("downloads");
   const customZips = downloadsQuery.data ?? [];
-  const [loading, setLoading] = useState(Boolean(restoredOperation));
-  const [installTaskId, setInstallTaskId] = useState(
-    restoredOperation?.id ?? null,
-  );
-  const { addToast } = useToast();
-  const navigate = useNavigate();
-  const { refreshServers, setSelectedServer } = useServer();
-  const handledTask = useRef(null);
-
-  const handleInstallSuccess = useCallback(async () => {
-    await refreshServers();
-    setSelectedServer(formData.server_name);
-    setLoading(false);
-    navigate("/server-properties", {
-      state: {
-        setupFlow: true,
-      },
-    });
-  }, [formData.server_name, navigate, refreshServers, setSelectedServer]);
-  const handleTaskUpdate = useCallback(
-    (taskData) => {
-      if (!installTaskId || handledTask.current === installTaskId) return;
-      const completed = ["completed", "complete", "success"].includes(
-        taskData.status,
-      );
-      const failed = ["failed", "cancelled", "canceled", "error"].includes(
-        taskData.status,
-      );
-      if (!completed && !failed) return;
-
-      handledTask.current = installTaskId;
-      operationCoordinator.acknowledge(installTaskId);
-      setInstallTaskId(null);
-      if (
-        completed &&
-        !["error", "skipped"].includes(taskData.result?.status)
-      ) {
-        addToast("Installation completed successfully!", "success");
-        handleInstallSuccess();
-      } else {
-        addToast(
-          `Installation failed: ${taskData.error?.message || taskData.result?.message || taskData.message}`,
-          "error",
-        );
-        setLoading(false);
-      }
-    },
-    [installTaskId, addToast, handleInstallSuccess],
-  );
-
-  // The session runtime owns task topics and HTTP recovery across navigation.
-  useEffect(() => {
-    if (!installTaskId) return;
-    return operationCoordinator.subscribe((operations) => {
-      const operation = operations.find(
-        (item) => item.id === String(installTaskId),
-      );
-      if (operation?.status === "unknown") {
-        setLoading(false);
-        setInstallTaskId(null);
-        addToast(
-          "Installation status is unavailable. Check the server before retrying.",
-          "error",
-        );
-      } else if (operation?.task) handleTaskUpdate(operation.task);
-    });
-  }, [installTaskId, handleTaskUpdate, addToast]);
-
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
+  const handleChange = (event) => {
+    const { name, value, type, checked } = event.target;
+    setFormData((previous) => ({
+      ...previous,
       [name]: type === "checkbox" ? checked : value,
     }));
   };
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     if (loading) return;
     if (!formData.server_name.trim()) {
       addToast("Server name is required", "error");
@@ -112,56 +47,13 @@ const ServerInstall = () => {
       addToast("Please enter a specific version number.", "error");
       return;
     }
-    const payload = {
+    await installation.submit({
       ...formData,
-    };
-    if (formData.server_version === "SPECIFIC") {
-      payload.server_version = specificVersion.trim();
-    }
-    setLoading(true);
-    try {
-      const response = await callOperation("install_server", { body: payload });
-      const initiateMonitoring = (taskId) => {
-        operationCoordinator.register({
-          id: taskId,
-          kind: "install",
-          serverName: formData.server_name,
-        });
-        setInstallTaskId(taskId);
-        handledTask.current = null;
-        addToast("Installation started. Please wait...", "info");
-      };
-      if (response && response.status === "confirm_needed") {
-        if (await confirmAction(response.message)) {
-          const confirmData = {
-            ...payload,
-            overwrite: true,
-          };
-          const confirmResponse = await callOperation("install_server", {
-            body: confirmData,
-          });
-          if (confirmResponse && confirmResponse.task_id) {
-            initiateMonitoring(confirmResponse.task_id);
-          } else {
-            addToast(
-              "The installation did not return a task ID. Try again.",
-              "error",
-            );
-            setLoading(false);
-          }
-        } else {
-          setLoading(false);
-        }
-      } else if (response && response.task_id) {
-        initiateMonitoring(response.task_id);
-      } else {
-        addToast("Failed to start installation task.", "error");
-        setLoading(false);
-      }
-    } catch (error) {
-      addToast(error.message || "Failed to install server.", "error");
-      setLoading(false);
-    }
+      server_version:
+        formData.server_version === "SPECIFIC"
+          ? specificVersion.trim()
+          : formData.server_version,
+    });
   };
   return (
     <div className="container">

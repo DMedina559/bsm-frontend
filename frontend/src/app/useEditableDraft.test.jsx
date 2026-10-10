@@ -2,10 +2,10 @@ import { act, renderHook } from "@testing-library/react";
 import { expect, it, vi } from "vitest";
 import { useEditableDraft } from "./useEditableDraft";
 const confirm = vi.hoisted(() => vi.fn());
-vi.mock("../AuthContext", () => ({
+vi.mock("../contexts/AuthContext", () => ({
   useAuth: () => ({ user: { id: "admin" }, sessionGeneration: 1 }),
 }));
-vi.mock("../DialogContext", () => ({
+vi.mock("../contexts/DialogContext", () => ({
   useDialog: () => ({ confirmAction: confirm }),
 }));
 const empty = {};

@@ -1,7 +1,7 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { createWebSocketManager } from "./webSocketManager";
 import { sessionRuntime } from "./sessionRuntime";
-vi.mock("../api", () => ({ getApiBaseUrl: () => "" }));
+vi.mock("../api/transport", () => ({ getApiBaseUrl: () => "" }));
 let sockets;
 class Socket {
   static OPEN = 1;

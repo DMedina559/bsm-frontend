@@ -6,9 +6,9 @@ import {
   Download,
   Terminal,
 } from "lucide-react";
-import { resolveApiUrl } from "../api";
-import { resolveOperationUrl } from "../api/operations";
-import { getApiProxyBasePath } from "../utils/basePath";
+import { resolveApiUrl } from "../../api/transport";
+import { resolveOperationUrl } from "../../api/operations";
+import { getApiProxyBasePath } from "../../utils/basePath";
 
 const actionDefinitions = {
   start: {
@@ -43,7 +43,7 @@ const actionDefinitions = {
   },
 };
 
-export default function OverviewServerCard({
+export default function ServerCard({
   server,
   busy,
   onOpen,

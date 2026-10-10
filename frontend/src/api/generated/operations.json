@@ -818,6 +818,22 @@
     "bodyTypes": ["application/json"],
     "responseType": "json"
   },
+  "create_first_user": {
+    "method": "POST",
+    "path": "/api/setup/create-first-user",
+    "parameters": [],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
+  },
+  "get_setup_status": {
+    "method": "GET",
+    "path": "/api/setup/status",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
   "list_tasks": {
     "method": "GET",
     "path": "/api/tasks/list",

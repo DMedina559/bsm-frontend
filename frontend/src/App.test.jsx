@@ -5,7 +5,7 @@ import App from "./App";
 import { BrowserRouter } from "react-router-dom";
 
 // Mock the API module
-vi.mock("./api", async (importOriginal) => {
+vi.mock("./api/transport", async (importOriginal) => {
   const { createHttpTransport, configureHttpFixtures } =
     await import("./test/httpFixtures");
   const fixtures = {

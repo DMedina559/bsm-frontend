@@ -5,7 +5,7 @@ import AuditLog from "./AuditLog";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import * as api from "../test/httpFixtures";
 import { fixtureResponse } from "../test/fixtures";
-vi.mock("../api", async (importOriginal) => {
+vi.mock("../api/transport", async (importOriginal) => {
   const { createHttpTransport } = await import("../test/httpFixtures");
   return createHttpTransport(await importOriginal());
 });

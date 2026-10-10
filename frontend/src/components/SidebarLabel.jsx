@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import "../styles/SidebarEnhanced.css";
+import "../styles/sidebar.css";
 const SidebarLabel = ({ children }) => {
   const textRef = useRef(null);
   const containerRef = useRef(null);

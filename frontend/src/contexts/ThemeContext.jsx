@@ -1,5 +1,8 @@
-import { callOperation, resolveOperationUrl } from "./api/operations";
-import { usePreference } from "./app/usePreference";
+import { callOperation } from "../api/operations";
+import { useResourceMutation } from "../app/resourceQueries";
+import { queryKeys } from "../app/queryKeys";
+import { resolveOperationUrl } from "../api/operations";
+import { usePreference } from "../app/usePreference";
 import React, {
   createContext,
   useContext,
@@ -8,27 +11,34 @@ import React, {
   useState,
 } from "react";
 import { useAuth } from "./AuthContext";
-import { resolveApiUrl, getApiBaseUrl } from "./api";
-import { getApiProxyBasePath } from "./utils/basePath";
+import { resolveApiUrl, getApiBaseUrl } from "../api/transport";
+import { getApiProxyBasePath } from "../utils/basePath";
 import {
   DEFAULT_APPEARANCE,
   normalizeAppearance,
   resolveMode,
   themeStylesheetUrl,
-} from "./utils/theme";
+} from "../utils/theme";
 
-import { validatePalette, paletteCss } from "./utils/palettes";
+import { validatePalette, paletteCss } from "../utils/palettes";
 
 const ThemeContext = createContext();
 export const useTheme = () => useContext(ThemeContext);
 
 export const ThemeProvider = ({ children }) => {
-  const { user, checkUser } = useAuth();
-  const [savedTheme, setSavedTheme] = useState(null);
-  const theme =
-    savedTheme && savedTheme.username === user?.username
-      ? savedTheme.theme
-      : user?.theme || "default";
+  const { user, updateAccount } = useAuth();
+  const theme = user?.theme || "default";
+  const themeWrite = useResourceMutation(
+    async (newTheme, { session, assertCurrent }) => {
+      await callOperation("update_account_theme", {
+        body: { theme: newTheme },
+        session,
+      });
+      assertCurrent();
+      await updateAccount({ theme: newTheme });
+    },
+    [queryKeys.account()],
+  );
   const [paletteState, setPaletteState] = usePreference("palettes", {
     palettes: [],
     active: null,
@@ -159,12 +169,9 @@ export const ThemeProvider = ({ children }) => {
     setThemeSaving(true);
     setThemeError(null);
     try {
-      await callOperation("update_account_theme", {
-        body: { theme: newTheme },
-      });
+      await themeWrite.mutateAsync(newTheme);
       selectPalette(null);
-      setSavedTheme({ username: user?.username, theme: newTheme });
-      await checkUser();
+
       return true;
     } catch (error) {
       setThemeError(error.message || "Theme preference could not be saved.");

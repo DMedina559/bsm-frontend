@@ -1,7 +1,7 @@
 import { useContext, useEffect, useSyncExternalStore } from "react";
 import { UNSAFE_DataRouterContext, useBlocker } from "react-router-dom";
-import { useDialog } from "../DialogContext";
-import { draftRegistry } from "./draftRegistry";
+import { useDialog } from "../contexts/DialogContext";
+import { draftRegistry } from "../app/draftRegistry";
 function RouterGuard({ dirty }) {
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>

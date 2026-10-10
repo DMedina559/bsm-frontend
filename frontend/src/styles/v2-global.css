@@ -1,2 +1,2 @@
 /* Compatibility entry for plugins importing the previous global stylesheet. */
-@import "../index.css";
+@import "./index.css";

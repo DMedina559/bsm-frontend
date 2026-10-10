@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import JSON5 from "json5";
-import DynamicPage from "../components/DynamicPage";
-import { useToast } from "../ToastContext";
+import DynamicPage from "./DynamicPage";
+import { useToast } from "../contexts/ToastContext";
 import { Play } from "lucide-react";
 const DEFAULT_JSON = `{
   "type": "Container",

@@ -5,9 +5,9 @@ import NotificationHistory from "../components/NotificationHistory";
 import Sidebar from "../components/Sidebar";
 import Footer from "../components/Footer";
 import { Menu, ChevronRight, Radio } from "lucide-react";
-import { useAuth } from "../AuthContext";
-import { useServer } from "../ServerContext";
-import { useWebSocket } from "../WebSocketContext";
+import { useAuth } from "../contexts/AuthContext";
+import { useServer } from "../contexts/ServerContext";
+import { useWebSocket } from "../contexts/WebSocketContext";
 import { PAGE_INFO } from "../utils/navigation";
 import { useFocusTrap } from "../utils/useFocusTrap";
 

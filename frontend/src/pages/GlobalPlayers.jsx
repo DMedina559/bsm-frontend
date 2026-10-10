@@ -4,7 +4,7 @@ import QueryStatus from "../components/QueryStatus";
 import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
 import React, { useState } from "react";
 
-import { useToast } from "../ToastContext";
+import { useToast } from "../contexts/ToastContext";
 import { RefreshCw, Plus, Scan } from "lucide-react";
 const GlobalPlayers = () => {
   const resourceQuery = useResourceQuery("globalPlayers");

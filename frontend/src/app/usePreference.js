@@ -5,7 +5,7 @@ import {
 import { normalizeAppearance } from "../utils/theme";
 import { validatePalette } from "../utils/palettes";
 import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "../AuthContext";
+import { useAuth } from "../contexts/AuthContext";
 import { createPreferenceStore } from "./preferenceStore";
 const definitions = {
   appearance: {

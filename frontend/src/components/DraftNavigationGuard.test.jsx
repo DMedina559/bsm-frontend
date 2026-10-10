@@ -3,9 +3,9 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider, Link } from "react-router-dom";
 import { expect, it, vi } from "vitest";
 import DraftNavigationGuard from "./DraftNavigationGuard";
-import { draftRegistry } from "./draftRegistry";
+import { draftRegistry } from "../app/draftRegistry";
 const confirm = vi.hoisted(() => vi.fn());
-vi.mock("../DialogContext", () => ({
+vi.mock("../contexts/DialogContext", () => ({
   useDialog: () => ({ confirmAction: confirm }),
 }));
 function Editor() {

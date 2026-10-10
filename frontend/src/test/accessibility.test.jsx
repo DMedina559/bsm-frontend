@@ -5,8 +5,8 @@ import { render, screen, waitFor, act } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import axe from "axe-core";
 import { describe, it, expect, vi } from "vitest";
-import { DialogProvider } from "../DialogContext";
-import { ToastProvider } from "../ToastContext";
+import { DialogProvider } from "../contexts/DialogContext";
+import { ToastProvider } from "../contexts/ToastContext";
 import { fixtureResponse, servers, user } from "./fixtures";
 import Account from "../pages/Account";
 const Appearance = () => <Account appearanceOnly />;
@@ -27,9 +27,9 @@ import Login from "../pages/Login";
 import Setup from "../pages/Setup";
 import Register from "../pages/Register";
 import Playground from "../pages/Playground";
-vi.mock("../api", async (importOriginal) => {
+vi.mock("../api/transport", async (importOriginal) => {
   const { createHttpTransport, configureHttpFixtures } =
-    await import("../test/httpFixtures");
+    await import("./httpFixtures");
   const fixtures = {
     get: vi.fn(async (url) =>
       fixtureResponse(new URL(url, "http://localhost")),
@@ -53,7 +53,7 @@ const stable = vi.hoisted(() => ({
   logout: vi.fn(),
   anonymous: false,
 }));
-vi.mock("../AuthContext", () => ({
+vi.mock("../contexts/AuthContext", () => ({
   useAuth: () => ({
     user: stable.anonymous ? null : user,
     checkUser: stable.checkUser,
@@ -61,7 +61,7 @@ vi.mock("../AuthContext", () => ({
     logout: stable.logout,
   }),
 }));
-vi.mock("../ServerContext", () => ({
+vi.mock("../contexts/ServerContext", () => ({
   useServer: () => ({
     servers,
     selectedServer: "Survival",
@@ -71,7 +71,7 @@ vi.mock("../ServerContext", () => ({
     error: null,
   }),
 }));
-vi.mock("../WebSocketContext", () => ({
+vi.mock("../contexts/WebSocketContext", () => ({
   useWebSocket: () => ({
     isConnected: true,
     isFallback: false,
@@ -82,7 +82,7 @@ vi.mock("../WebSocketContext", () => ({
     addMessageListener: stable.addMessageListener,
   }),
 }));
-vi.mock("../ThemeContext", () => ({
+vi.mock("../contexts/ThemeContext", () => ({
   useTheme: () => ({
     theme: "default",
     appearance: { mode: "theme", density: "comfortable" },

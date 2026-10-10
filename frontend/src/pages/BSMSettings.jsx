@@ -12,7 +12,7 @@ import {
 } from "../utils/settings";
 import React, { useEffect, useState } from "react";
 import { RefreshCw, Save } from "lucide-react";
-import { useToast } from "../ToastContext";
+import { useToast } from "../contexts/ToastContext";
 
 import { logger } from "../utils/logger";
 const EMPTY_SETTINGS = {};

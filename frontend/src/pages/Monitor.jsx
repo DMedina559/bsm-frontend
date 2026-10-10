@@ -4,9 +4,9 @@ import { queryKeys } from "../app/queryKeys";
 import QueryStatus from "../components/QueryStatus";
 import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
 import React, { useState, useEffect, useRef } from "react";
-import { useWebSocket } from "../WebSocketContext";
-import { useServer } from "../ServerContext";
-import { useToast } from "../ToastContext";
+import { useWebSocket } from "../contexts/WebSocketContext";
+import { useServer } from "../contexts/ServerContext";
+import { useToast } from "../contexts/ToastContext";
 
 import {
   LineChart,

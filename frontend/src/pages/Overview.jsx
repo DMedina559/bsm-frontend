@@ -3,15 +3,15 @@ import { useResourceMutation } from "../app/resourceQueries";
 import { queryKeys } from "../app/queryKeys";
 import { usePreference } from "../app/usePreference";
 import "./Overview.css";
-import OverviewServerCard from "./OverviewServerCard";
+import ServerCard from "../components/server/ServerCard";
 import OverviewFleetMetrics from "./OverviewFleetMetrics";
-import { useDialog } from "../DialogContext";
+import { useDialog } from "../contexts/DialogContext";
 import React, { useState } from "react";
-import { useServer } from "../ServerContext";
-import { useAuth } from "../AuthContext";
-import { useToast } from "../ToastContext";
+import { useServer } from "../contexts/ServerContext";
+import { useAuth } from "../contexts/AuthContext";
+import { useToast } from "../contexts/ToastContext";
 import { getApiProxyBasePath } from "../utils/basePath";
-import { useWebSocket } from "../WebSocketContext";
+import { useWebSocket } from "../contexts/WebSocketContext";
 import { useNavigate } from "react-router-dom";
 
 import { logger } from "../utils/logger";
@@ -312,7 +312,7 @@ const Overview = () => {
           className={`server-grid overview-server-grid overview-layout-${layout}`}
         >
           {sortedServers.map((server) => (
-            <OverviewServerCard
+            <ServerCard
               key={server.name}
               server={server}
               busy={isServerPending(server.name)}

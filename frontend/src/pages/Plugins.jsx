@@ -4,7 +4,7 @@ import { queryKeys } from "../app/queryKeys";
 import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
 import React from "react";
 import { Plug, RefreshCw, ToggleLeft, ToggleRight } from "lucide-react";
-import { useToast } from "../ToastContext";
+import { useToast } from "../contexts/ToastContext";
 
 const Plugins = () => {
   const { addToast } = useToast();

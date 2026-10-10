@@ -8,8 +8,8 @@ import { useResourceQuery, useResourceMutation } from "./resourceQueries";
 import { queryKeys } from "./queryKeys";
 import { get } from "../test/httpFixtures";
 const auth = vi.hoisted(() => ({ user: null, sessionGeneration: 1 }));
-vi.mock("../AuthContext", () => ({ useAuth: () => auth }));
-vi.mock("../api", async (importOriginal) => {
+vi.mock("../contexts/AuthContext", () => ({ useAuth: () => auth }));
+vi.mock("../api/transport", async (importOriginal) => {
   const { createHttpTransport, configureHttpFixtures } =
     await import("../test/httpFixtures");
   const fixtures = { get: vi.fn(), request: vi.fn() };

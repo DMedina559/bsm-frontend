@@ -1,5 +1,5 @@
 import { stateReconciler } from "./stateReconciler";
-import { getApiBaseUrl } from "../api";
+import { getApiBaseUrl } from "../api/transport";
 import { getApiProxyBasePath } from "../utils/basePath";
 import { logger } from "../utils/logger";
 import { sessionRuntime } from "./sessionRuntime";

@@ -61,22 +61,23 @@ export default [
     ignores: [
       "src/**/*.test.*",
       "src/test/**",
-      "src/api.js",
       "src/api/**",
-      "src/AuthContext.jsx",
-      "src/pages/Setup.jsx",
       "src/pages/Content.jsx",
-      "src/components/DynamicPage.jsx",
+      "src/features/plugins/**",
     ],
     rules: {
       "no-restricted-imports": [
         "error",
         {
-          paths: ["./api", "../api"].map((name) => ({
+          paths: [
+            "./api/transport",
+            "../api/transport",
+            "../../api/transport",
+          ].map((name) => ({
             name,
             importNames: ["request", "get", "post", "put", "del"],
             message:
-              "Use callOperation for core API requests; the generic transport is reserved for undeclared setup/plugin routes.",
+              "Use callOperation for core API requests; the generic transport is reserved for plugin routes and file transfers.",
           })),
         },
       ],

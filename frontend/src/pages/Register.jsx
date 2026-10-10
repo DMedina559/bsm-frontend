@@ -1,32 +1,32 @@
+import { usePublicQuery, useScopedMutation } from "../app/publicRequests";
 import { callOperation } from "../api/operations";
 import AuthBrand from "../components/AuthBrand";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useToast } from "../ToastContext";
+import { useToast } from "../contexts/ToastContext";
 
 const Register = () => {
-  const { token } = useParams();
+  const { token = "" } = useParams();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [tokenValid, setTokenValid] = useState(null);
+  const tokenQuery = usePublicQuery(
+    ["registration", token],
+    ({ signal }) =>
+      callOperation("validate_registration_token", { path: { token }, signal }),
+    { enabled: Boolean(token), staleTime: 0 },
+  );
+  const tokenValid = tokenQuery.isSuccess
+    ? true
+    : tokenQuery.isError
+      ? false
+      : null;
+  const write = useScopedMutation(`register:${token}`, (body, { signal }) =>
+    callOperation("register_user", { path: { token }, body, signal }),
+  );
+  const loading = write.isPending;
   const { addToast } = useToast();
   const navigate = useNavigate();
-  useEffect(() => {
-    const validateToken = async () => {
-      if (!token) return;
-      try {
-        await callOperation("validate_registration_token", {
-          path: { token: token },
-        });
-        setTokenValid(true);
-      } catch {
-        setTokenValid(false);
-      }
-    };
-    validateToken();
-  }, [token]);
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (loading) return;
@@ -42,21 +42,13 @@ const Register = () => {
       addToast("Invalid registration link.", "error");
       return;
     }
-    setLoading(true);
     try {
-      await callOperation("register_user", {
-        path: { token: token },
-        body: {
-          username,
-          password,
-        },
-      });
+      await write.mutateAsync({ username, password });
       addToast("Registration successful! Please login.", "success");
       navigate("/login");
     } catch (error) {
+      if (error.name === "AbortError") return;
       addToast(error.message || "Registration failed.", "error");
-    } finally {
-      setLoading(false);
     }
   };
   if (!token) {

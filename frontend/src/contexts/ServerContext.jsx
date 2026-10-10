@@ -1,12 +1,12 @@
-import { callOperation } from "./api/operations";
+import { callOperation } from "../api/operations";
 import {
   getPreferenceIdentity,
   migrateAccountPreference,
-} from "./app/backendIdentity";
+} from "../app/backendIdentity";
 import {
   captureStateRequest,
   reconcileServerSnapshot,
-} from "./app/applicationState";
+} from "../app/applicationState";
 import React, {
   createContext,
   useCallback,
@@ -19,9 +19,9 @@ import React, {
 import { useQuery } from "@tanstack/react-query";
 
 import { useAuth } from "./AuthContext";
-import { queryKeys } from "./app/queryKeys";
-import { createPreferenceStore } from "./app/preferenceStore";
-import { logger } from "./utils/logger";
+import { queryKeys } from "../app/queryKeys";
+import { createPreferenceStore } from "../app/preferenceStore";
+import { logger } from "../utils/logger";
 
 const ServerContext = createContext(null);
 const preferences = createPreferenceStore();

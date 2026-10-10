@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { request, ApiError, getApiBaseUrl, setApiBaseUrl } from "./api";
+import { request, ApiError, getApiBaseUrl, setApiBaseUrl } from "./transport";
 
 describe("api", () => {
   beforeEach(() => {
@@ -205,8 +205,8 @@ describe("authenticated API URL routing", () => {
   });
 });
 it("binary downloads reject stale sessions after reading the response body", async () => {
-  const { getBlob } = await import("./api");
-  const { sessionRuntime } = await import("./app/sessionRuntime");
+  const { getBlob } = await import("./transport");
+  const { sessionRuntime } = await import("../app/sessionRuntime");
   let finish;
   globalThis.fetch = vi.fn().mockResolvedValue({
     ok: true,
@@ -227,7 +227,7 @@ it("binary downloads reject stale sessions after reading the response body", asy
   await assertion;
 });
 it("binary requests normalize backend validation failures", async () => {
-  const { getBlob } = await import("./api");
+  const { getBlob } = await import("./transport");
   globalThis.fetch = vi.fn().mockResolvedValue({
     ok: false,
     status: 422,
@@ -243,7 +243,7 @@ it("binary requests normalize backend validation failures", async () => {
 });
 
 it("downloads revoke object URLs even if clicking the link fails", async () => {
-  const { downloadFile } = await import("./api");
+  const { downloadFile } = await import("./transport");
   globalThis.fetch = vi.fn().mockResolvedValue({
     ok: true,
     status: 200,
@@ -265,7 +265,7 @@ it("downloads revoke object URLs even if clicking the link fails", async () => {
   click.mockRestore();
 });
 it("bound session transport refuses later requests after logout before fetch", async () => {
-  const { sessionRuntime } = await import("./app/sessionRuntime");
+  const { sessionRuntime } = await import("../app/sessionRuntime");
   const session = sessionRuntime.capture();
   sessionRuntime.reset();
   globalThis.fetch = vi.fn();
@@ -319,7 +319,7 @@ it.each([400, 403, 404, 409, 422, 500])(
 );
 
 it("uses the generated login and reauthentication contracts through the authenticated transport", async () => {
-  const { callOperation } = await import("./api/operations");
+  const { callOperation } = await import("./operations");
   globalThis.fetch = vi.fn().mockResolvedValue({
     ok: true,
     status: 200,
@@ -345,8 +345,8 @@ it("uses the generated login and reauthentication contracts through the authenti
 });
 
 it("encodes server parameters and preserves task tracking for generated backup calls", async () => {
-  const { callOperation } = await import("./api/operations");
-  const { operationCoordinator } = await import("./app/operationCoordinator");
+  const { callOperation } = await import("./operations");
+  const { operationCoordinator } = await import("../app/operationCoordinator");
   operationCoordinator.clear();
   globalThis.fetch = vi.fn().mockResolvedValue({
     ok: true,
@@ -370,8 +370,8 @@ it("encodes server parameters and preserves task tracking for generated backup c
   operationCoordinator.clear();
 });
 it("does not register an old mutation task after the backend restarts", async () => {
-  const { stateReconciler } = await import("./app/stateReconciler");
-  const { operationCoordinator } = await import("./app/operationCoordinator");
+  const { stateReconciler } = await import("../app/stateReconciler");
+  const { operationCoordinator } = await import("../app/operationCoordinator");
   stateReconciler.clear();
   operationCoordinator.clear();
   stateReconciler.accept(["monitor"], { epoch: "first", revision: 100 });

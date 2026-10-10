@@ -1,7 +1,7 @@
-import { callOperation } from "./api/operations";
-import { sessionRuntime } from "./app/sessionRuntime";
-import { queryClient } from "./app/queryClient";
-import { operationCoordinator } from "./app/operationCoordinator";
+import { callOperation } from "../api/operations";
+import { sessionRuntime } from "../app/sessionRuntime";
+import { queryClient } from "../app/queryClient";
+import { operationCoordinator } from "../app/operationCoordinator";
 import React, {
   createContext,
   useContext,
@@ -9,21 +9,84 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { request } from "./api";
-import { logger } from "./utils/logger";
+import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "../app/queryKeys";
+import { getBackendIdentity } from "../app/backendIdentity";
+import {
+  captureStateRequest,
+  reconcileResourceSnapshot,
+} from "../app/applicationState";
+import { stateReconciler } from "../app/stateReconciler";
+import { logger } from "../utils/logger";
 
 const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
   const identityRef = useRef(null);
   const checkGeneration = useRef(0);
   const [loading, setLoading] = useState(true);
   const [needsSetup, setNeedsSetup] = useState(false);
-  const [sessionGeneration, setSessionGeneration] = useState(0);
+  const [sessionGeneration, setSessionGeneration] = useState(
+    () => sessionRuntime.capture().generation,
+  );
+  const [accountEnabled, setAccountEnabled] = useState(false);
+  const accountKey = [
+    ...queryKeys.account(),
+    { backend: getBackendIdentity(), generation: sessionGeneration },
+  ];
+  const accountQuery = useQuery(
+    {
+      queryKey: accountKey,
+      queryFn: async ({ signal }) => {
+        const ticket = captureStateRequest(signal);
+        const data = await callOperation("get_account", { signal });
+        if (data?.id == null && !data?.username)
+          throw new Error("Invalid account response");
+        return reconcileResourceSnapshot(
+          "account",
+          null,
+          accountKey,
+          data,
+          ticket,
+        );
+      },
+      enabled: accountEnabled,
+      retry: false,
+    },
+    queryClient,
+  );
+  const user = accountQuery.data ?? null;
+  const setUser = (data) => {
+    if (data === null) {
+      setAccountEnabled(false);
+      return;
+    }
+    setAccountEnabled(true);
+    queryClient.setQueryData(
+      [
+        ...queryKeys.account(),
+        {
+          backend: getBackendIdentity(),
+          generation: sessionRuntime.capture().generation,
+        },
+      ],
+      data,
+    );
+  };
+  const updateAccount = async (patch) => {
+    const ticket = captureStateRequest();
+    await queryClient.cancelQueries({ queryKey: accountKey });
+    if (!stateReconciler.current(ticket)) return;
+    const previous = queryClient.getQueryData(accountKey);
+    if (!previous) return;
+    const updated = { ...previous, ...patch };
+    stateReconciler.accept(["query", accountKey], updated, { ticket });
+    queryClient.setQueryData(accountKey, updated);
+  };
   const resetSession = () => {
+    setAccountEnabled(false);
     setSessionGeneration(sessionRuntime.reset());
     queryClient.clear();
     operationCoordinator.clear();
@@ -31,11 +94,12 @@ export const AuthProvider = ({ children }) => {
 
   const checkUser = async () => {
     const check = ++checkGeneration.current;
+    await queryClient.cancelQueries({ queryKey: queryKeys.account() });
     const current = () => check === checkGeneration.current;
     // Always check setup status first if not logged in or to ensure correctness
     try {
       logger.debug("[Auth] Checking setup status");
-      const setupData = await request("/api/setup/status");
+      const setupData = await callOperation("get_setup_status");
       if (!current()) return;
       setNeedsSetup(setupData.needs_setup);
       if (setupData.needs_setup) {
@@ -53,8 +117,9 @@ export const AuthProvider = ({ children }) => {
 
     try {
       logger.debug("[Auth] Checking user status");
-      // Check if we have a token in either storage (api.js handles retrieval)
-      const userData = await callOperation("get_account");
+      // Check if we have a token in either storage (the transport handles retrieval)
+      const ticket = captureStateRequest();
+      let userData = await callOperation("get_account");
       if (!current()) return;
       if (userData?.id == null && !userData?.username)
         throw new Error("Invalid account response");
@@ -92,6 +157,20 @@ export const AuthProvider = ({ children }) => {
       const nextIdentity = userData?.id ?? userData?.username ?? null;
       if (identityRef.current !== nextIdentity) {
         resetSession();
+      } else if (stateReconciler.current(ticket)) {
+        userData = reconcileResourceSnapshot(
+          "account",
+          null,
+          [
+            ...queryKeys.account(),
+            {
+              backend: getBackendIdentity(),
+              generation: sessionRuntime.capture().generation,
+            },
+          ],
+          userData,
+          ticket,
+        );
       }
       identityRef.current = nextIdentity;
       setUser(userData);
@@ -114,6 +193,16 @@ export const AuthProvider = ({ children }) => {
       if (current()) setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (
+      accountQuery.error?.status !== 401 &&
+      accountQuery.error?.status !== 403
+    )
+      return;
+    identityRef.current = null;
+    resetSession();
+  }, [accountQuery.error]);
 
   useEffect(() => {
     checkUser();
@@ -201,6 +290,7 @@ export const AuthProvider = ({ children }) => {
         logout,
         loading,
         checkUser,
+        updateAccount,
         needsSetup,
         sessionGeneration,
         status: loading

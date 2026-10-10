@@ -1,14 +1,14 @@
-import { stateReconciler } from "./app/stateReconciler";
-import { getBackendIdentity } from "./app/backendIdentity";
-import { operationCoordinator } from "./app/operationCoordinator";
+import { stateReconciler } from "../app/stateReconciler";
+import { getBackendIdentity } from "../app/backendIdentity";
+import { operationCoordinator } from "../app/operationCoordinator";
 /**
  * @fileoverview Core API client for making HTTP requests.
  * Handles fetch logic, headers, authentication, and response parsing.
  */
-import { sessionRuntime } from "./app/sessionRuntime";
-import { getApiProxyBasePath } from "./utils/basePath";
+import { sessionRuntime } from "../app/sessionRuntime";
+import { getApiProxyBasePath } from "../utils/basePath";
 
-import { logger } from "./utils/logger";
+import { logger } from "../utils/logger";
 
 export class ApiError extends Error {
   constructor(message, status, data) {

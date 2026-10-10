@@ -6,7 +6,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import Modal from "./components/Modal";
+import Modal from "../components/Modal";
 const DialogContext = createContext();
 export const useDialog = () => useContext(DialogContext);
 export function DialogProvider({ children }) {

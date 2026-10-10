@@ -1,9 +1,9 @@
-import { coreEventTopics } from "./app/coreEvents";
-import { queryClient } from "./app/queryClient";
-import { getPreferenceIdentity } from "./app/backendIdentity";
-import { startOperationRecovery } from "./app/operationRecovery";
-import { reconcileSocketMessage } from "./app/applicationState";
-import { operationCoordinator } from "./app/operationCoordinator";
+import { coreEventTopics } from "../app/coreEvents";
+import { queryClient } from "../app/queryClient";
+import { getPreferenceIdentity } from "../app/backendIdentity";
+import { startOperationRecovery } from "../app/operationRecovery";
+import { reconcileSocketMessage } from "../app/applicationState";
+import { operationCoordinator } from "../app/operationCoordinator";
 import React, {
   createContext,
   useContext,
@@ -13,8 +13,8 @@ import React, {
   useMemo,
 } from "react";
 import { useAuth } from "./AuthContext";
-import { createWebSocketManager } from "./app/webSocketManager";
-import { logger } from "./utils/logger";
+import { createWebSocketManager } from "../app/webSocketManager";
+import { logger } from "../utils/logger";
 
 const WebSocketContext = createContext(null);
 export const useWebSocket = () => {

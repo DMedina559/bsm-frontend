@@ -4,8 +4,8 @@ import {
   createOperationClient,
   resolveOperationUrl,
 } from "./operations";
-import { request } from "../api";
-vi.mock("../api", () => ({ request: vi.fn() }));
+import { request } from "./transport";
+vi.mock("./transport", () => ({ request: vi.fn() }));
 beforeEach(() => request.mockReset());
 it("encodes generated paths and rejects missing or unknown parameters", () => {
   expect(

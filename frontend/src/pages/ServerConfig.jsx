@@ -10,12 +10,12 @@ import {
   updateSetting,
   isSafeSettingPath,
 } from "../utils/settings";
-import { useDialog } from "../DialogContext";
+import { useDialog } from "../contexts/DialogContext";
 import React, { useEffect, useState } from "react";
 import { CheckCircle, Download, RefreshCw, Save, Trash2 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useServer } from "../ServerContext";
-import { useToast } from "../ToastContext";
+import { useServer } from "../contexts/ServerContext";
+import { useToast } from "../contexts/ToastContext";
 
 const EMPTY_SETTINGS = {};
 const ServerConfig = () => {
