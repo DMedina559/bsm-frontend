@@ -1,6 +1,6 @@
+import { callOperation } from "../api/operations";
 import { queryClient } from "./queryClient";
 import { queryKeys } from "./queryKeys";
-import { get } from "../api";
 import { operationCoordinator } from "./operationCoordinator";
 import { sessionRuntime } from "./sessionRuntime";
 /** Polling is owned by the session, so navigation cannot abandon a task. */
@@ -49,10 +49,10 @@ export function startOperationRecovery(identity = null, generation = 0) {
           ) {
             const operation = work[index++];
             try {
-              const data = await get(
-                `/api/tasks/status/${encodeURIComponent(operation.id)}`,
-                { signal: controller.signal },
-              );
+              const data = await callOperation("get_task_status", {
+                path: { task_id: operation.id },
+                signal: controller.signal,
+              });
               if (!stopped && sessionRuntime.isCurrent(session)) {
                 attempts.delete(operation.id);
                 operationCoordinator.reconcileTask({
@@ -101,7 +101,7 @@ export function startOperationRecovery(identity = null, generation = 0) {
     .fetchQuery({
       queryKey: [...queryKeys.tasks(), { identity, generation }],
       queryFn: ({ signal }) =>
-        get("/api/tasks/list", {
+        callOperation("list_tasks", {
           signal: AbortSignal.any([signal, controller.signal]),
         }),
     })

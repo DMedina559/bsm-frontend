@@ -1,10 +1,10 @@
+import { callOperation } from "../api/operations";
 import React, { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
 import { getApiProxyBasePath } from "../utils/basePath";
-import { get } from "../api";
 import { logger } from "../utils/logger";
 import {
   LayoutDashboard,
@@ -51,7 +51,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
   const effectiveCollapsed = isCollapsed && !mobileOpen;
   useEffect(() => {
     let active = true;
-    get("/api/info")
+    callOperation("get_system_info")
       .then((data) => {
         if (!active) return;
         setAppVersion(data?.info?.app_version || "Unknown");
@@ -62,7 +62,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
           error,
         }),
       );
-    get("/api/plugins/pages")
+    callOperation("get_plugin_pages")
       .then((data) => {
         if (active && data?.status === "success" && Array.isArray(data.pages))
           setPluginPages(data.pages);

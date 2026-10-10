@@ -43,6 +43,7 @@ type Options<T> = UrlOptions<T> &
     signal?: AbortSignal;
     session?: SessionSnapshot;
     timeout?: number;
+    headers?: Record<string, string>;
   };
 type Args<T> = {} extends T ? [options?: T] : [options: T];
 export function callOperation<

@@ -317,23 +317,6 @@ export async function request(url, options = {}) {
   }
 }
 
-// ... helpers
-export function get(url, options = {}) {
-  return request(url, { ...options, method: "GET" });
-}
-
-export function post(url, body, options = {}) {
-  return request(url, { ...options, method: "POST", body });
-}
-
-export function put(url, body, options = {}) {
-  return request(url, { ...options, method: "PUT", body });
-}
-
-export function del(url, options = {}) {
-  return request(url, { ...options, method: "DELETE" });
-}
-
 /** Binary responses share authentication, cancellation, timeouts and API errors. */
 export function getBlob(url, options = {}) {
   return request(url, { ...options, method: "GET", responseType: "blob" });

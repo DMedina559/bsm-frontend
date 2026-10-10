@@ -1,3 +1,4 @@
+import { callOperation } from "./api/operations";
 import {
   getPreferenceIdentity,
   migrateAccountPreference,
@@ -16,7 +17,7 @@ import React, {
   useState,
 } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { request } from "./api";
+
 import { useAuth } from "./AuthContext";
 import { useWebSocket } from "./WebSocketContext";
 import { queryKeys } from "./app/queryKeys";
@@ -39,8 +40,7 @@ const SERVER_TOPICS = [
 ];
 
 async function loadServers({ signal }) {
-  const data = await request("/api/servers", {
-    method: "GET",
+  const data = await callOperation("list_servers", {
     signal,
     headers: {
       "Cache-Control": "no-store, no-cache, must-revalidate",

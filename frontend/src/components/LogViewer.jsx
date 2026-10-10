@@ -1,6 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { get } from "../api";
-import { resolveOperationUrl } from "../api/operations";
+import { callOperation } from "../api/operations";
 import { useAuth } from "../AuthContext";
 import { useWebSocket } from "../WebSocketContext";
 
@@ -94,20 +93,16 @@ export default function LogViewer({
       setLoading(true);
       setError("");
       const previous = current.current;
-      const query = new URLSearchParams({ topic });
-      if (older) {
-        query.set("before", previous.start);
-        query.set("file_id", previous.file_id);
-      }
       try {
-        const result = await get(
-          resolveOperationUrl("get_log_history", {
-            query: Object.fromEntries(query),
-          }),
-          {
-            signal: controller.signal,
+        const result = await callOperation("get_log_history", {
+          query: {
+            topic,
+            ...(older
+              ? { before: previous.start, file_id: previous.file_id }
+              : {}),
           },
-        );
+          signal: controller.signal,
+        });
         if (!active) return;
         if (
           typeof result?.data !== "string" ||

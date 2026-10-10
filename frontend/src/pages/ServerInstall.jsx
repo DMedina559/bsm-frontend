@@ -1,9 +1,10 @@
+import { callOperation } from "../api/operations";
 import { useResourceQuery } from "../app/resourceQueries";
 import { operationCoordinator } from "../app/operationCoordinator";
 import { useDialog } from "../DialogContext";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useToast } from "../ToastContext";
-import { post } from "../api";
+
 import { useServer } from "../ServerContext";
 import { useNavigate } from "react-router-dom";
 import { PlusSquare, RefreshCw } from "lucide-react";
@@ -119,7 +120,7 @@ const ServerInstall = () => {
     }
     setLoading(true);
     try {
-      const response = await post("/api/server/install", payload);
+      const response = await callOperation("install_server", { body: payload });
       const initiateMonitoring = (taskId) => {
         operationCoordinator.register({
           id: taskId,
@@ -136,10 +137,9 @@ const ServerInstall = () => {
             ...payload,
             overwrite: true,
           };
-          const confirmResponse = await post(
-            "/api/server/install",
-            confirmData,
-          );
+          const confirmResponse = await callOperation("install_server", {
+            body: confirmData,
+          });
           if (confirmResponse && confirmResponse.task_id) {
             initiateMonitoring(confirmResponse.task_id);
           } else {

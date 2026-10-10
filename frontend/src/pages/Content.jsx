@@ -1,3 +1,4 @@
+import { callOperation } from "../api/operations";
 import { queryKeys } from "../app/queryKeys";
 import QueryStatus from "../components/QueryStatus";
 import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
@@ -7,9 +8,9 @@ import { useDialog } from "../DialogContext";
 import React, { useState } from "react";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
-import { resolveApiUrl } from "../api";
+import { request, resolveApiUrl } from "../api";
 import { resolveOperationUrl } from "../api/operations";
-import { post, del, request } from "../api";
+
 import {
   Upload,
   Trash2,
@@ -61,25 +62,25 @@ const Content = () => {
   const addonsLoading = addonsQuery.isFetching;
   const { addToast } = useToast();
   const write = useResourceMutation(
-    ({ method, url, body, options }) => {
-      if (method === "post") return post(url, body);
-      if (method === "del") return del(url, options);
-      if (method === "request") return request(url, options);
-    },
+    ({ id, options }, { session }) =>
+      callOperation(id, { ...options, session }),
     [
       queryKeys.content(),
       queryKeys.servers(),
       queryKeys.serverAddons(selectedServer),
     ],
   );
+  /** @type {typeof callOperation} */
+  const writeOperation = (id, ...args) =>
+    write.mutateAsync({ id, options: args[0] });
 
-  const actionLoading = write.isPending;
-  const writePost = (url, body) =>
-    write.mutateAsync({ url, body, method: "post" });
-  const writeDelete = (url, options) =>
-    write.mutateAsync({ url, options, method: "del" });
-  const writeRequest = (url, options) =>
-    write.mutateAsync({ url, options, method: "request" });
+  const upload = useResourceMutation(
+    (body, { session }) =>
+      request("/api/content/upload", { method: "POST", body, session }),
+    [queryKeys.content()],
+  );
+  const actionLoading = write.isPending || upload.isPending;
+
   const fetchItems = async () => {
     const result = await contentQuery.refetch();
     if (result.error) addToast(result.error.message, "error");
@@ -103,13 +104,13 @@ const Content = () => {
       return;
 
     try {
-      const endpoint =
-        activeTab === "worlds"
-          ? `/api/server/${selectedServer}/world/install`
-          : `/api/server/${selectedServer}/addon/install`;
-      await writePost(endpoint, {
-        filename: item.name,
-      });
+      await writeOperation(
+        activeTab === "worlds" ? "install_world" : "install_addon",
+        {
+          path: { server_name: selectedServer },
+          body: { filename: item.name },
+        },
+      );
       addToast(`Installation of ${item.name} started.`, "success");
     } catch (error) {
       addToast(error.message || "Installation failed.", "error");
@@ -124,7 +125,9 @@ const Content = () => {
       return;
 
     try {
-      await writeDelete(`/api/server/${selectedServer}/world/reset`);
+      await writeOperation("reset_world", {
+        path: { server_name: selectedServer },
+      });
       addToast(`World reset initiated for ${selectedServer}.`, "success");
     } catch (error) {
       addToast(error.message || "World reset failed.", "error");
@@ -132,7 +135,9 @@ const Content = () => {
   };
   const handleExportWorld = async () => {
     try {
-      await writePost(`/api/server/${selectedServer}/world/export`);
+      await writeOperation("export_world", {
+        path: { server_name: selectedServer },
+      });
       addToast(`World export initiated for ${selectedServer}.`, "success");
       // Optionally refresh list after a delay, but it's async background task
     } catch (error) {
@@ -163,9 +168,12 @@ const Content = () => {
           .filter((p) => p.status === "ACTIVE" && p.uuid)
           .map((p) => p.uuid);
         if (behaviorUuids.length > 0) {
-          await writePost(`/api/server/${selectedServer}/addon/reorder`, {
-            pack_type: "behavior",
-            uuids: behaviorUuids,
+          await writeOperation("reorder_addons", {
+            path: { server_name: selectedServer },
+            body: {
+              pack_type: "behavior",
+              uuids: behaviorUuids,
+            },
           });
         }
       } else if (addonModalTab === "resource") {
@@ -174,9 +182,12 @@ const Content = () => {
           .filter((p) => p.status === "ACTIVE" && p.uuid)
           .map((p) => p.uuid);
         if (resourceUuids.length > 0) {
-          await writePost(`/api/server/${selectedServer}/addon/reorder`, {
-            pack_type: "resource",
-            uuids: resourceUuids,
+          await writeOperation("reorder_addons", {
+            path: { server_name: selectedServer },
+            body: {
+              pack_type: "resource",
+              uuids: resourceUuids,
+            },
           });
         }
       }
@@ -186,6 +197,7 @@ const Content = () => {
       addToast(error.message || "Failed to save order", "error");
     }
   };
+  /** @param {{uuid: string}} pack @param {"behavior" | "resource"} packType @param {"enable" | "disable" | "uninstall"} action */
   const handleAddonAction = async (pack, packType, action) => {
     if (
       action === "uninstall" &&
@@ -195,17 +207,27 @@ const Content = () => {
 
     try {
       if (action === "uninstall") {
-        await writeDelete(`/api/server/${selectedServer}/addon/uninstall`, {
+        await writeOperation("uninstall_addon", {
+          path: { server_name: selectedServer },
           body: {
             pack_uuid: pack.uuid,
             pack_type: packType,
           },
         });
       } else {
-        await writePost(`/api/server/${selectedServer}/addon/${action}`, {
-          pack_uuid: pack.uuid,
-          pack_type: packType,
-        });
+        await writeOperation(
+          /** @type {const} */ ({
+            enable: "enable_addon",
+            disable: "disable_addon",
+          })[action],
+          {
+            path: { server_name: selectedServer },
+            body: {
+              pack_uuid: pack.uuid,
+              pack_type: packType,
+            },
+          },
+        );
       }
       addToast(`${action} successful.`, "success");
     } catch (error) {
@@ -214,10 +236,13 @@ const Content = () => {
   };
   const handleSubpackChange = async (pack, packType, newSubpackFolderName) => {
     try {
-      await writePost(`/api/server/${selectedServer}/addon/subpack`, {
-        pack_uuid: pack.uuid,
-        pack_type: packType,
-        subpack_name: newSubpackFolderName,
+      await writeOperation("update_addon_subpack", {
+        path: { server_name: selectedServer },
+        body: {
+          pack_uuid: pack.uuid,
+          pack_type: packType,
+          subpack_name: newSubpackFolderName,
+        },
       });
       addToast("Subpack updated.", "success");
 
@@ -486,10 +511,7 @@ const Content = () => {
     const type = activeTab === "worlds" ? "world" : "addon";
     formData.append("type", type);
     try {
-      const data = await writeRequest(`/api/content/upload`, {
-        method: "POST",
-        body: formData,
-      });
+      const data = await upload.mutateAsync(formData);
       if (data && data.status === "success") {
         addToast("Upload successful.", "success");
       } else {

@@ -1,10 +1,11 @@
+import { callOperation } from "../api/operations";
 import { useResourceMutation } from "../app/resourceQueries";
 import { queryKeys } from "../app/queryKeys";
 import Modal from "../components/Modal";
 import React, { useState } from "react";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
-import { post } from "../api";
+
 import { logger } from "../utils/logger";
 import { Users, X } from "lucide-react";
 const OnlinePlayers = () => {
@@ -26,16 +27,16 @@ const OnlinePlayers = () => {
   const currentServerObj = servers.find((s) => s.name === selectedServer);
   const players = currentServerObj?.players || [];
   const write = useResourceMutation(
-    ({ method, url, body }) => {
-      if (method === "post")
-        return body === undefined ? post(url) : post(url, body);
-    },
+    ({ id, options }, { session }) =>
+      callOperation(id, { ...options, session }),
     [queryKeys.servers(), queryKeys.access([selectedServer, "bans"])],
   );
+  /** @type {typeof callOperation} */
+  const writeOperation = (id, ...args) =>
+    write.mutateAsync({ id, options: args[0] });
 
   const loadingAction = write.isPending;
-  const writePost = (url, body) =>
-    write.mutateAsync({ url, body, method: "post" });
+
   const handleOpenKickModal = (playerName) => {
     setSelectedPlayer(playerName);
     setKickReason("");
@@ -78,10 +79,13 @@ const OnlinePlayers = () => {
     });
 
     try {
-      await writePost(`/api/server/${selectedServer}/bans/add`, {
-        player_name: selectedPlayer,
-        xuid: selectedPlayerXuid,
-        reason: banReason || null,
+      await writeOperation("add_server_ban", {
+        path: { server_name: selectedServer },
+        body: {
+          player_name: selectedPlayer,
+          xuid: selectedPlayerXuid,
+          reason: banReason || null,
+        },
       });
       addToast(`${selectedPlayer} has been banned.`, "success");
       closeModals();
@@ -106,8 +110,11 @@ const OnlinePlayers = () => {
     });
 
     try {
-      await writePost(`/api/server/${selectedServer}/send_command`, {
-        command: commandToExecute,
+      await writeOperation("send_command", {
+        path: { server_name: selectedServer },
+        body: {
+          command: commandToExecute,
+        },
       });
       addToast(`Kick command sent for ${selectedPlayer}.`, "success");
       closeModals();
@@ -147,8 +154,11 @@ const OnlinePlayers = () => {
     });
 
     try {
-      await writePost(`/api/server/${selectedServer}/send_command`, {
-        command: commandToExecute,
+      await writeOperation("send_command", {
+        path: { server_name: selectedServer },
+        body: {
+          command: commandToExecute,
+        },
       });
       addToast(`Transfer command sent for ${selectedPlayer}.`, "success");
       closeModals();

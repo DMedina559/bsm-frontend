@@ -1,3 +1,4 @@
+import { callOperation } from "../api/operations";
 import { useResourceMutation } from "../app/resourceQueries";
 import { queryKeys } from "../app/queryKeys";
 import { usePreference } from "../app/usePreference";
@@ -12,7 +13,7 @@ import { useToast } from "../ToastContext";
 import { getApiProxyBasePath } from "../utils/basePath";
 import { useWebSocket } from "../WebSocketContext";
 import { useNavigate } from "react-router-dom";
-import { post } from "../api";
+
 import { logger } from "../utils/logger";
 import { sortServers, SERVER_SORTS } from "../utils/serverSort";
 import { RefreshCw, LayoutGrid, List, Grid2X2 } from "lucide-react";
@@ -40,18 +41,18 @@ const Overview = () => {
   const updateSort = (patch) => setSort({ ...sort, ...patch });
 
   const write = useResourceMutation(
-    ({ method, url, body }) => {
-      if (method === "post")
-        return body === undefined ? post(url) : post(url, body);
-    },
+    ({ id, options }, { session }) =>
+      callOperation(id, { ...options, session }),
     [queryKeys.servers()],
   );
+  /** @type {typeof callOperation} */
+  const writeOperation = (id, ...args) =>
+    write.mutateAsync({ id, options: args[0] });
   const isServerPending = (name) =>
-    write.pendingVariables.some((variables) =>
-      variables?.url?.startsWith(`/api/server/${name}/`),
+    write.pendingVariables.some(
+      (variables) => variables?.options?.path?.server_name === name,
     );
-  const writePost = (url, body) =>
-    write.mutateAsync({ url, body, method: "post" });
+
   const handleServerClick = (serverName) => {
     setSelectedServer(serverName);
     navigate("/monitor");
@@ -75,6 +76,7 @@ const Overview = () => {
       setRefreshing(false);
     }
   };
+  /** @param {import("react").MouseEvent} e @param {string} serverName @param {"start" | "stop" | "restart"} action */
   const handleAction = async (e, serverName, action) => {
     // Prevent click from bubbling up to the card click handler
     e.stopPropagation();
@@ -90,7 +92,14 @@ const Overview = () => {
     });
     addToast(`Requesting ${action} for ${serverName}...`, "info");
     try {
-      const response = await writePost(`/api/server/${serverName}/${action}`);
+      const response = await writeOperation(
+        /** @type {const} */ ({
+          start: "start_server",
+          stop: "stop_server",
+          restart: "restart_server",
+        })[action],
+        { path: { server_name: serverName } },
+      );
       addToast(
         response?.message || `Server action completed for ${serverName}.`,
         "success",
@@ -122,7 +131,9 @@ const Overview = () => {
     });
     addToast(`Updating ${serverName}...`, "info");
     try {
-      await writePost(`/api/server/${serverName}/update`);
+      await writeOperation("update_server", {
+        path: { server_name: serverName },
+      });
       addToast(`Update initiated for ${serverName}.`, "success");
     } catch (error) {
       logger.error("[Overview] Failed to initiate update", {
@@ -149,8 +160,11 @@ const Overview = () => {
       command,
     });
     try {
-      await writePost(`/api/server/${serverName}/send_command`, {
-        command,
+      await writeOperation("send_command", {
+        path: { server_name: serverName },
+        body: {
+          command,
+        },
       });
       addToast(`Command sent to ${serverName}.`, "success");
     } catch (error) {

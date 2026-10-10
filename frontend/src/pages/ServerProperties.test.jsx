@@ -10,7 +10,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 import ServerProperties from "./ServerProperties";
-import * as api from "../api";
+import * as api from "../test/httpFixtures";
 import { BrowserRouter } from "react-router-dom";
 import { ToastProvider } from "../ToastContext";
 import { ServerContext } from "../ServerContext";
@@ -24,11 +24,17 @@ vi.mock("../ServerContext", () => ({
 import { useServer } from "../ServerContext";
 
 // Mock API
-vi.mock("../api", () => ({
-  get: vi.fn(),
-  post: vi.fn(),
-  request: vi.fn(),
-}));
+vi.mock("../api", async (importOriginal) => {
+  const { createHttpTransport, configureHttpFixtures } =
+    await import("../test/httpFixtures");
+  const fixtures = {
+    get: vi.fn(),
+    post: vi.fn(),
+    request: vi.fn(),
+  };
+  configureHttpFixtures(fixtures);
+  return createHttpTransport(await importOriginal());
+});
 
 const renderWithProviders = (ui) => {
   return render(

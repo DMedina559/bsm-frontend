@@ -27,12 +27,20 @@ import Login from "../pages/Login";
 import Setup from "../pages/Setup";
 import Register from "../pages/Register";
 import Playground from "../pages/Playground";
-vi.mock("../api", () => ({
-  get: vi.fn(async (url) => fixtureResponse(new URL(url, "http://localhost"))),
-  post: vi.fn(async () => ({ status: "success" })),
-  getApiBaseUrl: () => "",
-  resolveApiUrl: (url) => url,
-}));
+vi.mock("../api", async (importOriginal) => {
+  const { createHttpTransport, configureHttpFixtures } =
+    await import("../test/httpFixtures");
+  const fixtures = {
+    get: vi.fn(async (url) =>
+      fixtureResponse(new URL(url, "http://localhost")),
+    ),
+    post: vi.fn(async () => ({ status: "success" })),
+    getApiBaseUrl: () => "",
+    resolveApiUrl: (url) => url,
+  };
+  configureHttpFixtures(fixtures);
+  return createHttpTransport(await importOriginal());
+});
 const stable = vi.hoisted(() => ({
   refreshServers: vi.fn(),
   subscribe: vi.fn(),

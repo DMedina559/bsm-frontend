@@ -1,14 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-  request,
-  get,
-  post,
-  put,
-  del,
-  ApiError,
-  getApiBaseUrl,
-  setApiBaseUrl,
-} from "./api";
+import { request, ApiError, getApiBaseUrl, setApiBaseUrl } from "./api";
 
 describe("api", () => {
   beforeEach(() => {
@@ -130,7 +121,7 @@ describe("api", () => {
   });
 
   describe("helper methods", () => {
-    it("get calls request with GET method", async () => {
+    it("sends GET requests", async () => {
       globalThis.fetch = vi.fn(() =>
         Promise.resolve({
           status: 200,
@@ -139,14 +130,14 @@ describe("api", () => {
           json: () => Promise.resolve({}),
         }),
       );
-      await get("/test");
+      await request("/test", { method: "GET" });
       expect(globalThis.fetch).toHaveBeenCalledWith(
         "/test",
         expect.objectContaining({ method: "GET" }),
       );
     });
 
-    it("post calls request with POST method and body", async () => {
+    it("serializes POST request bodies", async () => {
       globalThis.fetch = vi.fn(() =>
         Promise.resolve({
           status: 200,
@@ -155,7 +146,7 @@ describe("api", () => {
           json: () => Promise.resolve({}),
         }),
       );
-      await post("/test", { data: "test" });
+      await request("/test", { method: "POST", body: { data: "test" } });
       expect(globalThis.fetch).toHaveBeenCalledWith(
         "/test",
         expect.objectContaining({
@@ -165,7 +156,7 @@ describe("api", () => {
       );
     });
 
-    it("put calls request with PUT method and body", async () => {
+    it("serializes PUT request bodies", async () => {
       globalThis.fetch = vi.fn(() =>
         Promise.resolve({
           status: 200,
@@ -174,7 +165,7 @@ describe("api", () => {
           json: () => Promise.resolve({}),
         }),
       );
-      await put("/test", { data: "test" });
+      await request("/test", { method: "PUT", body: { data: "test" } });
       expect(globalThis.fetch).toHaveBeenCalledWith(
         "/test",
         expect.objectContaining({
@@ -184,7 +175,7 @@ describe("api", () => {
       );
     });
 
-    it("del calls request with DELETE method", async () => {
+    it("sends DELETE requests", async () => {
       globalThis.fetch = vi.fn(() =>
         Promise.resolve({
           status: 200,
@@ -193,7 +184,7 @@ describe("api", () => {
           json: () => Promise.resolve({}),
         }),
       );
-      await del("/test");
+      await request("/test", { method: "DELETE" });
       expect(globalThis.fetch).toHaveBeenCalledWith(
         "/test",
         expect.objectContaining({ method: "DELETE" }),
@@ -279,23 +270,23 @@ it("bound session transport refuses later requests after logout before fetch", a
   sessionRuntime.reset();
   globalThis.fetch = vi.fn();
   await expect(
-    post(
-      "/api/settings/set",
-      { key: "name", value: "second step" },
-      { session },
-    ),
+    request("/api/settings/set", {
+      method: "POST",
+      body: { key: "name", value: "second step" },
+      session,
+    }),
   ).rejects.toMatchObject({ name: "AbortError" });
   expect(fetch).not.toHaveBeenCalled();
 });
 it("serializes explicit JSON objects and scalar zero without losing the request body", async () => {
   globalThis.fetch = vi.fn().mockResolvedValue({ status: 204 });
-  await post(
-    "/api/example",
-    { value: 1 },
-    { headers: { "Content-Type": "application/json" } },
-  );
+  await request("/api/example", {
+    method: "POST",
+    body: { value: 1 },
+    headers: { "Content-Type": "application/json" },
+  });
   expect(fetch.mock.calls[0][1].body).toBe('{"value":1}');
-  await post("/api/example", 0);
+  await request("/api/example", { method: "POST", body: 0 });
   expect(fetch.mock.calls[1][1].body).toBe("0");
 });
 
@@ -326,3 +317,55 @@ it.each([400, 403, 404, 409, 422, 500])(
     });
   },
 );
+
+it("uses the generated login and reauthentication contracts through the authenticated transport", async () => {
+  const { callOperation } = await import("./api/operations");
+  globalThis.fetch = vi.fn().mockResolvedValue({
+    ok: true,
+    status: 200,
+    headers: new Headers({ "content-type": "application/json" }),
+    json: async () => ({ access_token: "renewed", token_type: "bearer" }),
+  });
+  await callOperation("login", {
+    body: { username: "alice", password: "a&b", remember_me: true },
+  });
+  const [loginUrl, loginRequest] = fetch.mock.calls[0];
+  expect(loginUrl).toBe("/auth/token");
+  expect(loginRequest.method).toBe("POST");
+  expect(loginRequest.body.get("password")).toBe("a&b");
+  expect(loginRequest.headers["Content-Type"]).toBe(
+    "application/x-www-form-urlencoded",
+  );
+  sessionStorage.setItem("access_token", "current-token");
+  await callOperation("reauthenticate", { query: { remember_me: false } });
+  const [reauthUrl, reauthRequest] = fetch.mock.calls[1];
+  expect(reauthUrl).toBe("/auth/reauth?remember_me=false");
+  expect(reauthRequest.body).toBeUndefined();
+  expect(reauthRequest.headers.Authorization).toBe("Bearer current-token");
+});
+
+it("encodes server parameters and preserves task tracking for generated backup calls", async () => {
+  const { callOperation } = await import("./api/operations");
+  const { operationCoordinator } = await import("./app/operationCoordinator");
+  operationCoordinator.clear();
+  globalThis.fetch = vi.fn().mockResolvedValue({
+    ok: true,
+    status: 202,
+    headers: new Headers({ "content-type": "application/json" }),
+    json: async () => ({ status: "accepted", task_id: "backup-123" }),
+  });
+  const body = { backup_type: "world" };
+  await callOperation("create_backup", {
+    path: { server_name: "my server/one" },
+    body,
+  });
+  const [url, options] = fetch.mock.calls[0];
+  expect(url).toBe("/api/server/my%20server%2Fone/backup/action");
+  expect(options.method).toBe("POST");
+  expect(JSON.parse(options.body)).toEqual(body);
+  expect(operationCoordinator.get("backup-123")).toMatchObject({
+    serverName: "my server/one",
+    status: "pending",
+  });
+  operationCoordinator.clear();
+});

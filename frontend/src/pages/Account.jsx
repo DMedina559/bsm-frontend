@@ -1,8 +1,9 @@
+import { callOperation } from "../api/operations";
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../AuthContext";
 import { useTheme } from "../ThemeContext";
 import { useToast } from "../ToastContext";
-import { get, post } from "../api";
+
 import { Save, User, Palette, RotateCcw } from "lucide-react";
 import { BUILT_IN_THEMES, THEME_LABELS } from "../utils/theme";
 import themePreviews from "../utils/themePreviews.json";
@@ -31,7 +32,7 @@ const Account = ({ appearanceOnly = false }) => {
   const [themesNotice, setThemesNotice] = useState(null);
   useEffect(() => {
     let active = true;
-    get("/api/info/themes")
+    callOperation("list_themes")
       .then((response) => {
         if (!active) return;
         if (Array.isArray(response?.themes))
@@ -80,9 +81,11 @@ const Account = ({ appearanceOnly = false }) => {
     setPasswordSaving(true);
     setPasswordError(null);
     try {
-      await post("/api/account/change-password", {
-        current_password: passwords.currentPassword,
-        new_password: passwords.newPassword,
+      await callOperation("change_password", {
+        body: {
+          current_password: passwords.currentPassword,
+          new_password: passwords.newPassword,
+        },
       });
       addToast("Password updated successfully.", "success");
       setPasswords({

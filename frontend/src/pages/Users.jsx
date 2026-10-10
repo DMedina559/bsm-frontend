@@ -1,3 +1,4 @@
+import { callOperation } from "../api/operations";
 import QueryStatus from "../components/QueryStatus";
 import { queryKeys } from "../app/queryKeys";
 import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
@@ -5,7 +6,7 @@ import Modal from "../components/Modal";
 import { useDialog } from "../DialogContext";
 import React, { useState } from "react";
 import { useToast } from "../ToastContext";
-import { post } from "../api";
+
 import {
   Trash2,
   UserPlus,
@@ -24,25 +25,35 @@ const Users = () => {
   const { confirmAction } = useDialog();
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editingUser, setEditingUser] = useState(null);
+  const [editingUser, setEditingUser] = useState(
+    /** @type {import("../api/generated/contract").components["schemas"]["UserResponse"] | null} */ (
+      null
+    ),
+  );
 
   // Invite state
-  const [inviteRole, setInviteRole] = useState("user");
+  const [inviteRole, setInviteRole] = useState(
+    /** @type {"admin" | "moderator" | "user"} */ ("user"),
+  );
   const [generatedLink, setGeneratedLink] = useState(null);
   const [copied, setCopied] = useState(false);
 
   // Edit state
-  const [editRole, setEditRole] = useState("");
+  const [editRole, setEditRole] = useState(
+    /** @type {"admin" | "moderator" | "user"} */ ("user"),
+  );
   const [editActive, setEditActive] = useState(true);
   const { addToast } = useToast();
   const write = useResourceMutation(
-    ({ url, body }) => post(url, body),
+    ({ id, options }, { session }) =>
+      callOperation(id, { ...options, session }),
     [queryKeys.users()],
   );
+  /** @type {typeof callOperation} */
+  const writeOperation = (id, ...args) =>
+    write.mutateAsync({ id, options: args[0] });
 
   const actionLoading = write.isPending;
-  const writePost = (url, body) =>
-    write.mutateAsync({ method: "post", url, body });
 
   const { user: currentUser } = useAuth();
   const resourceQuery = useResourceQuery("users", undefined);
@@ -80,7 +91,9 @@ const Users = () => {
       return;
 
     try {
-      await writePost(`/api/users/${userToDelete.id}/delete`);
+      await writeOperation("delete_user", {
+        path: { user_id: userToDelete.id },
+      });
       addToast(`User ${userToDelete.username} deleted.`, "success");
       await fetchUsers();
     } catch (error) {
@@ -96,8 +109,10 @@ const Users = () => {
     e.preventDefault();
 
     try {
-      const response = await writePost("/api/register/generate-token", {
-        role: inviteRole,
+      const response = await writeOperation("generate_registration_token", {
+        body: {
+          role: inviteRole,
+        },
       });
       logger.debug("[Users] Generate token response", {
         response,
@@ -143,8 +158,11 @@ const Users = () => {
 
       // Update Role if changed
       if (editRole !== editingUser.role) {
-        await writePost(`/api/users/${editingUser.id}/role`, {
-          role: editRole,
+        await writeOperation("update_user_role", {
+          path: { user_id: editingUser.id },
+          body: {
+            role: editRole,
+          },
         });
         updated = true;
       }
@@ -152,7 +170,13 @@ const Users = () => {
       // Update Status if changed
       if (editActive !== editingUser.is_active) {
         const endpoint = editActive ? "enable" : "disable";
-        await writePost(`/api/users/${editingUser.id}/${endpoint}`);
+        await writeOperation(
+          /** @type {const} */ ({
+            enable: "enable_user",
+            disable: "disable_user",
+          })[endpoint],
+          { path: { user_id: editingUser.id } },
+        );
         updated = true;
       }
       if (updated) {

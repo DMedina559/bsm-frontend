@@ -1,3 +1,4 @@
+import { callOperation, resolveOperationUrl } from "./api/operations";
 import { usePreference } from "./app/usePreference";
 import React, {
   createContext,
@@ -7,7 +8,7 @@ import React, {
   useState,
 } from "react";
 import { useAuth } from "./AuthContext";
-import { request, getApiBaseUrl } from "./api";
+import { resolveApiUrl, getApiBaseUrl } from "./api";
 import { getApiProxyBasePath } from "./utils/basePath";
 import {
   DEFAULT_APPEARANCE,
@@ -67,10 +68,9 @@ export const ThemeProvider = ({ children }) => {
       `${100 - appearance.panoramaVisibility}%`,
     );
     if (appearance.panorama) {
-      const base = getApiBaseUrl() || getApiProxyBasePath();
       root.style.setProperty(
         "--bsm-panorama-image",
-        `url(${JSON.stringify(`${base}/api/panorama`)})`,
+        `url(${JSON.stringify(resolveApiUrl(resolveOperationUrl("get_panorama")))})`,
       );
     } else root.style.removeProperty("--bsm-panorama-image");
     return () => {
@@ -159,8 +159,7 @@ export const ThemeProvider = ({ children }) => {
     setThemeSaving(true);
     setThemeError(null);
     try {
-      await request("/api/account/theme", {
-        method: "POST",
+      await callOperation("update_account_theme", {
         body: { theme: newTheme },
       });
       selectPalette(null);

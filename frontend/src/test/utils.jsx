@@ -13,13 +13,14 @@ import { WebSocketProvider } from "../WebSocketContext";
 import { vi, beforeEach, afterEach } from "vitest";
 import { sessionRuntime } from "../app/sessionRuntime";
 import * as api from "../api";
+import * as fixtures from "./httpFixtures";
 beforeEach(() => {
   sessionRuntime.reset();
   queryClient.clear();
-  if (vi.isMockFunction(api.get))
-    api.get.mockResolvedValue({ needs_setup: false });
+  if (vi.isMockFunction(fixtures.get))
+    fixtures.get.mockResolvedValue({ needs_setup: false });
   if (vi.isMockFunction(api.request))
-    api.request.mockImplementation(async (url) =>
+    fixtures.request.mockImplementation(async (url) =>
       url === "/api/account"
         ? { username: "testuser", role: "admin" }
         : { status: "success" },
@@ -29,24 +30,12 @@ beforeEach(() => {
 // Check the requests exercised by page tests against the actual backend schema.
 afterEach(() => {
   cleanup();
-  for (const [name, method] of Object.entries({
-    get: "GET",
-    post: "POST",
-    put: "PUT",
-    del: "DELETE",
-    request: null,
-  })) {
-    if (!vi.isMockFunction(api[name])) continue;
-    for (const [url, value, options] of api[name].mock.calls) {
-      // Plugin and initial setup routes are outside the backend OpenAPI export.
-      if (!hasApiRoute(url)) continue;
-      const verb = method ?? value?.method ?? "GET";
-      const body = ["get", "del", "request"].includes(name)
-        ? value?.body
-        : value;
-      if (body instanceof FormData || body instanceof URLSearchParams) continue;
-      assertApiRequest(verb, url, options?.body ?? body);
-    }
+  if (!vi.isMockFunction(api.request)) return;
+  for (const [url, options = {}] of api.request.mock.calls) {
+    if (!hasApiRoute(url)) continue;
+    const body = options.body;
+    if (body instanceof FormData || body instanceof URLSearchParams) continue;
+    assertApiRequest(options.method ?? "GET", url, body);
   }
 });
 

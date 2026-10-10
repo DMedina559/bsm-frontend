@@ -56,5 +56,31 @@ export default [
       "react-refresh/only-export-components": "off",
     },
   },
+  {
+    files: ["src/**/*.{js,jsx}"],
+    ignores: [
+      "src/**/*.test.*",
+      "src/test/**",
+      "src/api.js",
+      "src/api/**",
+      "src/AuthContext.jsx",
+      "src/pages/Setup.jsx",
+      "src/pages/Content.jsx",
+      "src/components/DynamicPage.jsx",
+    ],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: ["./api", "../api"].map((name) => ({
+            name,
+            importNames: ["request", "get", "post", "put", "del"],
+            message:
+              "Use callOperation for core API requests; the generic transport is reserved for undeclared setup/plugin routes.",
+          })),
+        },
+      ],
+    },
+  },
   prettierConfig,
 ];

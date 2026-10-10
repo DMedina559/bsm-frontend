@@ -3,9 +3,12 @@ import { render, screen, waitFor } from "../test/utils";
 import { fireEvent } from "@testing-library/react";
 import AuditLog from "./AuditLog";
 import { vi, describe, it, expect, beforeEach } from "vitest";
-import * as api from "../api";
+import * as api from "../test/httpFixtures";
 import { fixtureResponse } from "../test/fixtures";
-vi.mock("../api");
+vi.mock("../api", async (importOriginal) => {
+  const { createHttpTransport } = await import("../test/httpFixtures");
+  return createHttpTransport(await importOriginal());
+});
 describe("AuditLog", () => {
   beforeEach(() => {
     vi.clearAllMocks();

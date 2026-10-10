@@ -61,7 +61,7 @@ function call(registry, id, options = {}) {
     throw new Error(`Missing request body: ${id}`);
   if (options.body !== undefined && operation.bodyTypes.length === 0)
     throw new Error(`Operation does not accept a body: ${id}`);
-  const headers = { ...options.header };
+  const headers = { ...options.headers, ...options.header };
   for (const parameter of operation.parameters.filter(
     (item) => item.in === "header" && item.required,
   ))

@@ -1,8 +1,9 @@
+import { callOperation } from "../api/operations";
 import AuthBrand from "../components/AuthBrand";
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useToast } from "../ToastContext";
-import { get, post } from "../api";
+
 const Register = () => {
   const { token } = useParams();
   const [username, setUsername] = useState("");
@@ -16,7 +17,9 @@ const Register = () => {
     const validateToken = async () => {
       if (!token) return;
       try {
-        await get(`/api/register/validate/${token}`);
+        await callOperation("validate_registration_token", {
+          path: { token: token },
+        });
         setTokenValid(true);
       } catch {
         setTokenValid(false);
@@ -35,15 +38,18 @@ const Register = () => {
       addToast("Passwords do not match", "error");
       return;
     }
-    if (!tokenValid) {
+    if (!token || !tokenValid) {
       addToast("Invalid registration link.", "error");
       return;
     }
     setLoading(true);
     try {
-      await post(`/api/register/${token}`, {
-        username,
-        password,
+      await callOperation("register_user", {
+        path: { token: token },
+        body: {
+          username,
+          password,
+        },
       });
       addToast("Registration successful! Please login.", "success");
       navigate("/login");

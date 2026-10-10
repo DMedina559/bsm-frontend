@@ -2,9 +2,12 @@ import { render, screen, waitFor } from "../test/utils";
 import { act, fireEvent } from "@testing-library/react";
 import Content from "./Content";
 import { vi, describe, it, expect, beforeEach } from "vitest";
-import * as api from "../api";
+import * as api from "../test/httpFixtures";
 
-vi.mock("../api");
+vi.mock("../api", async (importOriginal) => {
+  const { createHttpTransport } = await import("../test/httpFixtures");
+  return createHttpTransport(await importOriginal());
+});
 
 describe("Content", () => {
   beforeEach(() => {

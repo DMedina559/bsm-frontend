@@ -6,10 +6,16 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { queryClient } from "./queryClient";
 import { useResourceQuery, useResourceMutation } from "./resourceQueries";
 import { queryKeys } from "./queryKeys";
-import { get } from "../api";
+import { get } from "../test/httpFixtures";
 const auth = vi.hoisted(() => ({ user: null, sessionGeneration: 1 }));
 vi.mock("../AuthContext", () => ({ useAuth: () => auth }));
-vi.mock("../api", () => ({ get: vi.fn(), request: vi.fn() }));
+vi.mock("../api", async (importOriginal) => {
+  const { createHttpTransport, configureHttpFixtures } =
+    await import("../test/httpFixtures");
+  const fixtures = { get: vi.fn(), request: vi.fn() };
+  configureHttpFixtures(fixtures);
+  return createHttpTransport(await importOriginal());
+});
 const wrapper = ({ children }) => (
   <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
 );

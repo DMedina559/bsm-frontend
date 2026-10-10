@@ -5,15 +5,21 @@ import App from "./App";
 import { BrowserRouter } from "react-router-dom";
 
 // Mock the API module
-vi.mock("./api", () => ({
-  get: vi.fn(),
-  post: vi.fn(),
-  put: vi.fn(),
-  del: vi.fn(),
-  request: vi.fn(),
-  getApiBaseUrl: vi.fn(),
-  getJwtToken: vi.fn(),
-}));
+vi.mock("./api", async (importOriginal) => {
+  const { createHttpTransport, configureHttpFixtures } =
+    await import("./test/httpFixtures");
+  const fixtures = {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    del: vi.fn(),
+    request: vi.fn(),
+    getApiBaseUrl: vi.fn(),
+    getJwtToken: vi.fn(),
+  };
+  configureHttpFixtures(fixtures);
+  return createHttpTransport(await importOriginal());
+});
 
 describe("App", () => {
   beforeEach(() => {
@@ -23,7 +29,7 @@ describe("App", () => {
 
   it("renders loading state initially", async () => {
     // Return an unresolved promise for api.get so it stays in loading state
-    const api = await import("./api");
+    const api = await import("./test/httpFixtures");
     api.get.mockImplementation(() => new Promise(() => {}));
 
     await act(async () => {
@@ -40,7 +46,7 @@ describe("App", () => {
 
   it("redirects to setup if setup is needed", async () => {
     // Mock setup status via the api.get mock
-    const api = await import("./api");
+    const api = await import("./test/httpFixtures");
     api.get.mockImplementation(async (url) => {
       if (url === "/api/setup/status") {
         return { needs_setup: true };

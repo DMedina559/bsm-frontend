@@ -1,3 +1,4 @@
+import { callOperation } from "./api/operations";
 import { sessionRuntime } from "./app/sessionRuntime";
 import { queryClient } from "./app/queryClient";
 import { operationCoordinator } from "./app/operationCoordinator";
@@ -8,7 +9,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { request, get } from "./api";
+import { request } from "./api";
 import { logger } from "./utils/logger";
 
 const AuthContext = createContext();
@@ -34,7 +35,7 @@ export const AuthProvider = ({ children }) => {
     // Always check setup status first if not logged in or to ensure correctness
     try {
       logger.debug("[Auth] Checking setup status");
-      const setupData = await get("/api/setup/status");
+      const setupData = await request("/api/setup/status");
       if (!current()) return;
       setNeedsSetup(setupData.needs_setup);
       if (setupData.needs_setup) {
@@ -53,7 +54,7 @@ export const AuthProvider = ({ children }) => {
     try {
       logger.debug("[Auth] Checking user status");
       // Check if we have a token in either storage (api.js handles retrieval)
-      const userData = await request("/api/account", { method: "GET" });
+      const userData = await callOperation("get_account");
       if (!current()) return;
       if (userData?.id == null && !userData?.username)
         throw new Error("Invalid account response");
@@ -72,12 +73,8 @@ export const AuthProvider = ({ children }) => {
           "[Auth] Authenticated via cookie but no token in storage. Fetching new token.",
         );
         try {
-          const reauthData = await request("/auth/reauth", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/x-www-form-urlencoded",
-            },
-            body: new URLSearchParams({ remember_me: "false" }),
+          const reauthData = await callOperation("reauthenticate", {
+            query: { remember_me: false },
           });
           if (!current()) return;
           if (reauthData.access_token) {
@@ -155,13 +152,7 @@ export const AuthProvider = ({ children }) => {
     formData.append("remember_me", rememberMe);
 
     const attempt = checkGeneration.current;
-    const data = await request("/auth/token", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: formData,
-    });
+    const data = await callOperation("login", { body: formData });
 
     if (attempt !== checkGeneration.current) return data;
     if (data.access_token) {
@@ -189,7 +180,7 @@ export const AuthProvider = ({ children }) => {
     const attempt = checkGeneration.current;
     try {
       logger.info("[Auth] Logging out user", { username: user?.username });
-      await request("/auth/logout");
+      await callOperation("logout");
     } catch (e) {
       logger.warn("[Auth] Logout failed on server", { error: e });
     }

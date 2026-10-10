@@ -1,21 +1,21 @@
+import { callOperation } from "../api/operations";
 import QueryStatus from "../components/QueryStatus";
 import { queryKeys } from "../app/queryKeys";
 import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
 import React from "react";
 import { Plug, RefreshCw, ToggleLeft, ToggleRight } from "lucide-react";
 import { useToast } from "../ToastContext";
-import { post, put } from "../api";
+
 const Plugins = () => {
   const { addToast } = useToast();
   const write = useResourceMutation(
-    ({ method, url, body }) =>
-      method === "put" ? put(url, body) : post(url, body),
+    ({ id, options }, { session }) =>
+      callOperation(id, { ...options, session }),
     [queryKeys.plugins()],
   );
-  const writePost = (url, body) =>
-    write.mutateAsync({ method: "post", url, body });
-  const writePut = (url, body) =>
-    write.mutateAsync({ method: "put", url, body });
+  /** @type {typeof callOperation} */
+  const writeOperation = (id, ...args) =>
+    write.mutateAsync({ id, options: args[0] });
 
   const resourceQuery = useResourceQuery("plugins", undefined);
   const plugins = resourceQuery.data ?? [];
@@ -28,7 +28,7 @@ const Plugins = () => {
   const handleReload = async () => {
     addToast("Reloading plugins...", "info");
     try {
-      await writePut("/api/plugins/reload");
+      await writeOperation("reload_plugins");
       addToast("Plugins reloaded successfully", "success");
     } catch (error) {
       addToast(error.message || "Failed to reload plugins", "error");
@@ -38,8 +38,11 @@ const Plugins = () => {
     const newEnabled = !currentEnabled;
     try {
       // API expects POST for setting status
-      await writePost(`/api/plugins/${pluginName}`, {
-        enabled: newEnabled,
+      await writeOperation("set_plugin_status", {
+        path: { plugin_name: pluginName },
+        body: {
+          enabled: newEnabled,
+        },
       });
       addToast(
         `Plugin ${pluginName} ${newEnabled ? "enabled" : "disabled"}.`,

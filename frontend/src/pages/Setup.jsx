@@ -2,7 +2,7 @@ import AuthBrand from "../components/AuthBrand";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
-import { post } from "../api";
+import { request } from "../api";
 const Setup = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -21,9 +21,12 @@ const Setup = () => {
     }
     setLoading(true);
     try {
-      await post("/api/setup/create-first-user", {
-        username,
-        password,
+      await request("/api/setup/create-first-user", {
+        method: "POST",
+        body: {
+          username,
+          password,
+        },
       });
       // Setup successful
       // Refresh auth state since the backend logs us in

@@ -8,7 +8,7 @@ import {
 } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import LogViewer from "./LogViewer";
-import { get } from "../api";
+import { get } from "../test/httpFixtures";
 
 const auth = vi.hoisted(() => ({ identity: 1, generation: 0 }));
 const socket = vi.hoisted(() => ({
@@ -17,7 +17,13 @@ const socket = vi.hoisted(() => ({
   unsubscribe: vi.fn(),
   addMessageListener: vi.fn(),
 }));
-vi.mock("../api", () => ({ get: vi.fn(), request: vi.fn() }));
+vi.mock("../api", async (importOriginal) => {
+  const { createHttpTransport, configureHttpFixtures } =
+    await import("../test/httpFixtures");
+  const fixtures = { get: vi.fn(), request: vi.fn() };
+  configureHttpFixtures(fixtures);
+  return createHttpTransport(await importOriginal());
+});
 vi.mock("../AuthContext", () => ({
   useAuth: () => ({
     user: auth.identity === null ? null : { id: auth.identity },

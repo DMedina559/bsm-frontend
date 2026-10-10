@@ -15,7 +15,7 @@
     "test:run": "vitest run",
     "api:generate": "node scripts/generate-contract.mjs",
     "api:check": "node scripts/generate-contract.mjs --check",
-    "typecheck": "tsc --noEmit --strict --skipLibCheck --lib es2022,dom src/api/contract-check.ts",
+    "typecheck": "tsc --noEmit --strict --skipLibCheck --lib es2022,dom src/api/contract-check.ts && node scripts/check-api-calls.mjs",
     "test:e2e": "playwright test"
   },
   "dependencies": {

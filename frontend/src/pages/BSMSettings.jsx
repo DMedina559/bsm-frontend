@@ -12,7 +12,7 @@ import {
 import React, { useEffect, useState } from "react";
 import { RefreshCw, Save } from "lucide-react";
 import { useToast } from "../ToastContext";
-import { post, put } from "../api";
+
 import { logger } from "../utils/logger";
 const EMPTY_SETTINGS = {};
 const BSMSettings = () => {
@@ -34,20 +34,21 @@ const BSMSettings = () => {
   const [newValue, setNewValue] = useState("");
   const { addToast } = useToast();
   const write = useResourceMutation(
-    async ({ method, url, body, entries }, { session }) => {
+    async ({ id, options, entries }, { session }) => {
       if (entries) {
         for (const [key, value] of entries)
           await callOperation("set_setting", { body: { key, value }, session });
         return;
       }
-      return method === "put" ? put(url, body) : post(url, body);
+      return callOperation(id, { ...options, session });
     },
     [queryKeys.settings()],
   );
+  /** @type {typeof callOperation} */
+  const writeOperation = (id, ...args) =>
+    write.mutateAsync({ id, options: args[0] });
 
   const saving = write.isPending;
-  const writePut = (url, body) =>
-    write.mutateAsync({ method: "put", url, body });
 
   useEffect(() => {
     setLoadError(resourceQuery.error?.message ?? null);
@@ -60,9 +61,7 @@ const BSMSettings = () => {
       const flattened = flattenSettings(settings);
 
       // Iterate through keys and save each one individually as the API expects
-      // POST /api/settings/set with body { key: "...", value: ... }
       await write.mutateAsync({
-        url: "/api/settings/set",
         entries: Object.entries(flattened),
       });
       markSaved(settings);
@@ -77,7 +76,7 @@ const BSMSettings = () => {
   const handleReload = async () => {
     try {
       const refreshed = await draft.refresh(async () => {
-        await writePut("/api/settings/reload");
+        await writeOperation("reload_settings");
         return resourceQuery.refetch();
       });
       if (refreshed) addToast("Settings reloaded from disk.", "success");

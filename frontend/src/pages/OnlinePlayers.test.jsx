@@ -9,14 +9,20 @@ import { ServerProvider } from "../ServerContext";
 import { ToastProvider } from "../ToastContext";
 import { AuthProvider } from "../AuthContext";
 import { MemoryRouter } from "react-router-dom";
-import * as api from "../api";
+import * as api from "../test/httpFixtures";
 
 // Mock the API calls
-vi.mock("../api", () => ({
-  get: vi.fn(),
-  post: vi.fn(),
-  request: vi.fn(),
-}));
+vi.mock("../api", async (importOriginal) => {
+  const { createHttpTransport, configureHttpFixtures } =
+    await import("../test/httpFixtures");
+  const fixtures = {
+    get: vi.fn(),
+    post: vi.fn(),
+    request: vi.fn(),
+  };
+  configureHttpFixtures(fixtures);
+  return createHttpTransport(await importOriginal());
+});
 
 // Mock logger to avoid console spam during tests
 vi.mock("../utils/logger", () => ({

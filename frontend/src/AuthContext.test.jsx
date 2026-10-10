@@ -2,13 +2,19 @@ import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, act } from "@testing-library/react";
 import { AuthProvider, useAuth } from "./AuthContext";
-import * as api from "./api";
+import * as api from "./test/httpFixtures";
 
 // Mock api
-vi.mock("./api", () => ({
-  get: vi.fn(),
-  request: vi.fn(),
-}));
+vi.mock("./api", async (importOriginal) => {
+  const { createHttpTransport, configureHttpFixtures } =
+    await import("./test/httpFixtures");
+  const fixtures = {
+    get: vi.fn(),
+    request: vi.fn(),
+  };
+  configureHttpFixtures(fixtures);
+  return createHttpTransport(await importOriginal());
+});
 
 const TestComponent = () => {
   const { user, login, logout, loading, needsSetup } = useAuth();

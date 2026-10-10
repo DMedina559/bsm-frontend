@@ -1,6 +1,6 @@
 import { getPreferenceIdentity, getBackendIdentity } from "./backendIdentity";
 import { sessionRuntime } from "./sessionRuntime";
-import { resolveOperationUrl } from "../api/operations";
+import { callOperation } from "../api/operations";
 import {
   captureServerRevision,
   reconcileMonitorSnapshot,
@@ -12,7 +12,6 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useAuth } from "../AuthContext";
-import { get } from "../api";
 import { queryKeys, resourceInvalidation } from "./queryKeys";
 
 const array = (value, resource) => {
@@ -28,9 +27,10 @@ const object = (value, resource) => {
 const resources = {
   installedAddons: {
     key: queryKeys.serverAddons,
-    url: (name) =>
-      resolveOperationUrl("list_server_addons", {
+    load: (name, options) =>
+      callOperation("list_server_addons", {
         path: { server_name: name },
+        ...options,
       }),
     select: (data) => {
       const addons = object(data?.addons, "installed addons");
@@ -48,59 +48,63 @@ const resources = {
   },
   globalPlayers: {
     key: queryKeys.globalPlayers,
-    url: () => resolveOperationUrl("list_players"),
+    load: (_target, options) => callOperation("list_players", { ...options }),
     select: (data) => array(data?.players, "players"),
   },
   audit: {
     key: queryKeys.audit,
-    url: () => resolveOperationUrl("list_audit_logs"),
+    load: (_target, options) =>
+      callOperation("list_audit_logs", { ...options }),
     select: (data) => array(data, "list"),
   },
   tasks: {
     key: queryKeys.tasks,
-    url: () => resolveOperationUrl("list_tasks"),
+    load: (_target, options) => callOperation("list_tasks", { ...options }),
     select: (data) => array(data, "list"),
   },
   serverSettings: {
     key: queryKeys.serverSettings,
-    url: (name) =>
-      resolveOperationUrl("get_server_settings", {
+    load: (name, options) =>
+      callOperation("get_server_settings", {
         path: { server_name: name },
+        ...options,
       }),
     select: (data) => object(data?.settings, "settings"),
   },
   access: {
     key: queryKeys.access,
-    url: ([name, kind]) =>
-      resolveOperationUrl(
+    load: ([name, kind], options) =>
+      callOperation(
         {
           allowlist: "get_allowlist",
           permissions: "get_permissions",
           bans: "get_server_bans",
         }[kind],
-        { path: { server_name: name } },
+        { path: { server_name: name }, ...options },
       ),
     select: (data) =>
       array(data?.players ?? data?.permissions ?? data?.bans, "access"),
   },
   content: {
     key: queryKeys.content,
-    url: (kind) =>
-      resolveOperationUrl(
+    load: (kind, options) =>
+      callOperation(
         kind === "worlds" ? "list_available_worlds" : "list_available_addons",
+        { ...options },
       ),
     select: (data) => array(data?.files, "content").map((name) => ({ name })),
   },
   downloads: {
     key: queryKeys.downloads,
-    url: () => resolveOperationUrl("list_downloads"),
+    load: (_target, options) => callOperation("list_downloads", { ...options }),
     select: (data) => array(data?.custom_zips, "downloads"),
   },
   monitor: {
     key: queryKeys.serverMonitor,
-    url: (name) =>
-      resolveOperationUrl("get_server_process_info", {
+    load: (name, options) =>
+      callOperation("get_server_process_info", {
         path: { server_name: name },
+        ...options,
       }),
     select: (data) =>
       data?.process_info === null
@@ -109,7 +113,7 @@ const resources = {
   },
   plugins: {
     key: queryKeys.plugins,
-    url: () => resolveOperationUrl("list_plugins"),
+    load: (_target, options) => callOperation("list_plugins", { ...options }),
     select: (data) =>
       Object.entries(object(data?.plugins, "plugins"))
         .map(([name, details]) => ({ name, ...details }))
@@ -117,7 +121,7 @@ const resources = {
   },
   users: {
     key: queryKeys.users,
-    url: () => resolveOperationUrl("list_users"),
+    load: (_target, options) => callOperation("list_users", { ...options }),
     select: (data) => {
       if (!Array.isArray(data)) throw new Error("Invalid users response");
       return data;
@@ -125,9 +129,10 @@ const resources = {
   },
   backups: {
     key: queryKeys.serverBackups,
-    url: (name) =>
-      resolveOperationUrl("list_server_backups", {
+    load: (name, options) =>
+      callOperation("list_server_backups", {
         path: { server_name: name, backup_type: "all" },
+        ...options,
       }),
     select: (data) => {
       const backups = object(data?.backups, "backups");
@@ -144,13 +149,16 @@ const resources = {
   },
   settings: {
     key: queryKeys.settings,
-    url: () => resolveOperationUrl("get_settings"),
+    load: (_target, options) => callOperation("get_settings", { ...options }),
     select: (data) => object(data?.settings, "settings"),
   },
   properties: {
     key: queryKeys.serverProperties,
-    url: (name) =>
-      resolveOperationUrl("get_properties", { path: { server_name: name } }),
+    load: (name, options) =>
+      callOperation("get_properties", {
+        path: { server_name: name },
+        ...options,
+      }),
     select: (data) => {
       object(data?.properties, "properties");
       return data;
@@ -170,7 +178,7 @@ export function useResourceQuery(resource, target, options = {}) {
     ],
     queryFn: async ({ signal }) => {
       const startedAt = captureServerRevision();
-      const data = await get(definition.url(target), { signal });
+      const data = await definition.load(target, { signal });
       return resource === "monitor"
         ? reconcileMonitorSnapshot(data, target, startedAt)
         : data;

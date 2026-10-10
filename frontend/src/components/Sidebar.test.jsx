@@ -1,9 +1,12 @@
 import { render, screen, waitFor, fireEvent, act } from "../test/utils";
 import Sidebar from "./Sidebar";
 import { vi, describe, it, expect, beforeEach } from "vitest";
-import * as api from "../api";
+import * as api from "../test/httpFixtures";
 
-vi.mock("../api");
+vi.mock("../api", async (importOriginal) => {
+  const { createHttpTransport } = await import("../test/httpFixtures");
+  return createHttpTransport(await importOriginal());
+});
 
 describe("Sidebar", () => {
   beforeEach(() => {
@@ -180,7 +183,10 @@ describe("Sidebar", () => {
     });
 
     const api = await import("../api");
-    expect(api.request).toHaveBeenCalledWith("/auth/logout");
+    expect(api.request).toHaveBeenCalledWith(
+      "/auth/logout",
+      expect.objectContaining({ method: "GET" }),
+    );
   });
 
   it("highlights the active plugin page based on URL", async () => {

@@ -1,3 +1,4 @@
+import { callOperation } from "../api/operations";
 import QueryStatus from "../components/QueryStatus";
 import { queryKeys } from "../app/queryKeys";
 import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
@@ -13,20 +14,19 @@ import {
 } from "lucide-react";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
-import { post, put } from "../api";
+
 const Backups = () => {
   const { confirmAction } = useDialog();
   const { selectedServer } = useServer();
   const { addToast } = useToast();
   const write = useResourceMutation(
-    ({ method, url, body }) =>
-      method === "put" ? put(url, body) : post(url, body),
+    ({ id, options }, { session }) =>
+      callOperation(id, { ...options, session }),
     [queryKeys.serverBackups(selectedServer)],
   );
-  const writePost = (url, body) =>
-    write.mutateAsync({ method: "post", url, body });
-  const writePut = (url, body) =>
-    write.mutateAsync({ method: "put", url, body });
+  /** @type {typeof callOperation} */
+  const writeOperation = (id, ...args) =>
+    write.mutateAsync({ id, options: args[0] });
 
   const resourceQuery = useResourceQuery("backups", selectedServer);
   const backups = resourceQuery.data ?? {};
@@ -81,7 +81,10 @@ const Backups = () => {
         backup_type: backupType,
       };
       if (fileToBackup) payload.file_to_backup = fileToBackup;
-      await writePost(`/api/server/${selectedServer}/backup/action`, payload);
+      await writeOperation("create_backup", {
+        path: { server_name: selectedServer },
+        body: payload,
+      });
       addToast("Backup task started. Check logs for completion.", "success");
     } catch (error) {
       addToast(error.message || "Failed to start backup.", "error");
@@ -102,7 +105,10 @@ const Backups = () => {
       if (type !== "all") {
         payload.backup_file = filename;
       }
-      await writePost(`/api/server/${selectedServer}/restore/action`, payload);
+      await writeOperation("restore_backup", {
+        path: { server_name: selectedServer },
+        body: payload,
+      });
       addToast("Restore task started.", "success");
     } catch (error) {
       addToast(error.message || "Failed to start restore.", "error");
@@ -113,7 +119,9 @@ const Backups = () => {
     if (!(await confirmAction("Prune old backups based on retention policy?")))
       return;
     try {
-      await writePut(`/api/server/${selectedServer}/backups/prune`);
+      await writeOperation("prune_backups", {
+        path: { server_name: selectedServer },
+      });
       addToast("Pruning task started.", "success");
     } catch (error) {
       addToast(error.message || "Failed to prune backups.", "error");

@@ -3,8 +3,14 @@ import { beforeEach, afterEach, it, expect, vi } from "vitest";
 import { operationCoordinator } from "./operationCoordinator";
 import { startOperationRecovery } from "./operationRecovery";
 import { sessionRuntime } from "./sessionRuntime";
-import { get } from "../api";
-vi.mock("../api", () => ({ get: vi.fn() }));
+import { get } from "../test/httpFixtures";
+vi.mock("../api", async (importOriginal) => {
+  const { createHttpTransport, configureHttpFixtures } =
+    await import("../test/httpFixtures");
+  const fixtures = { get: vi.fn() };
+  configureHttpFixtures(fixtures);
+  return createHttpTransport(await importOriginal());
+});
 beforeEach(() => {
   vi.useFakeTimers();
   operationCoordinator.clear();

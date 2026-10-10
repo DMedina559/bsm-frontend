@@ -5,7 +5,11 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { ThemeProvider, useTheme } from "./ThemeContext";
 import { request } from "./api";
-vi.mock("./api", () => ({ request: vi.fn(), getApiBaseUrl: () => "" }));
+vi.mock("./api", () => ({
+  request: vi.fn(),
+  getApiBaseUrl: () => "",
+  resolveApiUrl: (url) => url,
+}));
 const auth = vi.hoisted(() => ({
   user: { username: "admin", theme: "default" },
   checkUser: vi.fn(),
@@ -57,10 +61,13 @@ describe("theme engine", () => {
       expect(screen.getByTestId("theme")).toHaveTextContent("blue"),
     );
     expect(request).toHaveBeenCalledTimes(1);
-    expect(request).toHaveBeenCalledWith("/api/account/theme", {
-      method: "POST",
-      body: { theme: "blue" },
-    });
+    expect(request).toHaveBeenCalledWith(
+      "/api/account/theme",
+      expect.objectContaining({
+        method: "POST",
+        body: { theme: "blue" },
+      }),
+    );
   });
   it("preserves current theme on a failed save", async () => {
     request.mockRejectedValue(new Error("Save failed"));
@@ -210,10 +217,13 @@ describe("appearance reset", () => {
     await waitFor(() =>
       expect(document.documentElement.dataset.theme).toBe("default"),
     );
-    expect(request).toHaveBeenCalledWith("/api/account/theme", {
-      method: "POST",
-      body: { theme: "default" },
-    });
+    expect(request).toHaveBeenCalledWith(
+      "/api/account/theme",
+      expect.objectContaining({
+        method: "POST",
+        body: { theme: "default" },
+      }),
+    );
     expect(
       JSON.parse(
         localStorage.getItem(

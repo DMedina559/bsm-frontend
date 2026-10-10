@@ -1,3 +1,4 @@
+import { callOperation } from "../api/operations";
 import LogViewer from "../components/LogViewer";
 import { queryKeys } from "../app/queryKeys";
 import QueryStatus from "../components/QueryStatus";
@@ -6,7 +7,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useWebSocket } from "../WebSocketContext";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
-import { post } from "../api";
+
 import {
   LineChart,
   Line,
@@ -121,16 +122,16 @@ const Monitor = () => {
     });
   }, [addMessageListener, selectedServer]);
   const write = useResourceMutation(
-    ({ method, url, body }) => {
-      if (method === "post")
-        return body === undefined ? post(url) : post(url, body);
-    },
+    ({ id, options }, { session }) =>
+      callOperation(id, { ...options, session }),
     [queryKeys.servers(), queryKeys.serverMonitor(selectedServer)],
   );
+  /** @type {typeof callOperation} */
+  const writeOperation = (id, ...args) =>
+    write.mutateAsync({ id, options: args[0] });
 
   const loadingAction = write.isPending;
-  const writePost = (url, body) =>
-    write.mutateAsync({ url, body, method: "post" });
+
   const handleCommand = async (e) => {
     e.preventDefault();
     if (!command.trim()) return;
@@ -141,8 +142,11 @@ const Monitor = () => {
     });
 
     try {
-      await writePost(`/api/server/${selectedServer}/send_command`, {
-        command: command.trim(),
+      await writeOperation("send_command", {
+        path: { server_name: selectedServer },
+        body: {
+          command: command.trim(),
+        },
       });
       addToast("Command sent successfully.", "success");
       setCommand("");
@@ -155,6 +159,7 @@ const Monitor = () => {
       addToast(error.message || "Failed to send command.", "error");
     }
   };
+  /** @param {"start" | "stop" | "restart"} action */
   const sendAction = async (action) => {
     if (loadingAction || !selectedServer) return;
     logger.info(`[Monitor] Sending signal`, {
@@ -164,8 +169,13 @@ const Monitor = () => {
 
     addToast(`Requesting server ${action}...`, "info");
     try {
-      const response = await writePost(
-        `/api/server/${selectedServer}/${action}`,
+      const response = await writeOperation(
+        /** @type {const} */ ({
+          start: "start_server",
+          stop: "stop_server",
+          restart: "restart_server",
+        })[action],
+        { path: { server_name: selectedServer } },
       );
       addToast(response?.message || "Server action completed.", "success");
     } catch (error) {

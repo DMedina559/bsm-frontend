@@ -6,7 +6,8 @@ import {
   Download,
   Terminal,
 } from "lucide-react";
-import { getApiBaseUrl } from "../api";
+import { resolveApiUrl } from "../api";
+import { resolveOperationUrl } from "../api/operations";
 import { getApiProxyBasePath } from "../utils/basePath";
 
 const actionDefinitions = {
@@ -79,7 +80,11 @@ export default function OverviewServerCard({
       <div className="card-header overview-card-header">
         <img
           className="overview-world-icon"
-          src={`${getApiBaseUrl()}/api/server/${encodeURIComponent(server.name)}/world/icon`}
+          src={resolveApiUrl(
+            resolveOperationUrl("get_world_icon", {
+              path: { server_name: server.name },
+            }),
+          )}
           alt=""
           onError={(event) => {
             event.currentTarget.onerror = null;

@@ -1,8 +1,9 @@
+import { callOperation } from "../api/operations";
 import { queryKeys } from "../app/queryKeys";
 import QueryStatus from "../components/QueryStatus";
 import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
 import React, { useState } from "react";
-import { post, put } from "../api";
+
 import { useToast } from "../ToastContext";
 import { RefreshCw, Plus, Scan } from "lucide-react";
 const GlobalPlayers = () => {
@@ -15,24 +16,20 @@ const GlobalPlayers = () => {
 
   const { addToast } = useToast();
   const write = useResourceMutation(
-    ({ method, url, body }) => {
-      if (method === "post")
-        return body === undefined ? post(url) : post(url, body);
-      if (method === "put")
-        return body === undefined ? put(url) : put(url, body);
-    },
+    ({ id, options }, { session }) =>
+      callOperation(id, { ...options, session }),
     [queryKeys.globalPlayers()],
   );
+  /** @type {typeof callOperation} */
+  const writeOperation = (id, ...args) =>
+    write.mutateAsync({ id, options: args[0] });
   const scanLoading = write.pendingVariables.some(
-    (variables) => variables?.url === "/api/players/scan",
+    (variables) => variables?.id === "scan_players",
   );
   const addLoading = write.pendingVariables.some(
-    (variables) => variables?.url === "/api/players/add",
+    (variables) => variables?.id === "add_players",
   );
-  const writePost = (url, body) =>
-    write.mutateAsync({ url, body, method: "post" });
-  const writePut = (url, body) =>
-    write.mutateAsync({ url, body, method: "put" });
+
   const fetchPlayers = async () => {
     const result = await resourceQuery.refetch();
     if (result.error) addToast(result.error.message, "error");
@@ -46,7 +43,7 @@ const GlobalPlayers = () => {
   };
   const handleScan = async () => {
     try {
-      const response = await writePut("/api/players/scan");
+      const response = await writeOperation("scan_players");
       if (response && response.status === "success") {
         addToast(response.message || "Scan started.", "success");
       } else {
@@ -68,8 +65,10 @@ const GlobalPlayers = () => {
     if (inputs.length === 0) return;
     try {
       // payload expects { players: ["Name:XUID", ...] }
-      const response = await writePost("/api/players/add", {
-        players: inputs,
+      const response = await writeOperation("add_players", {
+        body: {
+          players: inputs,
+        },
       });
       if (response && response.status === "success") {
         addToast(response.message || "Players added/updated.", "success");

@@ -1,3 +1,4 @@
+import { callOperation } from "../api/operations";
 import { useEditableDraft } from "../app/useEditableDraft";
 import QueryStatus from "../components/QueryStatus";
 import { queryKeys } from "../app/queryKeys";
@@ -6,7 +7,7 @@ import Modal from "../components/Modal";
 import React, { useEffect, useMemo, useState } from "react";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
-import { post } from "../api";
+
 import {
   Save,
   RefreshCw,
@@ -103,13 +104,15 @@ const ServerProperties = () => {
   const [showRawModal, setShowRawModal] = useState(false);
   const { addToast } = useToast();
   const write = useResourceMutation(
-    ({ url, body }) => post(url, body),
+    ({ id, options }, { session }) =>
+      callOperation(id, { ...options, session }),
     [queryKeys.serverProperties(selectedServer)],
   );
+  /** @type {typeof callOperation} */
+  const writeOperation = (id, ...args) =>
+    write.mutateAsync({ id, options: args[0] });
 
   const saving = write.isPending;
-  const writePost = (url, body) =>
-    write.mutateAsync({ method: "post", url, body });
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -150,8 +153,11 @@ const ServerProperties = () => {
       return acc;
     }, {});
     try {
-      await writePost(`/api/server/${selectedServer}/properties/set`, {
-        properties: propsObj,
+      await writeOperation("set_properties", {
+        path: { server_name: selectedServer },
+        body: {
+          properties: propsObj,
+        },
       });
       markSaved(properties);
       addToast("Server properties saved successfully.", "success");

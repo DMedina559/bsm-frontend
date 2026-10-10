@@ -14,7 +14,7 @@ import {
 } from "@testing-library/react";
 import ServerInstall from "./ServerInstall";
 import { vi, describe, it, expect, beforeEach } from "vitest";
-import * as api from "../api";
+import * as api from "../test/httpFixtures";
 
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
@@ -26,7 +26,10 @@ const mocks = vi.hoisted(() => ({
   listeners: new Set(),
   addMessageListener: vi.fn(),
 }));
-vi.mock("../api");
+vi.mock("../api", async (importOriginal) => {
+  const { createHttpTransport } = await import("../test/httpFixtures");
+  return createHttpTransport(await importOriginal());
+});
 vi.mock("../DialogContext", () => ({
   useDialog: () => ({ confirmAction: vi.fn() }),
 }));

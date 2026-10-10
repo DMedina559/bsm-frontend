@@ -1,3 +1,4 @@
+import { callOperation } from "../api/operations";
 import { queryKeys } from "../app/queryKeys";
 import QueryStatus from "../components/QueryStatus";
 import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
@@ -17,7 +18,7 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
-import { del, post, put } from "../api";
+
 import { logger } from "../utils/logger";
 const AccessControl = () => {
   const { confirmAction } = useDialog();
@@ -34,7 +35,9 @@ const AccessControl = () => {
   // Add Form State
   const [playerName, setPlayerName] = useState("");
   const [playerXuid, setPlayerXuid] = useState(""); // New state for XUID
-  const [permissionLevel, setPermissionLevel] = useState("member");
+  const [permissionLevel, setPermissionLevel] = useState(
+    /** @type {"visitor" | "member" | "operator"} */ ("member"),
+  );
   const [ignoresPlayerLimit, setIgnoresPlayerLimit] = useState(false);
   const [banReason, setBanReason] = useState("");
 
@@ -52,23 +55,16 @@ const AccessControl = () => {
     }
   }, [location.state]);
   const write = useResourceMutation(
-    ({ method, url, body, options }) => {
-      if (method === "post") return post(url, body);
-      if (method === "put")
-        return body === undefined ? put(url) : put(url, body);
-      if (method === "del")
-        return options === undefined ? del(url) : del(url, options);
-    },
+    ({ id, options }, { session }) =>
+      callOperation(id, { ...options, session }),
     [queryKeys.access([selectedServer, activeTab]), queryKeys.globalPlayers()],
   );
+  /** @type {typeof callOperation} */
+  const writeOperation = (id, ...args) =>
+    write.mutateAsync({ id, options: args[0] });
 
   const actionLoading = write.isPending;
-  const writePost = (url, body) =>
-    write.mutateAsync({ url, body, method: "post" });
-  const writePut = (url, body) =>
-    write.mutateAsync({ url, body, method: "put" });
-  const writeDelete = (url, options) =>
-    write.mutateAsync({ url, options, method: "del" });
+
   const fetchItems = async () => {
     const result = await resourceQuery.refetch();
     if (result.error) addToast(result.error.message, "error");
@@ -98,26 +94,35 @@ const AccessControl = () => {
 
     try {
       if (activeTab === "allowlist") {
-        await writePost(`/api/server/${selectedServer}/allowlist/add`, {
-          players: [playerName],
-          ignoresPlayerLimit: ignoresPlayerLimit,
+        await writeOperation("add_allowlist_players", {
+          path: { server_name: selectedServer },
+          body: {
+            players: [playerName],
+            ignoresPlayerLimit: ignoresPlayerLimit,
+          },
         });
       } else if (activeTab === "bans") {
-        await writePost(`/api/server/${selectedServer}/bans/add`, {
-          player_name: playerName,
-          xuid: playerXuid,
-          reason: banReason || null,
+        await writeOperation("add_server_ban", {
+          path: { server_name: selectedServer },
+          body: {
+            player_name: playerName,
+            xuid: playerXuid,
+            reason: banReason || null,
+          },
         });
       } else {
-        await writePost(`/api/server/${selectedServer}/permissions/set`, {
-          // Permission endpoint expects a list of objects
-          permissions: [
-            {
-              xuid: playerXuid,
-              name: playerName,
-              permission_level: permissionLevel,
-            },
-          ],
+        await writeOperation("set_permissions", {
+          path: { server_name: selectedServer },
+          body: {
+            // Permission endpoint expects a list of objects
+            permissions: [
+              {
+                xuid: playerXuid,
+                name: playerName,
+                permission_level: permissionLevel,
+              },
+            ],
+          },
         });
       }
       addToast(`${playerName} added/updated in ${activeTab}.`, "success");
@@ -142,8 +147,11 @@ const AccessControl = () => {
     });
 
     try {
-      await writePost(`/api/server/${selectedServer}/send_command`, {
-        command: commandToExecute,
+      await writeOperation("send_command", {
+        path: { server_name: selectedServer },
+        body: {
+          command: commandToExecute,
+        },
       });
       addToast(`Kick command sent for ${kickPlayerName}.`, "success");
       setKickReasons((prev) => ({
@@ -167,14 +175,16 @@ const AccessControl = () => {
 
     try {
       if (activeTab === "allowlist") {
-        await writeDelete(`/api/server/${selectedServer}/allowlist/remove`, {
+        await writeOperation("remove_allowlist_players", {
+          path: { server_name: selectedServer },
           body: {
             players: [item.name || item.xuid],
           },
         });
         addToast("Player removed from allowlist.", "success");
       } else if (activeTab === "bans") {
-        await writeDelete(`/api/server/${selectedServer}/bans/remove`, {
+        await writeOperation("remove_server_ban", {
+          path: { server_name: selectedServer },
           body: {
             xuid: item.xuid || item.uuid,
           },
@@ -194,14 +204,17 @@ const AccessControl = () => {
     if (!selectedServer) return;
 
     try {
-      await writePost(`/api/server/${selectedServer}/permissions/set`, {
-        permissions: [
-          {
-            xuid: item.xuid,
-            name: item.name,
-            permission_level: newLevel,
-          },
-        ],
+      await writeOperation("set_permissions", {
+        path: { server_name: selectedServer },
+        body: {
+          permissions: [
+            {
+              xuid: item.xuid,
+              name: item.name,
+              permission_level: newLevel,
+            },
+          ],
+        },
       });
       addToast(`Updated permission for ${item.name} to ${newLevel}`, "success");
     } catch (error) {
@@ -211,7 +224,7 @@ const AccessControl = () => {
   };
   const handleScanPlayers = async () => {
     try {
-      await writePut("/api/players/scan");
+      await writeOperation("scan_players");
       addToast("Player scan initiated. Logs are being processed.", "success");
       // Optionally refresh, though scan is async and updates global DB, might not affect local list immediately
     } catch (error) {

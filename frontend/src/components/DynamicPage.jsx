@@ -1,7 +1,7 @@
 import { useRequestTracker } from "../utils/useRequestTracker";
 import Modal from "./Modal";
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { get, post, downloadFile } from "../api";
+import { request, downloadFile } from "../api";
 import { useToast } from "../ToastContext";
 import { useSearchParams } from "react-router-dom";
 import { useServer } from "../ServerContext";
@@ -971,7 +971,7 @@ const DynamicPage = ({ schemaJson }) => {
           fetchUrlObj.searchParams.append("server", server);
         }
         const relativeFetchUrl = fetchUrlObj.pathname + fetchUrlObj.search;
-        const response = await get(relativeFetchUrl);
+        const response = await request(relativeFetchUrl);
         if (!requestTicket.current()) return;
         // Verify if response is valid schema
         if (
@@ -1096,9 +1096,15 @@ const DynamicPage = ({ schemaJson }) => {
             }
           });
           // api.post handles FormData correctly (lets browser set Content-Type)
-          res = await post(actionDef.endpoint, formData);
+          res = await request(actionDef.endpoint, {
+            method: "POST",
+            body: formData,
+          });
         } else {
-          res = await post(actionDef.endpoint, payload);
+          res = await request(actionDef.endpoint, {
+            method: "POST",
+            body: payload,
+          });
         }
         if (res && res.status === "success") {
           addToast(res.message || "Action successful", "success");

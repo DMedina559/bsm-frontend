@@ -15,7 +15,7 @@ import { CheckCircle, Download, RefreshCw, Save, Trash2 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
-import { post, del } from "../api";
+
 const EMPTY_SETTINGS = {};
 const ServerConfig = () => {
   const { confirmAction } = useDialog();
@@ -41,7 +41,7 @@ const ServerConfig = () => {
   const navigate = useNavigate();
   const setupFlow = location.state?.setupFlow;
   const write = useResourceMutation(
-    async ({ method, url, body, options, entries }, { session }) => {
+    async ({ id, options, entries }, { session }) => {
       if (entries) {
         for (const [key, value] of entries)
           await callOperation("set_server_setting", {
@@ -51,18 +51,16 @@ const ServerConfig = () => {
           });
         return;
       }
-      if (method === "post") return post(url, body);
-      if (method === "del")
-        return options === undefined ? del(url) : del(url, options);
+      return callOperation(id, { ...options, session });
     },
     [queryKeys.serverSettings(selectedServer), queryKeys.servers()],
   );
+  /** @type {typeof callOperation} */
+  const writeOperation = (id, ...args) =>
+    write.mutateAsync({ id, options: args[0] });
 
   const saving = write.isPending;
-  const writePost = (url, body) =>
-    write.mutateAsync({ url, body, method: "post" });
-  const writeDelete = (url, options) =>
-    write.mutateAsync({ url, options, method: "del" });
+
   useEffect(() => {
     setLoadError(resourceQuery.error?.message ?? null);
   }, [resourceQuery.error]);
@@ -83,7 +81,6 @@ const ServerConfig = () => {
     try {
       const flattened = flattenSettings(settings);
       await write.mutateAsync({
-        url: `/api/server/${selectedServer}/settings/set`,
         entries: Object.entries(flattened).filter(
           ([key]) => key !== "config_schema_version",
         ),
@@ -102,7 +99,9 @@ const ServerConfig = () => {
     ) {
       addToast("Starting server...", "info");
       try {
-        const response = await writePost(`/api/server/${selectedServer}/start`);
+        const response = await writeOperation("start_server", {
+          path: { server_name: selectedServer },
+        });
         addToast(response?.message || "Server started.", "success");
       } catch (error) {
         addToast("Failed to start server: " + error.message, "error");
@@ -121,7 +120,9 @@ const ServerConfig = () => {
       return;
     addToast("Updating server...", "info");
     try {
-      await writePost(`/api/server/${selectedServer}/update`);
+      await writeOperation("update_server", {
+        path: { server_name: selectedServer },
+      });
       addToast("Update task started. Check logs.", "success");
     } catch (error) {
       addToast(error.message || "Failed to start update.", "error");
@@ -136,7 +137,9 @@ const ServerConfig = () => {
 
     addToast(`Deleting server "${selectedServer}"...`, "info");
     try {
-      await writeDelete(`/api/server/${selectedServer}/delete`);
+      await writeOperation("delete_server", {
+        path: { server_name: selectedServer },
+      });
       addToast(`Server "${selectedServer}" deletion started.`, "success");
       navigate("/");
     } catch (error) {
