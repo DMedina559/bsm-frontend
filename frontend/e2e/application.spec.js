@@ -116,7 +116,9 @@ test("installation survives navigation and reconnect then resumes setup", async 
   await page.getByRole("link", { name: /Install Server/ }).click();
   await page.getByLabel("Server Name").fill("NewServer");
   await page.getByRole("button", { name: /Install Server/ }).click();
-  await expect(page.getByText("1 active operations")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "1 active operation. View operations" }),
+  ).toBeVisible();
   await page.getByRole("link", { name: "Overview", exact: true }).click();
   await expect.poll(() => state.sockets.length).toBeGreaterThan(0);
   const connections = state.sockets.length;
@@ -139,7 +141,9 @@ test("installation survives navigation and reconnect then resumes setup", async 
       },
     }),
   );
-  await expect(page.getByText("0 active operations")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "0 active operations. View operations" }),
+  ).toBeVisible();
   await page.getByRole("link", { name: /Install Server/ }).click();
   await expect(page).toHaveURL(/server-properties/);
 });

@@ -97,6 +97,7 @@ const Layout = () => {
               <Radio size={14} />
               {isConnected ? "Live" : isFallback ? "Polling" : "Offline"}
             </span>
+            <OperationsStatus />
             <NotificationHistory />
             <Link className="account-chip" to="/account">
               <span className="avatar">
@@ -120,7 +121,6 @@ const Layout = () => {
               </span>
             )}
           </div>
-          <OperationsStatus />
           <Outlet />
           <Footer />
         </main>

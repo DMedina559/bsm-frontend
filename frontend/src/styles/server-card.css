@@ -63,3 +63,42 @@
 .server-card-menu-panel button:focus-visible {
   background: var(--bsm-surface-raised);
 }
+
+.workspace-overview .overview-server-card .overview-card-header {
+  padding: 12px 14px 8px;
+  gap: 10px;
+}
+.workspace-overview .overview-server-card .overview-world-icon {
+  width: 44px;
+  height: 44px;
+}
+.workspace-overview .overview-server-card .overview-server-identity h3 {
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+.workspace-overview .overview-server-card .overview-card-body {
+  padding: 0 14px 10px;
+}
+.workspace-overview .overview-server-card .overview-detail-row {
+  margin-top: 6px;
+  font-size: 0.85rem;
+}
+.workspace-overview .overview-server-card .overview-card-actions {
+  padding: 8px 12px;
+  gap: 6px;
+}
+.workspace-overview
+  .overview-server-card
+  .overview-card-actions
+  .action-button {
+  min-height: 34px;
+  padding: 6px 8px;
+}
+@media (max-width: 768px) {
+  .workspace-overview
+    .overview-server-card
+    .overview-card-actions
+    .action-button {
+    min-height: 44px;
+  }
+}

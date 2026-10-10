@@ -20,6 +20,23 @@ function mount() {
 }
 
 describe("server card navigation", () => {
+  it.each(["INSTALLED", "ERROR", "UNKNOWN", "CRASHED"])(
+    "offers Start for a %s server",
+    (status) => {
+      const action = vi.fn();
+      render(
+        <ServerCard server={{ name: "Recovery", status }} onAction={action} />,
+      );
+      const start = screen.getByRole("button", { name: "Start Recovery" });
+      expect(start).toBeEnabled();
+      fireEvent.click(start);
+      expect(action).toHaveBeenCalledWith(
+        expect.anything(),
+        "Recovery",
+        "start",
+      );
+    },
+  );
   it("opens Monitor from the card's primary button", () => {
     const handlers = mount();
     fireEvent.click(screen.getByRole("button", { name: "Open Test monitor" }));

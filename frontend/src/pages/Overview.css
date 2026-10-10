@@ -534,9 +534,9 @@
 .workspace-overview .overview-metrics .workspace-metric:first-child {
   grid-column: auto;
   min-height: 0;
-  padding: clamp(10px, 1vw, 15px);
+  padding: 8px 10px;
   justify-content: center;
-  gap: 5px;
+  gap: 3px;
 }
 .workspace-overview .overview-metric-heading {
   align-items: flex-start;
@@ -548,7 +548,7 @@
   height: 15px;
 }
 .workspace-overview .overview-metrics strong {
-  font-size: clamp(1.35rem, 1.7vw, 1.75rem);
+  font-size: clamp(1.15rem, 1.4vw, 1.4rem);
   line-height: 1.1;
 }
 .workspace-overview .overview-metrics small {
@@ -631,4 +631,11 @@
   .workspace-overview .overview-refresh {
     padding: 6px 9px;
   }
+}
+
+.workspace-overview .overview-metrics {
+  align-self: start;
+}
+.workspace-overview .overview-metrics small {
+  display: none;
 }

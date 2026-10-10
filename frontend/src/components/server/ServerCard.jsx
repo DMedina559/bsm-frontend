@@ -58,7 +58,7 @@ export default function ServerCard({
   const stopped = status === "stopped";
   const stable = running || stopped;
   const actions = [
-    ...(stopped ? ["start"] : []),
+    ...(!running ? ["start"] : []),
     ...(running ? ["stop", "restart"] : []),
     "update",
     "command",

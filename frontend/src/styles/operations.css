@@ -1,0 +1,65 @@
+.operations-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 5px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--bsm-radius-md);
+  background: transparent;
+  color: var(--text-color);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.operations-trigger:hover {
+  background: var(--bsm-surface-raised);
+}
+.operations-count {
+  min-width: 20px;
+  padding: 2px 5px;
+  border-radius: 20px;
+  background: var(--bsm-surface-raised);
+  text-align: center;
+  font-weight: 700;
+}
+.operations-dialog {
+  max-width: 560px;
+}
+.operations-summary {
+  margin-top: 0;
+  color: var(--text-color-secondary);
+  font-size: 0.85rem;
+}
+.operations-list {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.operations-item {
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--bsm-radius-md);
+  overflow-wrap: anywhere;
+}
+.operations-item progress {
+  display: block;
+  width: 100%;
+  margin: 10px 0;
+  accent-color: var(--bsm-accent);
+}
+.operations-item .action-button {
+  display: block;
+  margin-top: 10px;
+}
+@media (max-width: 768px) {
+  .operations-trigger {
+    min-height: 44px;
+  }
+  .operations-trigger-label {
+    display: none;
+  }
+}

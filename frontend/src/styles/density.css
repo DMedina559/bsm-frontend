@@ -128,7 +128,7 @@ body {
   font-size: var(--bsm-small-size);
 }
 .workspace-topbar {
-  padding: var(--bsm-card-padding) var(--bsm-page-padding);
+  padding: 3px var(--bsm-page-padding);
 }
 .dialog-panel .dialog-body {
   padding: var(--bsm-panel-padding);

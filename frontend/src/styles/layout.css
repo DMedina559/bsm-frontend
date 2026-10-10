@@ -281,12 +281,12 @@
 
 /* Slim breadcrumb and account bar on desktop and mobile. */
 .workspace-shell > .workspace-topbar {
-  min-height: 56px;
-  padding: 6px clamp(16px, 2vw, 28px);
+  min-height: 44px;
+  padding: 3px clamp(16px, 2vw, 28px);
   gap: 12px;
 }
 .workspace-topbar .workspace-indicators {
-  gap: 14px;
+  gap: 8px;
 }
 .workspace-topbar .breadcrumbs {
   gap: 9px;
