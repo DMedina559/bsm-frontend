@@ -1,38 +1,55 @@
+vi.mock("../contexts/DialogContext", () => ({
+  useDialog: () => ({ confirmAction: vi.fn().mockResolvedValue(true) }),
+}));
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "../app/queryClient";
+vi.mock("../contexts/AuthContext", () => ({
+  useAuth: () => ({ user: { username: "admin" } }),
+}));
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 import ServerProperties from "./ServerProperties";
-import * as api from "../api";
+import * as api from "../test/httpFixtures";
 import { BrowserRouter } from "react-router-dom";
-import { ToastProvider } from "../ToastContext";
-import { ServerContext } from "../ServerContext";
+import { ToastProvider } from "../contexts/ToastContext";
+import { ServerContext } from "../contexts/ServerContext";
 
 // Mock the useServer hook
-vi.mock("../ServerContext", () => ({
+vi.mock("../contexts/ServerContext", () => ({
   useServer: vi.fn(),
   ServerProvider: ({ children }) => <div>{children}</div>,
 }));
 
-import { useServer } from "../ServerContext";
+import { useServer } from "../contexts/ServerContext";
 
 // Mock API
-vi.mock("../api", () => ({
-  get: vi.fn(),
-  post: vi.fn(),
-  request: vi.fn(),
-}));
+vi.mock("../api/transport", async (importOriginal) => {
+  const { createHttpTransport, configureHttpFixtures } =
+    await import("../test/httpFixtures");
+  const fixtures = {
+    get: vi.fn(),
+    post: vi.fn(),
+    request: vi.fn(),
+  };
+  configureHttpFixtures(fixtures);
+  return createHttpTransport(await importOriginal());
+});
 
 const renderWithProviders = (ui) => {
   return render(
-    <BrowserRouter>
-      <ToastProvider>{ui}</ToastProvider>
-    </BrowserRouter>,
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <ToastProvider>{ui}</ToastProvider>
+      </BrowserRouter>
+    </QueryClientProvider>,
   );
 };
 
 describe("ServerProperties", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    queryClient.clear();
 
     // Mock useServer return value
     useServer.mockReturnValue({
@@ -60,6 +77,7 @@ describe("ServerProperties", () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+    queryClient.clear();
   });
 
   it("renders properties form and saves changes", async () => {

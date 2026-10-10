@@ -1,159 +1,43 @@
-import { useDialog } from "../DialogContext";
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useToast } from "../ToastContext";
-import { post, get } from "../api";
-import { useServer } from "../ServerContext";
+import { useResourceQuery } from "../app/resourceQueries";
+import { useServerInstallation } from "../features/servers/useServerInstallation";
+import React, { useState, useCallback } from "react";
+import { useToast } from "../contexts/ToastContext";
+import { useServer } from "../contexts/ServerContext";
 import { useNavigate } from "react-router-dom";
 import { PlusSquare, RefreshCw } from "lucide-react";
-import { useWebSocket } from "../WebSocketContext";
-import { logger } from "../utils/logger";
 const ServerInstall = () => {
-  const { confirmAction } = useDialog();
+  const { addToast } = useToast();
+  const navigate = useNavigate();
+  const { refreshServers, setSelectedServer } = useServer();
+  const onInstalled = useCallback(
+    async (name, assertCurrent) => {
+      await refreshServers();
+      assertCurrent();
+      setSelectedServer(name);
+      navigate("/server-properties", { state: { setupFlow: true } });
+    },
+    [navigate, refreshServers, setSelectedServer],
+  );
+  const installation = useServerInstallation(onInstalled);
+  const loading = installation.loading;
   const [formData, setFormData] = useState({
-    server_name: "",
+    server_name: installation.serverName ?? "",
     server_version: "LATEST",
     server_zip_path: "",
     overwrite: false,
   });
   const [specificVersion, setSpecificVersion] = useState("");
-  const [customZips, setCustomZips] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [installTaskId, setInstallTaskId] = useState(null);
-  const { addToast } = useToast();
-  const navigate = useNavigate();
-  const { refreshServers, setSelectedServer } = useServer();
-  const { subscribe, unsubscribe, addMessageListener } = useWebSocket();
-  const handledTask = useRef(null);
-
-  const handleInstallSuccess = useCallback(async () => {
-    await refreshServers();
-    setSelectedServer(formData.server_name);
-    if (installTaskId) {
-      unsubscribe(`task:${installTaskId}`);
-    }
-    setLoading(false);
-    navigate("/server-properties", {
-      state: {
-        setupFlow: true,
-      },
-    });
-  }, [
-    formData.server_name,
-    installTaskId,
-    navigate,
-    refreshServers,
-    setSelectedServer,
-    unsubscribe,
-  ]);
-  useEffect(() => {
-    const fetchCustomZips = async () => {
-      try {
-        const data = await get("/api/downloads/list");
-        if (data && data.status === "success") {
-          setCustomZips(data.custom_zips || []);
-        }
-      } catch (error) {
-        logger.warn("[ServerInstall] Failed to fetch custom zips", {
-          error,
-        });
-      }
-    };
-    fetchCustomZips();
-  }, []);
-
-  const handleTaskUpdate = useCallback(
-    (taskData) => {
-      if (!installTaskId || handledTask.current === installTaskId) return;
-      const completed = ["completed", "success"].includes(taskData.status);
-      const failed = ["failed", "cancelled", "error"].includes(taskData.status);
-      if (!completed && !failed) return;
-
-      handledTask.current = installTaskId;
-      setInstallTaskId(null);
-      unsubscribe(`task:${installTaskId}`);
-      if (
-        completed &&
-        !["error", "skipped"].includes(taskData.result?.status)
-      ) {
-        addToast("Installation completed successfully!", "success");
-        handleInstallSuccess();
-      } else {
-        addToast(
-          `Installation failed: ${taskData.error?.message || taskData.result?.message || taskData.message}`,
-          "error",
-        );
-        setLoading(false);
-      }
-    },
-    [installTaskId, unsubscribe, addToast, handleInstallSuccess],
-  );
-
-  // Listen directly so another topic cannot overwrite completion in a React batch.
-  useEffect(() => {
-    if (!installTaskId) return;
-    const topic = `task:${installTaskId}`;
-    const removeListener = addMessageListener((message) => {
-      if (message.topic === topic && message.type === "task_update") {
-        handleTaskUpdate(message.data);
-      }
-    });
-    subscribe(topic);
-    return () => {
-      removeListener();
-      unsubscribe(topic);
-    };
-  }, [
-    installTaskId,
-    addMessageListener,
-    subscribe,
-    unsubscribe,
-    handleTaskUpdate,
-  ]);
-
-  // Reconcile even with an active socket: completion may precede subscription
-  // or occur during reconnection. The same handler makes delivery idempotent.
-  useEffect(() => {
-    if (!installTaskId) return;
-    let disposed = false;
-    let polling = false;
-    const pollStatus = async () => {
-      if (polling) return;
-      polling = true;
-      try {
-        const taskData = await get(`/api/tasks/status/${installTaskId}`);
-        if (!disposed && taskData) handleTaskUpdate(taskData);
-      } catch (error) {
-        logger.warn("[ServerInstall] Polling task status failed", {
-          error,
-          installTaskId,
-        });
-        if (!disposed && error.status === 404) {
-          handleTaskUpdate({
-            status: "failed",
-            message: "Installation task lost.",
-          });
-        }
-      } finally {
-        polling = false;
-      }
-    };
-    const intervalId = setInterval(pollStatus, 2000);
-    pollStatus();
-    return () => {
-      disposed = true;
-      clearInterval(intervalId);
-    };
-  }, [installTaskId, handleTaskUpdate]);
-
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
+  const downloadsQuery = useResourceQuery("downloads");
+  const customZips = downloadsQuery.data ?? [];
+  const handleChange = (event) => {
+    const { name, value, type, checked } = event.target;
+    setFormData((previous) => ({
+      ...previous,
       [name]: type === "checkbox" ? checked : value,
     }));
   };
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     if (loading) return;
     if (!formData.server_name.trim()) {
       addToast("Server name is required", "error");
@@ -163,52 +47,13 @@ const ServerInstall = () => {
       addToast("Please enter a specific version number.", "error");
       return;
     }
-    const payload = {
+    await installation.submit({
       ...formData,
-    };
-    if (formData.server_version === "SPECIFIC") {
-      payload.server_version = specificVersion.trim();
-    }
-    setLoading(true);
-    try {
-      const response = await post("/api/server/install", payload);
-      const initiateMonitoring = (taskId) => {
-        setInstallTaskId(taskId);
-        handledTask.current = null;
-        addToast("Installation started. Please wait...", "info");
-      };
-      if (response && response.status === "confirm_needed") {
-        if (await confirmAction(response.message)) {
-          const confirmData = {
-            ...payload,
-            overwrite: true,
-          };
-          const confirmResponse = await post(
-            "/api/server/install",
-            confirmData,
-          );
-          if (confirmResponse && confirmResponse.task_id) {
-            initiateMonitoring(confirmResponse.task_id);
-          } else {
-            addToast(
-              "The installation did not return a task ID. Try again.",
-              "error",
-            );
-            setLoading(false);
-          }
-        } else {
-          setLoading(false);
-        }
-      } else if (response && response.task_id) {
-        initiateMonitoring(response.task_id);
-      } else {
-        addToast("Failed to start installation task.", "error");
-        setLoading(false);
-      }
-    } catch (error) {
-      addToast(error.message || "Failed to install server.", "error");
-      setLoading(false);
-    }
+      server_version:
+        formData.server_version === "SPECIFIC"
+          ? specificVersion.trim()
+          : formData.server_version,
+    });
   };
   return (
     <div className="container">
@@ -221,7 +66,7 @@ const ServerInstall = () => {
           maxWidth: "600px",
           margin: "0 auto",
           background: "var(--container-background-color)",
-          padding: "30px",
+          padding: "calc(30px * var(--bsm-spacing-scale))",
           border: "1px solid var(--border-color)",
           borderRadius: "8px",
         }}
@@ -229,7 +74,7 @@ const ServerInstall = () => {
         <form onSubmit={handleSubmit} className="form-group">
           <div
             style={{
-              marginBottom: "20px",
+              marginBottom: "calc(20px * var(--bsm-spacing-scale))",
             }}
           >
             <label className="form-label" htmlFor="server_name">
@@ -259,7 +104,7 @@ const ServerInstall = () => {
 
           <div
             style={{
-              marginBottom: "20px",
+              marginBottom: "calc(20px * var(--bsm-spacing-scale))",
             }}
           >
             <label className="form-label" htmlFor="server_version">
@@ -285,8 +130,8 @@ const ServerInstall = () => {
           {formData.server_version === "SPECIFIC" && (
             <div
               style={{
-                marginBottom: "20px",
-                padding: "15px",
+                marginBottom: "calc(20px * var(--bsm-spacing-scale))",
+                padding: "calc(15px * var(--bsm-spacing-scale))",
                 background: "var(--text-color)",
                 border: "1px solid var(--border-color)",
                 borderRadius: "5px",
@@ -318,8 +163,8 @@ const ServerInstall = () => {
           {formData.server_version === "CUSTOM" && (
             <div
               style={{
-                marginBottom: "20px",
-                padding: "15px",
+                marginBottom: "calc(20px * var(--bsm-spacing-scale))",
+                padding: "calc(15px * var(--bsm-spacing-scale))",
                 background: "var(--text-color)",
                 border: "1px solid var(--border-color)",
                 borderRadius: "5px",
@@ -360,7 +205,7 @@ const ServerInstall = () => {
 
           <div
             style={{
-              marginBottom: "30px",
+              marginBottom: "calc(30px * var(--bsm-spacing-scale))",
             }}
           >
             <label
@@ -377,7 +222,7 @@ const ServerInstall = () => {
                 checked={formData.overwrite}
                 onChange={handleChange}
                 style={{
-                  marginRight: "10px",
+                  marginRight: "calc(10px * var(--bsm-spacing-scale))",
                 }}
                 disabled={loading}
               />
@@ -399,14 +244,14 @@ const ServerInstall = () => {
                 className="spin"
                 size={20}
                 style={{
-                  marginRight: "8px",
+                  marginRight: "calc(8px * var(--bsm-spacing-scale))",
                 }}
               />
             ) : (
               <PlusSquare
                 size={20}
                 style={{
-                  marginRight: "8px",
+                  marginRight: "calc(8px * var(--bsm-spacing-scale))",
                 }}
               />
             )}

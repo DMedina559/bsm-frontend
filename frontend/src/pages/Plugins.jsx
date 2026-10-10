@@ -1,50 +1,35 @@
-import { useRequestTracker } from "../utils/useRequestTracker";
-import React, { useCallback, useEffect, useState } from "react";
+import { callOperation } from "../api/operations";
+import QueryStatus from "../components/QueryStatus";
+import { queryKeys } from "../app/queryKeys";
+import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
+import React from "react";
 import { Plug, RefreshCw, ToggleLeft, ToggleRight } from "lucide-react";
-import { useToast } from "../ToastContext";
-import { get, post, put } from "../api";
+import { useToast } from "../contexts/ToastContext";
+
 const Plugins = () => {
-  const [plugins, setPlugins] = useState([]);
-  const [loading, setLoading] = useState(true);
   const { addToast } = useToast();
-  const beginRequest = useRequestTracker("" + ":" + "");
-  const fetchPlugins = useCallback(async () => {
-    const requestTicket = beginRequest("fetchPlugins");
-    setLoading(true);
-    try {
-      const data = await get("/api/plugins");
-      if (!requestTicket.current()) return false;
-      if (data && data.status === "success" && data.plugins) {
-        const pluginsArray = Object.entries(data.plugins).map(
-          ([name, details]) => ({
-            name,
-            ...details,
-          }),
-        );
-        pluginsArray.sort((a, b) => a.name.localeCompare(b.name));
-        setPlugins(pluginsArray);
-      } else {
-        addToast("Failed to fetch plugins", "error");
-        setPlugins([]);
-      }
-    } catch (error) {
-      if (!requestTicket.current()) return false;
-      addToast(error.message || "Error fetching plugins", "error");
-    } finally {
-      if (requestTicket.current()) {
-        setLoading(false);
-      }
-    }
-  }, [addToast, beginRequest]);
-  useEffect(() => {
-    fetchPlugins();
-  }, [fetchPlugins]);
+  const write = useResourceMutation(
+    ({ id, options }, { session }) =>
+      callOperation(id, { ...options, session }),
+    [queryKeys.plugins()],
+  );
+  /** @type {typeof callOperation} */
+  const writeOperation = (id, ...args) =>
+    write.mutateAsync({ id, options: args[0] });
+
+  const resourceQuery = useResourceQuery("plugins", undefined);
+  const plugins = resourceQuery.data ?? [];
+  const loading = resourceQuery.isFetching || write.isPending;
+  const fetchPlugins = async () => {
+    const result = await resourceQuery.refetch();
+    if (result.error) addToast(result.error.message, "error");
+    return result.isSuccess;
+  };
   const handleReload = async () => {
     addToast("Reloading plugins...", "info");
     try {
-      await put("/api/plugins/reload");
+      await writeOperation("reload_plugins");
       addToast("Plugins reloaded successfully", "success");
-      fetchPlugins();
     } catch (error) {
       addToast(error.message || "Failed to reload plugins", "error");
     }
@@ -53,24 +38,15 @@ const Plugins = () => {
     const newEnabled = !currentEnabled;
     try {
       // API expects POST for setting status
-      await post(`/api/plugins/${pluginName}`, {
-        enabled: newEnabled,
+      await writeOperation("set_plugin_status", {
+        path: { plugin_name: pluginName },
+        body: {
+          enabled: newEnabled,
+        },
       });
       addToast(
         `Plugin ${pluginName} ${newEnabled ? "enabled" : "disabled"}.`,
         "success",
-      );
-
-      // Optimistic update
-      setPlugins((prev) =>
-        prev.map((p) =>
-          p.name === pluginName
-            ? {
-                ...p,
-                enabled: newEnabled,
-              }
-            : p,
-        ),
       );
     } catch (error) {
       addToast(
@@ -82,6 +58,7 @@ const Plugins = () => {
   };
   return (
     <div className="container">
+      <QueryStatus query={resourceQuery} />
       <div
         className="header"
         style={{
@@ -101,7 +78,7 @@ const Plugins = () => {
           <RefreshCw
             size={16}
             style={{
-              marginRight: "5px",
+              marginRight: "calc(5px * var(--bsm-spacing-scale))",
             }}
             className={loading ? "spin" : ""}
           />{" "}
@@ -113,14 +90,14 @@ const Plugins = () => {
         <div
           style={{
             textAlign: "center",
-            padding: "20px",
+            padding: "calc(20px * var(--bsm-spacing-scale))",
           }}
         >
           <RefreshCw
             className="spin"
             style={{
               display: "inline-block",
-              marginRight: "10px",
+              marginRight: "calc(10px * var(--bsm-spacing-scale))",
             }}
           />{" "}
           Loading plugins...
@@ -131,8 +108,8 @@ const Plugins = () => {
             display: "grid",
             gridTemplateColumns:
               "repeat(auto-fill, minmax(min(100%, 300px), 1fr))",
-            gap: "20px",
-            marginTop: "20px",
+            gap: "calc(20px * var(--bsm-spacing-scale))",
+            marginTop: "calc(20px * var(--bsm-spacing-scale))",
           }}
         >
           {plugins.length === 0 ? (
@@ -150,7 +127,7 @@ const Plugins = () => {
                 style={{
                   background: "var(--container-background-color, #333)",
                   border: "1px solid var(--border-color, #555)",
-                  padding: "15px",
+                  padding: "calc(15px * var(--bsm-spacing-scale))",
                   display: "flex",
                   flexDirection: "column",
                 }}
@@ -160,14 +137,14 @@ const Plugins = () => {
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "flex-start",
-                    marginBottom: "10px",
+                    marginBottom: "calc(10px * var(--bsm-spacing-scale))",
                   }}
                 >
                   <div
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: "10px",
+                      gap: "calc(10px * var(--bsm-spacing-scale))",
                     }}
                   >
                     <Plug size={20} />
@@ -205,7 +182,7 @@ const Plugins = () => {
 
                 <p
                   style={{
-                    margin: "5px 0",
+                    margin: "calc(5px * var(--bsm-spacing-scale)) 0",
                     color: "var(--text-color-secondary)",
                     fontSize: "0.9em",
                     flexGrow: 1,
@@ -218,11 +195,11 @@ const Plugins = () => {
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
-                    marginTop: "15px",
+                    marginTop: "calc(15px * var(--bsm-spacing-scale))",
                     fontSize: "0.85em",
                     color: "var(--text-color-secondary)",
                     borderTop: "1px solid var(--border-color, #555)",
-                    paddingTop: "10px",
+                    paddingTop: "calc(10px * var(--bsm-spacing-scale))",
                   }}
                 >
                   <span>v{plugin.version || "N/A"}</span>

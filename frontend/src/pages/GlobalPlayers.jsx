@@ -1,52 +1,40 @@
-import { useRequestTracker } from "../utils/useRequestTracker";
-import React, { useState, useEffect } from "react";
-import { get, post, put } from "../api";
-import { useToast } from "../ToastContext";
+import { callOperation } from "../api/operations";
+import { queryKeys } from "../app/queryKeys";
+import QueryStatus from "../components/QueryStatus";
+import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
+import React, { useState } from "react";
+
+import { useToast } from "../contexts/ToastContext";
 import { RefreshCw, Plus, Scan } from "lucide-react";
-import { logger } from "../utils/logger";
 const GlobalPlayers = () => {
-  const [players, setPlayers] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [scanLoading, setScanLoading] = useState(false);
-  const [addLoading, setAddLoading] = useState(false);
+  const resourceQuery = useResourceQuery("globalPlayers");
+  const players = resourceQuery.data ?? [];
+  const loading = resourceQuery.isFetching;
 
   // Add form state
   const [newPlayerString, setNewPlayerString] = useState(""); // Format: Name:XUID
 
   const { addToast } = useToast();
-  const beginRequest = useRequestTracker("" + ":" + "");
-  const fetchPlayers = React.useCallback(async () => {
-    const requestTicket = beginRequest("fetchPlayers");
-    setLoading(true);
-    try {
-      const response = await get("/api/players/get");
-      if (!requestTicket.current()) return false;
-      if (response && response.status === "success") {
-        setPlayers(response.players || []);
-        return true;
-      } else {
-        logger.warn("[GlobalPlayers] Failed to fetch players", {
-          response,
-        });
-        addToast(response?.message || "Failed to fetch players.", "error");
-        return false;
-      }
-    } catch (error) {
-      if (!requestTicket.current()) return false;
-      logger.error("[GlobalPlayers] Error fetching players", {
-        error,
-      });
-      addToast("Error fetching players.", "error");
-      return false;
-    } finally {
-      if (requestTicket.current()) {
-        setLoading(false);
-      }
-    }
-  }, [addToast, beginRequest]);
-  useEffect(() => {
-    fetchPlayers();
-  }, [fetchPlayers]);
+  const write = useResourceMutation(
+    ({ id, options }, { session }) =>
+      callOperation(id, { ...options, session }),
+    [queryKeys.globalPlayers()],
+  );
+  /** @type {typeof callOperation} */
+  const writeOperation = (id, ...args) =>
+    write.mutateAsync({ id, options: args[0] });
+  const scanLoading = write.pendingVariables.some(
+    (variables) => variables?.id === "scan_players",
+  );
+  const addLoading = write.pendingVariables.some(
+    (variables) => variables?.id === "add_players",
+  );
+
+  const fetchPlayers = async () => {
+    const result = await resourceQuery.refetch();
+    if (result.error) addToast(result.error.message, "error");
+    return result.isSuccess;
+  };
   const handleRefresh = async () => {
     const success = await fetchPlayers();
     if (success) {
@@ -54,19 +42,15 @@ const GlobalPlayers = () => {
     }
   };
   const handleScan = async () => {
-    setScanLoading(true);
     try {
-      const response = await put("/api/players/scan");
+      const response = await writeOperation("scan_players");
       if (response && response.status === "success") {
         addToast(response.message || "Scan started.", "success");
-        setTimeout(fetchPlayers, 2000);
       } else {
         addToast(response?.message || "Scan failed.", "error");
       }
     } catch {
       addToast("Error triggering scan.", "error");
-    } finally {
-      setScanLoading(false);
     }
   };
   const handleAdd = async (e) => {
@@ -79,27 +63,26 @@ const GlobalPlayers = () => {
       .map((s) => s.trim())
       .filter((s) => s);
     if (inputs.length === 0) return;
-    setAddLoading(true);
     try {
       // payload expects { players: ["Name:XUID", ...] }
-      const response = await post("/api/players/add", {
-        players: inputs,
+      const response = await writeOperation("add_players", {
+        body: {
+          players: inputs,
+        },
       });
       if (response && response.status === "success") {
         addToast(response.message || "Players added/updated.", "success");
         setNewPlayerString("");
-        fetchPlayers();
       } else {
         addToast(response?.message || "Failed to add players.", "error");
       }
     } catch (error) {
       addToast(error.message || "Error adding players.", "error");
-    } finally {
-      setAddLoading(false);
     }
   };
   return (
     <div className="container">
+      <QueryStatus query={resourceQuery} />
       <div
         className="header"
         style={{
@@ -112,7 +95,7 @@ const GlobalPlayers = () => {
         <div
           style={{
             display: "flex",
-            gap: "10px",
+            gap: "calc(10px * var(--bsm-spacing-scale))",
           }}
         >
           <button
@@ -126,7 +109,7 @@ const GlobalPlayers = () => {
             <Scan
               size={16}
               style={{
-                marginRight: "5px",
+                marginRight: "calc(5px * var(--bsm-spacing-scale))",
               }}
               className={scanLoading ? "spin" : ""}
             />
@@ -141,7 +124,7 @@ const GlobalPlayers = () => {
             <RefreshCw
               size={16}
               style={{
-                marginRight: "5px",
+                marginRight: "calc(5px * var(--bsm-spacing-scale))",
               }}
               className={loading ? "spin" : ""}
             />{" "}
@@ -153,14 +136,14 @@ const GlobalPlayers = () => {
       <div
         style={{
           background: "var(--input-background-color)",
-          padding: "20px",
+          padding: "calc(20px * var(--bsm-spacing-scale))",
           borderRadius: "5px",
           border: "1px solid var(--border-color)",
         }}
       >
         <p
           style={{
-            marginBottom: "20px",
+            marginBottom: "calc(20px * var(--bsm-spacing-scale))",
             color: "var(--text-color-secondary)",
           }}
         >
@@ -174,11 +157,11 @@ const GlobalPlayers = () => {
           className="form-group"
           style={{
             display: "flex",
-            gap: "10px",
+            gap: "calc(10px * var(--bsm-spacing-scale))",
             alignItems: "flex-end",
-            marginBottom: "20px",
+            marginBottom: "calc(20px * var(--bsm-spacing-scale))",
             background: "rgba(0,0,0,0.1)",
-            padding: "15px",
+            padding: "calc(15px * var(--bsm-spacing-scale))",
             borderRadius: "5px",
           }}
         >
@@ -191,7 +174,7 @@ const GlobalPlayers = () => {
               className="form-label"
               style={{
                 display: "block",
-                marginBottom: "5px",
+                marginBottom: "calc(5px * var(--bsm-spacing-scale))",
               }}
               htmlFor="globalplayers-field-1"
             >
@@ -217,7 +200,7 @@ const GlobalPlayers = () => {
             <Plus
               size={16}
               style={{
-                marginRight: "5px",
+                marginRight: "calc(5px * var(--bsm-spacing-scale))",
               }}
             />{" "}
             Add / Update
@@ -230,7 +213,7 @@ const GlobalPlayers = () => {
             className="loader-container"
             style={{
               textAlign: "center",
-              padding: "40px",
+              padding: "calc(40px * var(--bsm-spacing-scale))",
             }}
           >
             <div className="spinner"></div>
@@ -271,7 +254,7 @@ const GlobalPlayers = () => {
                       className="no-servers"
                       style={{
                         textAlign: "center",
-                        padding: "30px",
+                        padding: "calc(30px * var(--bsm-spacing-scale))",
                         fontStyle: "italic",
                         color: "var(--text-color-secondary)",
                       }}

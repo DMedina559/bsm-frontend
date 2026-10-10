@@ -1,9 +1,14 @@
-import { useRequestTracker } from "../utils/useRequestTracker";
+import DraftConflictNotice from "../components/DraftConflictNotice";
+import { callOperation } from "../api/operations";
+import { useEditableDraft } from "../app/useEditableDraft";
+import QueryStatus from "../components/QueryStatus";
+import { queryKeys } from "../app/queryKeys";
+import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
 import Modal from "../components/Modal";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useServer } from "../ServerContext";
-import { useToast } from "../ToastContext";
-import { get, post } from "../api";
+import React, { useEffect, useMemo, useState } from "react";
+import { useServer } from "../contexts/ServerContext";
+import { useToast } from "../contexts/ToastContext";
+
 import {
   Save,
   RefreshCw,
@@ -74,16 +79,42 @@ const PROPERTY_GROUPS = {
     "enable-profiler",
   ],
 };
+const EMPTY_PROPERTIES = [];
 const ServerProperties = () => {
   const { selectedServer } = useServer();
-  const [properties, setProperties] = useState([]);
   const [rawContent, setRawContent] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [savedSnapshot, setSavedSnapshot] = useState(null);
+  const resourceQuery = useResourceQuery("properties", selectedServer);
+  const draftData = useMemo(
+    () =>
+      resourceQuery.data?.properties
+        ? Object.entries(resourceQuery.data.properties)
+            .map(([key, value]) => ({ key, value: String(value) }))
+            .sort((a, b) => a.key.localeCompare(b.key))
+        : undefined,
+    [resourceQuery.data],
+  );
+  const draft = useEditableDraft(selectedServer, draftData, EMPTY_PROPERTIES);
+  const {
+    value: properties,
+    setValue: setProperties,
+    savedSnapshot,
+    markSaved,
+  } = draft;
+  const loading = resourceQuery.isFetching;
   const [searchTerm, setSearchTerm] = useState("");
   const [showRawModal, setShowRawModal] = useState(false);
   const { addToast } = useToast();
+  const write = useResourceMutation(
+    ({ id, options }, { session }) =>
+      callOperation(id, { ...options, session }),
+    [queryKeys.serverProperties(selectedServer)],
+  );
+  /** @type {typeof callOperation} */
+  const writeOperation = (id, ...args) =>
+    write.mutateAsync({ id, options: args[0] });
+
+  const saving = write.isPending;
+
   const location = useLocation();
   const navigate = useNavigate();
   const setupFlow = location.state?.setupFlow;
@@ -94,51 +125,21 @@ const ServerProperties = () => {
 
   // Collapsible state for sections
   const [collapsedSections, setCollapsedSections] = useState({});
-  const beginRequest = useRequestTracker(selectedServer + ":" + "");
-  const fetchProperties = useCallback(async () => {
-    const requestTicket = beginRequest("fetchProperties");
-    setLoading(true);
-    try {
-      const data = await get(`/api/server/${selectedServer}/properties/get`);
-      if (!requestTicket.current()) return false;
-      if (data && data.status === "success" && data.properties) {
-        // Convert object to array for mapping
-        const propsArray = Object.entries(data.properties).map(
-          ([key, value]) => ({
-            key,
-            value: String(value), // Ensure string for inputs
-          }),
-        );
-        propsArray.sort((a, b) => a.key.localeCompare(b.key));
-        setProperties(propsArray);
-        setSavedSnapshot(JSON.stringify(propsArray));
-        if (data.raw_content !== undefined) {
-          setRawContent(data.raw_content);
-        }
-        return true;
-      } else {
-        addToast("Failed to load server properties", "error");
-        setProperties([]);
-        return false;
-      }
-    } catch (error) {
-      if (!requestTicket.current()) return false;
-      addToast(error.message || "Error fetching properties", "error");
-      return false;
-    } finally {
-      if (requestTicket.current()) {
-        setLoading(false);
-      }
-    }
-  }, [selectedServer, addToast, beginRequest]);
   useEffect(() => {
-    if (selectedServer) {
-      // Initial fetch
-      fetchProperties();
-    }
-  }, [selectedServer, fetchProperties]);
+    setRawContent(resourceQuery.data?.raw_content ?? "");
+  }, [resourceQuery.data, selectedServer]);
   const handleRefresh = async () => {
-    const success = await fetchProperties();
+    const success = await draft.refresh(async () => {
+      const result = await resourceQuery.refetch();
+      return {
+        ...result,
+        data: result.data?.properties
+          ? Object.entries(result.data.properties)
+              .map(([key, value]) => ({ key, value: String(value) }))
+              .sort((a, b) => a.key.localeCompare(b.key))
+          : undefined,
+      };
+    });
     if (success) {
       addToast("Properties refreshed", "success");
     }
@@ -147,16 +148,19 @@ const ServerProperties = () => {
     e.preventDefault();
     if (!selectedServer) return;
     if (saving) return;
-    setSaving(true);
+
     const propsObj = properties.reduce((acc, curr) => {
       acc[curr.key] = curr.value;
       return acc;
     }, {});
     try {
-      await post(`/api/server/${selectedServer}/properties/set`, {
-        properties: propsObj,
+      await writeOperation("set_properties", {
+        path: { server_name: selectedServer },
+        body: {
+          properties: propsObj,
+        },
       });
-      setSavedSnapshot(JSON.stringify(properties));
+      markSaved(properties);
       addToast("Server properties saved successfully.", "success");
       if (setupFlow) {
         navigate("/access-control", {
@@ -168,8 +172,6 @@ const ServerProperties = () => {
       }
     } catch (error) {
       addToast(error.message || "Failed to save properties.", "error");
-    } finally {
-      setSaving(false);
     }
   };
   const handleChange = (key, newValue) => {
@@ -275,7 +277,7 @@ const ServerProperties = () => {
         <div
           className="switch-wrapper"
           style={{
-            marginTop: "5px",
+            marginTop: "calc(5px * var(--bsm-spacing-scale))",
           }}
         >
           <label className="switch" htmlFor={key}>
@@ -428,8 +430,8 @@ const ServerProperties = () => {
           className="message-box message-warning"
           style={{
             textAlign: "center",
-            marginTop: "50px",
-            padding: "20px",
+            marginTop: "calc(50px * var(--bsm-spacing-scale))",
+            padding: "calc(20px * var(--bsm-spacing-scale))",
             border: "1px solid orange",
             color: "orange",
           }}
@@ -441,20 +443,22 @@ const ServerProperties = () => {
   }
   return (
     <div className="container">
+      <QueryStatus query={resourceQuery} />
+      <DraftConflictNotice draft={draft} />
       <div
         className="header"
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: "20px",
+          marginBottom: "calc(20px * var(--bsm-spacing-scale))",
         }}
       >
         <h1>Server Properties: {selectedServer}</h1>
         <div
           style={{
             display: "flex",
-            gap: "10px",
+            gap: "calc(10px * var(--bsm-spacing-scale))",
             flexWrap: "wrap",
             justifyContent: "flex-end",
           }}
@@ -470,7 +474,7 @@ const ServerProperties = () => {
               <RefreshCw
                 size={16}
                 style={{
-                  marginRight: "5px",
+                  marginRight: "calc(5px * var(--bsm-spacing-scale))",
                 }}
                 className={loading ? "spin" : ""}
               />{" "}
@@ -486,7 +490,7 @@ const ServerProperties = () => {
             <FileText
               size={16}
               style={{
-                marginRight: "5px",
+                marginRight: "calc(5px * var(--bsm-spacing-scale))",
               }}
             />{" "}
             View File
@@ -503,7 +507,7 @@ const ServerProperties = () => {
                 <ArrowRight
                   size={16}
                   style={{
-                    marginLeft: "5px",
+                    marginLeft: "calc(5px * var(--bsm-spacing-scale))",
                   }}
                 />
               </>
@@ -512,7 +516,7 @@ const ServerProperties = () => {
                 <Save
                   size={16}
                   style={{
-                    marginRight: "5px",
+                    marginRight: "calc(5px * var(--bsm-spacing-scale))",
                   }}
                 />{" "}
                 Save Changes
@@ -526,7 +530,7 @@ const ServerProperties = () => {
         <div
           className="message-box message-info"
           style={{
-            marginBottom: "20px",
+            marginBottom: "calc(20px * var(--bsm-spacing-scale))",
           }}
         >
           <strong>Setup Wizard (Step 1/5):</strong> Configure your server
@@ -543,7 +547,7 @@ const ServerProperties = () => {
       {/* Search Bar */}
       <div
         style={{
-          marginBottom: "20px",
+          marginBottom: "calc(20px * var(--bsm-spacing-scale))",
           position: "relative",
         }}
       >
@@ -565,7 +569,7 @@ const ServerProperties = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="form-input"
           style={{
-            paddingLeft: "35px",
+            paddingLeft: "calc(35px * var(--bsm-spacing-scale))",
             width: "100%",
             maxWidth: "400px",
           }}
@@ -576,7 +580,7 @@ const ServerProperties = () => {
         <div
           style={{
             textAlign: "center",
-            padding: "20px",
+            padding: "calc(20px * var(--bsm-spacing-scale))",
           }}
         >
           <div className="spinner"></div> Loading properties...
@@ -597,7 +601,7 @@ const ServerProperties = () => {
                   <div
                     key={groupName}
                     style={{
-                      marginBottom: "20px",
+                      marginBottom: "calc(20px * var(--bsm-spacing-scale))",
                       border: "1px solid var(--border-color)",
                       borderRadius: "5px",
                       background: "var(--container-background-color)",
@@ -610,7 +614,8 @@ const ServerProperties = () => {
                       className="property-section-toggle"
                       onClick={() => toggleSection(groupName)}
                       style={{
-                        padding: "10px 15px",
+                        padding:
+                          "calc(10px * var(--bsm-spacing-scale)) calc(15px * var(--bsm-spacing-scale))",
                         background: "rgba(0,0,0,0.2)",
                         borderBottom: isCollapsed
                           ? "none"
@@ -635,11 +640,11 @@ const ServerProperties = () => {
                     {!isCollapsed && (
                       <div
                         style={{
-                          padding: "20px",
+                          padding: "calc(20px * var(--bsm-spacing-scale))",
                           display: "grid",
                           gridTemplateColumns:
                             "repeat(auto-fill, minmax(min(100%, 280px), 1fr))",
-                          gap: "20px",
+                          gap: "calc(20px * var(--bsm-spacing-scale))",
                         }}
                       >
                         {groupProps.map((prop) => (
@@ -654,7 +659,8 @@ const ServerProperties = () => {
                               htmlFor={prop.key}
                               className="form-label"
                               style={{
-                                marginBottom: "5px",
+                                marginBottom:
+                                  "calc(5px * var(--bsm-spacing-scale))",
                                 fontSize: "0.9em",
                                 color: "var(--text-color-secondary)",
                               }}
@@ -675,7 +681,7 @@ const ServerProperties = () => {
             {/* Custom Property Section */}
             <div
               style={{
-                marginBottom: "20px",
+                marginBottom: "calc(20px * var(--bsm-spacing-scale))",
                 border: "1px solid var(--border-color)",
                 borderRadius: "5px",
                 background: "var(--container-background-color)",
@@ -684,7 +690,8 @@ const ServerProperties = () => {
             >
               <div
                 style={{
-                  padding: "10px 15px",
+                  padding:
+                    "calc(10px * var(--bsm-spacing-scale)) calc(15px * var(--bsm-spacing-scale))",
                   background: "rgba(0,0,0,0.2)",
                   borderBottom: "1px solid var(--border-color)",
                   fontWeight: "bold",
@@ -694,9 +701,9 @@ const ServerProperties = () => {
               </div>
               <div
                 style={{
-                  padding: "20px",
+                  padding: "calc(20px * var(--bsm-spacing-scale))",
                   display: "flex",
-                  gap: "10px",
+                  gap: "calc(10px * var(--bsm-spacing-scale))",
                   alignItems: "flex-end",
                   flexWrap: "wrap",
                 }}
@@ -711,7 +718,7 @@ const ServerProperties = () => {
                     className="form-label"
                     style={{
                       display: "block",
-                      marginBottom: "5px",
+                      marginBottom: "calc(5px * var(--bsm-spacing-scale))",
                       fontSize: "0.9em",
                     }}
                     htmlFor="serverproperties-field-1"
@@ -740,7 +747,7 @@ const ServerProperties = () => {
                     className="form-label"
                     style={{
                       display: "block",
-                      marginBottom: "5px",
+                      marginBottom: "calc(5px * var(--bsm-spacing-scale))",
                       fontSize: "0.9em",
                     }}
                     htmlFor="serverproperties-field-2"
@@ -763,7 +770,7 @@ const ServerProperties = () => {
                   className="action-button secondary"
                   onClick={handleAddCustomProperty}
                   style={{
-                    marginBottom: "1px",
+                    marginBottom: "calc(1px * var(--bsm-spacing-scale))",
                   }}
                   type="button"
                 >
@@ -777,8 +784,8 @@ const ServerProperties = () => {
               style={{
                 display: "flex",
                 justifyContent: "flex-end",
-                marginTop: "20px",
-                gap: "10px",
+                marginTop: "calc(20px * var(--bsm-spacing-scale))",
+                gap: "calc(10px * var(--bsm-spacing-scale))",
               }}
             >
               <button
@@ -790,7 +797,7 @@ const ServerProperties = () => {
                 <FileText
                   size={16}
                   style={{
-                    marginRight: "5px",
+                    marginRight: "calc(5px * var(--bsm-spacing-scale))",
                   }}
                 />{" "}
                 View File
@@ -806,7 +813,7 @@ const ServerProperties = () => {
                     <ArrowRight
                       size={16}
                       style={{
-                        marginLeft: "5px",
+                        marginLeft: "calc(5px * var(--bsm-spacing-scale))",
                       }}
                     />
                   </>
@@ -815,7 +822,7 @@ const ServerProperties = () => {
                     <Save
                       size={16}
                       style={{
-                        marginRight: "5px",
+                        marginRight: "calc(5px * var(--bsm-spacing-scale))",
                       }}
                     />{" "}
                     {saving ? "Saving…" : "Save Changes"}
@@ -835,7 +842,7 @@ const ServerProperties = () => {
               <FileText
                 size={20}
                 style={{
-                  marginRight: "10px",
+                  marginRight: "calc(10px * var(--bsm-spacing-scale))",
                 }}
               />
               Raw server.properties
@@ -847,7 +854,8 @@ const ServerProperties = () => {
         >
           <div
             style={{
-              padding: "15px 20px",
+              padding:
+                "calc(15px * var(--bsm-spacing-scale)) calc(20px * var(--bsm-spacing-scale))",
               borderBottom: "1px solid var(--border-color, #555)",
               display: "flex",
               justifyContent: "space-between",
@@ -870,7 +878,7 @@ const ServerProperties = () => {
           </div>
           <div
             style={{
-              padding: "20px",
+              padding: "calc(20px * var(--bsm-spacing-scale))",
               overflowY: "auto",
               flex: 1,
               textAlign: "left",
@@ -882,7 +890,7 @@ const ServerProperties = () => {
                 style={atomOneDark}
                 customStyle={{
                   background: "rgba(0, 0, 0, 0.3)",
-                  padding: "15px",
+                  padding: "calc(15px * var(--bsm-spacing-scale))",
                   borderRadius: "5px",
                   border: "1px solid rgba(255, 255, 255, 0.1)",
                   margin: 0,
@@ -907,7 +915,8 @@ const ServerProperties = () => {
           </div>
           <div
             style={{
-              padding: "15px 20px",
+              padding:
+                "calc(15px * var(--bsm-spacing-scale)) calc(20px * var(--bsm-spacing-scale))",
               borderTop: "1px solid var(--border-color, #555)",
               display: "flex",
               justifyContent: "flex-end",

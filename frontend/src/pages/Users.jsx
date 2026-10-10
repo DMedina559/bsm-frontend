@@ -1,9 +1,12 @@
-import { useRequestTracker } from "../utils/useRequestTracker";
+import { callOperation } from "../api/operations";
+import QueryStatus from "../components/QueryStatus";
+import { queryKeys } from "../app/queryKeys";
+import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
 import Modal from "../components/Modal";
-import { useDialog } from "../DialogContext";
-import React, { useCallback, useEffect, useState } from "react";
-import { useToast } from "../ToastContext";
-import { get, post } from "../api";
+import { useDialog } from "../contexts/DialogContext";
+import React, { useState } from "react";
+import { useToast } from "../contexts/ToastContext";
+
 import {
   Trash2,
   UserPlus,
@@ -16,58 +19,51 @@ import {
   Lock,
   Unlock,
 } from "lucide-react";
-import { useAuth } from "../AuthContext";
+import { useAuth } from "../contexts/AuthContext";
 import { logger } from "../utils/logger";
 const Users = () => {
   const { confirmAction } = useDialog();
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editingUser, setEditingUser] = useState(null);
+  const [editingUser, setEditingUser] = useState(
+    /** @type {import("../api/generated/contract").components["schemas"]["UserResponse"] | null} */ (
+      null
+    ),
+  );
 
   // Invite state
-  const [inviteRole, setInviteRole] = useState("user");
+  const [inviteRole, setInviteRole] = useState(
+    /** @type {"admin" | "moderator" | "user"} */ ("user"),
+  );
   const [generatedLink, setGeneratedLink] = useState(null);
   const [copied, setCopied] = useState(false);
 
   // Edit state
-  const [editRole, setEditRole] = useState("");
+  const [editRole, setEditRole] = useState(
+    /** @type {"admin" | "moderator" | "user"} */ ("user"),
+  );
   const [editActive, setEditActive] = useState(true);
   const { addToast } = useToast();
+  const write = useResourceMutation(
+    ({ id, options }, { session }) =>
+      callOperation(id, { ...options, session }),
+    [queryKeys.users()],
+  );
+  /** @type {typeof callOperation} */
+  const writeOperation = (id, ...args) =>
+    write.mutateAsync({ id, options: args[0] });
+
+  const actionLoading = write.isPending;
+
   const { user: currentUser } = useAuth();
-  const beginRequest = useRequestTracker("" + ":" + "");
-  const fetchUsers = useCallback(async () => {
-    const requestTicket = beginRequest("fetchUsers");
-    setLoading(true);
-    try {
-      const data = await get("/api/users/list");
-      if (!requestTicket.current()) return false;
-      if (Array.isArray(data)) {
-        setUsers(data);
-        return true;
-      } else {
-        addToast("Failed to fetch users", "error");
-        setUsers([]);
-        return false;
-      }
-    } catch (error) {
-      if (!requestTicket.current()) return false;
-      logger.error("[Users] Error fetching users", {
-        error,
-      });
-      addToast(error.message || "Error fetching users", "error");
-      return false;
-    } finally {
-      if (requestTicket.current()) {
-        setLoading(false);
-      }
-    }
-  }, [addToast, beginRequest]);
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+  const resourceQuery = useResourceQuery("users", undefined);
+  const users = resourceQuery.data ?? [];
+  const loading = resourceQuery.isFetching;
+  const fetchUsers = async () => {
+    const result = await resourceQuery.refetch();
+    if (result.error) addToast(result.error.message, "error");
+    return result.isSuccess;
+  };
   const handleRefresh = async () => {
     const success = await fetchUsers();
     if (success) {
@@ -93,9 +89,11 @@ const Users = () => {
       ))
     )
       return;
-    setActionLoading(true);
+
     try {
-      await post(`/api/users/${userToDelete.id}/delete`);
+      await writeOperation("delete_user", {
+        path: { user_id: userToDelete.id },
+      });
       addToast(`User ${userToDelete.username} deleted.`, "success");
       await fetchUsers();
     } catch (error) {
@@ -105,16 +103,16 @@ const Users = () => {
         username: userToDelete?.username,
       });
       addToast(error.message || "Failed to delete user.", "error");
-    } finally {
-      setActionLoading(false);
     }
   };
   const handleGenerateLink = async (e) => {
     e.preventDefault();
-    setActionLoading(true);
+
     try {
-      const response = await post("/api/register/generate-token", {
-        role: inviteRole,
+      const response = await writeOperation("generate_registration_token", {
+        body: {
+          role: inviteRole,
+        },
       });
       logger.debug("[Users] Generate token response", {
         response,
@@ -137,8 +135,6 @@ const Users = () => {
       }
     } catch (error) {
       addToast(error.message || "Failed to generate invitation link.", "error");
-    } finally {
-      setActionLoading(false);
     }
   };
   const openEditModal = (user) => {
@@ -156,14 +152,17 @@ const Users = () => {
   };
   const saveUserChanges = async () => {
     if (!editingUser) return;
-    setActionLoading(true);
+
     try {
       let updated = false;
 
       // Update Role if changed
       if (editRole !== editingUser.role) {
-        await post(`/api/users/${editingUser.id}/role`, {
-          role: editRole,
+        await writeOperation("update_user_role", {
+          path: { user_id: editingUser.id },
+          body: {
+            role: editRole,
+          },
         });
         updated = true;
       }
@@ -171,7 +170,13 @@ const Users = () => {
       // Update Status if changed
       if (editActive !== editingUser.is_active) {
         const endpoint = editActive ? "enable" : "disable";
-        await post(`/api/users/${editingUser.id}/${endpoint}`);
+        await writeOperation(
+          /** @type {const} */ ({
+            enable: "enable_user",
+            disable: "disable_user",
+          })[endpoint],
+          { path: { user_id: editingUser.id } },
+        );
         updated = true;
       }
       if (updated) {
@@ -192,8 +197,6 @@ const Users = () => {
         editingUser,
       });
       addToast(error.message || "Failed to update user.", "error");
-    } finally {
-      setActionLoading(false);
     }
   };
   const copyToClipboard = async () => {
@@ -220,6 +223,7 @@ const Users = () => {
   const isAdmin = currentUser?.role === "admin";
   return (
     <div className="container">
+      <QueryStatus query={resourceQuery} />
       <div
         className="header"
         style={{
@@ -232,7 +236,7 @@ const Users = () => {
         <div
           style={{
             display: "flex",
-            gap: "10px",
+            gap: "calc(10px * var(--bsm-spacing-scale))",
           }}
         >
           <button
@@ -244,7 +248,7 @@ const Users = () => {
             <RefreshCw
               size={16}
               style={{
-                marginRight: "5px",
+                marginRight: "calc(5px * var(--bsm-spacing-scale))",
               }}
               className={loading ? "spin" : ""}
             />{" "}
@@ -260,7 +264,7 @@ const Users = () => {
               <UserPlus
                 size={16}
                 style={{
-                  marginRight: "5px",
+                  marginRight: "calc(5px * var(--bsm-spacing-scale))",
                 }}
               />{" "}
               Invite User
@@ -273,7 +277,7 @@ const Users = () => {
         <div
           style={{
             textAlign: "center",
-            padding: "40px",
+            padding: "calc(40px * var(--bsm-spacing-scale))",
           }}
         >
           <div className="spinner"></div> Loading users...
@@ -319,7 +323,7 @@ const Users = () => {
                     {currentUser && currentUser.id === user.id && (
                       <span
                         style={{
-                          marginLeft: "5px",
+                          marginLeft: "calc(5px * var(--bsm-spacing-scale))",
                           fontSize: "0.8em",
                           color: "var(--primary-color)",
                         }}
@@ -333,7 +337,7 @@ const Users = () => {
                       <Shield
                         size={12}
                         style={{
-                          marginRight: "4px",
+                          marginRight: "calc(4px * var(--bsm-spacing-scale))",
                         }}
                       />{" "}
                       {user.role}
@@ -346,7 +350,7 @@ const Users = () => {
                         style={{
                           display: "inline-flex",
                           alignItems: "center",
-                          gap: "5px",
+                          gap: "calc(5px * var(--bsm-spacing-scale))",
                         }}
                       >
                         <Check size={14} /> Active
@@ -357,7 +361,7 @@ const Users = () => {
                         style={{
                           display: "inline-flex",
                           alignItems: "center",
-                          gap: "5px",
+                          gap: "calc(5px * var(--bsm-spacing-scale))",
                         }}
                       >
                         <Ban size={14} /> Disabled
@@ -368,7 +372,7 @@ const Users = () => {
                     <div
                       style={{
                         display: "flex",
-                        gap: "5px",
+                        gap: "calc(5px * var(--bsm-spacing-scale))",
                       }}
                     >
                       {isAdmin && (
@@ -378,7 +382,8 @@ const Users = () => {
                             onClick={() => openEditModal(user)}
                             title="Edit User"
                             style={{
-                              padding: "5px 10px",
+                              padding:
+                                "calc(5px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
                             }}
                             disabled={
                               actionLoading || user.id === currentUser?.id
@@ -393,7 +398,8 @@ const Users = () => {
                             onClick={() => handleDelete(user)}
                             title="Delete User"
                             style={{
-                              padding: "5px 10px",
+                              padding:
+                                "calc(5px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
                             }}
                             disabled={
                               actionLoading || user.id === currentUser?.id
@@ -415,7 +421,7 @@ const Users = () => {
                     colSpan="4"
                     style={{
                       textAlign: "center",
-                      padding: "20px",
+                      padding: "calc(20px * var(--bsm-spacing-scale))",
                       fontStyle: "italic",
                       color: "var(--text-color-secondary)",
                     }}
@@ -440,13 +446,13 @@ const Users = () => {
             <form onSubmit={handleGenerateLink}>
               <div
                 style={{
-                  marginBottom: "20px",
+                  marginBottom: "calc(20px * var(--bsm-spacing-scale))",
                   textAlign: "left",
                 }}
               >
                 <p
                   style={{
-                    marginBottom: "15px",
+                    marginBottom: "calc(15px * var(--bsm-spacing-scale))",
                     color: "var(--text-color-secondary)",
                     lineHeight: "1.5",
                   }}
@@ -458,7 +464,7 @@ const Users = () => {
                   className="form-label"
                   style={{
                     display: "block",
-                    marginBottom: "5px",
+                    marginBottom: "calc(5px * var(--bsm-spacing-scale))",
                   }}
                   htmlFor="users-field-1"
                 >
@@ -483,7 +489,7 @@ const Users = () => {
                 style={{
                   display: "flex",
                   justifyContent: "flex-end",
-                  gap: "10px",
+                  gap: "calc(10px * var(--bsm-spacing-scale))",
                 }}
               >
                 <button
@@ -510,7 +516,7 @@ const Users = () => {
             >
               <p
                 style={{
-                  marginBottom: "10px",
+                  marginBottom: "calc(10px * var(--bsm-spacing-scale))",
                   color: "var(--success-color)",
                   fontWeight: "bold",
                 }}
@@ -520,8 +526,8 @@ const Users = () => {
               <div
                 style={{
                   display: "flex",
-                  gap: "10px",
-                  marginBottom: "20px",
+                  gap: "calc(10px * var(--bsm-spacing-scale))",
+                  marginBottom: "calc(20px * var(--bsm-spacing-scale))",
                 }}
               >
                 <input
@@ -572,20 +578,20 @@ const Users = () => {
         >
           <div
             style={{
-              marginBottom: "20px",
+              marginBottom: "calc(20px * var(--bsm-spacing-scale))",
               textAlign: "left",
             }}
           >
             <div
               style={{
-                marginBottom: "15px",
+                marginBottom: "calc(15px * var(--bsm-spacing-scale))",
               }}
             >
               <label
                 className="form-label"
                 style={{
                   display: "block",
-                  marginBottom: "5px",
+                  marginBottom: "calc(5px * var(--bsm-spacing-scale))",
                 }}
                 htmlFor="users-field-2"
               >
@@ -612,7 +618,7 @@ const Users = () => {
                 className="form-label"
                 style={{
                   display: "block",
-                  marginBottom: "5px",
+                  marginBottom: "calc(5px * var(--bsm-spacing-scale))",
                 }}
               >
                 Account Status
@@ -632,7 +638,7 @@ const Users = () => {
                     <Unlock
                       size={16}
                       style={{
-                        marginRight: "5px",
+                        marginRight: "calc(5px * var(--bsm-spacing-scale))",
                       }}
                     />{" "}
                     Account Active
@@ -642,7 +648,7 @@ const Users = () => {
                     <Lock
                       size={16}
                       style={{
-                        marginRight: "5px",
+                        marginRight: "calc(5px * var(--bsm-spacing-scale))",
                       }}
                     />{" "}
                     Account Disabled
@@ -652,7 +658,7 @@ const Users = () => {
               <small
                 style={{
                   display: "block",
-                  marginTop: "5px",
+                  marginTop: "calc(5px * var(--bsm-spacing-scale))",
                   color: "var(--text-color-secondary)",
                 }}
               >
@@ -665,7 +671,7 @@ const Users = () => {
             style={{
               display: "flex",
               justifyContent: "flex-end",
-              gap: "10px",
+              gap: "calc(10px * var(--bsm-spacing-scale))",
             }}
           >
             <button
@@ -695,7 +701,7 @@ const Users = () => {
         .badge {
             display: inline-flex;
             align-items: center;
-            padding: 2px 8px;
+            padding: calc(2px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale));
             border-radius: 12px;
             font-size: 0.85em;
             font-weight: 500;
@@ -718,7 +724,7 @@ const Users = () => {
         }
         .modal-content {
             background: var(--container-background-color);
-            padding: 25px;
+            padding: calc(25px * var(--bsm-spacing-scale));
             border-radius: 8px;
             width: 100%;
             border: 1px solid var(--border-color);

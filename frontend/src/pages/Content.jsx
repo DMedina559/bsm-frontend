@@ -1,12 +1,17 @@
-import { useRequestTracker } from "../utils/useRequestTracker";
+import DraftConflictNotice from "../components/DraftConflictNotice";
+import { callOperation } from "../api/operations";
+import { queryKeys } from "../app/queryKeys";
+import QueryStatus from "../components/QueryStatus";
+import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
+import { useEditableDraft } from "../app/useEditableDraft";
 import Modal from "../components/Modal";
-import { useDialog } from "../DialogContext";
-import React, { useState, useEffect } from "react";
-import { useServer } from "../ServerContext";
-import { useToast } from "../ToastContext";
-import { getApiBaseUrl } from "../api";
-import { get, post, del, request } from "../api";
-import { logger } from "../utils/logger";
+import { useDialog } from "../contexts/DialogContext";
+import React, { useState } from "react";
+import { useServer } from "../contexts/ServerContext";
+import { useToast } from "../contexts/ToastContext";
+import { request, resolveApiUrl } from "../api/transport";
+import { resolveOperationUrl } from "../api/operations";
+
 import {
   Upload,
   Trash2,
@@ -19,102 +24,69 @@ import {
   X,
 } from "lucide-react";
 import DraggableList from "../components/DraggableList";
+const EMPTY_ADDONS = { behavior_packs: [], resource_packs: [] };
 const Content = () => {
   const { confirmAction } = useDialog();
   const { selectedServer } = useServer();
   const [activeTab, setActiveTab] = useState("worlds");
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [isUploadEnabled, setIsUploadEnabled] = useState(false);
+  const contentQuery = useResourceQuery(
+    "content",
+    activeTab === "worlds" ? "worlds" : "addons",
+    { enabled: Boolean(selectedServer) },
+  );
+  const items = (contentQuery.data ?? []).map((item) => ({
+    ...item,
+    type: activeTab,
+  }));
+  const loading = contentQuery.isFetching;
+  const pluginQuery = useResourceQuery("plugins");
+  const isUploadEnabled = Boolean(
+    pluginQuery.data?.find(
+      (plugin) => plugin.name === "content_uploader_plugin",
+    )?.enabled,
+  );
   const [isAddonModalOpen, setIsAddonModalOpen] = useState(false);
   const [addonModalTab, setAddonModalTab] = useState("behavior");
-  const [installedAddons, setInstalledAddons] = useState({
-    behavior_packs: [],
-    resource_packs: [],
+  const addonsQuery = useResourceQuery("installedAddons", selectedServer, {
+    enabled: isAddonModalOpen,
   });
-  const [addonsLoading, setAddonsLoading] = useState(false);
-  const [orderChanged, setOrderChanged] = useState(false);
+  const addonDraft = useEditableDraft(
+    selectedServer,
+    addonsQuery.data,
+    EMPTY_ADDONS,
+  );
+  const {
+    value: installedAddons,
+    setValue: setInstalledAddons,
+    dirty: orderChanged,
+  } = addonDraft;
+  const addonsLoading = addonsQuery.isFetching;
   const { addToast } = useToast();
-  const checkUploadPluginStatus = React.useCallback(async () => {
-    try {
-      const response = await get("/api/plugins");
-      if (
-        response &&
-        response.status === "success" &&
-        (response.plugins || response.data)
-      ) {
-        const plugin = (response.plugins || response.data)[
-          "content_uploader_plugin"
-        ];
-        if (plugin && plugin.enabled) {
-          setIsUploadEnabled(true);
-        } else {
-          setIsUploadEnabled(false);
-        }
-      }
-    } catch (error) {
-      logger.warn("[Content] Failed to check upload plugin status", {
-        error,
-        selectedServer,
-      });
-      setIsUploadEnabled(false);
-    }
-  }, [selectedServer]);
-  const beginRequest = useRequestTracker(selectedServer + ":" + activeTab);
-  const fetchItems = React.useCallback(async () => {
-    const requestTicket = beginRequest("fetchItems");
-    if (!selectedServer) return false;
-    setLoading(true);
-    try {
-      let endpoint = "";
-      if (activeTab === "worlds") {
-        endpoint = `/api/content/worlds`;
-      } else {
-        endpoint = `/api/content/addons`;
-      }
-      const data = await get(endpoint);
-      if (!requestTicket.current()) return false;
-      if (data && data.status === "success") {
-        // Backend returns "files": ["filename.mcworld", ...]
-        // We need to map this to objects for the table
-        const fileList = data.files || [];
-        const mappedItems = fileList.map((filename) => ({
-          name: filename,
-          type: activeTab,
-        }));
-        setItems(mappedItems);
-        return true;
-      } else {
-        addToast(
-          `Failed to load ${activeTab}: ${data?.message || "Unknown error"}`,
-          "error",
-        );
-        setItems([]);
-        return false;
-      }
-    } catch (error) {
-      if (!requestTicket.current()) return false;
-      logger.error(`[Content] Error fetching ${activeTab}`, {
-        error,
-        activeTab,
-        selectedServer,
-      });
-      addToast(`Error fetching ${activeTab}`, "error");
-      setItems([]);
-      return false;
-    } finally {
-      if (requestTicket.current()) {
-        setLoading(false);
-      }
-    }
-  }, [selectedServer, activeTab, addToast, beginRequest]);
-  useEffect(() => {
-    checkUploadPluginStatus();
-    if (selectedServer) {
-      fetchItems();
-    }
-  }, [selectedServer, activeTab, fetchItems, checkUploadPluginStatus]);
+  const write = useResourceMutation(
+    ({ id, options }, { session }) =>
+      callOperation(id, { ...options, session }),
+    [
+      queryKeys.content(),
+      queryKeys.servers(),
+      queryKeys.serverAddons(selectedServer),
+    ],
+  );
+  /** @type {typeof callOperation} */
+  const writeOperation = (id, ...args) =>
+    write.mutateAsync({ id, options: args[0] });
+
+  const upload = useResourceMutation(
+    (body, { session }) =>
+      request("/api/content/upload", { method: "POST", body, session }),
+    [queryKeys.content()],
+  );
+  const actionLoading = write.isPending || upload.isPending;
+
+  const fetchItems = async () => {
+    const result = await contentQuery.refetch();
+    if (result.error) addToast(result.error.message, "error");
+    return result.isSuccess;
+  };
   const handleRefresh = async () => {
     const success = await fetchItems();
     if (success) {
@@ -131,20 +103,18 @@ const Content = () => {
       ))
     )
       return;
-    setActionLoading(true);
+
     try {
-      const endpoint =
-        activeTab === "worlds"
-          ? `/api/server/${selectedServer}/world/install`
-          : `/api/server/${selectedServer}/addon/install`;
-      await post(endpoint, {
-        filename: item.name,
-      });
+      await writeOperation(
+        activeTab === "worlds" ? "install_world" : "install_addon",
+        {
+          path: { server_name: selectedServer },
+          body: { filename: item.name },
+        },
+      );
       addToast(`Installation of ${item.name} started.`, "success");
     } catch (error) {
       addToast(error.message || "Installation failed.", "error");
-    } finally {
-      setActionLoading(false);
     }
   };
   const handleResetWorld = async () => {
@@ -154,78 +124,33 @@ const Content = () => {
       ))
     )
       return;
-    setActionLoading(true);
+
     try {
-      await del(`/api/server/${selectedServer}/world/reset`);
+      await writeOperation("reset_world", {
+        path: { server_name: selectedServer },
+      });
       addToast(`World reset initiated for ${selectedServer}.`, "success");
     } catch (error) {
       addToast(error.message || "World reset failed.", "error");
-    } finally {
-      setActionLoading(false);
     }
   };
   const handleExportWorld = async () => {
-    setActionLoading(true);
     try {
-      await post(`/api/server/${selectedServer}/world/export`);
+      await writeOperation("export_world", {
+        path: { server_name: selectedServer },
+      });
       addToast(`World export initiated for ${selectedServer}.`, "success");
       // Optionally refresh list after a delay, but it's async background task
     } catch (error) {
       addToast(error.message || "World export failed.", "error");
-    } finally {
-      setActionLoading(false);
-    }
-  };
-  const fetchInstalledAddons = async () => {
-    const requestTicket = beginRequest("fetchInstalledAddons");
-    if (!selectedServer) return;
-    setAddonsLoading(true);
-    setOrderChanged(false);
-    try {
-      const data = await get(`/api/server/${selectedServer}/addons`);
-      if (!requestTicket.current()) return false;
-      if (data && data.status === "success" && data.addons) {
-        const bp = (data.addons.behavior_packs || []).map((p) => ({
-          ...p,
-          id: p.uuid,
-        }));
-        const rp = (data.addons.resource_packs || []).map((p) => ({
-          ...p,
-          id: p.uuid,
-        }));
-        setInstalledAddons({
-          behavior_packs: bp,
-          resource_packs: rp,
-        });
-      } else {
-        addToast("Failed to load installed addons", "error");
-        setInstalledAddons({
-          behavior_packs: [],
-          resource_packs: [],
-        });
-      }
-    } catch (error) {
-      if (!requestTicket.current()) return false;
-      logger.error("[Content] Error fetching installed addons", {
-        error,
-        selectedServer,
-      });
-      addToast("Error fetching installed addons", "error");
-      setInstalledAddons({
-        behavior_packs: [],
-        resource_packs: [],
-      });
-    } finally {
-      if (requestTicket.current()) {
-        setAddonsLoading(false);
-      }
     }
   };
   const handleOpenAddonModal = () => {
     setIsAddonModalOpen(true);
-    fetchInstalledAddons();
   };
-  const handleCloseAddonModal = () => {
+  const handleCloseAddonModal = async () => {
+    if (orderChanged && !(await confirmAction("Discard unsaved addon order?")))
+      return;
     setIsAddonModalOpen(false);
   };
   const handleReorderAddons = (newItems, type) => {
@@ -233,11 +158,10 @@ const Content = () => {
       ...prev,
       [type === "behavior" ? "behavior_packs" : "resource_packs"]: newItems,
     }));
-    setOrderChanged(true);
   };
   const handleSaveAddonOrder = async () => {
     if (!selectedServer) return;
-    setActionLoading(true);
+
     try {
       if (addonModalTab === "behavior") {
         // Save behavior packs order
@@ -245,9 +169,12 @@ const Content = () => {
           .filter((p) => p.status === "ACTIVE" && p.uuid)
           .map((p) => p.uuid);
         if (behaviorUuids.length > 0) {
-          await post(`/api/server/${selectedServer}/addon/reorder`, {
-            pack_type: "behavior",
-            uuids: behaviorUuids,
+          await writeOperation("reorder_addons", {
+            path: { server_name: selectedServer },
+            body: {
+              pack_type: "behavior",
+              uuids: behaviorUuids,
+            },
           });
         }
       } else if (addonModalTab === "resource") {
@@ -256,58 +183,67 @@ const Content = () => {
           .filter((p) => p.status === "ACTIVE" && p.uuid)
           .map((p) => p.uuid);
         if (resourceUuids.length > 0) {
-          await post(`/api/server/${selectedServer}/addon/reorder`, {
-            pack_type: "resource",
-            uuids: resourceUuids,
+          await writeOperation("reorder_addons", {
+            path: { server_name: selectedServer },
+            body: {
+              pack_type: "resource",
+              uuids: resourceUuids,
+            },
           });
         }
       }
       addToast("Addon order saved.", "success");
-      setOrderChanged(false);
-      fetchInstalledAddons();
+      addonDraft.markSaved(installedAddons);
     } catch (error) {
       addToast(error.message || "Failed to save order", "error");
-    } finally {
-      setActionLoading(false);
     }
   };
+  /** @param {{uuid: string}} pack @param {"behavior" | "resource"} packType @param {"enable" | "disable" | "uninstall"} action */
   const handleAddonAction = async (pack, packType, action) => {
     if (
       action === "uninstall" &&
       !(await confirmAction(`Are you sure you want to uninstall ${pack.name}?`))
     )
       return;
-    setActionLoading(true);
+
     try {
       if (action === "uninstall") {
-        await del(`/api/server/${selectedServer}/addon/uninstall`, {
+        await writeOperation("uninstall_addon", {
+          path: { server_name: selectedServer },
           body: {
             pack_uuid: pack.uuid,
             pack_type: packType,
           },
         });
       } else {
-        await post(`/api/server/${selectedServer}/addon/${action}`, {
-          pack_uuid: pack.uuid,
-          pack_type: packType,
-        });
+        await writeOperation(
+          /** @type {const} */ ({
+            enable: "enable_addon",
+            disable: "disable_addon",
+          })[action],
+          {
+            path: { server_name: selectedServer },
+            body: {
+              pack_uuid: pack.uuid,
+              pack_type: packType,
+            },
+          },
+        );
       }
       addToast(`${action} successful.`, "success");
-      fetchInstalledAddons();
     } catch (error) {
       addToast(error.message || `Failed to ${action} addon`, "error");
-    } finally {
-      setActionLoading(false);
     }
   };
   const handleSubpackChange = async (pack, packType, newSubpackFolderName) => {
-    setActionLoading(true);
     try {
-      // The old UI used dynamic form state with names like `subpack_${uuid}`
-      await post(`/api/server/${selectedServer}/addon/subpack`, {
-        pack_uuid: pack.uuid,
-        pack_type: packType,
-        [`subpack_${pack.uuid}`]: newSubpackFolderName,
+      await writeOperation("update_addon_subpack", {
+        path: { server_name: selectedServer },
+        body: {
+          pack_uuid: pack.uuid,
+          pack_type: packType,
+          subpack_name: newSubpackFolderName,
+        },
       });
       addToast("Subpack updated.", "success");
 
@@ -329,8 +265,6 @@ const Content = () => {
       });
     } catch (error) {
       addToast(error.message || "Failed to update subpack", "error");
-    } finally {
-      setActionLoading(false);
     }
   };
   const renderAddonItem = (item, packType) => {
@@ -370,16 +304,21 @@ const Content = () => {
         <div
           style={{
             display: "flex",
-            padding: "10px",
+            padding: "calc(10px * var(--bsm-spacing-scale))",
             alignItems: "center",
-            gap: "10px",
+            gap: "calc(10px * var(--bsm-spacing-scale))",
             flex: 1,
             overflow: "hidden",
           }}
         >
           {item.icon ? (
             <img
-              src={`${getApiBaseUrl()}/api/server/${selectedServer}/addon/icon?pack_type=${packType}&uuid=${item.uuid}`}
+              src={resolveApiUrl(
+                resolveOperationUrl("get_server_addon_icon", {
+                  path: { server_name: selectedServer },
+                  query: { pack_type: packType, uuid: item.uuid },
+                }),
+              )}
               alt={`${item.name} icon`}
               style={{
                 width: "48px",
@@ -416,7 +355,7 @@ const Content = () => {
               flexDirection: "column",
               height: "100%",
               justifyContent: "center",
-              gap: "6px",
+              gap: "calc(6px * var(--bsm-spacing-scale))",
             }}
           >
             <h4
@@ -437,7 +376,7 @@ const Content = () => {
                 color: "var(--text-color-secondary)",
                 display: "flex",
                 flexWrap: "wrap",
-                gap: "10px",
+                gap: "calc(10px * var(--bsm-spacing-scale))",
                 alignItems: "center",
               }}
             >
@@ -446,7 +385,7 @@ const Content = () => {
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "4px",
+                  gap: "calc(4px * var(--bsm-spacing-scale))",
                   color: statusColor,
                 }}
               >
@@ -468,7 +407,7 @@ const Content = () => {
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "6px",
+                  gap: "calc(6px * var(--bsm-spacing-scale))",
                   marginTop: "auto",
                 }}
               >
@@ -476,7 +415,8 @@ const Content = () => {
                   className="form-input"
                   style={{
                     flex: 1,
-                    padding: "2px 6px",
+                    padding:
+                      "calc(2px * var(--bsm-spacing-scale)) calc(6px * var(--bsm-spacing-scale))",
                     fontSize: "0.8em",
                     height: "24px",
                     maxWidth: "200px",
@@ -501,12 +441,12 @@ const Content = () => {
 
         <div
           style={{
-            padding: "10px",
+            padding: "calc(10px * var(--bsm-spacing-scale))",
             background: "rgba(0,0,0,0.1)",
             borderLeft: "1px solid var(--border-color)",
             display: "flex",
             flexDirection: "column",
-            gap: "8px",
+            gap: "calc(8px * var(--bsm-spacing-scale))",
             justifyContent: "center",
             width: "90px",
             flexShrink: 0,
@@ -516,7 +456,8 @@ const Content = () => {
             <button
               className="action-button warning-button"
               style={{
-                padding: "6px 8px",
+                padding:
+                  "calc(6px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
                 fontSize: "0.85em",
                 width: "100%",
                 justifyContent: "center",
@@ -531,7 +472,8 @@ const Content = () => {
             <button
               className="action-button success-button"
               style={{
-                padding: "6px 8px",
+                padding:
+                  "calc(6px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
                 fontSize: "0.85em",
                 background: "var(--bsm-success)",
                 color: "var(--text-color)",
@@ -548,7 +490,8 @@ const Content = () => {
           <button
             className="action-button danger-button"
             style={{
-              padding: "6px 8px",
+              padding:
+                "calc(6px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
               fontSize: "0.85em",
               width: "100%",
               justifyContent: "center",
@@ -573,21 +516,15 @@ const Content = () => {
     const type = activeTab === "worlds" ? "world" : "addon";
     formData.append("type", type);
     try {
-      setLoading(true);
-      const data = await request(`/api/content/upload`, {
-        method: "POST",
-        body: formData,
-      });
+      const data = await upload.mutateAsync(formData);
       if (data && data.status === "success") {
         addToast("Upload successful.", "success");
-        fetchItems();
       } else {
         addToast(`Upload failed: ${data?.message || "Unknown error"}`, "error");
       }
     } catch {
       addToast("Upload failed.", "error");
     } finally {
-      setLoading(false);
       e.target.value = null; // Reset input
     }
   };
@@ -598,8 +535,8 @@ const Content = () => {
           className="message-box message-warning"
           style={{
             textAlign: "center",
-            marginTop: "50px",
-            padding: "20px",
+            marginTop: "calc(50px * var(--bsm-spacing-scale))",
+            padding: "calc(20px * var(--bsm-spacing-scale))",
             border: "1px solid orange",
             color: "orange",
           }}
@@ -611,12 +548,14 @@ const Content = () => {
   }
   return (
     <div className="container">
+      <DraftConflictNotice draft={addonDraft} />
+      <QueryStatus query={contentQuery} />
       <div
         className="header"
         style={{
           display: "flex",
           flexWrap: "wrap",
-          gap: "10px",
+          gap: "calc(10px * var(--bsm-spacing-scale))",
           justifyContent: "space-between",
           alignItems: "center",
         }}
@@ -632,7 +571,7 @@ const Content = () => {
           style={{
             display: "flex",
             flexWrap: "wrap",
-            gap: "10px",
+            gap: "calc(10px * var(--bsm-spacing-scale))",
           }}
         >
           <button
@@ -644,7 +583,7 @@ const Content = () => {
             <RefreshCw
               size={16}
               style={{
-                marginRight: "5px",
+                marginRight: "calc(5px * var(--bsm-spacing-scale))",
               }}
               className={loading ? "spin" : ""}
             />{" "}
@@ -660,7 +599,7 @@ const Content = () => {
               <Settings
                 size={16}
                 style={{
-                  marginRight: "5px",
+                  marginRight: "calc(5px * var(--bsm-spacing-scale))",
                 }}
               />{" "}
               Manage Installed Addons
@@ -678,7 +617,7 @@ const Content = () => {
                 <Download
                   size={16}
                   style={{
-                    marginRight: "5px",
+                    marginRight: "calc(5px * var(--bsm-spacing-scale))",
                   }}
                 />{" "}
                 Export World
@@ -693,7 +632,7 @@ const Content = () => {
                 <RefreshCcw
                   size={16}
                   style={{
-                    marginRight: "5px",
+                    marginRight: "calc(5px * var(--bsm-spacing-scale))",
                   }}
                 />{" "}
                 Reset World
@@ -730,10 +669,11 @@ const Content = () => {
           closeDisabled={actionLoading}
           className="addon-dialog"
         >
+          <QueryStatus query={addonsQuery} />
           <div
             className="dynamic-modal-header"
             style={{
-              padding: "15px",
+              padding: "calc(15px * var(--bsm-spacing-scale))",
               borderBottom: "1px solid var(--border-color)",
               display: "flex",
               justifyContent: "space-between",
@@ -743,18 +683,18 @@ const Content = () => {
 
           <div
             style={{
-              padding: "0 15px",
+              padding: "0 calc(15px * var(--bsm-spacing-scale))",
               borderBottom: "1px solid var(--border-color)",
               display: "flex",
-              gap: "10px",
-              marginTop: "10px",
+              gap: "calc(10px * var(--bsm-spacing-scale))",
+              marginTop: "calc(10px * var(--bsm-spacing-scale))",
             }}
           >
             <button
               className={`tab-button ${addonModalTab === "behavior" ? "active" : ""}`}
               onClick={() => setAddonModalTab("behavior")}
               style={{
-                padding: "10px",
+                padding: "calc(10px * var(--bsm-spacing-scale))",
                 background: "none",
                 border: "none",
                 borderBottom:
@@ -777,7 +717,7 @@ const Content = () => {
               className={`tab-button ${addonModalTab === "resource" ? "active" : ""}`}
               onClick={() => setAddonModalTab("resource")}
               style={{
-                padding: "10px",
+                padding: "calc(10px * var(--bsm-spacing-scale))",
                 background: "none",
                 border: "none",
                 borderBottom:
@@ -801,7 +741,7 @@ const Content = () => {
           <div
             className="dynamic-modal-body"
             style={{
-              padding: "15px",
+              padding: "calc(15px * var(--bsm-spacing-scale))",
               overflowY: "auto",
               flex: 1,
             }}
@@ -810,7 +750,7 @@ const Content = () => {
               <div
                 style={{
                   textAlign: "center",
-                  padding: "20px",
+                  padding: "calc(20px * var(--bsm-spacing-scale))",
                   color: "var(--text-color-secondary)",
                 }}
               >
@@ -831,7 +771,7 @@ const Content = () => {
                     <div
                       style={{
                         textAlign: "center",
-                        padding: "20px",
+                        padding: "calc(20px * var(--bsm-spacing-scale))",
                         color: "var(--text-color-secondary)",
                       }}
                     >
@@ -851,7 +791,7 @@ const Content = () => {
                     <div
                       style={{
                         textAlign: "center",
-                        padding: "20px",
+                        padding: "calc(20px * var(--bsm-spacing-scale))",
                         color: "var(--text-color-secondary)",
                       }}
                     >
@@ -864,11 +804,11 @@ const Content = () => {
 
           <div
             style={{
-              padding: "15px",
+              padding: "calc(15px * var(--bsm-spacing-scale))",
               borderTop: "1px solid var(--border-color)",
               display: "flex",
               justifyContent: "flex-end",
-              gap: "10px",
+              gap: "calc(10px * var(--bsm-spacing-scale))",
             }}
           >
             <button
@@ -894,8 +834,8 @@ const Content = () => {
         {isUploadEnabled && (
           <div
             style={{
-              marginBottom: "20px",
-              padding: "15px",
+              marginBottom: "calc(20px * var(--bsm-spacing-scale))",
+              padding: "calc(15px * var(--bsm-spacing-scale))",
               background: "var(--input-background-color)",
               borderRadius: "5px",
               border: "1px solid var(--border-color)",
@@ -922,7 +862,7 @@ const Content = () => {
               style={{
                 fontSize: "0.85em",
                 color: "var(--text-color-secondary)",
-                marginTop: "5px",
+                marginTop: "calc(5px * var(--bsm-spacing-scale))",
               }}
             >
               Uploaded files will appear in the list below.
@@ -933,7 +873,7 @@ const Content = () => {
         {loading && items.length === 0 ? (
           <div
             style={{
-              padding: "40px",
+              padding: "calc(40px * var(--bsm-spacing-scale))",
               textAlign: "center",
               color: "var(--text-color-secondary)",
             }}
@@ -975,7 +915,7 @@ const Content = () => {
                           style={{
                             display: "flex",
                             alignItems: "center",
-                            gap: "10px",
+                            gap: "calc(10px * var(--bsm-spacing-scale))",
                           }}
                         >
                           {activeTab === "worlds" ? (
@@ -1002,7 +942,8 @@ const Content = () => {
                           onClick={() => handleInstall(item)}
                           title={`Install to ${selectedServer}`}
                           style={{
-                            padding: "5px 10px",
+                            padding:
+                              "calc(5px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
                             fontSize: "0.9em",
                           }}
                           disabled={actionLoading}
@@ -1022,7 +963,7 @@ const Content = () => {
                         textAlign: "center",
                         color: "var(--text-color-secondary)",
                         fontStyle: "italic",
-                        padding: "20px",
+                        padding: "calc(20px * var(--bsm-spacing-scale))",
                       }}
                     >
                       No available {activeTab} found in imports directory.

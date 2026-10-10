@@ -1,11 +1,11 @@
 .footer {
   border-top: 1px solid var(--border-color);
-  margin-top: 32px;
-  padding: 20px 0;
+  margin-top: calc(32px * var(--bsm-spacing-scale));
+  padding: calc(20px * var(--bsm-spacing-scale)) 0;
   display: flex;
   justify-content: flex-end;
   color: var(--text-color-secondary);
-  font-size: 11px;
+  font-size: calc(11px * var(--bsm-type-scale));
 }
 .footer p {
   margin: 0;
@@ -13,7 +13,7 @@
 .footer a {
   color: var(--text-color-secondary);
   text-decoration: none;
-  margin: 0 6px;
+  margin: 0 calc(6px * var(--bsm-spacing-scale));
 }
 .footer a:hover {
   color: var(--text-color);

@@ -2,7 +2,7 @@ import React, { useRef, useState } from "react";
 import themePreviews from "../utils/themePreviews.json";
 import Modal from "./Modal";
 import { Palette, Plus, Pencil, Trash2 } from "lucide-react";
-import { useTheme } from "../ThemeContext";
+import { useTheme } from "../contexts/ThemeContext";
 import {
   DEFAULT_PALETTE,
   PALETTE_FIELDS,

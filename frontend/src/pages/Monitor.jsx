@@ -1,9 +1,14 @@
-import { useRequestTracker } from "../utils/useRequestTracker";
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useWebSocket } from "../WebSocketContext";
-import { useServer } from "../ServerContext";
-import { useToast } from "../ToastContext";
-import { post, get } from "../api";
+import { callOperation } from "../api/operations";
+import LogViewer from "../components/LogViewer";
+import "../styles/monitor.css";
+import { queryKeys } from "../app/queryKeys";
+import QueryStatus from "../components/QueryStatus";
+import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
+import React, { useState, useEffect, useRef } from "react";
+import { useWebSocket } from "../contexts/WebSocketContext";
+import { useServer } from "../contexts/ServerContext";
+import { useToast } from "../contexts/ToastContext";
+
 import {
   LineChart,
   Line,
@@ -20,21 +25,29 @@ import {
   Terminal,
   FileText,
   Users,
+  RefreshCw,
 } from "lucide-react";
 import { logger } from "../utils/logger";
 const Monitor = () => {
-  const { isConnected, isFallback, lastMessage, subscribe, unsubscribe } =
-    useWebSocket();
+  const {
+    isConnected,
+    isFallback,
+    subscribe,
+    unsubscribe,
+    addMessageListener,
+  } = useWebSocket();
   const { selectedServer, servers } = useServer();
   const { addToast } = useToast();
-  const [processInfo, setProcessInfo] = useState(null);
+  const monitorQuery = useResourceQuery("monitor", selectedServer, {
+    refetchInterval: isFallback ? 2000 : false,
+  });
+  const processInfo = monitorQuery.data ?? null;
   const [usageHistory, setUsageHistory] = useState([]);
   const [command, setCommand] = useState("");
   const [chartReady, setChartReady] = useState(false);
   const chartContainerRef = useRef(null);
 
   // Use a ResizeObserver to wait until the chart container actually has dimensions
-  const beginRequest = useRequestTracker(selectedServer + ":" + "");
   useEffect(() => {
     if (!chartContainerRef.current) return;
     const observer = new ResizeObserver((entries) => {
@@ -51,114 +64,50 @@ const Monitor = () => {
       observer.disconnect();
     };
   }, [processInfo]); // Re-bind observer when server status changes panel visibility
-  const [loadingAction, setLoadingAction] = useState(false);
-  const [logLines, setLogLines] = useState([]);
-  const logEndRef = useRef(null);
-  const fetchStatus = useCallback(async () => {
-    const requestTicket = beginRequest("fetchStatus");
-    if (!selectedServer) return;
-    try {
-      logger.debug(`[Monitor] Fetching process status`, {
-        server: selectedServer,
-      });
-      const data = await get(`/api/server/${selectedServer}/process_info`);
-      if (!requestTicket.current()) return false;
-      if (data && data.status === "success" && data.process_info) {
-        setProcessInfo(data.process_info);
-        // Only update history on polling if we want, or rely on WS
-        // If polling, we should update history here too
-        if (isFallback) {
-          const info = data.process_info;
-          setUsageHistory((prev) => {
-            const newPoint = {
-              time: new Date().toLocaleTimeString(),
-              cpu: info.cpu_percent || 0,
-              memory: info.memory_mb || 0,
-            };
-            // Limit history
-            const newData = [...prev, newPoint];
-            if (newData.length > 20) newData.shift();
-            return newData;
-          });
-        }
-      } else {
-        setProcessInfo(null);
-      }
-    } catch (error) {
-      if (!requestTicket.current()) return false;
-      if (error.status === 404) {
-        setProcessInfo(null);
-      } else {
-        logger.warn(`[Monitor] Failed to fetch initial status`, {
-          error,
-          server: selectedServer,
-        });
-      }
-    }
-  }, [selectedServer, isFallback, beginRequest]);
-
-  // Auto-scroll logs
+  const { refetch: fetchStatus } = monitorQuery;
   useEffect(() => {
-    if (logEndRef.current) {
-      const container = logEndRef.current.parentElement;
-      if (container) {
-        container.scrollTop = container.scrollHeight;
-      }
-    }
-  }, [logLines]);
+    if (!isFallback || !processInfo) return;
+    setUsageHistory((previous) =>
+      [
+        ...previous,
+        {
+          time: new Date().toLocaleTimeString(),
+          cpu: processInfo.cpu_percent || 0,
+          memory: processInfo.memory_mb || 0,
+        },
+      ].slice(-20),
+    );
+  }, [isFallback, processInfo, monitorQuery.dataUpdatedAt]);
 
-  // Clear logs on server switch
   useEffect(() => {
-    setLogLines([]);
     setUsageHistory([]);
-    setProcessInfo(null);
   }, [selectedServer]);
 
   // Handle WebSocket subscriptions
   useEffect(() => {
     if (isConnected && selectedServer) {
       const topic = `resource-monitor:${selectedServer}`;
-      const logTopic = `server_log:${selectedServer}`;
       subscribe(topic);
-      subscribe(logTopic);
 
       // Perform an initial fetch of the status when we connect or switch servers
       fetchStatus();
       return () => {
         unsubscribe(topic);
-        unsubscribe(logTopic);
       };
     }
   }, [isConnected, selectedServer, subscribe, unsubscribe, fetchStatus]);
 
-  // Handle Polling fallback
+  // Direct listeners preserve every log frame even when React batches renders.
   useEffect(() => {
-    let intervalId = null;
-    if (isFallback && selectedServer) {
-      logger.debug("[Monitor] WebSocket fallback active: polling stats", {
-        interval: "2s",
-        server: selectedServer,
-      });
-      fetchStatus();
-      intervalId = setInterval(fetchStatus, 2000);
-    }
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [isFallback, selectedServer, fetchStatus]);
-
-  // Handle incoming WebSocket messages
-  useEffect(() => {
-    if (lastMessage && selectedServer) {
+    if (!selectedServer) return;
+    return addMessageListener((lastMessage) => {
       const resourceTopic = `resource-monitor:${selectedServer}`;
-      const logTopic = `server_log:${selectedServer}`;
       if (
         lastMessage.topic === resourceTopic &&
         lastMessage.type === "resource_update"
       ) {
         const info = lastMessage.data?.process_info;
         if (info) {
-          setProcessInfo(info);
           setUsageHistory((prev) => {
             const newPoint = {
               time: new Date().toLocaleTimeString(),
@@ -170,29 +119,21 @@ const Monitor = () => {
             if (newData.length > 20) newData.shift();
             return newData;
           });
-        } else {
-          setProcessInfo(null);
-        }
-      } else if (
-        lastMessage.topic === logTopic &&
-        lastMessage.type === "log_update"
-      ) {
-        if (lastMessage.data) {
-          setLogLines((prev) => {
-            // Split by newline but keep empty lines if needed, or filter.
-            // Usually log files end with newline, so split gives empty string at end.
-            const newLines = lastMessage.data.split("\n");
-            // Filter out last empty string if data ends with newline
-            if (newLines.length > 0 && newLines[newLines.length - 1] === "") {
-              newLines.pop();
-            }
-            const updated = [...prev, ...newLines].slice(-1000); // Keep last 1000 lines
-            return updated;
-          });
         }
       }
-    }
-  }, [lastMessage, selectedServer]);
+    });
+  }, [addMessageListener, selectedServer]);
+  const write = useResourceMutation(
+    ({ id, options }, { session }) =>
+      callOperation(id, { ...options, session }),
+    [queryKeys.servers(), queryKeys.serverMonitor(selectedServer)],
+  );
+  /** @type {typeof callOperation} */
+  const writeOperation = (id, ...args) =>
+    write.mutateAsync({ id, options: args[0] });
+
+  const loadingAction = write.isPending;
+
   const handleCommand = async (e) => {
     e.preventDefault();
     if (!command.trim()) return;
@@ -201,10 +142,13 @@ const Monitor = () => {
       server: selectedServer,
       command: command.trim(),
     });
-    setLoadingAction(true);
+
     try {
-      await post(`/api/server/${selectedServer}/send_command`, {
-        command: command.trim(),
+      await writeOperation("send_command", {
+        path: { server_name: selectedServer },
+        body: {
+          command: command.trim(),
+        },
       });
       addToast("Command sent successfully.", "success");
       setCommand("");
@@ -215,22 +159,27 @@ const Monitor = () => {
         command: command.trim(),
       });
       addToast(error.message || "Failed to send command.", "error");
-    } finally {
-      setLoadingAction(false);
     }
   };
+  /** @param {"start" | "stop" | "restart"} action */
   const sendAction = async (action) => {
     if (loadingAction || !selectedServer) return;
     logger.info(`[Monitor] Sending signal`, {
       action,
       server: selectedServer,
     });
-    setLoadingAction(true);
-    addToast(`Sending ${action} signal...`, "info");
+
+    addToast(`Requesting server ${action}...`, "info");
     try {
-      // Pass empty body explicitely to ensure headers are set if needed, though usually not required for this endpoint
-      await post(`/api/server/${selectedServer}/${action}`, {});
-      addToast(`Server ${action} signal sent.`, "success");
+      const response = await writeOperation(
+        /** @type {const} */ ({
+          start: "start_server",
+          stop: "stop_server",
+          restart: "restart_server",
+        })[action],
+        { path: { server_name: selectedServer } },
+      );
+      addToast(response?.message || "Server action completed.", "success");
     } catch (error) {
       logger.error(`[Monitor] Action failed`, {
         error,
@@ -238,8 +187,6 @@ const Monitor = () => {
         server: selectedServer,
       });
       addToast(error.message || `Failed to ${action} server.`, "error");
-    } finally {
-      setLoadingAction(false);
     }
   };
   if (!selectedServer) {
@@ -249,8 +196,8 @@ const Monitor = () => {
           className="message-box message-warning"
           style={{
             textAlign: "center",
-            marginTop: "50px",
-            padding: "20px",
+            marginTop: "calc(50px * var(--bsm-spacing-scale))",
+            padding: "calc(20px * var(--bsm-spacing-scale))",
             border: "1px solid orange",
             color: "orange",
           }}
@@ -260,186 +207,130 @@ const Monitor = () => {
       </div>
     );
   }
-  const isRunning = processInfo && processInfo.pid;
+  const isRunning = Boolean(processInfo?.pid);
+  const server = servers.find((item) => item.name === selectedServer);
+  const status = isRunning
+    ? "RUNNING"
+    : String(server?.status ?? "unknown").toUpperCase();
+  const metrics = [
+    ["PID", processInfo?.pid ?? "—"],
+    ["Uptime", processInfo?.uptime ?? "—"],
+    [
+      "CPU",
+      processInfo?.cpu_percent != null
+        ? `${processInfo.cpu_percent.toFixed(1)}%`
+        : "—",
+    ],
+    [
+      "Memory",
+      processInfo?.memory_mb != null
+        ? `${processInfo.memory_mb.toFixed(1)} MB`
+        : "—",
+    ],
+    ["Players", server?.player_count ?? "—"],
+  ];
   return (
-    <div className="container">
-      <div
-        className="header"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <h1>Server Monitor: {selectedServer}</h1>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-          }}
-        >
-          <span
-            className={`status-text ${isConnected ? "status-running" : "status-stopped"}`}
-            style={{
-              fontWeight: "bold",
-              color: isConnected ? "lightgreen" : "red",
-            }}
-          >
-            {isConnected ? "• Live" : "• Disconnected"}
-          </span>
-          {isFallback && (
+    <div className="container monitor-page">
+      <QueryStatus query={monitorQuery} />
+      <div className="monitor-heading">
+        <div>
+          <h1>Server Monitor: {selectedServer}</h1>
+          <div className="monitor-state">
             <span
-              style={{
-                fontSize: "0.8em",
-                color: "orange",
-                fontStyle: "italic",
-              }}
+              className={`status-indicator ${isRunning ? "status-running" : "status-stopped"}`}
             >
-              (Polling Mode)
+              {status}
             </span>
-          )}
+            <span className="monitor-connection">
+              {isConnected
+                ? "Live updates"
+                : isFallback
+                  ? "Polling mode"
+                  : "Disconnected"}
+            </span>
+          </div>
+        </div>
+        <div className="monitor-actions" aria-label="Server controls">
+          <button
+            type="button"
+            className="action-button start-button"
+            onClick={() => sendAction("start")}
+            disabled={loadingAction || isRunning}
+          >
+            <Play size={16} aria-hidden="true" /> Start
+          </button>
+          <button
+            type="button"
+            className="action-button danger-button"
+            onClick={() => sendAction("stop")}
+            disabled={loadingAction || !isRunning}
+          >
+            <Square size={16} aria-hidden="true" /> Stop
+          </button>
+          <button
+            type="button"
+            className="action-button warning-button"
+            onClick={() => sendAction("restart")}
+            disabled={loadingAction}
+          >
+            <RotateCcw size={16} aria-hidden="true" /> Restart
+          </button>
+          <button
+            type="button"
+            className="action-button secondary"
+            onClick={() => fetchStatus()}
+            disabled={monitorQuery.isFetching}
+            aria-label="Refresh server status"
+          >
+            <RefreshCw size={16} aria-hidden="true" />
+          </button>
         </div>
       </div>
-
-      <div
-        className="grid"
-        style={{
-          display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
-          gap: "20px",
-          marginBottom: "20px",
-        }}
+      <section
+        className="monitor-status"
+        aria-labelledby="monitor-status-title"
       >
-        {/* Status Panel */}
-        <div
-          style={{
-            background: "var(--container-background-color, #444)",
-            padding: "20px",
-            border: "1px solid var(--border-color, #555)",
-          }}
-        >
-          <h3>Process Status</h3>
-          {processInfo ? (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "10px",
-                fontSize: "0.9em",
-              }}
-            >
-              <div>
-                <strong>PID:</strong> {processInfo.pid ?? "N/A"}
-              </div>
-              <div>
-                <strong>Uptime:</strong> {processInfo.uptime ?? "N/A"}
-              </div>
-              <div>
-                <strong>CPU:</strong>{" "}
-                {processInfo.cpu_percent != null
-                  ? processInfo.cpu_percent.toFixed(1) + "%"
-                  : "N/A"}
-              </div>
-              <div>
-                <strong>Memory:</strong>{" "}
-                {processInfo.memory_mb != null
-                  ? processInfo.memory_mb.toFixed(1) + " MB"
-                  : "N/A"}
-              </div>
-              <div
-                style={{
-                  gridColumn: "1 / -1",
-                  marginTop: "10px",
-                }}
+        <h2 id="monitor-status-title">Process Status</h2>
+        <dl className="monitor-metrics">
+          {metrics.map(([label, value]) => (
+            <div key={label}>
+              <dt>
+                {label === "Players" && <Users size={14} aria-hidden="true" />}
+                {label}
+              </dt>
+              <dd
+                title={
+                  label === "Players"
+                    ? server?.players
+                        ?.map((player) => player.name)
+                        .join("\n") || "No players online"
+                    : undefined
+                }
               >
-                <strong>Status:</strong>{" "}
-                <span
-                  style={{
-                    color: processInfo.pid ? "lightgreen" : "red",
-                    fontWeight: "bold",
-                  }}
-                >
-                  {processInfo.pid ? "RUNNING" : "STOPPED"}
-                </span>
-              </div>
-
-              {/* Online Players Tooltip inside Monitor */}
-              <div
-                style={{
-                  gridColumn: "1 / -1",
-                  marginTop: "10px",
-                }}
-              >
-                <span
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "5px",
-                  }}
-                >
-                  <Users size={14} /> <strong>Players:</strong>{" "}
-                  <span
-                    style={{
-                      color: "var(--text-color)",
-                      position: "relative",
-                      cursor: "help",
-                    }}
-                    title={(() => {
-                      const currentServerObj = servers.find(
-                        (s) => s.name === selectedServer,
-                      );
-                      const players = currentServerObj?.players || [];
-                      return players.length > 0
-                        ? players.map((p) => p.name).join("\n")
-                        : "No players online";
-                    })()}
-                  >
-                    {(() => {
-                      const currentServerObj = servers.find(
-                        (s) => s.name === selectedServer,
-                      );
-                      return currentServerObj?.player_count !== undefined
-                        ? currentServerObj.player_count
-                        : "-";
-                    })()}
-                  </span>
-                </span>
-              </div>
+                {value}
+              </dd>
             </div>
-          ) : (
-            <div
-              style={{
-                color: "var(--text-color-secondary)",
-                fontStyle: "italic",
-              }}
-            >
-              Server process not running or status unavailable.
-            </div>
-          )}
-        </div>
-
-        {/* Chart Panel */}
-        <div
-          style={{
-            background: "var(--container-background-color, #444)",
-            padding: "20px",
-            border: "1px solid var(--border-color, #555)",
-            minHeight: "250px",
-          }}
+          ))}
+        </dl>
+        {!processInfo && !monitorQuery.isPending && (
+          <p className="monitor-hint">
+            Server process not running or status unavailable.
+          </p>
+        )}
+      </section>
+      <div className="monitor-panels">
+        <section
+          className="monitor-panel monitor-resources"
+          aria-labelledby="monitor-resource-title"
         >
-          <h3>Resource Usage</h3>
-          {/* Fixed dimensions container for ResponsiveContainer to calculate from */}
-          <div
-            ref={chartContainerRef}
-            style={{
-              height: "200px",
-              width: "100%",
-              minHeight: "200px",
-              position: "relative",
-            }}
-          >
+          <div className="monitor-panel-heading">
+            <h2 id="monitor-resource-title">Resource Usage</h2>
+            <div className="monitor-chart-key">
+              <span>CPU %</span>
+              <span>RAM (MB)</span>
+            </div>
+          </div>
+          <div className="monitor-chart" ref={chartContainerRef}>
             {chartReady && usageHistory && usageHistory.length > 0 ? (
               <ResponsiveContainer
                 width="100%"
@@ -508,215 +399,54 @@ const Monitor = () => {
               </div>
             )}
           </div>
-        </div>
-      </div>
-
-      <div
-        className="grid"
-        style={{
-          display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
-          gap: "20px",
-          marginBottom: "20px",
-        }}
-      >
-        {/* Controls (Half Card) */}
-        <div
-          className="controls-section"
-          style={{
-            background: "var(--container-background-color, #444)",
-            padding: "20px",
-            border: "1px solid var(--border-color, #555)",
-          }}
+          <p className="monitor-hint">
+            Recent samples · CPU on the left, memory on the right
+          </p>
+        </section>
+        <section
+          className="monitor-panel monitor-console"
+          aria-labelledby="monitor-log-title"
         >
-          <h3>Quick Actions</h3>
-          <div
-            className="button-group"
+          <div className="monitor-panel-heading">
+            <h2 id="monitor-log-title">
+              <FileText size={18} aria-hidden="true" /> Server Log
+            </h2>
+          </div>
+          <LogViewer
+            topic={`server_log:${selectedServer}`}
+            label="Server log output"
             style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "10px",
+              height: "360px",
+              fontSize: "0.85rem",
+              borderRadius: "8px",
             }}
-          >
-            <div
-              style={{
-                display: "flex",
-                gap: "10px",
-              }}
-            >
-              <button
-                className="action-button start-button"
-                onClick={() => sendAction("start")}
-                disabled={loadingAction || isRunning}
-                style={{
-                  flex: 1,
-                  justifyContent: "center",
-                }}
-                type="button"
-              >
-                <Play
-                  size={16}
-                  style={{
-                    marginRight: "5px",
-                  }}
-                />{" "}
-                Start
-              </button>
-              <button
-                className="action-button danger-button"
-                onClick={() => sendAction("stop")}
+          />
+          <form className="monitor-command" onSubmit={handleCommand}>
+            <div className="monitor-command-input">
+              <Terminal size={18} aria-hidden="true" />
+              <input
+                type="text"
+                className="form-input"
+                value={command}
+                onChange={(event) => setCommand(event.target.value)}
+                placeholder={
+                  isRunning
+                    ? "Enter command..."
+                    : "Start the server to send commands"
+                }
+                aria-label="Console command"
                 disabled={loadingAction || !isRunning}
-                style={{
-                  flex: 1,
-                  justifyContent: "center",
-                }}
-                type="button"
-              >
-                <Square
-                  size={16}
-                  style={{
-                    marginRight: "5px",
-                  }}
-                />{" "}
-                Stop
-              </button>
+              />
             </div>
             <button
-              className="action-button warning-button"
-              onClick={() => sendAction("restart")}
-              disabled={loadingAction}
-              style={{
-                width: "100%",
-                justifyContent: "center",
-              }}
-              type="button"
+              type="submit"
+              className="action-button"
+              disabled={loadingAction || !command.trim() || !isRunning}
             >
-              <RotateCcw
-                size={16}
-                style={{
-                  marginRight: "5px",
-                }}
-              />{" "}
-              Restart
+              Send
             </button>
-          </div>
-        </div>
-
-        {/* Server Log Stream (Half Card) */}
-        <div
-          style={{
-            background: "var(--container-background-color, #444)",
-            padding: "20px",
-            border: "1px solid var(--border-color, #555)",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <h3
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-            }}
-          >
-            <FileText size={18} /> Server Log
-          </h3>
-          <div
-            style={{
-              flexGrow: 1,
-              background: "var(--bsm-console)",
-              color: "var(--text-color)",
-              padding: "10px",
-              fontFamily: "monospace",
-              fontSize: "0.85em",
-              overflowY: "auto",
-              height: "150px",
-              borderRadius: "4px",
-              whiteSpace: "pre-wrap",
-            }}
-          >
-            {logLines.length === 0 ? (
-              <div
-                style={{
-                  color: "var(--text-color-secondary)",
-                  fontStyle: "italic",
-                }}
-              >
-                Waiting for logs...
-              </div>
-            ) : (
-              logLines.map((line, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    minHeight: "1.2em",
-                  }}
-                >
-                  {line}
-                </div>
-              ))
-            )}
-            <div ref={logEndRef} />
-          </div>
-        </div>
-      </div>
-
-      {/* Command Console */}
-      <div
-        className="console-section"
-        style={{
-          background: "var(--container-background-color, #444)",
-          padding: "20px",
-          border: "1px solid var(--border-color, #555)",
-        }}
-      >
-        <h3>Send Command</h3>
-        <form
-          onSubmit={handleCommand}
-          style={{
-            display: "flex",
-            gap: "10px",
-          }}
-        >
-          <div
-            style={{
-              flexGrow: 1,
-              position: "relative",
-            }}
-          >
-            <Terminal
-              size={18}
-              style={{
-                position: "absolute",
-                left: "10px",
-                top: "50%",
-                transform: "translateY(-50%)",
-                color: "var(--text-color-secondary)",
-              }}
-            />
-            <input
-              type="text"
-              className="form-input"
-              value={command}
-              onChange={(e) => setCommand(e.target.value)}
-              placeholder="Enter command..."
-              aria-label="Console command"
-              style={{
-                width: "100%",
-                paddingLeft: "35px",
-              }}
-              disabled={loadingAction || !isRunning}
-            />
-          </div>
-          <button
-            type="submit"
-            className="action-button"
-            disabled={loadingAction || !command || !isRunning}
-          >
-            Send
-          </button>
-        </form>
+          </form>
+        </section>
       </div>
     </div>
   );

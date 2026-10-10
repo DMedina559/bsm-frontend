@@ -7,10 +7,10 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { ToastProvider, useToast } from "../ToastContext";
+import { ToastProvider, useToast } from "../contexts/ToastContext";
 import NotificationHistory from "./NotificationHistory";
 const auth = vi.hoisted(() => ({ user: { username: "admin" } }));
-vi.mock("../AuthContext", () => ({ useAuth: () => auth }));
+vi.mock("../contexts/AuthContext", () => ({ useAuth: () => auth }));
 function App() {
   const { addToast } = useToast();
   return (
@@ -77,4 +77,15 @@ describe("notification memory", () => {
       expect(screen.queryByText("Backup completed")).not.toBeInTheDocument(),
     );
   });
+});
+it("bounds visible notification bursts while retaining history", () => {
+  render(tree());
+  for (let i = 0; i < 20; i++) fireEvent.click(screen.getByText("Notify"));
+  expect(screen.getAllByLabelText("Dismiss notification")).toHaveLength(8);
+  fireEvent.click(
+    screen.getByRole("button", { name: "Notification history, 20 unread" }),
+  );
+  expect(
+    within(screen.getByRole("dialog")).getAllByText("Backup completed"),
+  ).toHaveLength(20);
 });

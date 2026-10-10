@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { getApiBaseUrl, setApiBaseUrl } from "../api";
+import { getApiBaseUrl, setApiBaseUrl } from "../api/transport";
 import Modal from "./Modal";
-import { useDialog } from "../DialogContext";
+import { useDialog } from "../contexts/DialogContext";
 const RemoteConfigModal = ({ isOpen, onClose }) => {
   const [remoteUrl, setRemoteUrl] = useState(
     getApiBaseUrl() || import.meta.env.VITE_API_URL || "",

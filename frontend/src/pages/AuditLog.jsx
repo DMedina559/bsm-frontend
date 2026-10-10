@@ -1,112 +1,27 @@
-import { useRequestTracker } from "../utils/useRequestTracker";
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useToast } from "../ToastContext";
-import { get } from "../api";
-import { useWebSocket } from "../WebSocketContext";
+import { useResourceQuery } from "../app/resourceQueries";
+import React, { useState } from "react";
+import TaskOutcome from "../components/TaskOutcome";
+import LogViewer from "../components/LogViewer";
+import QueryStatus from "../components/QueryStatus";
+import { useToast } from "../contexts/ToastContext";
 import { RefreshCw, Activity, User, FileText } from "lucide-react";
 const AuditLog = () => {
   const [activeTab, setActiveTab] = useState("users");
-  const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const logsQuery = useResourceQuery("audit", undefined, {
+    enabled: activeTab === "users",
+  });
+  const tasksQuery = useResourceQuery("tasks", undefined, {
+    enabled: activeTab === "tasks",
+  });
+  const logs = logsQuery.data ?? [];
+  const tasks = tasksQuery.data ?? [];
+  const loading =
+    activeTab === "users" ? logsQuery.isFetching : tasksQuery.isFetching;
 
-  // App Log State
-  const [appLogLines, setAppLogLines] = useState([]);
-  const appLogEndRef = useRef(null);
-
-  // Tasks State
-  const [tasks, setTasks] = useState([]);
+  const [logRefreshKey, setLogRefreshKey] = useState(0);
   const { addToast } = useToast();
-  const { isConnected, lastMessage, subscribe, unsubscribe } = useWebSocket();
-
-  // App Log Subscription
-  const beginRequest = useRequestTracker("" + ":" + activeTab);
-  useEffect(() => {
-    if (activeTab === "app_log" && isConnected) {
-      subscribe("app_log");
-      return () => unsubscribe("app_log");
-    }
-  }, [activeTab, isConnected, subscribe, unsubscribe]);
-
-  // Handle WS Messages
-  useEffect(() => {
-    if (!lastMessage) return;
-    if (lastMessage.topic === "app_log" && lastMessage.type === "log_update") {
-      if (lastMessage.data) {
-        setAppLogLines((prev) => {
-          const newLines = lastMessage.data.split("\n");
-          if (newLines.length > 0 && newLines[newLines.length - 1] === "") {
-            newLines.pop();
-          }
-          return [...prev, ...newLines].slice(-1000);
-        });
-      }
-    }
-  }, [lastMessage]);
-
-  // Auto-scroll App Log
-  useEffect(() => {
-    if (appLogEndRef.current && activeTab === "app_log") {
-      const container = appLogEndRef.current.parentElement;
-      if (container) {
-        container.scrollTop = container.scrollHeight;
-      }
-    }
-  }, [appLogLines, activeTab]);
-  const fetchLogs = useCallback(async () => {
-    const requestTicket = beginRequest("fetchLogs");
-    setLoading(true);
-    try {
-      const data = await get("/audit-log/list");
-      if (!requestTicket.current()) return false;
-      if (Array.isArray(data)) {
-        setLogs(data);
-        return true;
-      } else {
-        addToast("Failed to fetch audit logs", "error");
-        setLogs([]);
-        return false;
-      }
-    } catch (error) {
-      if (!requestTicket.current()) return false;
-      addToast(error.message || "Error fetching audit logs", "error");
-      return false;
-    } finally {
-      if (requestTicket.current()) {
-        setLoading(false);
-      }
-    }
-  }, [addToast, beginRequest]);
-  const fetchTasks = useCallback(async () => {
-    const requestTicket = beginRequest("fetchTasks");
-    setLoading(true);
-    try {
-      const data = await get("/api/tasks/list");
-      if (!requestTicket.current()) return false;
-      if (Array.isArray(data)) {
-        setTasks(data);
-        return true;
-      } else {
-        setTasks([]);
-        return false;
-      }
-    } catch {
-      if (!requestTicket.current()) return false;
-      addToast("Error fetching tasks", "error");
-      setTasks([]);
-      return false;
-    } finally {
-      if (requestTicket.current()) {
-        setLoading(false);
-      }
-    }
-  }, [addToast, beginRequest]);
-  useEffect(() => {
-    if (activeTab === "users") {
-      fetchLogs();
-    } else if (activeTab === "tasks") {
-      fetchTasks();
-    }
-  }, [activeTab, fetchLogs, fetchTasks]);
+  const fetchLogs = async () => (await logsQuery.refetch()).isSuccess;
+  const fetchTasks = async () => (await tasksQuery.refetch()).isSuccess;
   const handleRefresh = async () => {
     if (activeTab === "users") {
       const success = await fetchLogs();
@@ -115,8 +30,7 @@ const AuditLog = () => {
       const success = await fetchTasks();
       if (success) addToast("Tasks list refreshed", "success");
     } else if (activeTab === "app_log") {
-      setAppLogLines([]); // Clear logs on refresh? Or maybe just re-subscribe?
-      addToast("App log cleared", "info");
+      setLogRefreshKey((key) => key + 1);
     }
   };
   const formatDate = (dateString) => {
@@ -133,7 +47,7 @@ const AuditLog = () => {
         style={{
           display: "flex",
           flexWrap: "wrap",
-          gap: "10px",
+          gap: "calc(10px * var(--bsm-spacing-scale))",
           justifyContent: "space-between",
           alignItems: "center",
         }}
@@ -154,7 +68,7 @@ const AuditLog = () => {
           <RefreshCw
             size={16}
             style={{
-              marginRight: "5px",
+              marginRight: "calc(5px * var(--bsm-spacing-scale))",
             }}
             className={loading ? "spin" : ""}
           />
@@ -172,7 +86,7 @@ const AuditLog = () => {
           <User
             size={16}
             style={{
-              marginRight: "5px",
+              marginRight: "calc(5px * var(--bsm-spacing-scale))",
             }}
           />{" "}
           User Actions
@@ -186,7 +100,7 @@ const AuditLog = () => {
           <FileText
             size={16}
             style={{
-              marginRight: "5px",
+              marginRight: "calc(5px * var(--bsm-spacing-scale))",
             }}
           />{" "}
           App Log
@@ -200,7 +114,7 @@ const AuditLog = () => {
           <Activity
             size={16}
             style={{
-              marginRight: "5px",
+              marginRight: "calc(5px * var(--bsm-spacing-scale))",
             }}
           />{" "}
           Background Tasks
@@ -208,6 +122,9 @@ const AuditLog = () => {
       </div>
 
       <div className="tab-content">
+        {activeTab !== "app_log" && (
+          <QueryStatus query={activeTab === "users" ? logsQuery : tasksQuery} />
+        )}
         {activeTab === "users" && (
           <>
             {loading && logs.length === 0 ? (
@@ -215,123 +132,52 @@ const AuditLog = () => {
                 className="container"
                 style={{
                   textAlign: "center",
-                  padding: "20px",
+                  padding: "calc(20px * var(--bsm-spacing-scale))",
                 }}
               >
                 Loading logs...
               </div>
             ) : (
-              <div className="table-responsive-wrapper">
-                <table
-                  className="server-table"
-                  style={{
-                    width: "100%",
-                  }}
-                >
-                  <thead>
-                    <tr>
-                      <th>Timestamp</th>
-                      <th>User ID</th>
-                      <th>Action</th>
-                      <th>Details</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {logs.map((log) => (
-                      <tr key={log.id}>
-                        <td>
-                          <div className="scrollable-field">
-                            {formatDate(log.timestamp)}
-                          </div>
-                        </td>
-                        <td>
-                          <div className="scrollable-field">{log.user_id}</div>
-                        </td>
-                        <td>
-                          <div className="scrollable-field">
-                            <span className="badge badge-user">
-                              {log.action}
-                            </span>
-                          </div>
-                        </td>
-                        <td>
-                          <pre
-                            style={{
-                              margin: 0,
-                              whiteSpace: "pre-wrap",
-                              maxHeight: "100px",
-                              overflowY: "auto",
-                              background: "rgba(0,0,0,0.1)",
-                              padding: "5px",
-                              borderRadius: "4px",
-                              fontSize: "0.85em",
-                            }}
-                          >
-                            {JSON.stringify(log.details, null, 2)}
-                          </pre>
-                        </td>
-                      </tr>
-                    ))}
-                    {logs.length === 0 && (
-                      <tr>
-                        <td
-                          colSpan="4"
-                          style={{
-                            textAlign: "center",
-                            padding: "20px",
-                            color: "var(--text-color-secondary)",
-                          }}
-                        >
-                          No user audit logs found.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+              <div className="task-history">
+                {logs.map((log) => (
+                  <article
+                    className="task-history-card"
+                    key={log.id}
+                    aria-label={`Audit event ${log.action}`}
+                  >
+                    <header>
+                      <strong>{log.action}</strong>
+                      <time dateTime={log.timestamp}>
+                        {formatDate(log.timestamp)}
+                      </time>
+                    </header>
+                    <p>User ID: {log.user_id ?? "System"}</p>
+                    <TaskOutcome
+                      result={log.details}
+                      rawLabel="View event details"
+                    />
+                  </article>
+                ))}
+                {logs.length === 0 && <p>No user audit logs found.</p>}
               </div>
             )}
           </>
         )}
 
         {activeTab === "app_log" && (
-          <div
+          <LogViewer
+            topic="app_log"
+            label="Application log output"
+            emptyMessage="Waiting for application logs..."
+            refreshKey={logRefreshKey}
             style={{
-              background: "var(--bsm-console)",
-              color: "var(--text-color)",
-              padding: "15px",
-              fontFamily: "monospace",
-              fontSize: "0.9em",
-              overflowY: "auto",
               height: "calc(100vh - 250px)",
               minHeight: "400px",
+              fontSize: "0.9em",
               borderRadius: "5px",
               border: "1px solid var(--border-color)",
-              whiteSpace: "pre-wrap",
             }}
-          >
-            {appLogLines.length === 0 ? (
-              <div
-                style={{
-                  color: "var(--text-color-secondary)",
-                  fontStyle: "italic",
-                }}
-              >
-                Waiting for application logs...
-              </div>
-            ) : (
-              appLogLines.map((line, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    minHeight: "1.2em",
-                  }}
-                >
-                  {line}
-                </div>
-              ))
-            )}
-            <div ref={appLogEndRef} />
-          </div>
+          />
         )}
 
         {activeTab === "tasks" && (
@@ -341,90 +187,32 @@ const AuditLog = () => {
                 className="container"
                 style={{
                   textAlign: "center",
-                  padding: "20px",
+                  padding: "calc(20px * var(--bsm-spacing-scale))",
                 }}
               >
                 Loading tasks...
               </div>
             ) : (
-              <div className="table-responsive-wrapper">
-                <table
-                  className="server-table"
-                  style={{
-                    width: "100%",
-                  }}
-                >
-                  <thead>
-                    <tr>
-                      <th>Task ID</th>
-                      <th>Status</th>
-                      <th>User</th>
-                      <th>Message</th>
-                      <th>Result</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tasks.map((task) => (
-                      <tr key={task.id}>
-                        <td
-                          style={{
-                            fontSize: "0.85em",
-                            fontFamily: "monospace",
-                          }}
-                        >
-                          <div className="scrollable-field">{task.id}</div>
-                        </td>
-                        <td>
-                          <div className="scrollable-field">
-                            <span
-                              className={`status-indicator ${task.status === "success" ? "status-running" : task.status === "error" ? "status-stopped" : "status-starting"}`}
-                            >
-                              {task.status.toUpperCase()}
-                            </span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="scrollable-field">
-                            {task.username || "-"}
-                          </div>
-                        </td>
-                        <td>
-                          <div className="scrollable-field">{task.message}</div>
-                        </td>
-                        <td>
-                          {task.result ? (
-                            <pre
-                              style={{
-                                margin: 0,
-                                maxHeight: "50px",
-                                overflowY: "auto",
-                                fontSize: "0.85em",
-                              }}
-                            >
-                              {JSON.stringify(task.result)}
-                            </pre>
-                          ) : (
-                            "-"
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                    {tasks.length === 0 && (
-                      <tr>
-                        <td
-                          colSpan="5"
-                          style={{
-                            textAlign: "center",
-                            padding: "20px",
-                            color: "var(--text-color-secondary)",
-                          }}
-                        >
-                          No background tasks found.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+              <div className="task-history">
+                {tasks.map((task) => (
+                  <article
+                    className="task-history-card"
+                    key={task.id}
+                    aria-label={`Task ${task.id}`}
+                  >
+                    <header>
+                      <code>{task.id}</code>
+                      <span
+                        className={`status-indicator ${task.status === "completed" ? "status-running" : ["failed", "cancelled"].includes(task.status) ? "status-stopped" : "status-starting"}`}
+                      >
+                        {task.status.toUpperCase()}
+                      </span>
+                    </header>
+                    <p>{task.message}</p>
+                    <TaskOutcome result={task.result} error={task.error} />
+                  </article>
+                ))}
+                {tasks.length === 0 && <p>No background tasks found.</p>}
               </div>
             )}
           </>

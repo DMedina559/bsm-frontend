@@ -1,6 +1,9 @@
-import { useRequestTracker } from "../utils/useRequestTracker";
-import { useDialog } from "../DialogContext";
-import React, { useCallback, useEffect, useState } from "react";
+import { callOperation } from "../api/operations";
+import QueryStatus from "../components/QueryStatus";
+import { queryKeys } from "../app/queryKeys";
+import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
+import { useDialog } from "../contexts/DialogContext";
+import React from "react";
 import {
   Archive,
   Layers,
@@ -9,52 +12,30 @@ import {
   RotateCcw,
   Trash2,
 } from "lucide-react";
-import { useServer } from "../ServerContext";
-import { useToast } from "../ToastContext";
-import { get, post, put } from "../api";
+import { useServer } from "../contexts/ServerContext";
+import { useToast } from "../contexts/ToastContext";
+
 const Backups = () => {
   const { confirmAction } = useDialog();
   const { selectedServer } = useServer();
-  const [backups, setBackups] = useState({});
-  const [loading, setLoading] = useState(false);
   const { addToast } = useToast();
-  const beginRequest = useRequestTracker(selectedServer + ":" + "");
-  const fetchBackups = useCallback(async () => {
-    const requestTicket = beginRequest("fetchBackups");
-    setLoading(true);
-    try {
-      const data = await get(`/api/server/${selectedServer}/backup/list/all`);
-      if (!requestTicket.current()) return false;
-      if (data && data.status === "success" && data.details?.all_backups) {
-        // Map API keys to local keys
-        const apiBackups = data.details.all_backups;
-        setBackups({
-          world: apiBackups.world_backups || [],
-          properties: apiBackups.properties_backups || [],
-          allowlist: apiBackups.allowlist_backups || [],
-          permissions: apiBackups.permissions_backups || [],
-        });
-        return true;
-      } else {
-        addToast("Failed to fetch backups list", "error");
-        setBackups({});
-        return false;
-      }
-    } catch (error) {
-      if (!requestTicket.current()) return false;
-      addToast(error.message || "Error fetching backups", "error");
-      return false;
-    } finally {
-      if (requestTicket.current()) {
-        setLoading(false);
-      }
-    }
-  }, [selectedServer, addToast, beginRequest]);
-  useEffect(() => {
-    if (selectedServer) {
-      fetchBackups();
-    }
-  }, [selectedServer, fetchBackups]);
+  const write = useResourceMutation(
+    ({ id, options }, { session }) =>
+      callOperation(id, { ...options, session }),
+    [queryKeys.serverBackups(selectedServer)],
+  );
+  /** @type {typeof callOperation} */
+  const writeOperation = (id, ...args) =>
+    write.mutateAsync({ id, options: args[0] });
+
+  const resourceQuery = useResourceQuery("backups", selectedServer);
+  const backups = resourceQuery.data ?? {};
+  const loading = resourceQuery.isFetching || write.isPending;
+  const fetchBackups = async () => {
+    const result = await resourceQuery.refetch();
+    if (result.error) addToast(result.error.message, "error");
+    return result.isSuccess;
+  };
   const handleRefresh = async () => {
     const success = await fetchBackups();
     if (success) {
@@ -100,7 +81,10 @@ const Backups = () => {
         backup_type: backupType,
       };
       if (fileToBackup) payload.file_to_backup = fileToBackup;
-      await post(`/api/server/${selectedServer}/backup/action`, payload);
+      await writeOperation("create_backup", {
+        path: { server_name: selectedServer },
+        body: payload,
+      });
       addToast("Backup task started. Check logs for completion.", "success");
     } catch (error) {
       addToast(error.message || "Failed to start backup.", "error");
@@ -121,7 +105,10 @@ const Backups = () => {
       if (type !== "all") {
         payload.backup_file = filename;
       }
-      await post(`/api/server/${selectedServer}/restore/action`, payload);
+      await writeOperation("restore_backup", {
+        path: { server_name: selectedServer },
+        body: payload,
+      });
       addToast("Restore task started.", "success");
     } catch (error) {
       addToast(error.message || "Failed to start restore.", "error");
@@ -132,7 +119,9 @@ const Backups = () => {
     if (!(await confirmAction("Prune old backups based on retention policy?")))
       return;
     try {
-      await put(`/api/server/${selectedServer}/backups/prune`, {});
+      await writeOperation("prune_backups", {
+        path: { server_name: selectedServer },
+      });
       addToast("Pruning task started.", "success");
     } catch (error) {
       addToast(error.message || "Failed to prune backups.", "error");
@@ -145,8 +134,8 @@ const Backups = () => {
           className="message-box message-warning"
           style={{
             textAlign: "center",
-            marginTop: "50px",
-            padding: "20px",
+            marginTop: "calc(50px * var(--bsm-spacing-scale))",
+            padding: "calc(20px * var(--bsm-spacing-scale))",
             border: "1px solid orange",
             color: "orange",
           }}
@@ -161,9 +150,9 @@ const Backups = () => {
   const renderBackupTable = (title, type, files) => (
     <div
       style={{
-        marginBottom: "30px",
+        marginBottom: "calc(30px * var(--bsm-spacing-scale))",
         background: "var(--container-background-color)",
-        padding: "15px",
+        padding: "calc(15px * var(--bsm-spacing-scale))",
         border: "1px solid var(--border-color)",
       }}
     >
@@ -172,9 +161,9 @@ const Backups = () => {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: "10px",
+          marginBottom: "calc(10px * var(--bsm-spacing-scale))",
           borderBottom: "1px solid var(--border-color)",
-          paddingBottom: "10px",
+          paddingBottom: "calc(10px * var(--bsm-spacing-scale))",
         }}
       >
         <h3
@@ -192,7 +181,7 @@ const Backups = () => {
           <Plus
             size={16}
             style={{
-              marginRight: "5px",
+              marginRight: "calc(5px * var(--bsm-spacing-scale))",
             }}
           />{" "}
           New {title} Backup
@@ -233,7 +222,7 @@ const Backups = () => {
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: "10px",
+                      gap: "calc(10px * var(--bsm-spacing-scale))",
                     }}
                   >
                     <Archive
@@ -256,7 +245,8 @@ const Backups = () => {
                     onClick={() => handleRestore(type, file)}
                     title="Restore"
                     style={{
-                      padding: "5px 10px",
+                      padding:
+                        "calc(5px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
                       fontSize: "0.8em",
                     }}
                     type="button"
@@ -264,7 +254,7 @@ const Backups = () => {
                     <RotateCcw
                       size={14}
                       style={{
-                        marginRight: "5px",
+                        marginRight: "calc(5px * var(--bsm-spacing-scale))",
                       }}
                     />{" "}
                     Restore
@@ -280,7 +270,7 @@ const Backups = () => {
                   textAlign: "center",
                   color: "var(--text-color-secondary)",
                   fontStyle: "italic",
-                  padding: "15px",
+                  padding: "calc(15px * var(--bsm-spacing-scale))",
                 }}
               >
                 No backups found.
@@ -293,6 +283,7 @@ const Backups = () => {
   );
   return (
     <div className="container">
+      <QueryStatus query={resourceQuery} />
       <div
         className="header"
         style={{
@@ -305,7 +296,7 @@ const Backups = () => {
         <div
           style={{
             display: "flex",
-            gap: "10px",
+            gap: "calc(10px * var(--bsm-spacing-scale))",
           }}
         >
           <button
@@ -317,7 +308,7 @@ const Backups = () => {
             <Trash2
               size={16}
               style={{
-                marginRight: "5px",
+                marginRight: "calc(5px * var(--bsm-spacing-scale))",
               }}
             />{" "}
             Prune Old
@@ -332,7 +323,7 @@ const Backups = () => {
             <RefreshCw
               size={16}
               style={{
-                marginRight: "5px",
+                marginRight: "calc(5px * var(--bsm-spacing-scale))",
               }}
               className={loading ? "spin" : ""}
             />{" "}
@@ -344,8 +335,8 @@ const Backups = () => {
       {/* Global Backup/Restore Actions */}
       <div
         style={{
-          marginBottom: "20px",
-          padding: "20px",
+          marginBottom: "calc(20px * var(--bsm-spacing-scale))",
+          padding: "calc(20px * var(--bsm-spacing-scale))",
           background: "rgba(0,0,0,0.2)",
           border: "1px solid var(--border-color)",
         }}
@@ -370,7 +361,7 @@ const Backups = () => {
           className="button-group"
           style={{
             display: "flex",
-            gap: "15px",
+            gap: "calc(15px * var(--bsm-spacing-scale))",
           }}
         >
           <button
@@ -381,7 +372,7 @@ const Backups = () => {
             <Layers
               size={16}
               style={{
-                marginRight: "5px",
+                marginRight: "calc(5px * var(--bsm-spacing-scale))",
               }}
             />{" "}
             Backup All
@@ -394,7 +385,7 @@ const Backups = () => {
             <RotateCcw
               size={16}
               style={{
-                marginRight: "5px",
+                marginRight: "calc(5px * var(--bsm-spacing-scale))",
               }}
             />{" "}
             Restore All (Latest)
@@ -405,7 +396,7 @@ const Backups = () => {
       {loading ? (
         <div
           style={{
-            padding: "20px",
+            padding: "calc(20px * var(--bsm-spacing-scale))",
             textAlign: "center",
           }}
         >

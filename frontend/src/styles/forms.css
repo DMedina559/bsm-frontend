@@ -3,7 +3,7 @@
   display: block;
   width: 100%;
   min-height: var(--bsm-control-height);
-  padding: var(--bsm-control-padding) 12px;
+  padding: var(--bsm-control-padding) calc(12px * var(--bsm-spacing-scale));
   border: 1px solid var(--form-input-border-color);
   border-radius: var(--bsm-radius-md);
   background-color: var(--form-input-background-color);
@@ -55,15 +55,15 @@ input[type="radio"] {
 .form-label,
 .select-label {
   display: block;
-  font-size: 12px;
+  font-size: calc(12px * var(--bsm-type-scale));
   line-height: 1.5;
   color: var(--form-label-text-color);
-  margin-bottom: 8px;
+  margin-bottom: calc(8px * var(--bsm-spacing-scale));
   font-weight: 600;
 }
 .form-label-inline {
   display: inline;
-  margin-left: 6px;
+  margin-left: calc(6px * var(--bsm-spacing-scale));
   cursor: pointer;
 }
 .form-group {
@@ -74,32 +74,32 @@ input[type="radio"] {
 .trigger-fields-container {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
-  gap: 24px;
-  margin-bottom: 24px;
+  gap: calc(24px * var(--bsm-spacing-scale));
+  margin-bottom: calc(24px * var(--bsm-spacing-scale));
 }
 .form-actions {
   display: flex;
   justify-content: flex-end;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 24px;
-  padding-top: 20px;
+  gap: calc(10px * var(--bsm-spacing-scale));
+  margin-top: calc(24px * var(--bsm-spacing-scale));
+  padding-top: calc(20px * var(--bsm-spacing-scale));
   border-top: 1px solid var(--border-color);
 }
 .form-help-text {
   display: block;
-  font-size: 12px;
+  font-size: calc(12px * var(--bsm-type-scale));
   line-height: 1.6;
   color: var(--text-color-secondary);
-  margin-top: 8px;
+  margin-top: calc(8px * var(--bsm-spacing-scale));
 }
 .validation-error,
 .form-error {
   color: var(--validation-error-text-color);
   display: block;
-  font-size: 12px;
-  margin-top: 8px;
+  font-size: calc(12px * var(--bsm-type-scale));
+  margin-top: calc(8px * var(--bsm-spacing-scale));
 }
 .form-error {
   list-style: none;
@@ -112,21 +112,21 @@ input[type="radio"] {
 }
 .server-selection-section,
 .trigger-group {
-  padding: 20px;
+  padding: calc(20px * var(--bsm-spacing-scale));
   border: 1px solid var(--border-color);
   border-radius: var(--bsm-radius-md);
   background: var(--container-background-color);
-  margin-bottom: 24px;
+  margin-bottom: calc(24px * var(--bsm-spacing-scale));
 }
 .select-server-group,
 .action-buttons-group {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: calc(10px * var(--bsm-spacing-scale));
 }
 .list-section {
-  margin-top: 28px;
-  padding-top: 20px;
+  margin-top: calc(28px * var(--bsm-spacing-scale));
+  padding-top: calc(20px * var(--bsm-spacing-scale));
   border-top: 1px solid var(--border-color);
 }
 .item-list {
@@ -139,9 +139,10 @@ input[type="radio"] {
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 12px;
-  padding: 12px 16px;
-  margin-bottom: 8px;
+  gap: calc(12px * var(--bsm-spacing-scale));
+  padding: calc(12px * var(--bsm-spacing-scale))
+    calc(16px * var(--bsm-spacing-scale));
+  margin-bottom: calc(8px * var(--bsm-spacing-scale));
   border: 1px solid var(--border-color);
   border-radius: var(--bsm-radius-md);
   background: var(--bsm-input);
@@ -152,12 +153,12 @@ input[type="radio"] {
 }
 .player-meta {
   color: var(--text-color-secondary);
-  font-size: 12px;
+  font-size: calc(12px * var(--bsm-type-scale));
 }
 .login-wrapper {
   max-width: 460px;
-  margin: 48px auto;
-  padding: 32px;
+  margin: calc(48px * var(--bsm-spacing-scale)) auto;
+  padding: calc(32px * var(--bsm-spacing-scale));
   border: 1px solid var(--border-color);
   border-radius: var(--bsm-radius-xl);
   background: var(--container-background-color);
@@ -173,29 +174,30 @@ input[type="radio"] {
   right: 12px;
   top: 12px;
   min-height: 28px;
-  padding: 4px 8px;
+  padding: calc(4px * var(--bsm-spacing-scale))
+    calc(8px * var(--bsm-spacing-scale));
 }
 .settings-container {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: calc(24px * var(--bsm-spacing-scale));
 }
 .settings-group,
 .settings-panel {
-  padding: 24px;
+  padding: calc(24px * var(--bsm-spacing-scale));
   border: 1px solid var(--border-color);
   border-radius: var(--bsm-radius-lg);
   background: var(--container-background-color);
-  margin-bottom: 24px;
+  margin-bottom: calc(24px * var(--bsm-spacing-scale));
 }
 .settings-group-title {
-  margin: 0 0 20px;
+  margin: 0 0 calc(20px * var(--bsm-spacing-scale));
   text-transform: capitalize;
 }
 .settings-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
-  gap: 24px;
+  gap: calc(24px * var(--bsm-spacing-scale));
 }
 .setting-item {
   min-width: 0;
@@ -206,26 +208,26 @@ input[type="radio"] {
 .section-heading {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: calc(12px * var(--bsm-spacing-scale));
+  margin-bottom: calc(24px * var(--bsm-spacing-scale));
 }
 .section-heading > svg {
   color: var(--bsm-accent);
   flex-shrink: 0;
-  margin-top: 2px;
+  margin-top: calc(2px * var(--bsm-spacing-scale));
 }
 .section-heading h2 {
-  margin: 0 0 8px;
+  margin: 0 0 calc(8px * var(--bsm-spacing-scale));
 }
 .section-heading p {
   margin: 0;
   color: var(--text-color-secondary);
-  font-size: 13px;
+  font-size: calc(13px * var(--bsm-type-scale));
 }
 @media (max-width: 600px) {
   .settings-panel,
   .settings-group {
-    padding: 18px;
+    padding: calc(18px * var(--bsm-spacing-scale));
   }
   .form-actions > button {
     flex: 1;

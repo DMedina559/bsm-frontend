@@ -1,3 +1,10 @@
+import { startOperationRecovery } from "../app/operationRecovery";
+import { operationCoordinator } from "../app/operationCoordinator";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "../app/queryClient";
+vi.mock("../contexts/AuthContext", () => ({
+  useAuth: () => ({ user: { username: "admin" } }),
+}));
 import {
   render,
   screen,
@@ -7,7 +14,7 @@ import {
 } from "@testing-library/react";
 import ServerInstall from "./ServerInstall";
 import { vi, describe, it, expect, beforeEach } from "vitest";
-import * as api from "../api";
+import * as api from "../test/httpFixtures";
 
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
@@ -19,18 +26,23 @@ const mocks = vi.hoisted(() => ({
   listeners: new Set(),
   addMessageListener: vi.fn(),
 }));
-vi.mock("../api");
-vi.mock("../DialogContext", () => ({
+vi.mock("../api/transport", async (importOriginal) => {
+  const { createHttpTransport } = await import("../test/httpFixtures");
+  return createHttpTransport(await importOriginal());
+});
+vi.mock("../contexts/DialogContext", () => ({
   useDialog: () => ({ confirmAction: vi.fn() }),
 }));
 vi.mock("react-router-dom", () => ({ useNavigate: () => mocks.navigate }));
-vi.mock("../ToastContext", () => ({ useToast: () => mocks }));
-vi.mock("../ServerContext", () => ({ useServer: () => mocks }));
-vi.mock("../WebSocketContext", () => ({ useWebSocket: () => mocks }));
+vi.mock("../contexts/ToastContext", () => ({ useToast: () => mocks }));
+vi.mock("../contexts/ServerContext", () => ({ useServer: () => mocks }));
+vi.mock("../contexts/WebSocketContext", () => ({ useWebSocket: () => mocks }));
 
 describe("ServerInstall", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    queryClient.clear();
+    operationCoordinator.clear();
     mocks.listeners.clear();
     mocks.addMessageListener.mockImplementation((listener) => {
       mocks.listeners.add(listener);
@@ -53,27 +65,55 @@ describe("ServerInstall", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /Install Server/i }));
     await waitFor(() =>
-      expect(mocks.subscribe).toHaveBeenCalledWith("task:install-task"),
+      expect(operationCoordinator.get("install-task")).not.toBeNull(),
     );
   }
   function emit(status, result) {
     act(() => {
-      for (const listener of mocks.listeners) {
-        listener({
-          type: "task_update",
-          topic: "task:install-task",
-          data: { status, result, message: "Task finished" },
-        });
-      }
+      operationCoordinator.reconcileTask({
+        type: "task_update",
+        data: {
+          task_id: "install-task",
+          status,
+          result,
+          message: "Task finished",
+        },
+      });
     });
   }
 
   it("renders installation form", () => {
-    render(<ServerInstall />);
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ServerInstall />
+      </QueryClientProvider>,
+    );
     expect(screen.getByText("Install New Server")).toBeInTheDocument();
   });
+  it("restores active installation progress after revisiting the page", async () => {
+    operationCoordinator.register({
+      id: "install-task",
+      kind: "install",
+      serverName: "NewServer",
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ServerInstall />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByLabelText("Server Name")).toHaveValue("NewServer");
+    expect(screen.getByRole("button", { name: /Installing/i })).toBeDisabled();
+    emit("completed", { status: "success" });
+    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledTimes(1));
+    expect(mocks.setSelectedServer).toHaveBeenCalledWith("NewServer");
+  });
+
   it("handles installation submission", async () => {
-    render(<ServerInstall />);
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ServerInstall />
+      </QueryClientProvider>,
+    );
     await submit();
     expect(api.post).toHaveBeenCalledWith(
       "/api/server/install",
@@ -83,7 +123,11 @@ describe("ServerInstall", () => {
   it.each(["completed", "success"])(
     "advances after a %s socket update",
     async (status) => {
-      render(<ServerInstall />);
+      render(
+        <QueryClientProvider client={queryClient}>
+          <ServerInstall />
+        </QueryClientProvider>,
+      );
       await submit();
       emit(status, { status: "success" });
       await waitFor(() =>
@@ -98,18 +142,26 @@ describe("ServerInstall", () => {
   it.each(["failed", "cancelled", "error"])(
     "stops monitoring after a %s task",
     async (status) => {
-      render(<ServerInstall />);
+      render(
+        <QueryClientProvider client={queryClient}>
+          <ServerInstall />
+        </QueryClientProvider>,
+      );
       await submit();
       emit(status);
       expect(mocks.navigate).not.toHaveBeenCalled();
       expect(
         screen.getByRole("button", { name: /Install Server/i }),
       ).toBeEnabled();
-      expect(mocks.unsubscribe).toHaveBeenCalledWith("task:install-task");
+      expect(operationCoordinator.get("install-task").terminal).toBe(true);
     },
   );
   it("does not advance when the completed operation was skipped", async () => {
-    render(<ServerInstall />);
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ServerInstall />
+      </QueryClientProvider>,
+    );
     await submit();
     emit("completed", {
       status: "skipped",
@@ -129,25 +181,26 @@ describe("ServerInstall", () => {
           : { status: "completed", result: { status: "success" } },
       ),
     );
-    render(<ServerInstall />);
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ServerInstall />
+      </QueryClientProvider>,
+    );
     await submit();
+    const stop = startOperationRecovery("admin");
     await waitFor(() => expect(mocks.navigate).toHaveBeenCalledTimes(1));
+    stop();
     expect(mocks.refreshServers).toHaveBeenCalledTimes(1);
   });
   it("handles duplicate completion frames once", async () => {
-    render(<ServerInstall />);
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ServerInstall />
+      </QueryClientProvider>,
+    );
     await submit();
-    act(() => {
-      for (const listener of mocks.listeners) {
-        const message = {
-          type: "task_update",
-          topic: "task:install-task",
-          data: { status: "completed" },
-        };
-        listener(message);
-        listener(message);
-      }
-    });
+    emit("completed");
+    emit("completed");
     await waitFor(() => expect(mocks.navigate).toHaveBeenCalledTimes(1));
     expect(mocks.refreshServers).toHaveBeenCalledTimes(1);
   });

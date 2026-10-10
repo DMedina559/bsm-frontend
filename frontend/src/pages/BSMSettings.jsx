@@ -1,96 +1,88 @@
-import { useRequestTracker } from "../utils/useRequestTracker";
+import DraftConflictNotice from "../components/DraftConflictNotice";
+import { callOperation } from "../api/operations";
+import { useEditableDraft } from "../app/useEditableDraft";
+import QueryStatus from "../components/QueryStatus";
+import { queryKeys } from "../app/queryKeys";
+import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
 import SettingsField from "../components/SettingsField";
 import {
   flattenSettings,
   updateSetting,
   isSafeSettingPath,
 } from "../utils/settings";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { RefreshCw, Save } from "lucide-react";
-import { useToast } from "../ToastContext";
-import { get, post, put } from "../api";
+import { useToast } from "../contexts/ToastContext";
+
 import { logger } from "../utils/logger";
+const EMPTY_SETTINGS = {};
 const BSMSettings = () => {
-  const [settings, setSettings] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [savedSnapshot, setSavedSnapshot] = useState(null);
+  const resourceQuery = useResourceQuery("settings");
+  const draft = useEditableDraft(
+    "settings",
+    resourceQuery.data,
+    EMPTY_SETTINGS,
+  );
+  const {
+    value: settings,
+    setValue: setSettings,
+    savedSnapshot,
+    markSaved,
+  } = draft;
+  const loading = resourceQuery.isFetching;
   const [loadError, setLoadError] = useState(null);
   const [newKey, setNewKey] = useState("");
   const [newValue, setNewValue] = useState("");
   const { addToast } = useToast();
-  const beginRequest = useRequestTracker("" + ":" + "");
-  const fetchSettings = useCallback(async () => {
-    const requestTicket = beginRequest("fetchSettings");
-    setLoading(true);
-    setLoadError(null);
-    try {
-      const data = await get("/api/settings/get");
-      if (!requestTicket.current()) return false;
-      if (data && data.settings) {
-        setSettings(data.settings);
-        setSavedSnapshot(JSON.stringify(data.settings));
-      } else {
-        setLoadError("Failed to load settings");
-        addToast("Failed to load settings", "error");
+  const write = useResourceMutation(
+    async ({ id, options, entries }, { session }) => {
+      if (entries) {
+        for (const [key, value] of entries)
+          await callOperation("set_setting", { body: { key, value }, session });
+        return;
       }
-    } catch (error) {
-      if (!requestTicket.current()) return false;
-      setLoadError(error.message || "Error fetching settings");
-      addToast(error.message || "Error fetching settings", "error");
-    } finally {
-      if (requestTicket.current()) {
-        setLoading(false);
-      }
-    }
-  }, [addToast, beginRequest]);
+      return callOperation(id, { ...options, session });
+    },
+    [queryKeys.settings()],
+  );
+  /** @type {typeof callOperation} */
+  const writeOperation = (id, ...args) =>
+    write.mutateAsync({ id, options: args[0] });
+
+  const saving = write.isPending;
+
   useEffect(() => {
-    fetchSettings();
-  }, [fetchSettings]);
+    setLoadError(resourceQuery.error?.message ?? null);
+  }, [resourceQuery.error]);
   const handleSave = async (e) => {
     e.preventDefault();
     if (saving) return;
-    setSaving(true);
+
     try {
       const flattened = flattenSettings(settings);
 
       // Iterate through keys and save each one individually as the API expects
-      // POST /api/settings/set with body { key: "...", value: ... }
-      for (const [key, value] of Object.entries(flattened)) {
-        try {
-          await post("/api/settings/set", {
-            key: key,
-            value: value,
-          });
-        } catch (err) {
-          logger.error(`[BSMSettings] Failed to save setting`, {
-            error: err,
-            key,
-            value,
-          });
-          throw err; // Re-throw to be caught by outer block
-        }
-      }
-      setSavedSnapshot(JSON.stringify(settings));
+      await write.mutateAsync({
+        entries: Object.entries(flattened),
+      });
+      markSaved(settings);
       addToast("Settings saved successfully.", "success");
     } catch (error) {
       logger.error("[BSMSettings] Save settings error", {
         error,
       });
       addToast(error.message || "Failed to save settings.", "error");
-    } finally {
-      setSaving(false);
     }
   };
   const handleReload = async () => {
-    setLoading(true);
     try {
-      await put("/api/settings/reload");
-      addToast("Settings reloaded from disk.", "success");
-      fetchSettings();
+      const refreshed = await draft.refresh(async () => {
+        await writeOperation("reload_settings");
+        return resourceQuery.refetch();
+      });
+      if (refreshed) addToast("Settings reloaded from disk.", "success");
     } catch (error) {
       addToast(error.message || "Failed to reload settings.", "error");
-      setLoading(false);
     }
   };
   const handleChange = (path, value) =>
@@ -158,6 +150,8 @@ const BSMSettings = () => {
   };
   return (
     <div className="container">
+      <DraftConflictNotice draft={draft} />
+      <QueryStatus query={resourceQuery} />
       <div
         className="header"
         style={{
@@ -176,7 +170,7 @@ const BSMSettings = () => {
           <RefreshCw
             size={16}
             style={{
-              marginRight: "5px",
+              marginRight: "calc(5px * var(--bsm-spacing-scale))",
             }}
             className={loading ? "spin" : ""}
           />{" "}
@@ -198,7 +192,7 @@ const BSMSettings = () => {
         <div
           style={{
             textAlign: "center",
-            padding: "40px",
+            padding: "calc(40px * var(--bsm-spacing-scale))",
           }}
         >
           <div className="spinner"></div> Loading settings...
@@ -230,14 +224,14 @@ const BSMSettings = () => {
             <div
               className="settings-group"
               style={{
-                marginTop: "20px",
+                marginTop: "calc(20px * var(--bsm-spacing-scale))",
               }}
             >
               <h3 className="settings-group-title">Add Custom Setting</h3>
               <div
                 style={{
                   display: "flex",
-                  gap: "10px",
+                  gap: "calc(10px * var(--bsm-spacing-scale))",
                   alignItems: "flex-end",
                   flexWrap: "wrap",
                 }}
@@ -283,7 +277,7 @@ const BSMSettings = () => {
                   onClick={handleAddCustom}
                   disabled={!newKey.trim()}
                   style={{
-                    marginBottom: "2px",
+                    marginBottom: "calc(2px * var(--bsm-spacing-scale))",
                   }}
                   type="button"
                 >
@@ -295,9 +289,9 @@ const BSMSettings = () => {
             <div
               className="form-actions"
               style={{
-                marginTop: "20px",
+                marginTop: "calc(20px * var(--bsm-spacing-scale))",
                 borderTop: "1px solid var(--border-color)",
-                paddingTop: "20px",
+                paddingTop: "calc(20px * var(--bsm-spacing-scale))",
               }}
             >
               <button
@@ -308,7 +302,7 @@ const BSMSettings = () => {
                 <Save
                   size={16}
                   style={{
-                    marginRight: "5px",
+                    marginRight: "calc(5px * var(--bsm-spacing-scale))",
                   }}
                 />{" "}
                 {saving ? "Saving…" : "Save Changes"}

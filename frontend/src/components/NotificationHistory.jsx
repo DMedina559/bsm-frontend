@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Bell } from "lucide-react";
-import { useToast } from "../ToastContext";
+import { useToast } from "../contexts/ToastContext";
 import Modal from "./Modal";
 export default function NotificationHistory() {
   const {
@@ -16,6 +16,7 @@ export default function NotificationHistory() {
         type="button"
         className="icon-button notification-history-toggle"
         aria-label={`Notification history${unreadCount ? `, ${unreadCount} unread` : ""}`}
+        title="Notification history"
         aria-haspopup="dialog"
         onClick={() => {
           setOpen(true);
@@ -25,7 +26,7 @@ export default function NotificationHistory() {
         <Bell size={18} aria-hidden="true" />
         {unreadCount > 0 && (
           <span className="notification-count" aria-hidden="true">
-            {unreadCount}
+            {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
       </button>

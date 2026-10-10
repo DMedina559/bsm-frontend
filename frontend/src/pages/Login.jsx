@@ -1,9 +1,9 @@
 import AuthBrand from "../components/AuthBrand";
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../AuthContext";
+import { useAuth } from "../contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import RemoteConfigModal from "../components/RemoteConfigModal";
-import { getApiBaseUrl } from "../api";
+import { getApiBaseUrl } from "../api/transport";
 import { Globe } from "lucide-react";
 const Login = () => {
   const [showRemoteModal, setShowRemoteModal] = useState(false);
@@ -54,7 +54,7 @@ const Login = () => {
       className="container auth-page"
       style={{
         maxWidth: "400px",
-        marginTop: "100px",
+        marginTop: "calc(100px * var(--bsm-spacing-scale))",
       }}
     >
       <AuthBrand />
@@ -62,7 +62,7 @@ const Login = () => {
         className="header"
         style={{
           flexDirection: "column",
-          gap: "10px",
+          gap: "calc(10px * var(--bsm-spacing-scale))",
         }}
       >
         <h1>Login</h1>
@@ -74,7 +74,7 @@ const Login = () => {
         style={{
           display: "flex",
           flexDirection: "column",
-          gap: "15px",
+          gap: "calc(15px * var(--bsm-spacing-scale))",
         }}
       >
         <div>
@@ -114,7 +114,7 @@ const Login = () => {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "8px",
+            gap: "calc(8px * var(--bsm-spacing-scale))",
           }}
         >
           <input
@@ -152,7 +152,7 @@ const Login = () => {
       {showConfigButton && (
         <div
           style={{
-            marginTop: "20px",
+            marginTop: "calc(20px * var(--bsm-spacing-scale))",
             display: "flex",
             justifyContent: "center",
           }}
@@ -167,7 +167,7 @@ const Login = () => {
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
-              gap: "5px",
+              gap: "calc(5px * var(--bsm-spacing-scale))",
               fontSize: "0.9em",
               textDecoration: "underline",
             }}

@@ -36,7 +36,7 @@ const SortableItem = ({ id, children, itemClassName }) => {
     position: "relative",
     display: "flex",
     alignItems: "center",
-    gap: "10px",
+    gap: "calc(10px * var(--bsm-spacing-scale))",
   };
   return (
     <div
@@ -116,7 +116,7 @@ const DraggableList = ({
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: "10px",
+            gap: "calc(10px * var(--bsm-spacing-scale))",
           }}
         >
           {items.map((item, index) => (

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import JSON5 from "json5";
-import DynamicPage from "../components/DynamicPage";
-import { useToast } from "../ToastContext";
+import DynamicPage from "./DynamicPage";
+import { useToast } from "../contexts/ToastContext";
 import { Play } from "lucide-react";
 const DEFAULT_JSON = `{
   "type": "Container",
@@ -57,8 +57,8 @@ const Playground = () => {
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: "20px",
-        padding: "20px",
+        gap: "calc(20px * var(--bsm-spacing-scale))",
+        padding: "calc(20px * var(--bsm-spacing-scale))",
       }}
     >
       <div className="header">
@@ -74,7 +74,7 @@ const Playground = () => {
             width: "100%",
             height: "300px",
             fontFamily: "monospace",
-            padding: "10px",
+            padding: "calc(10px * var(--bsm-spacing-scale))",
             background: "var(--input-bg, #222)",
             color: "var(--text-color, #eee)",
             border: "1px solid var(--border-color, #444)",
@@ -87,7 +87,7 @@ const Playground = () => {
         />
         <div
           style={{
-            marginTop: "10px",
+            marginTop: "calc(10px * var(--bsm-spacing-scale))",
             display: "flex",
             justifyContent: "flex-end",
           }}
@@ -100,7 +100,7 @@ const Playground = () => {
             <Play
               size={16}
               style={{
-                marginRight: "5px",
+                marginRight: "calc(5px * var(--bsm-spacing-scale))",
               }}
             />
             Render Page
@@ -112,7 +112,7 @@ const Playground = () => {
         <div
           style={{
             borderTop: "2px dashed var(--border-color, #444)",
-            paddingTop: "20px",
+            paddingTop: "calc(20px * var(--bsm-spacing-scale))",
           }}
         >
           <h3>Preview</h3>

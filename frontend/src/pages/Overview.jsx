@@ -1,19 +1,22 @@
+import { callOperation } from "../api/operations";
+import { useResourceMutation, useResourceQuery } from "../app/resourceQueries";
+import { queryKeys } from "../app/queryKeys";
+import { usePreference } from "../app/usePreference";
 import "./Overview.css";
-import OverviewServerCard from "./OverviewServerCard";
+import ServerCard from "../components/server/ServerCard";
 import OverviewFleetMetrics from "./OverviewFleetMetrics";
-import { useDialog } from "../DialogContext";
+import { useDialog } from "../contexts/DialogContext";
 import React, { useState } from "react";
-import { useServer } from "../ServerContext";
-import { useAuth } from "../AuthContext";
-import { useToast } from "../ToastContext";
+import { useServer } from "../contexts/ServerContext";
+import { useAuth } from "../contexts/AuthContext";
+import { useToast } from "../contexts/ToastContext";
 import { getApiProxyBasePath } from "../utils/basePath";
-import { useWebSocket } from "../WebSocketContext";
+import { useWebSocket } from "../contexts/WebSocketContext";
 import { useNavigate } from "react-router-dom";
-import { post } from "../api";
+
 import { logger } from "../utils/logger";
-import { sortServers, readServerSort, SERVER_SORTS } from "../utils/serverSort";
+import { sortServers, SERVER_SORTS } from "../utils/serverSort";
 import { RefreshCw, LayoutGrid, List, Grid2X2 } from "lucide-react";
-const LAYOUT_STORAGE_KEY = "bsm.overview-layout.v1";
 const LAYOUTS = [
   { id: "grid", label: "Grid", Icon: LayoutGrid },
   { id: "compact", label: "Compact", Icon: Grid2X2 },
@@ -26,46 +29,37 @@ const Overview = () => {
     useServer();
   const { user } = useAuth();
   const { addToast } = useToast();
-  const { isConnected, isFallback, reconnect } = useWebSocket();
-  const navigate = useNavigate();
-  const [actionLoading, setActionLoading] = useState({});
-  const [refreshing, setRefreshing] = useState(false);
-  const [layout, setLayout] = useState(() => {
-    try {
-      const stored = localStorage.getItem(LAYOUT_STORAGE_KEY);
-      return LAYOUTS.some(({ id }) => id === stored) ? stored : "grid";
-    } catch {
-      return "grid";
-    }
+  const { isConnected, reconnect } = useWebSocket();
+  const health = useResourceQuery("applicationInfo", undefined, {
+    refetchInterval: 30000,
+    retry: false,
   });
-  const updateLayout = (next) => {
-    setLayout(next);
-    try {
-      localStorage.setItem(LAYOUT_STORAGE_KEY, next);
-    } catch {
-      /* Private mode */
-    }
-  };
-  const [sort, setSort] = useState(readServerSort);
+  const navigate = useNavigate();
+  const [refreshing, setRefreshing] = useState(false);
+  const [layout, updateLayout] = usePreference("overviewLayout", "grid");
+  const [sort, setSort] = usePreference("serverSort", {
+    key: "name",
+    direction: "asc",
+  });
   const sortedServers = sortServers(servers, sort.key, sort.direction);
-  const updateSort = (patch) => {
-    const next = { ...sort, ...patch };
-    setSort(next);
-    try {
-      localStorage.setItem("bsm.fleet-sort.v4", JSON.stringify(next));
-    } catch {
-      /* Sorting remains available without browser storage. */
-    }
-  };
+  const updateSort = (patch) => setSort({ ...sort, ...patch });
 
-  // Force refresh servers list when navigating back to Overview,
-  // guaranteeing fresh status (e.g. after navigating back from Monitor)
-  React.useEffect(() => {
-    refreshServers();
-  }, [refreshServers]);
-  const handleServerClick = (serverName) => {
+  const write = useResourceMutation(
+    ({ id, options }, { session }) =>
+      callOperation(id, { ...options, session }),
+    [queryKeys.servers()],
+  );
+  /** @type {typeof callOperation} */
+  const writeOperation = (id, ...args) =>
+    write.mutateAsync({ id, options: args[0] });
+  const isServerPending = (name) =>
+    write.pendingVariables.some(
+      (variables) => variables?.options?.path?.server_name === name,
+    );
+
+  const handleServerClick = (serverName, path = "/monitor") => {
     setSelectedServer(serverName);
-    navigate("/monitor");
+    navigate(path);
   };
   const handleRefresh = async () => {
     if (refreshing) return;
@@ -86,6 +80,7 @@ const Overview = () => {
       setRefreshing(false);
     }
   };
+  /** @param {import("react").MouseEvent} e @param {string} serverName @param {"start" | "stop" | "restart"} action */
   const handleAction = async (e, serverName, action) => {
     // Prevent click from bubbling up to the card click handler
     e.stopPropagation();
@@ -94,19 +89,25 @@ const Overview = () => {
     if (!isConnected) {
       reconnect();
     }
-    if (actionLoading[serverName]) return;
+    if (isServerPending(serverName)) return;
     logger.info("[Overview] Sending server action", {
       server: serverName,
       action,
     });
-    setActionLoading((prev) => ({
-      ...prev,
-      [serverName]: true,
-    }));
-    addToast(`Sending ${action} signal to ${serverName}...`, "info");
+    addToast(`Requesting ${action} for ${serverName}...`, "info");
     try {
-      await post(`/api/server/${serverName}/${action}`);
-      addToast(`Signal ${action} sent to ${serverName}.`, "success");
+      const response = await writeOperation(
+        /** @type {const} */ ({
+          start: "start_server",
+          stop: "stop_server",
+          restart: "restart_server",
+        })[action],
+        { path: { server_name: serverName } },
+      );
+      addToast(
+        response?.message || `Server action completed for ${serverName}.`,
+        "success",
+      );
     } catch (error) {
       logger.error("[Overview] Failed to send server action", {
         error,
@@ -114,13 +115,6 @@ const Overview = () => {
         action,
       });
       addToast(error.message || `Failed to ${action} server.`, "error");
-    } finally {
-      setActionLoading((prev) => ({
-        ...prev,
-        [serverName]: false,
-      }));
-      // Ensure UI reflects the latest state, even if WS messages are missed
-      refreshServers();
     }
   };
   const handleUpdate = async (e, serverName) => {
@@ -139,13 +133,11 @@ const Overview = () => {
     logger.info("[Overview] Initiating server update", {
       server: serverName,
     });
-    setActionLoading((prev) => ({
-      ...prev,
-      [serverName]: true,
-    }));
     addToast(`Updating ${serverName}...`, "info");
     try {
-      await post(`/api/server/${serverName}/update`);
+      await writeOperation("update_server", {
+        path: { server_name: serverName },
+      });
       addToast(`Update initiated for ${serverName}.`, "success");
     } catch (error) {
       logger.error("[Overview] Failed to initiate update", {
@@ -153,12 +145,6 @@ const Overview = () => {
         server: serverName,
       });
       addToast(error.message || `Failed to update ${serverName}.`, "error");
-    } finally {
-      setActionLoading((prev) => ({
-        ...prev,
-        [serverName]: false,
-      }));
-      refreshServers();
     }
   };
   const handleSendCommand = async (e, serverName) => {
@@ -177,13 +163,12 @@ const Overview = () => {
       server: serverName,
       command,
     });
-    setActionLoading((prev) => ({
-      ...prev,
-      [serverName]: true,
-    }));
     try {
-      await post(`/api/server/${serverName}/send_command`, {
-        command,
+      await writeOperation("send_command", {
+        path: { server_name: serverName },
+        body: {
+          command,
+        },
       });
       addToast(`Command sent to ${serverName}.`, "success");
     } catch (error) {
@@ -196,18 +181,13 @@ const Overview = () => {
         error.message || `Failed to send command to ${serverName}.`,
         "error",
       );
-    } finally {
-      setActionLoading((prev) => ({
-        ...prev,
-        [serverName]: false,
-      }));
     }
   };
-  const connection = isConnected
-    ? "Live updates connected"
-    : isFallback
-      ? "Polling fallback"
-      : "Live updates disconnected";
+  const healthLabel = health.isPending
+    ? "Checking"
+    : health.error
+      ? "Unavailable"
+      : "Connected";
   const unavailable = (loading || error) && servers.length === 0;
   return (
     <div className="container workspace-overview">
@@ -235,26 +215,15 @@ const Overview = () => {
             src={`${getApiProxyBasePath()}/app/image/icon/manager-logo.png`}
             alt=""
           />
-          <div>
-            <span className="workspace-eyebrow">BEDROCK SERVER MANAGER</span>
-            <h2>Your Bedrock workspace</h2>
-            <p>Manage servers, players, backups, and extensions.</p>
-            <div
-              className={`connection-pill ${isConnected ? "connected" : "degraded"}`}
-              role="status"
-            >
-              {connection}
-            </div>
+          <h2>Bedrock Server Manager</h2>
+          <div
+            className={`connection-pill ${!health.isPending && !health.error ? "connected" : "degraded"}`}
+            role="status"
+            aria-label="Connection health"
+            title="Backend API availability, checked every 30 seconds"
+          >
+            {healthLabel}
           </div>
-          {!isConnected && (
-            <button
-              className="action-button secondary"
-              onClick={reconnect}
-              type="button"
-            >
-              Reconnect
-            </button>
-          )}
         </section>
         <OverviewFleetMetrics servers={servers} unavailable={unavailable} />
       </div>
@@ -336,10 +305,10 @@ const Overview = () => {
           className={`server-grid overview-server-grid overview-layout-${layout}`}
         >
           {sortedServers.map((server) => (
-            <OverviewServerCard
+            <ServerCard
               key={server.name}
               server={server}
-              busy={Boolean(actionLoading[server.name])}
+              busy={isServerPending(server.name)}
               onOpen={handleServerClick}
               onAction={handleAction}
               onUpdate={handleUpdate}

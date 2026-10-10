@@ -2,14 +2,14 @@
 .workspace-overview {
   display: flex;
   flex-direction: column;
-  gap: var(--bsm-grid-gap, 18px);
+  gap: var(--bsm-grid-gap, calc(18px * var(--bsm-spacing-scale)));
 }
 .workspace-overview > .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: calc(16px * var(--bsm-spacing-scale));
   margin-bottom: 0;
 }
 .workspace-overview > .header h1 {
@@ -18,21 +18,29 @@
 .workspace-overview > .header .action-button {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: calc(8px * var(--bsm-spacing-scale));
 }
 .workspace-overview .overview-dashboard-top {
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(270px, 1fr);
-  gap: var(--bsm-grid-gap, 16px);
+  gap: var(--bsm-grid-gap, calc(16px * var(--bsm-spacing-scale)));
   align-items: stretch;
 }
 .workspace-overview .overview-intro {
   min-height: 0;
-  padding: clamp(18px, 2.5vw, 28px);
+  padding: clamp(
+    calc(18px * var(--bsm-spacing-scale)),
+    2.5vw,
+    calc(28px * var(--bsm-spacing-scale))
+  );
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: clamp(16px, 2vw, 24px);
+  gap: clamp(
+    calc(16px * var(--bsm-spacing-scale)),
+    2vw,
+    calc(24px * var(--bsm-spacing-scale))
+  );
 }
 .workspace-overview .overview-intro > img {
   width: clamp(76px, 9vw, 116px);
@@ -45,24 +53,29 @@
   flex: 1 1 190px;
 }
 .workspace-overview .overview-intro h2 {
-  margin: 4px 0 8px;
+  margin: calc(4px * var(--bsm-spacing-scale)) 0
+    calc(8px * var(--bsm-spacing-scale));
 }
 .workspace-overview .overview-intro p {
-  margin: 0 0 12px;
+  margin: 0 0 calc(12px * var(--bsm-spacing-scale));
 }
 .workspace-overview .overview-metrics {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-template-rows: repeat(2, minmax(0, 1fr));
-  gap: var(--bsm-grid-gap, 12px);
+  gap: var(--bsm-grid-gap, calc(12px * var(--bsm-spacing-scale)));
   margin: 0;
 }
 .workspace-overview .overview-metrics .workspace-metric {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: calc(5px * var(--bsm-spacing-scale));
   min-width: 0;
-  padding: clamp(12px, 1.6vw, 18px);
+  padding: clamp(
+    calc(12px * var(--bsm-spacing-scale)),
+    1.6vw,
+    calc(18px * var(--bsm-spacing-scale))
+  );
 }
 .workspace-overview .overview-metrics .workspace-metric:first-child {
   grid-column: 1 / -1;
@@ -71,7 +84,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: calc(8px * var(--bsm-spacing-scale));
   color: var(--text-color-secondary);
 }
 .workspace-overview .overview-metric-heading svg {
@@ -90,8 +103,8 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 12px;
-  margin: 4px 0 0;
+  gap: calc(12px * var(--bsm-spacing-scale));
+  margin: calc(4px * var(--bsm-spacing-scale)) 0 0;
 }
 .workspace-overview .fleet-heading h2 {
   margin: 0;
@@ -100,12 +113,12 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: calc(8px * var(--bsm-spacing-scale));
 }
 .workspace-overview .overview-layout-switch {
   display: inline-flex;
-  padding: 3px;
-  gap: 2px;
+  padding: calc(3px * var(--bsm-spacing-scale));
+  gap: calc(2px * var(--bsm-spacing-scale));
   border: 1px solid var(--border-color);
   border-radius: 10px;
   background: var(--container-background-color);
@@ -114,12 +127,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: calc(6px * var(--bsm-spacing-scale));
   border: 0;
   border-radius: 7px;
   background: transparent;
   color: var(--text-color);
-  padding: 7px 9px;
+  padding: calc(7px * var(--bsm-spacing-scale))
+    calc(9px * var(--bsm-spacing-scale));
   cursor: pointer;
   font: inherit;
   font-size: 0.8rem;
@@ -135,7 +149,7 @@
 .workspace-overview .overview-server-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
-  gap: var(--bsm-grid-gap, 16px);
+  gap: var(--bsm-grid-gap, calc(16px * var(--bsm-spacing-scale)));
   align-items: stretch;
 }
 .workspace-overview .overview-layout-compact {
@@ -148,7 +162,9 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  overflow: hidden;
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
   background: var(--container-background-color);
   border: 1px solid var(--border-color);
   border-radius: var(--bsm-radius-lg, 12px);
@@ -163,7 +179,7 @@
 .workspace-overview .overview-card-header {
   display: flex;
   align-items: center;
-  gap: var(--bsm-grid-gap, 12px);
+  gap: var(--bsm-grid-gap, calc(12px * var(--bsm-spacing-scale)));
   padding: var(--bsm-card-padding);
 }
 .workspace-overview .overview-world-icon {
@@ -179,13 +195,13 @@
   min-width: 0;
 }
 .workspace-overview .overview-server-identity h3 {
-  margin: 0 0 6px;
+  margin: 0 0 calc(6px * var(--bsm-spacing-scale));
   overflow-wrap: anywhere;
 }
 .workspace-overview .overview-server-status {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: calc(7px * var(--bsm-spacing-scale));
   font-size: 0.8rem;
   font-weight: 700;
   color: var(--text-color-secondary);
@@ -216,8 +232,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-top: 10px;
+  gap: calc(12px * var(--bsm-spacing-scale));
+  margin-top: calc(10px * var(--bsm-spacing-scale));
 }
 .workspace-overview .overview-detail-row strong {
   color: var(--text-color);
@@ -228,13 +244,13 @@
 .workspace-overview .overview-player-label {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: calc(6px * var(--bsm-spacing-scale));
 }
 .workspace-overview .overview-card-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
-  padding: 12px var(--bsm-card-padding);
+  gap: calc(7px * var(--bsm-spacing-scale));
+  padding: calc(12px * var(--bsm-spacing-scale)) var(--bsm-card-padding);
   margin-top: auto;
   border-top: 1px solid var(--border-color);
   background: var(--bsm-surface-raised, transparent);
@@ -244,9 +260,10 @@
   flex: 1 1 auto;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: calc(6px * var(--bsm-spacing-scale));
   min-width: 72px;
-  padding: 8px 10px;
+  padding: calc(8px * var(--bsm-spacing-scale))
+    calc(10px * var(--bsm-spacing-scale));
   font-size: 0.8rem;
 }
 .workspace-overview .overview-card-actions .action-button span {
@@ -261,7 +278,7 @@
   .overview-card-actions
   .action-button {
   min-width: 38px;
-  padding: 7px;
+  padding: calc(7px * var(--bsm-spacing-scale));
 }
 .workspace-overview
   .overview-layout-compact
@@ -291,7 +308,7 @@
 }
 .workspace-overview .overview-empty {
   text-align: center;
-  padding: 40px;
+  padding: calc(40px * var(--bsm-spacing-scale));
 }
 .workspace-overview .overview-layout-button:focus-visible,
 .workspace-overview .overview-card-actions .action-button:focus-visible {
@@ -354,16 +371,21 @@
 
 /* Compact, aligned dashboard header and balanced summary panels. */
 .workspace-overview {
-  gap: clamp(14px, 1.7vw, 22px);
+  gap: clamp(
+    calc(14px * var(--bsm-spacing-scale)),
+    1.7vw,
+    calc(22px * var(--bsm-spacing-scale))
+  );
 }
 .workspace-overview .overview-page-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 12px 20px;
+  gap: calc(12px * var(--bsm-spacing-scale))
+    calc(20px * var(--bsm-spacing-scale));
   min-width: 0;
-  padding: 0 0 14px;
+  padding: 0 0 calc(14px * var(--bsm-spacing-scale));
   border-bottom: 1px solid var(--border-color);
 }
 .workspace-overview .overview-heading-copy {
@@ -375,23 +397,35 @@
   line-height: 1.15;
 }
 .workspace-overview .overview-heading-copy p {
-  margin: 4px 0 0;
+  margin: calc(4px * var(--bsm-spacing-scale)) 0 0;
   color: var(--text-color-secondary);
   font-size: 0.88rem;
 }
 .workspace-overview .overview-refresh {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: calc(8px * var(--bsm-spacing-scale));
   flex-shrink: 0;
 }
 .workspace-overview .overview-dashboard-top {
   grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-  gap: clamp(12px, 1.5vw, 20px);
+  gap: clamp(
+    calc(12px * var(--bsm-spacing-scale)),
+    1.5vw,
+    calc(20px * var(--bsm-spacing-scale))
+  );
 }
 .workspace-overview .overview-intro {
-  padding: clamp(18px, 2vw, 26px);
-  gap: clamp(16px, 2vw, 24px);
+  padding: clamp(
+    calc(18px * var(--bsm-spacing-scale)),
+    2vw,
+    calc(26px * var(--bsm-spacing-scale))
+  );
+  gap: clamp(
+    calc(16px * var(--bsm-spacing-scale)),
+    2vw,
+    calc(24px * var(--bsm-spacing-scale))
+  );
   align-content: center;
   min-width: 0;
 }
@@ -411,10 +445,18 @@
   line-height: 1.45;
 }
 .workspace-overview .overview-metrics {
-  gap: clamp(10px, 1.1vw, 14px);
+  gap: clamp(
+    calc(10px * var(--bsm-spacing-scale)),
+    1.1vw,
+    calc(14px * var(--bsm-spacing-scale))
+  );
 }
 .workspace-overview .overview-metrics .workspace-metric {
-  padding: clamp(14px, 1.4vw, 20px);
+  padding: clamp(
+    calc(14px * var(--bsm-spacing-scale)),
+    1.4vw,
+    calc(20px * var(--bsm-spacing-scale))
+  );
   justify-content: center;
 }
 .workspace-overview .overview-metrics .workspace-metric:first-child {
@@ -424,14 +466,15 @@
   font-size: clamp(1.5rem, 2vw, 2rem);
 }
 .workspace-overview .fleet-heading {
-  gap: 12px 18px;
+  gap: calc(12px * var(--bsm-spacing-scale))
+    calc(18px * var(--bsm-spacing-scale));
 }
 .workspace-overview .fleet-heading h2 {
   font-size: clamp(1.25rem, 1.8vw, 1.6rem);
 }
 .workspace-overview .fleet-sort-controls {
   justify-content: flex-end;
-  gap: 8px;
+  gap: calc(8px * var(--bsm-spacing-scale));
 }
 .workspace-overview .fleet-sort-controls select {
   width: auto;
@@ -496,19 +539,35 @@
 
 /* Compact dashboard summary: prioritize the server fleet over oversized KPIs. */
 .workspace-overview {
-  gap: clamp(10px, 1.1vw, 16px);
+  gap: clamp(
+    calc(10px * var(--bsm-spacing-scale)),
+    1.1vw,
+    calc(16px * var(--bsm-spacing-scale))
+  );
 }
 .workspace-overview .overview-page-heading {
-  padding-bottom: 10px;
+  padding-bottom: calc(10px * var(--bsm-spacing-scale));
 }
 .workspace-overview .overview-dashboard-top {
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-  gap: clamp(10px, 1vw, 14px);
+  gap: clamp(
+    calc(10px * var(--bsm-spacing-scale)),
+    1vw,
+    calc(14px * var(--bsm-spacing-scale))
+  );
   align-items: stretch;
 }
 .workspace-overview .overview-intro {
-  padding: clamp(14px, 1.5vw, 22px);
-  gap: clamp(12px, 1.5vw, 20px);
+  padding: clamp(
+    calc(14px * var(--bsm-spacing-scale)),
+    1.5vw,
+    calc(22px * var(--bsm-spacing-scale))
+  );
+  gap: clamp(
+    calc(12px * var(--bsm-spacing-scale)),
+    1.5vw,
+    calc(20px * var(--bsm-spacing-scale))
+  );
 }
 .workspace-overview .overview-intro > img {
   width: clamp(64px, 6vw, 88px);
@@ -516,25 +575,31 @@
 }
 .workspace-overview .overview-intro h2 {
   font-size: clamp(1.15rem, 1.45vw, 1.4rem);
-  margin: 3px 0 5px;
+  margin: calc(3px * var(--bsm-spacing-scale)) 0
+    calc(5px * var(--bsm-spacing-scale));
 }
 .workspace-overview .overview-intro p {
   font-size: 0.9rem;
-  margin-bottom: 8px;
+  margin-bottom: calc(8px * var(--bsm-spacing-scale));
 }
 .workspace-overview .overview-metrics {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-template-rows: minmax(0, 1fr);
-  gap: clamp(8px, 0.8vw, 12px);
+  gap: clamp(
+    calc(8px * var(--bsm-spacing-scale)),
+    0.8vw,
+    calc(12px * var(--bsm-spacing-scale))
+  );
   align-self: stretch;
 }
 .workspace-overview .overview-metrics .workspace-metric,
 .workspace-overview .overview-metrics .workspace-metric:first-child {
   grid-column: auto;
   min-height: 0;
-  padding: clamp(10px, 1vw, 15px);
+  padding: calc(8px * var(--bsm-spacing-scale))
+    calc(10px * var(--bsm-spacing-scale));
   justify-content: center;
-  gap: 5px;
+  gap: calc(3px * var(--bsm-spacing-scale));
 }
 .workspace-overview .overview-metric-heading {
   align-items: flex-start;
@@ -546,7 +611,7 @@
   height: 15px;
 }
 .workspace-overview .overview-metrics strong {
-  font-size: clamp(1.35rem, 1.7vw, 1.75rem);
+  font-size: clamp(1.15rem, 1.4vw, 1.4rem);
   line-height: 1.1;
 }
 .workspace-overview .overview-metrics small {
@@ -554,7 +619,7 @@
   line-height: 1.35;
 }
 .workspace-overview .fleet-heading {
-  margin-top: 4px;
+  margin-top: calc(4px * var(--bsm-spacing-scale));
 }
 @media (max-width: 1350px) {
   .workspace-overview .overview-dashboard-top {
@@ -575,7 +640,7 @@
     grid-column: auto;
   }
   .workspace-overview .overview-metrics .workspace-metric {
-    padding: 10px;
+    padding: calc(10px * var(--bsm-spacing-scale));
   }
   .workspace-overview .overview-metrics small {
     display: none;
@@ -596,9 +661,10 @@
 /* Compact page toolbar: keep the heading and refresh aligned without a tall hero header. */
 .workspace-overview .overview-page-heading {
   min-height: 0;
-  padding: 0 0 8px;
+  padding: 0 0 calc(8px * var(--bsm-spacing-scale));
   margin: 0;
-  gap: 8px 14px;
+  gap: calc(8px * var(--bsm-spacing-scale))
+    calc(14px * var(--bsm-spacing-scale));
   align-items: center;
 }
 .workspace-overview .overview-heading-copy h1 {
@@ -611,7 +677,8 @@
 }
 .workspace-overview .overview-refresh {
   min-height: 34px;
-  padding: 6px 12px;
+  padding: calc(6px * var(--bsm-spacing-scale))
+    calc(12px * var(--bsm-spacing-scale));
   font-size: 0.86rem;
   line-height: 1.2;
 }
@@ -627,6 +694,47 @@
     font-size: 1.3rem;
   }
   .workspace-overview .overview-refresh {
-    padding: 6px 9px;
+    padding: calc(6px * var(--bsm-spacing-scale))
+      calc(9px * var(--bsm-spacing-scale));
   }
+}
+
+.workspace-overview .overview-metrics {
+  align-self: start;
+}
+.workspace-overview .overview-metrics small {
+  display: none;
+}
+
+.workspace-overview .overview-page-heading {
+  padding-bottom: calc(4px * var(--bsm-spacing-scale));
+  border-bottom: 0;
+}
+
+.workspace-overview .overview-dashboard-top .overview-intro {
+  padding: calc(10px * var(--bsm-spacing-scale))
+    calc(14px * var(--bsm-spacing-scale));
+  gap: calc(12px * var(--bsm-spacing-scale));
+  flex-wrap: wrap;
+  align-items: center;
+}
+.workspace-overview .overview-dashboard-top .overview-intro > img {
+  width: 40px;
+  height: 40px;
+}
+.workspace-overview .overview-dashboard-top .overview-intro h2 {
+  flex: 1;
+  margin: 0;
+  font-size: 1rem;
+}
+.workspace-overview .overview-intro .connection-pill {
+  margin: 0;
+  padding: calc(5px * var(--bsm-spacing-scale))
+    calc(9px * var(--bsm-spacing-scale));
+  font-size: 0.75rem;
+}
+
+.workspace-overview .overview-intro > .connection-pill {
+  flex: 0 1 auto;
+  min-width: 0;
 }

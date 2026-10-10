@@ -17,7 +17,7 @@
   border: 1px solid var(--border-color); /* Outer border for the group */
   border-radius: var(--bsm-radius-md); /* Sharp corners */
   overflow: hidden; /* Clip child borders cleanly */
-  margin: 4px 0; /* Add some vertical margin */
+  margin: calc(4px * var(--bsm-spacing-scale)) 0; /* Add some vertical margin */
 }
 
 /* Individual segment (styled button) */
@@ -30,7 +30,8 @@
   /* Add right border as separator (except last) */
   border-right: 1px solid var(--border-color);
   margin: 0;
-  padding: 7px 14px; /* Inner spacing */
+  padding: calc(7px * var(--bsm-spacing-scale))
+    calc(14px * var(--bsm-spacing-scale)); /* Inner spacing */
   /* Default (inactive) state appearance */
   background-color: var(--button-background-color); /* Dark background */
   color: var(--button-text-color); /* Light grey text */
@@ -82,7 +83,7 @@
   display: flex; /* Align label group and switch horizontally */
   align-items: center; /* Align items vertically centered */
   justify-content: space-between; /* Push switch to the right */
-  padding: 8px 0; /* Vertical padding */
+  padding: calc(8px * var(--bsm-spacing-scale)) 0; /* Vertical padding */
   /* Optional separator */
   /* border-bottom: 1px solid #484848; */
 }
@@ -93,12 +94,16 @@
 
 /* Group for the label and optional help text */
 .form-label-group {
-  padding-right: 15px; /* Space between text and the switch */
+  padding-right: calc(
+    15px * var(--bsm-spacing-scale)
+  ); /* Space between text and the switch */
 }
 
 .form-label-group .form-label {
   display: block; /* Ensure label is block for margin */
-  margin-bottom: 2px; /* Small space below main label */
+  margin-bottom: calc(
+    2px * var(--bsm-spacing-scale)
+  ); /* Small space below main label */
   font-weight: 600;
 }
 
@@ -209,8 +214,10 @@
   font-size: 0.9em;
   color: var(--text-color-secondary); /* Lighter text */
   font-style: italic;
-  margin-top: 3px;
-  margin-bottom: 15px; /* Add space below indicator */
+  margin-top: calc(3px * var(--bsm-spacing-scale));
+  margin-bottom: calc(
+    15px * var(--bsm-spacing-scale)
+  ); /* Add space below indicator */
   display: block; /* Ensure it takes its own line */
 }
 

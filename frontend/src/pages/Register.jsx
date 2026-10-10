@@ -1,29 +1,32 @@
+import { usePublicQuery, useScopedMutation } from "../app/publicRequests";
+import { callOperation } from "../api/operations";
 import AuthBrand from "../components/AuthBrand";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useToast } from "../ToastContext";
-import { get, post } from "../api";
+import { useToast } from "../contexts/ToastContext";
+
 const Register = () => {
-  const { token } = useParams();
+  const { token = "" } = useParams();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [tokenValid, setTokenValid] = useState(null);
+  const tokenQuery = usePublicQuery(
+    ["registration", token],
+    ({ signal }) =>
+      callOperation("validate_registration_token", { path: { token }, signal }),
+    { enabled: Boolean(token), staleTime: 0 },
+  );
+  const tokenValid = tokenQuery.isSuccess
+    ? true
+    : tokenQuery.isError
+      ? false
+      : null;
+  const write = useScopedMutation(`register:${token}`, (body, { signal }) =>
+    callOperation("register_user", { path: { token }, body, signal }),
+  );
+  const loading = write.isPending;
   const { addToast } = useToast();
   const navigate = useNavigate();
-  useEffect(() => {
-    const validateToken = async () => {
-      if (!token) return;
-      try {
-        await get(`/api/register/validate/${token}`);
-        setTokenValid(true);
-      } catch {
-        setTokenValid(false);
-      }
-    };
-    validateToken();
-  }, [token]);
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (loading) return;
@@ -35,22 +38,17 @@ const Register = () => {
       addToast("Passwords do not match", "error");
       return;
     }
-    if (!tokenValid) {
+    if (!token || !tokenValid) {
       addToast("Invalid registration link.", "error");
       return;
     }
-    setLoading(true);
     try {
-      await post(`/api/register/${token}`, {
-        username,
-        password,
-      });
+      await write.mutateAsync({ username, password });
       addToast("Registration successful! Please login.", "success");
       navigate("/login");
     } catch (error) {
+      if (error.name === "AbortError") return;
       addToast(error.message || "Registration failed.", "error");
-    } finally {
-      setLoading(false);
     }
   };
   if (!token) {
@@ -58,7 +56,7 @@ const Register = () => {
       <div
         className="container auth-page"
         style={{
-          marginTop: "100px",
+          marginTop: "calc(100px * var(--bsm-spacing-scale))",
           textAlign: "center",
         }}
       >
@@ -73,7 +71,7 @@ const Register = () => {
       <div
         className="container auth-page"
         style={{
-          marginTop: "100px",
+          marginTop: "calc(100px * var(--bsm-spacing-scale))",
           textAlign: "center",
         }}
       >
@@ -88,7 +86,7 @@ const Register = () => {
       <div
         className="container auth-page"
         style={{
-          marginTop: "100px",
+          marginTop: "calc(100px * var(--bsm-spacing-scale))",
           textAlign: "center",
         }}
       >
@@ -96,7 +94,7 @@ const Register = () => {
           className="spinner"
           style={{
             display: "inline-block",
-            marginRight: "10px",
+            marginRight: "calc(10px * var(--bsm-spacing-scale))",
           }}
         ></div>{" "}
         Checking registration link...
@@ -108,7 +106,7 @@ const Register = () => {
       className="container auth-page"
       style={{
         maxWidth: "400px",
-        marginTop: "100px",
+        marginTop: "calc(100px * var(--bsm-spacing-scale))",
       }}
     >
       <AuthBrand />
@@ -119,7 +117,7 @@ const Register = () => {
       <form onSubmit={handleSubmit} className="form-group">
         <div
           style={{
-            marginBottom: "15px",
+            marginBottom: "calc(15px * var(--bsm-spacing-scale))",
           }}
         >
           <label className="form-label" htmlFor="username">
@@ -139,7 +137,7 @@ const Register = () => {
 
         <div
           style={{
-            marginBottom: "15px",
+            marginBottom: "calc(15px * var(--bsm-spacing-scale))",
           }}
         >
           <label className="form-label" htmlFor="password">
@@ -159,7 +157,7 @@ const Register = () => {
 
         <div
           style={{
-            marginBottom: "20px",
+            marginBottom: "calc(20px * var(--bsm-spacing-scale))",
           }}
         >
           <label className="form-label" htmlFor="confirmPassword">

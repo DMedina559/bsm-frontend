@@ -1,19 +1,28 @@
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "../app/queryClient";
+import { synchronizeServerEvent } from "../app/applicationState";
 import React from "react";
 import { render, screen, waitFor, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import OnlinePlayers from "./OnlinePlayers";
-import { ServerProvider } from "../ServerContext";
-import { ToastProvider } from "../ToastContext";
-import { AuthProvider } from "../AuthContext";
+import { ServerProvider } from "../contexts/ServerContext";
+import { ToastProvider } from "../contexts/ToastContext";
+import { AuthProvider } from "../contexts/AuthContext";
 import { MemoryRouter } from "react-router-dom";
-import * as api from "../api";
+import * as api from "../test/httpFixtures";
 
 // Mock the API calls
-vi.mock("../api", () => ({
-  get: vi.fn(),
-  post: vi.fn(),
-  request: vi.fn(),
-}));
+vi.mock("../api/transport", async (importOriginal) => {
+  const { createHttpTransport, configureHttpFixtures } =
+    await import("../test/httpFixtures");
+  const fixtures = {
+    get: vi.fn(),
+    post: vi.fn(),
+    request: vi.fn(),
+  };
+  configureHttpFixtures(fixtures);
+  return createHttpTransport(await importOriginal());
+});
 
 // Mock logger to avoid console spam during tests
 vi.mock("../utils/logger", () => ({
@@ -32,7 +41,7 @@ const socket = vi.hoisted(() => ({
   listeners: new Set(),
   addMessageListener: vi.fn(),
 }));
-vi.mock("../WebSocketContext", () => ({
+vi.mock("../contexts/WebSocketContext", () => ({
   useWebSocket: () => ({
     isConnected: socket.connected,
     isFallback: false,
@@ -45,19 +54,22 @@ vi.mock("../WebSocketContext", () => ({
 // Create a wrapper with necessary providers
 const renderWithProviders = (ui, { initialRoute = "/" } = {}) => {
   return render(
-    <MemoryRouter initialEntries={[initialRoute]}>
-      <AuthProvider>
-        <ToastProvider>
-          <ServerProvider>{ui}</ServerProvider>
-        </ToastProvider>
-      </AuthProvider>
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={[initialRoute]}>
+        <AuthProvider>
+          <ToastProvider>
+            <ServerProvider>{ui}</ServerProvider>
+          </ToastProvider>
+        </AuthProvider>
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 };
 
 describe("OnlinePlayers", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    queryClient.clear();
     localStorage.clear();
     socket.connected = true;
     socket.listeners.clear();
@@ -76,8 +88,7 @@ describe("OnlinePlayers", () => {
       }
       if (url === "/api/account") {
         return Promise.resolve({
-          status: "success",
-          data: { user: { username: "testuser" } },
+          username: "testuser",
         });
       }
       if (url === "/api/servers") {
@@ -113,25 +124,16 @@ describe("OnlinePlayers", () => {
 });
 
 function emitPlayers(server_name, players) {
-  act(() => {
-    for (const listener of socket.listeners) {
-      listener({
-        type: "event",
-        topic: "event:after_server_players_change",
-        data: {
-          result: {
-            status: "success",
-            server_name,
-            players,
-            player_count: players.length,
-          },
-        },
-      });
-    }
-  });
+  act(() =>
+    synchronizeServerEvent({
+      type: "event",
+      topic: "event:after_server_players_change",
+      data: { result: { server_name, players, player_count: players.length } },
+    }),
+  );
 }
 
-it("subscribes and updates joins, same-count replacements and the last departure", async () => {
+it("updates joins, same-count replacements and the last departure", async () => {
   localStorage.setItem("selectedServer", "TestServer");
   socket.connected = true;
   socket.listeners.clear();
@@ -152,29 +154,23 @@ it("subscribes and updates joins, same-count replacements and the last departure
     ),
   );
   const { unmount } = renderWithProviders(<OnlinePlayers />);
-  await waitFor(() =>
-    expect(socket.subscribe).toHaveBeenCalledWith(
-      "event:after_server_players_change",
-    ),
-  );
   await waitFor(() => expect(screen.getByText("0 Online")).toBeInTheDocument());
   const requests = api.request.mock.calls.length;
   emitPlayers("TestServer", [{ name: "Joined", xuid: "999" }]);
-  expect(screen.getByText("Joined")).toBeInTheDocument();
+  await waitFor(() => expect(screen.getByText("Joined")).toBeInTheDocument());
   expect(screen.getByText("XUID: 999")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Ban" })).toBeEnabled();
   emitPlayers("OtherServer", []);
-  expect(screen.getByText("Joined")).toBeInTheDocument();
+  await waitFor(() => expect(screen.getByText("Joined")).toBeInTheDocument());
   emitPlayers("TestServer", [{ name: "Replacement", xuid: "888" }]);
-  expect(screen.queryByText("Joined")).not.toBeInTheDocument();
+  await waitFor(() =>
+    expect(screen.queryByText("Joined")).not.toBeInTheDocument(),
+  );
   expect(screen.getByText("Replacement")).toBeInTheDocument();
   emitPlayers("TestServer", []);
-  expect(screen.getByText("0 Online")).toBeInTheDocument();
+  await waitFor(() => expect(screen.getByText("0 Online")).toBeInTheDocument());
   expect(screen.queryByText("Replacement")).not.toBeInTheDocument();
   expect(api.request.mock.calls.length).toBe(requests);
   unmount();
-  expect(socket.unsubscribe).toHaveBeenCalledWith(
-    "event:after_server_players_change",
-  );
   expect(socket.listeners.size).toBe(0);
 });

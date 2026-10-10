@@ -1,12 +1,13 @@
+import OperationsStatus from "../components/OperationsStatus";
 import React, { useEffect, useRef, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import NotificationHistory from "../components/NotificationHistory";
 import Sidebar from "../components/Sidebar";
 import Footer from "../components/Footer";
 import { Menu, ChevronRight, Radio } from "lucide-react";
-import { useAuth } from "../AuthContext";
-import { useServer } from "../ServerContext";
-import { useWebSocket } from "../WebSocketContext";
+import { useAuth } from "../contexts/AuthContext";
+import { useServer } from "../contexts/ServerContext";
+import { useWebSocket } from "../contexts/WebSocketContext";
 import { PAGE_INFO } from "../utils/navigation";
 import { useFocusTrap } from "../utils/useFocusTrap";
 
@@ -91,11 +92,20 @@ const Layout = () => {
           <div className="workspace-indicators">
             <span
               className={`connection-indicator ${isConnected ? "connected" : "degraded"}`}
-              title="Update connection; not an overall system health check"
+              role="status"
+              aria-label="WebSocket health"
+              title={
+                isConnected
+                  ? "WebSocket connected"
+                  : isFallback
+                    ? "WebSocket disconnected; HTTP polling active"
+                    : "WebSocket disconnected"
+              }
             >
               <Radio size={14} />
-              {isConnected ? "Live" : isFallback ? "Polling" : "Offline"}
+              {isConnected ? "Live" : "Offline"}
             </span>
+            <OperationsStatus />
             <NotificationHistory />
             <Link className="account-chip" to="/account">
               <span className="avatar">
@@ -107,18 +117,20 @@ const Layout = () => {
         </header>
         <main
           id="main-content"
-          className="main-content"
+          className={`main-content${pathname === "/" ? " overview-main" : ""}`}
           ref={mainRef}
           tabIndex={-1}
         >
-          <div className="page-context">
-            <span>{description}</span>
-            {group === "Selected server" && (
-              <span className="workspace-server">
-                {selectedServer || "No server selected"}
-              </span>
-            )}
-          </div>
+          {pathname !== "/" && (
+            <div className="page-context">
+              <span>{description}</span>
+              {group === "Selected server" && (
+                <span className="workspace-server">
+                  {selectedServer || "No server selected"}
+                </span>
+              )}
+            </div>
+          )}
           <Outlet />
           <Footer />
         </main>

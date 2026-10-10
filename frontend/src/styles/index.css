@@ -1,0 +1,18 @@
+/* Global CSS for V2 */
+@import "./base.css";
+@import "./buttons.css";
+@import "./forms.css";
+@import "./tables.css";
+@import "./messages.css";
+@import "./tabs.css";
+@import "./controls.css";
+@import "./layout.css";
+@import "./animations.css";
+@import "./tokens.css";
+@import "./workspace.css";
+@import "./density.css";
+
+body {
+  margin: 0;
+  padding: 0;
+}

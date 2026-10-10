@@ -1,9 +1,12 @@
 import { render, screen, fireEvent, waitFor } from "../test/utils";
 import AccessControl from "./AccessControl";
 import { vi, describe, it, expect, beforeEach } from "vitest";
-import * as api from "../api";
+import * as api from "../test/httpFixtures";
 
-vi.mock("../api");
+vi.mock("../api/transport", async (importOriginal) => {
+  const { createHttpTransport } = await import("../test/httpFixtures");
+  return createHttpTransport(await importOriginal());
+});
 
 describe("AccessControl", () => {
   beforeEach(() => {
@@ -32,7 +35,7 @@ describe("AccessControl", () => {
         return Promise.resolve({
           status: "success",
           permissions: [
-            { xuid: "123", name: "AdminPlayer", permission: "operator" },
+            { xuid: "123", name: "AdminPlayer", permission_level: "operator" },
           ],
         });
       }

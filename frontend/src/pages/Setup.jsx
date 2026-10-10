@@ -1,14 +1,18 @@
 import AuthBrand from "../components/AuthBrand";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../AuthContext";
-import { post } from "../api";
+import { useAuth } from "../contexts/AuthContext";
+import { callOperation } from "../api/operations";
+import { useScopedMutation } from "../app/publicRequests";
 const Setup = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const write = useScopedMutation("setup", (body, { signal }) =>
+    callOperation("create_first_user", { body, signal }),
+  );
+  const loading = write.isPending;
   const navigate = useNavigate();
   const { checkUser } = useAuth();
   const handleSubmit = async (e) => {
@@ -19,21 +23,16 @@ const Setup = () => {
       setError("Passwords do not match");
       return;
     }
-    setLoading(true);
     try {
-      await post("/api/setup/create-first-user", {
-        username,
-        password,
-      });
+      await write.mutateAsync({ username, password });
       // Setup successful
       // Refresh auth state since the backend logs us in
       await checkUser();
       // Redirect to dashboard or login
       navigate("/");
     } catch (error) {
+      if (error.name === "AbortError") return;
       setError(error.message || "An error occurred during setup.");
-    } finally {
-      setLoading(false);
     }
   };
   return (
@@ -41,7 +40,7 @@ const Setup = () => {
       className="container auth-page"
       style={{
         maxWidth: "500px",
-        marginTop: "50px",
+        marginTop: "calc(50px * var(--bsm-spacing-scale))",
       }}
     >
       <AuthBrand />
@@ -49,7 +48,7 @@ const Setup = () => {
         className="header"
         style={{
           flexDirection: "column",
-          gap: "10px",
+          gap: "calc(10px * var(--bsm-spacing-scale))",
         }}
       >
         <h1>Setup Bedrock Server Manager</h1>
@@ -62,7 +61,7 @@ const Setup = () => {
         style={{
           display: "flex",
           flexDirection: "column",
-          gap: "15px",
+          gap: "calc(15px * var(--bsm-spacing-scale))",
         }}
       >
         <div>

@@ -3,7 +3,7 @@ import Playground from "./Playground";
 import { vi, describe, it, expect } from "vitest";
 
 // Mock the entire DynamicPage to see what props it gets, to avoid nested fetch loops
-vi.mock("../components/DynamicPage", () => {
+vi.mock("./DynamicPage", () => {
   return {
     default: ({ schemaJson }) => (
       <div data-testid="mock-dynamic-page">

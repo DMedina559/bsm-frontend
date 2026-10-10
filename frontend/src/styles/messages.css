@@ -1,12 +1,13 @@
 .message,
 .message-box {
-  padding: 14px 18px;
+  padding: calc(14px * var(--bsm-spacing-scale))
+    calc(18px * var(--bsm-spacing-scale));
   border: 1px solid var(--border-color);
   border-radius: var(--bsm-radius-md);
-  margin-bottom: 20px;
+  margin-bottom: calc(20px * var(--bsm-spacing-scale));
   color: var(--text-color);
   background: var(--bsm-surface-raised);
-  font-size: 13px;
+  font-size: calc(13px * var(--bsm-type-scale));
   line-height: 1.6;
 }
 .message-info {
@@ -36,7 +37,7 @@
   z-index: 3000;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: calc(12px * var(--bsm-spacing-scale));
   width: min(380px, calc(100vw - 32px));
   max-height: 80vh;
   overflow: auto;
@@ -44,16 +45,16 @@
 .toast {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 16px;
+  gap: calc(12px * var(--bsm-spacing-scale));
+  padding: calc(16px * var(--bsm-spacing-scale));
   border: 1px solid;
   border-radius: var(--bsm-radius-md);
   box-shadow: var(--bsm-shadow);
-  font-size: 13px;
+  font-size: calc(13px * var(--bsm-type-scale));
 }
 .toast > svg {
   flex-shrink: 0;
-  margin-top: 3px;
+  margin-top: calc(3px * var(--bsm-spacing-scale));
 }
 .toast > span {
   flex: 1;
@@ -72,9 +73,10 @@
   border: 1px solid var(--border-color);
   background: var(--bsm-surface-raised);
   color: var(--text-color);
-  padding: 3px 8px;
+  padding: calc(3px * var(--bsm-spacing-scale))
+    calc(8px * var(--bsm-spacing-scale));
   border-radius: 6px;
-  font-size: 11px;
+  font-size: calc(11px * var(--bsm-type-scale));
   font-weight: 600;
 }
 .badge-success {

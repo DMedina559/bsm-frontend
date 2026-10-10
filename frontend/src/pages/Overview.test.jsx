@@ -1,9 +1,21 @@
+import { useServer } from "../contexts/ServerContext";
+import { assertApiResponse } from "../test/apiContract";
+import { getPreferenceIdentity } from "../app/backendIdentity";
+import { getSessionStorageKey } from "../app/sessionBoundary";
 import { render, screen, fireEvent, waitFor } from "../test/utils";
 import Overview from "./Overview";
 import { vi, describe, it, expect, beforeEach } from "vitest";
-import * as api from "../api";
+import * as api from "../test/httpFixtures";
 
-vi.mock("../api");
+vi.mock("../api/transport", async (importOriginal) => {
+  const { createHttpTransport } = await import("../test/httpFixtures");
+  return createHttpTransport(await importOriginal());
+});
+
+function Selection() {
+  const { selectedServer } = useServer();
+  return <output aria-label="Selected server">{selectedServer}</output>;
+}
 
 describe("Overview", () => {
   beforeEach(() => {
@@ -39,6 +51,43 @@ describe("Overview", () => {
     api.post.mockResolvedValue({ status: "success" });
   });
 
+  it("selects the server before opening its monitor", async () => {
+    window.history.replaceState({}, "", "/app/");
+    render(
+      <>
+        <Overview />
+        <Selection />
+      </>,
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Open Server2 monitor" }),
+    );
+    expect(window.location.pathname).toBe("/monitor");
+    expect(screen.getByLabelText("Selected server")).toHaveTextContent(
+      "Server2",
+    );
+  });
+
+  it("selects the server before opening a shortcut", async () => {
+    window.history.replaceState({}, "", "/app/");
+    render(
+      <>
+        <Overview />
+        <Selection />
+      </>,
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "More options for Server2" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Properties", exact: true }),
+    );
+    expect(window.location.pathname).toBe("/server-properties");
+    expect(screen.getByLabelText("Selected server")).toHaveTextContent(
+      "Server2",
+    );
+  });
+
   it("renders server list", async () => {
     render(<Overview />);
     await waitFor(() =>
@@ -65,7 +114,9 @@ describe("Overview", () => {
     // post helper: post(url, body, options)
     // If body is undefined, it might pass undefined.
     // Overview.jsx calls post with 1 argument.
-    expect(api.post).toHaveBeenCalledWith("/api/server/Server1/start");
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith("/api/server/Server1/start"),
+    );
   });
   it("shows only actions appropriate to each server state", async () => {
     render(<Overview />);
@@ -100,7 +151,16 @@ describe("Overview", () => {
       "aria-pressed",
       "true",
     );
-    expect(localStorage.getItem("bsm.overview-layout.v1")).toBe("list");
+    expect(
+      JSON.parse(
+        localStorage.getItem(
+          getSessionStorageKey(
+            getPreferenceIdentity({ username: "admin" }),
+            "preference:overviewLayout",
+          ),
+        ),
+      ).value,
+    ).toBe("list");
     expect(document.querySelector(".overview-layout-list")).toBeInTheDocument();
   });
 
@@ -114,8 +174,20 @@ describe("Overview", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Managed servers")).toBeInTheDocument();
     expect(screen.getByText("Players online")).toBeInTheDocument();
-    expect(
-      screen.getByText("Built for your Bedrock worlds."),
-    ).toBeInTheDocument();
+    expect(document.querySelector(".overview-intro")).toBeInTheDocument();
+  });
+  it("shows the backend lifecycle outcome instead of an assumed start", async () => {
+    const response = {
+      status: "success",
+      server_name: "Server1",
+      outcome: "already_running",
+      message: "Server is already running.",
+    };
+    assertApiResponse("POST", "/api/server/Server1/start", response);
+    api.post.mockResolvedValue(response);
+    render(<Overview />);
+    await screen.findByText("Server1");
+    fireEvent.click(screen.getByTitle("Start Server"));
+    expect(await screen.findByText(response.message)).toBeInTheDocument();
   });
 });

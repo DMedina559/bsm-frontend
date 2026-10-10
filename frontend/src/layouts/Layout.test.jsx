@@ -3,13 +3,13 @@ import { render, screen, fireEvent, act } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, afterEach, it, expect, vi } from "vitest";
 import Layout from "./Layout";
-vi.mock("../AuthContext", () => ({
+vi.mock("../contexts/AuthContext", () => ({
   useAuth: () => ({ user: { username: "admin" } }),
 }));
-vi.mock("../ServerContext", () => ({
+vi.mock("../contexts/ServerContext", () => ({
   useServer: () => ({ selectedServer: "Survival" }),
 }));
-vi.mock("../WebSocketContext", () => ({
+vi.mock("../contexts/WebSocketContext", () => ({
   useWebSocket: () => ({ isConnected: true, isFallback: false }),
 }));
 vi.mock("../components/NotificationHistory", () => ({ default: () => null }));

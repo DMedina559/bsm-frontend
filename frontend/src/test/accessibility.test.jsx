@@ -1,10 +1,12 @@
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "../app/queryClient";
 import React from "react";
 import { render, screen, waitFor, act } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import axe from "axe-core";
 import { describe, it, expect, vi } from "vitest";
-import { DialogProvider } from "../DialogContext";
-import { ToastProvider } from "../ToastContext";
+import { DialogProvider } from "../contexts/DialogContext";
+import { ToastProvider } from "../contexts/ToastContext";
 import { fixtureResponse, servers, user } from "./fixtures";
 import Account from "../pages/Account";
 const Appearance = () => <Account appearanceOnly />;
@@ -25,15 +27,24 @@ import Login from "../pages/Login";
 import Setup from "../pages/Setup";
 import Register from "../pages/Register";
 import Playground from "../pages/Playground";
-vi.mock("../api", () => ({
-  get: vi.fn(async (url) => fixtureResponse(new URL(url, "http://localhost"))),
-  post: vi.fn(async () => ({ status: "success" })),
-  getApiBaseUrl: () => "",
-  resolveApiUrl: (url) => url,
-}));
+vi.mock("../api/transport", async (importOriginal) => {
+  const { createHttpTransport, configureHttpFixtures } =
+    await import("./httpFixtures");
+  const fixtures = {
+    get: vi.fn(async (url) =>
+      fixtureResponse(new URL(url, "http://localhost")),
+    ),
+    post: vi.fn(async () => ({ status: "success" })),
+    getApiBaseUrl: () => "",
+    resolveApiUrl: (url) => url,
+  };
+  configureHttpFixtures(fixtures);
+  return createHttpTransport(await importOriginal());
+});
 const stable = vi.hoisted(() => ({
   refreshServers: vi.fn(),
   subscribe: vi.fn(),
+  addMessageListener: () => () => {},
   unsubscribe: vi.fn(),
   reconnect: vi.fn(),
   setSelectedServer: vi.fn(),
@@ -42,7 +53,7 @@ const stable = vi.hoisted(() => ({
   logout: vi.fn(),
   anonymous: false,
 }));
-vi.mock("../AuthContext", () => ({
+vi.mock("../contexts/AuthContext", () => ({
   useAuth: () => ({
     user: stable.anonymous ? null : user,
     checkUser: stable.checkUser,
@@ -50,7 +61,7 @@ vi.mock("../AuthContext", () => ({
     logout: stable.logout,
   }),
 }));
-vi.mock("../ServerContext", () => ({
+vi.mock("../contexts/ServerContext", () => ({
   useServer: () => ({
     servers,
     selectedServer: "Survival",
@@ -60,7 +71,7 @@ vi.mock("../ServerContext", () => ({
     error: null,
   }),
 }));
-vi.mock("../WebSocketContext", () => ({
+vi.mock("../contexts/WebSocketContext", () => ({
   useWebSocket: () => ({
     isConnected: true,
     isFallback: false,
@@ -68,10 +79,10 @@ vi.mock("../WebSocketContext", () => ({
     subscribe: stable.subscribe,
     unsubscribe: stable.unsubscribe,
     reconnect: stable.reconnect,
-    addMessageListener: () => () => {},
+    addMessageListener: stable.addMessageListener,
   }),
 }));
-vi.mock("../ThemeContext", () => ({
+vi.mock("../contexts/ThemeContext", () => ({
   useTheme: () => ({
     theme: "default",
     appearance: { mode: "theme", density: "comfortable" },
@@ -107,22 +118,24 @@ describe("page accessibility structure with fixture data", () => {
       async () => {
         stable.anonymous = name === "Login";
         const { container } = render(
-          <MemoryRouter initialEntries={["/register/test"]}>
-            <DialogProvider>
-              <ToastProvider>
-                <Routes>
-                  <Route
-                    path="/register/:token"
-                    element={
-                      <main>
-                        <Page />
-                      </main>
-                    }
-                  />
-                </Routes>
-              </ToastProvider>
-            </DialogProvider>
-          </MemoryRouter>,
+          <QueryClientProvider client={queryClient}>
+            <MemoryRouter initialEntries={["/register/test"]}>
+              <DialogProvider>
+                <ToastProvider>
+                  <Routes>
+                    <Route
+                      path="/register/:token"
+                      element={
+                        <main>
+                          <Page />
+                        </main>
+                      }
+                    />
+                  </Routes>
+                </ToastProvider>
+              </DialogProvider>
+            </MemoryRouter>
+          </QueryClientProvider>,
         );
         await act(async () => {});
         await waitFor(() =>

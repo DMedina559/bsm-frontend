@@ -1,0 +1,479 @@
+/* DynamicPage Component Styles */
+
+/* --- Switch (Toggle) --- */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+  margin-right: calc(10px * var(--bsm-spacing-scale));
+  vertical-align: middle;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--toggle-switch-off-background-color, #ccc);
+  transition: 0.4s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: var(--toggle-switch-on-background-color, #2196f3);
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px var(--toggle-switch-on-background-color, #2196f3);
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.switch-label-text {
+  vertical-align: middle;
+  margin-left: calc(8px * var(--bsm-spacing-scale));
+  font-weight: 500;
+}
+
+.switch-wrapper {
+  display: flex;
+  align-items: center;
+  margin-bottom: calc(10px * var(--bsm-spacing-scale));
+}
+
+/* --- Modal --- */
+/* Reusing/Extending base.css .modal if present, but defining specific dynamic-page modal styles to ensure isolation */
+.dynamic-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--bsm-overlay);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.dynamic-modal-content {
+  background-color: var(--container-background-color, #333);
+  padding: 0;
+  border: 1px solid var(--border-color, #555);
+  border-radius: 8px;
+  min-width: 300px;
+  max-width: 80%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.2s ease-in-out;
+}
+
+.dynamic-modal-header {
+  padding: calc(15px * var(--bsm-spacing-scale))
+    calc(20px * var(--bsm-spacing-scale));
+  border-bottom: 1px solid var(--border-color, #555);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--bsm-surface-raised);
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.dynamic-modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--header-text-color, #eee);
+}
+
+.dynamic-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-color, #ccc);
+  cursor: pointer;
+  padding: calc(5px * var(--bsm-spacing-scale));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.dynamic-modal-close:hover {
+  background-color: var(--bsm-surface-raised);
+  color: var(--text-color);
+}
+
+.dynamic-modal-body {
+  padding: calc(20px * var(--bsm-spacing-scale));
+  overflow-y: auto;
+  flex: 1;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* --- Accordion --- */
+.accordion {
+  border: 1px solid var(--border-color, #555);
+  border-radius: 4px;
+  margin-bottom: calc(10px * var(--bsm-spacing-scale));
+  background-color: rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.accordion-header {
+  padding: calc(12px * var(--bsm-spacing-scale))
+    calc(15px * var(--bsm-spacing-scale));
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--bsm-input);
+  transition: background-color 0.2s;
+  font-weight: 600;
+  user-select: none;
+}
+
+.accordion-header:hover {
+  background-color: var(--bsm-surface-raised);
+}
+
+.accordion-body {
+  padding: calc(15px * var(--bsm-spacing-scale));
+  border-top: 1px solid var(--border-color, #555);
+  background-color: transparent;
+}
+
+/* --- Badge --- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: calc(4px * var(--bsm-spacing-scale))
+    calc(10px * var(--bsm-spacing-scale));
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1;
+  background-color: var(--border-color);
+  color: var(--text-color);
+}
+
+.badge.primary {
+  background-color: var(--primary-button-background-color, #4caf50);
+}
+.badge.secondary {
+  background-color: var(--bsm-surface-raised);
+}
+.badge.success {
+  background-color: var(--bsm-success);
+}
+.badge.danger {
+  background-color: var(--bsm-danger);
+}
+.badge.warning {
+  background-color: var(--bsm-warning);
+  color: var(--text-color);
+}
+.badge.info {
+  background-color: var(--bsm-info);
+}
+.badge.dark {
+  background-color: var(--bsm-surface-raised);
+}
+
+/* --- CodeBlock --- */
+.code-block {
+  background-color: var(--bsm-console);
+  color: var(--bsm-console-text);
+  padding: calc(15px * var(--bsm-spacing-scale));
+  border-radius: 4px;
+  font-family: "Consolas", "Monaco", "Courier New", monospace;
+  font-size: 0.9rem;
+  overflow-x: auto;
+  border: 1px solid #333;
+  margin: calc(10px * var(--bsm-spacing-scale)) 0;
+  white-space: pre-wrap;
+  position: relative;
+}
+
+.code-block-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: calc(5px * var(--bsm-spacing-scale));
+  border-bottom: 1px solid #333;
+  padding-bottom: calc(5px * var(--bsm-spacing-scale));
+}
+
+/* --- Image --- */
+.dynamic-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  display: block;
+}
+
+/* --- Divider --- */
+.divider {
+  border: 0;
+  border-top: 1px solid var(--border-color, #555);
+  margin: calc(20px * var(--bsm-spacing-scale)) 0;
+}
+
+/* --- iframe --- */
+.dynamic-iframe {
+  width: 100%;
+  border: 1px solid var(--border-color, #555);
+  border-radius: 4px;
+  background-color: var(--text-color);
+}
+
+/* --- Checkbox Wrapper --- */
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  margin-bottom: calc(10px * var(--bsm-spacing-scale));
+  cursor: pointer;
+}
+
+.checkbox-wrapper input[type="checkbox"] {
+  margin-right: calc(10px * var(--bsm-spacing-scale));
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
+/* --- Chart --- */
+.chart-container {
+  margin-bottom: calc(20px * var(--bsm-spacing-scale));
+  min-height: 200px;
+}
+
+/* --- LogViewer --- */
+.log-viewer {
+  background: var(--bsm-console);
+  color: var(--bsm-console-text);
+  padding: calc(10px * var(--bsm-spacing-scale));
+  font-family: "Consolas", "Monaco", "Courier New", monospace;
+  font-size: 0.85em;
+  overflow-y: auto;
+  border-radius: 4px;
+  border: 1px solid var(--border-color, #555);
+  white-space: pre-wrap;
+  margin-bottom: calc(10px * var(--bsm-spacing-scale));
+}
+
+.log-line {
+  min-height: 1.2em;
+}
+
+.log-placeholder {
+  color: var(--text-color-secondary);
+  font-style: italic;
+  text-align: center;
+  padding-top: calc(20px * var(--bsm-spacing-scale));
+}
+
+/* --- StatCard --- */
+.stat-card {
+  background-color: var(--server-card-background-color, #444);
+  padding: calc(15px * var(--bsm-spacing-scale));
+  border: 1px solid var(--border-color, #555);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: calc(15px * var(--bsm-spacing-scale));
+  flex: 1;
+  min-width: 200px;
+}
+
+.stat-icon {
+  background-color: var(--bsm-surface-raised);
+  padding: calc(10px * var(--bsm-spacing-scale));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: 0.9em;
+  color: var(--text-color, #ccc);
+  opacity: 0.8;
+}
+
+.stat-value {
+  font-size: 1.5em;
+  font-weight: bold;
+  color: var(--header-text-color, #eee);
+  display: flex;
+  align-items: center;
+  gap: calc(5px * var(--bsm-spacing-scale));
+}
+
+.stat-trend {
+  font-size: 0.8em;
+  margin-left: calc(5px * var(--bsm-spacing-scale));
+}
+
+.trend-up {
+  color: var(--bsm-success);
+}
+.trend-down {
+  color: var(--bsm-danger);
+}
+
+/* --- StatusIndicator --- */
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  font-weight: bold;
+  font-size: 0.95em;
+}
+
+.status-dot {
+  font-size: 1.2em;
+  margin-right: calc(5px * var(--bsm-spacing-scale));
+  line-height: 1;
+}
+
+.status-running .status-dot {
+  color: var(--bsm-success);
+}
+.status-stopped .status-dot {
+  color: var(--bsm-danger);
+}
+.status-warning .status-dot {
+  color: var(--bsm-warning);
+}
+
+/* --- Alert Box --- */
+.alert-box {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(12px * var(--bsm-spacing-scale));
+  padding: calc(12px * var(--bsm-spacing-scale))
+    calc(16px * var(--bsm-spacing-scale));
+  border-radius: 6px;
+  margin-bottom: calc(12px * var(--bsm-spacing-scale));
+  border: 1px solid transparent;
+}
+
+.alert-box .alert-icon {
+  display: flex;
+  align-items: center;
+  margin-top: calc(2px * var(--bsm-spacing-scale));
+}
+
+.alert-box .alert-content {
+  display: flex;
+  flex-direction: column;
+  gap: calc(4px * var(--bsm-spacing-scale));
+}
+
+.alert-box .alert-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.alert-box .alert-message {
+  font-size: 0.875rem;
+  opacity: 0.9;
+}
+
+.alert-info {
+  background-color: rgba(23, 162, 184, 0.15);
+  border-color: rgba(23, 162, 184, 0.4);
+  color: var(--bsm-info);
+}
+
+.alert-success {
+  background-color: rgba(40, 167, 69, 0.15);
+  border-color: rgba(40, 167, 69, 0.4);
+  color: var(--bsm-success);
+}
+
+.alert-warning {
+  background-color: rgba(255, 193, 7, 0.15);
+  border-color: rgba(255, 193, 7, 0.4);
+  color: var(--bsm-warning);
+}
+
+.alert-danger,
+.alert-error {
+  background-color: rgba(220, 53, 69, 0.15);
+  border-color: rgba(220, 53, 69, 0.4);
+  color: var(--bsm-danger);
+}
+
+.switch input:focus-visible + .slider {
+  outline: 2px solid var(--bsm-focus);
+  outline-offset: 3px;
+}
+.alert-info {
+  color: var(--bsm-info);
+  background: color-mix(in srgb, var(--bsm-info) 8%, var(--bsm-surface));
+  border-color: var(--border-color);
+}
+.alert-success {
+  color: var(--bsm-success);
+  background: color-mix(in srgb, var(--bsm-success) 8%, var(--bsm-surface));
+  border-color: var(--border-color);
+}
+.alert-warning {
+  color: var(--bsm-warning);
+  background: color-mix(in srgb, var(--bsm-warning) 8%, var(--bsm-surface));
+  border-color: var(--border-color);
+}
+.alert-danger {
+  color: var(--bsm-danger);
+  background: color-mix(in srgb, var(--bsm-danger) 8%, var(--bsm-surface));
+  border-color: var(--border-color);
+}

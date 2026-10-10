@@ -1,16 +1,22 @@
-import { render, screen, fireEvent, waitFor } from "../test/utils";
+import { render, screen, fireEvent, waitFor, act } from "../test/utils";
 import ServerConfig from "./ServerConfig";
-import { vi, describe, it, expect, beforeEach } from "vitest";
-import * as api from "../api";
+import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
+import * as api from "../test/httpFixtures";
 
-vi.mock("../api");
+vi.mock("../api/transport", async (importOriginal) => {
+  const { createHttpTransport } = await import("../test/httpFixtures");
+  return createHttpTransport(await importOriginal());
+});
 
 describe("ServerConfig", () => {
+  afterEach(() => vi.unstubAllGlobals());
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.setItem("selectedServer", "TestServer");
 
     api.request.mockImplementation((url) => {
+      if (url === "/api/account")
+        return Promise.resolve({ username: "testuser", role: "admin" });
       if (url === "/api/servers")
         return Promise.resolve({
           status: "success",
@@ -26,6 +32,9 @@ describe("ServerConfig", () => {
           settings: {
             server_info: {
               installed_version: "1.0",
+            },
+            settings: {
+              target_version: "LATEST",
             },
             auto_backup: {
               enabled: true,
@@ -66,7 +75,10 @@ describe("ServerConfig", () => {
     fireEvent.click(saveBtn);
 
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalled();
+      expect(api.request).toHaveBeenCalledWith(
+        "/api/server/TestServer/settings/set",
+        expect.objectContaining({ method: "POST" }),
+      );
     });
   });
 
@@ -95,4 +107,92 @@ describe("ServerConfig", () => {
       expect(api.del).toHaveBeenCalledWith("/api/server/TestServer/delete");
     });
   });
+  it.each([false, true])(
+    "receives a remote target version update while mounted (dirty=%s)",
+    async (dirty) => {
+      const sockets = [];
+      class Socket {
+        static OPEN = 1;
+        static CONNECTING = 0;
+        readyState = 0;
+        send = vi.fn();
+        close = vi.fn();
+        constructor() {
+          sockets.push(this);
+        }
+      }
+      vi.stubGlobal("WebSocket", Socket);
+      render(<ServerConfig />);
+      await waitFor(() =>
+        expect(screen.getByLabelText("target version")).toHaveValue("LATEST"),
+      );
+      const socket = sockets.at(-1);
+      socket.readyState = 1;
+      act(() => socket.onopen());
+      await act(async () =>
+        socket.onmessage({
+          data: JSON.stringify({
+            status: "success",
+            message: "Authenticated successfully",
+          }),
+        }),
+      );
+      expect(socket.send).toHaveBeenCalledWith(
+        JSON.stringify({
+          action: "subscribe",
+          topic: "event:after_set_server_setting",
+        }),
+      );
+      if (dirty)
+        fireEvent.change(screen.getByLabelText("target version"), {
+          target: { value: "local-edit" },
+        });
+      api.get.mockImplementation((url) =>
+        Promise.resolve(
+          url.includes("/settings/get")
+            ? {
+                status: "success",
+                settings: {
+                  server_info: { installed_version: "1.0" },
+                  settings: { target_version: "PREVIEW" },
+                  auto_backup: { enabled: true },
+                },
+              }
+            : {},
+        ),
+      );
+      await act(async () =>
+        socket.onmessage({
+          data: JSON.stringify({
+            type: "event",
+            topic: "event:after_set_server_setting",
+            epoch: "backend",
+            revision: 10,
+            data: {
+              request: {
+                server_name: "TestServer",
+                key: "settings.target_version",
+                value: "PREVIEW",
+              },
+              server_name: "TestServer",
+              key: "settings.target_version",
+              value: "PREVIEW",
+              result: { status: "success", message: "Setting updated" },
+            },
+          }),
+        }),
+      );
+      await waitFor(() =>
+        expect(screen.getByLabelText("target version")).toHaveValue(
+          dirty ? "local-edit" : "PREVIEW",
+        ),
+      );
+      if (dirty)
+        await waitFor(() =>
+          expect(
+            screen.getByText(/saved settings changed while you were editing/i),
+          ).toBeInTheDocument(),
+        );
+    },
+  );
 });

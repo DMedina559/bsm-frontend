@@ -1,24 +1,39 @@
-import { useRequestTracker } from "../utils/useRequestTracker";
+import DraftConflictNotice from "../components/DraftConflictNotice";
+import { callOperation } from "../api/operations";
+import { queryKeys } from "../app/queryKeys";
+import { useEditableDraft } from "../app/useEditableDraft";
+import QueryStatus from "../components/QueryStatus";
+import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
 import SettingsField from "../components/SettingsField";
 import {
   flattenSettings,
   updateSetting,
   isSafeSettingPath,
 } from "../utils/settings";
-import { useDialog } from "../DialogContext";
-import React, { useCallback, useEffect, useState } from "react";
+import { useDialog } from "../contexts/DialogContext";
+import React, { useEffect, useState } from "react";
 import { CheckCircle, Download, RefreshCw, Save, Trash2 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useServer } from "../ServerContext";
-import { useToast } from "../ToastContext";
-import { get, post, del } from "../api";
+import { useServer } from "../contexts/ServerContext";
+import { useToast } from "../contexts/ToastContext";
+
+const EMPTY_SETTINGS = {};
 const ServerConfig = () => {
   const { confirmAction } = useDialog();
   const { selectedServer } = useServer();
-  const [settings, setSettings] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [savedSnapshot, setSavedSnapshot] = useState(null);
+  const resourceQuery = useResourceQuery("serverSettings", selectedServer);
+  const draft = useEditableDraft(
+    selectedServer,
+    resourceQuery.data,
+    EMPTY_SETTINGS,
+  );
+  const {
+    value: settings,
+    setValue: setSettings,
+    savedSnapshot,
+    markSaved,
+  } = draft;
+  const loading = resourceQuery.isFetching;
   const [loadError, setLoadError] = useState(null);
   const [newKey, setNewKey] = useState("");
   const [newValue, setNewValue] = useState("");
@@ -26,42 +41,35 @@ const ServerConfig = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const setupFlow = location.state?.setupFlow;
-  const beginRequest = useRequestTracker(selectedServer + ":" + "");
-  const fetchSettings = useCallback(async () => {
-    const requestTicket = beginRequest("fetchSettings");
-    setLoading(true);
-    setLoadError(null);
-    try {
-      const data = await get(`/api/server/${selectedServer}/settings/get`);
-      if (!requestTicket.current()) return false;
-      if (data && data.status === "success" && data.settings) {
-        setSettings(data.settings);
-        setSavedSnapshot(JSON.stringify(data.settings));
-        return true;
-      } else {
-        setLoadError("Failed to load server settings");
-        addToast("Failed to load server settings", "error");
-        setSettings({});
-        return false;
+  const write = useResourceMutation(
+    async ({ id, options, entries }, { session }) => {
+      if (entries) {
+        for (const [key, value] of entries)
+          await callOperation("set_server_setting", {
+            path: { server_name: selectedServer },
+            body: { key, value },
+            session,
+          });
+        return;
       }
-    } catch (error) {
-      if (!requestTicket.current()) return false;
-      setLoadError(error.message || "Error fetching server settings");
-      addToast(error.message || "Error fetching server settings", "error");
-      return false;
-    } finally {
-      if (requestTicket.current()) {
-        setLoading(false);
-      }
-    }
-  }, [selectedServer, addToast, beginRequest]);
+      return callOperation(id, { ...options, session });
+    },
+    [queryKeys.serverSettings(selectedServer), queryKeys.servers()],
+  );
+  /** @type {typeof callOperation} */
+  const writeOperation = (id, ...args) =>
+    write.mutateAsync({ id, options: args[0] });
+
+  const saving = write.isPending;
+
   useEffect(() => {
-    if (selectedServer) {
-      fetchSettings();
-    }
-  }, [selectedServer, fetchSettings]);
+    setLoadError(resourceQuery.error?.message ?? null);
+  }, [resourceQuery.error]);
   const handleRefresh = async () => {
-    const success = await fetchSettings();
+    const success = await draft.refresh(async () => {
+      const result = await resourceQuery.refetch();
+      return { ...result, data: result.data };
+    });
     if (success) {
       addToast("Settings refreshed", "success");
     }
@@ -70,23 +78,18 @@ const ServerConfig = () => {
     e.preventDefault();
     if (!selectedServer) return;
     if (saving) return;
-    setSaving(true);
+
     try {
       const flattened = flattenSettings(settings);
-      for (const [key, value] of Object.entries(flattened)) {
-        if (key === "config_schema_version") continue;
-        await post(`/api/server/${selectedServer}/settings/set`, {
-          key: key,
-          value: value,
-        });
-      }
-      setSavedSnapshot(JSON.stringify(settings));
+      await write.mutateAsync({
+        entries: Object.entries(flattened).filter(
+          ([key]) => key !== "config_schema_version",
+        ),
+      });
+      markSaved(settings);
       addToast("Server settings saved successfully.", "success");
-      fetchSettings();
     } catch (error) {
       addToast(error.message || "Failed to save settings.", "error");
-    } finally {
-      setSaving(false);
     }
   };
   const handleFinishSetup = async () => {
@@ -97,8 +100,10 @@ const ServerConfig = () => {
     ) {
       addToast("Starting server...", "info");
       try {
-        await post(`/api/server/${selectedServer}/start`);
-        addToast("Server start signal sent.", "success");
+        const response = await writeOperation("start_server", {
+          path: { server_name: selectedServer },
+        });
+        addToast(response?.message || "Server started.", "success");
       } catch (error) {
         addToast("Failed to start server: " + error.message, "error");
       }
@@ -116,7 +121,9 @@ const ServerConfig = () => {
       return;
     addToast("Updating server...", "info");
     try {
-      await post(`/api/server/${selectedServer}/update`, {});
+      await writeOperation("update_server", {
+        path: { server_name: selectedServer },
+      });
       addToast("Update task started. Check logs.", "success");
     } catch (error) {
       addToast(error.message || "Failed to start update.", "error");
@@ -128,15 +135,16 @@ const ServerConfig = () => {
       `Are you sure you want to delete server "${selectedServer}"?\n\nThis action cannot be undone. All server data will be permanently lost.`,
     );
     if (!confirmed) return;
-    setLoading(true);
+
     addToast(`Deleting server "${selectedServer}"...`, "info");
     try {
-      await del(`/api/server/${selectedServer}/delete`);
+      await writeOperation("delete_server", {
+        path: { server_name: selectedServer },
+      });
       addToast(`Server "${selectedServer}" deletion started.`, "success");
       navigate("/");
     } catch (error) {
       addToast(error.message || "Failed to delete server.", "error");
-      setLoading(false);
     }
   };
   const handleChange = (path, value) =>
@@ -174,16 +182,16 @@ const ServerConfig = () => {
           <div
             key={fullPath}
             style={{
-              marginBottom: "20px",
-              marginLeft: "10px",
-              paddingLeft: "10px",
+              marginBottom: "calc(20px * var(--bsm-spacing-scale))",
+              marginLeft: "calc(10px * var(--bsm-spacing-scale))",
+              paddingLeft: "calc(10px * var(--bsm-spacing-scale))",
               borderLeft: "2px solid var(--border-color)",
             }}
           >
             <h4
               style={{
                 textTransform: "capitalize",
-                margin: "10px 0",
+                margin: "calc(10px * var(--bsm-spacing-scale)) 0",
               }}
             >
               {key.replace(/_/g, " ")}
@@ -193,7 +201,7 @@ const ServerConfig = () => {
                 display: "grid",
                 gridTemplateColumns:
                   "repeat(auto-fill, minmax(min(100%, 300px), 1fr))",
-                gap: "15px",
+                gap: "calc(15px * var(--bsm-spacing-scale))",
               }}
             >
               {renderFields(value, fullPath)}
@@ -222,8 +230,8 @@ const ServerConfig = () => {
           className="message-box message-warning"
           style={{
             textAlign: "center",
-            marginTop: "50px",
-            padding: "20px",
+            marginTop: "calc(50px * var(--bsm-spacing-scale))",
+            padding: "calc(20px * var(--bsm-spacing-scale))",
             border: "1px solid orange",
             color: "orange",
           }}
@@ -235,6 +243,8 @@ const ServerConfig = () => {
   }
   return (
     <div className="container">
+      <QueryStatus query={resourceQuery} />
+      <DraftConflictNotice draft={draft} />
       <div
         className="header"
         style={{
@@ -247,7 +257,7 @@ const ServerConfig = () => {
         <div
           style={{
             display: "flex",
-            gap: "10px",
+            gap: "calc(10px * var(--bsm-spacing-scale))",
           }}
         >
           {!setupFlow && (
@@ -260,7 +270,7 @@ const ServerConfig = () => {
               <RefreshCw
                 size={16}
                 style={{
-                  marginRight: "5px",
+                  marginRight: "calc(5px * var(--bsm-spacing-scale))",
                 }}
               />{" "}
               Refresh
@@ -275,7 +285,7 @@ const ServerConfig = () => {
               <CheckCircle
                 size={16}
                 style={{
-                  marginRight: "5px",
+                  marginRight: "calc(5px * var(--bsm-spacing-scale))",
                 }}
               />{" "}
               Finish Setup
@@ -288,7 +298,7 @@ const ServerConfig = () => {
         <div
           className="message-box message-info"
           style={{
-            marginBottom: "20px",
+            marginBottom: "calc(20px * var(--bsm-spacing-scale))",
           }}
         >
           <strong>Setup Wizard (Step 5/5):</strong> Configure settings for this
@@ -310,7 +320,7 @@ const ServerConfig = () => {
         <div
           style={{
             textAlign: "center",
-            padding: "20px",
+            padding: "calc(20px * var(--bsm-spacing-scale))",
           }}
         >
           Loading settings...
@@ -321,13 +331,13 @@ const ServerConfig = () => {
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: "20px",
+            gap: "calc(20px * var(--bsm-spacing-scale))",
           }}
         >
           {!setupFlow && (
             <div
               style={{
-                padding: "15px",
+                padding: "calc(15px * var(--bsm-spacing-scale))",
                 background: "var(--border-color)",
                 borderRadius: "5px",
                 display: "flex",
@@ -345,7 +355,7 @@ const ServerConfig = () => {
               <div
                 style={{
                   display: "flex",
-                  gap: "10px",
+                  gap: "calc(10px * var(--bsm-spacing-scale))",
                 }}
               >
                 <button
@@ -356,7 +366,7 @@ const ServerConfig = () => {
                   <Download
                     size={16}
                     style={{
-                      marginRight: "5px",
+                      marginRight: "calc(5px * var(--bsm-spacing-scale))",
                     }}
                   />{" "}
                   Update Server
@@ -369,7 +379,7 @@ const ServerConfig = () => {
                   <Trash2
                     size={16}
                     style={{
-                      marginRight: "5px",
+                      marginRight: "calc(5px * var(--bsm-spacing-scale))",
                     }}
                   />{" "}
                   Delete Server
@@ -386,7 +396,7 @@ const ServerConfig = () => {
               <div
                 style={{
                   background: "var(--container-background-color)",
-                  padding: "20px",
+                  padding: "calc(20px * var(--bsm-spacing-scale))",
                   border: "1px solid var(--border-color)",
                 }}
               >
@@ -400,15 +410,17 @@ const ServerConfig = () => {
                       <div
                         key={group}
                         style={{
-                          marginBottom: "30px",
+                          marginBottom: "calc(30px * var(--bsm-spacing-scale))",
                           borderBottom: "1px solid var(--border-color)",
-                          paddingBottom: "20px",
+                          paddingBottom:
+                            "calc(20px * var(--bsm-spacing-scale))",
                         }}
                       >
                         <h3
                           style={{
                             textTransform: "capitalize",
-                            margin: "0 0 15px 0",
+                            margin:
+                              "0 0 calc(15px * var(--bsm-spacing-scale)) 0",
                           }}
                         >
                           {group.replace(/_/g, " ")}
@@ -417,7 +429,7 @@ const ServerConfig = () => {
                           style={{
                             display: "grid",
                             gridTemplateColumns: "1fr",
-                            gap: "10px",
+                            gap: "calc(10px * var(--bsm-spacing-scale))",
                           }}
                         >
                           {renderFields(groupData, group)}
@@ -433,9 +445,9 @@ const ServerConfig = () => {
               <div
                 style={{
                   background: "var(--container-background-color)",
-                  padding: "20px",
+                  padding: "calc(20px * var(--bsm-spacing-scale))",
                   border: "1px solid var(--border-color)",
-                  marginTop: "20px",
+                  marginTop: "calc(20px * var(--bsm-spacing-scale))",
                 }}
               >
                 <h3
@@ -448,7 +460,7 @@ const ServerConfig = () => {
                 <div
                   style={{
                     display: "flex",
-                    gap: "10px",
+                    gap: "calc(10px * var(--bsm-spacing-scale))",
                     alignItems: "flex-end",
                     flexWrap: "wrap",
                   }}
@@ -500,7 +512,7 @@ const ServerConfig = () => {
                     onClick={handleAddCustom}
                     disabled={!newKey.trim()}
                     style={{
-                      marginBottom: "2px",
+                      marginBottom: "calc(2px * var(--bsm-spacing-scale))",
                     }}
                     type="button"
                   >
@@ -513,7 +525,7 @@ const ServerConfig = () => {
                 style={{
                   display: "flex",
                   justifyContent: "flex-end",
-                  marginTop: "20px",
+                  marginTop: "calc(20px * var(--bsm-spacing-scale))",
                 }}
               >
                 <button
@@ -524,7 +536,7 @@ const ServerConfig = () => {
                   <Save
                     size={16}
                     style={{
-                      marginRight: "5px",
+                      marginRight: "calc(5px * var(--bsm-spacing-scale))",
                     }}
                   />{" "}
                   Save Settings
