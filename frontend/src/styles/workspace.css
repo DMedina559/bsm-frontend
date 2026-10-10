@@ -376,21 +376,6 @@ pre.monitor-output {
   color: var(--text-color-secondary);
   font-size: 12px;
 }
-.server-name-button {
-  font: inherit;
-  color: var(--text-color);
-  background: none;
-  border: 0;
-  padding: 0;
-  text-align: left;
-  cursor: pointer;
-  text-decoration: underline;
-  text-decoration-color: transparent;
-  text-underline-offset: 4px;
-}
-.server-name-button:hover {
-  text-decoration-color: var(--bsm-accent);
-}
 .app-loading {
   padding: 48px;
   color: var(--text-color-secondary);

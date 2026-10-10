@@ -1,3 +1,4 @@
+import { useServer } from "../contexts/ServerContext";
 import { assertApiResponse } from "../test/apiContract";
 import { getPreferenceIdentity } from "../app/backendIdentity";
 import { getSessionStorageKey } from "../app/sessionBoundary";
@@ -10,6 +11,11 @@ vi.mock("../api/transport", async (importOriginal) => {
   const { createHttpTransport } = await import("../test/httpFixtures");
   return createHttpTransport(await importOriginal());
 });
+
+function Selection() {
+  const { selectedServer } = useServer();
+  return <output aria-label="Selected server">{selectedServer}</output>;
+}
 
 describe("Overview", () => {
   beforeEach(() => {
@@ -43,6 +49,43 @@ describe("Overview", () => {
 
     // Mock actions
     api.post.mockResolvedValue({ status: "success" });
+  });
+
+  it("selects the server before opening its monitor", async () => {
+    window.history.replaceState({}, "", "/app/");
+    render(
+      <>
+        <Overview />
+        <Selection />
+      </>,
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Open Server2 monitor" }),
+    );
+    expect(window.location.pathname).toBe("/monitor");
+    expect(screen.getByLabelText("Selected server")).toHaveTextContent(
+      "Server2",
+    );
+  });
+
+  it("selects the server before opening a shortcut", async () => {
+    window.history.replaceState({}, "", "/app/");
+    render(
+      <>
+        <Overview />
+        <Selection />
+      </>,
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "More options for Server2" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Properties", exact: true }),
+    );
+    expect(window.location.pathname).toBe("/server-properties");
+    expect(screen.getByLabelText("Selected server")).toHaveTextContent(
+      "Server2",
+    );
   });
 
   it("renders server list", async () => {

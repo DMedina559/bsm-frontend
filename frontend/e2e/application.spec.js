@@ -189,3 +189,26 @@ test("notifications synchronize messages, read state and clearing across tabs", 
     page.getByRole("dialog").getByText("No notifications yet."),
   ).toBeVisible();
 });
+
+test("server cards open Monitor and offer settings shortcuts", async ({
+  context,
+  page,
+}) => {
+  await backend(context);
+  await login(page, "alice");
+  const card = page.getByRole("article", {
+    name: "alice-server server",
+    exact: true,
+  });
+  // Click card padding to exercise the full-card hit area rather than its title.
+  await card.click({ position: { x: 12, y: 12 } });
+  await expect(page).toHaveURL(/\/monitor$/);
+  await expect(page.locator("#server-select")).toHaveValue("alice-server");
+  await page.getByRole("link", { name: "Overview", exact: true }).click();
+  await page
+    .getByRole("button", { name: "More options for alice-server" })
+    .click();
+  await page.getByRole("button", { name: "Properties", exact: true }).click();
+  await expect(page).toHaveURL(/\/server-properties$/);
+  await expect(page.locator("#server-select")).toHaveValue("alice-server");
+});

@@ -1,3 +1,5 @@
+import ServerCardMenu from "./ServerCardMenu";
+import "../../styles/server-card.css";
 import {
   Play,
   Square,
@@ -77,6 +79,12 @@ export default function ServerCard({
       className="server-card overview-server-card"
       aria-label={`${server.name} server`}
     >
+      <button
+        type="button"
+        className="server-card-open"
+        onClick={() => onOpen(server.name)}
+        aria-label={`Open ${server.name} monitor`}
+      />
       <div className="card-header overview-card-header">
         <img
           className="overview-world-icon"
@@ -92,21 +100,13 @@ export default function ServerCard({
           }}
         />
         <div className="overview-server-identity">
-          <h3>
-            <button
-              type="button"
-              className="server-name-button"
-              onClick={() => onOpen(server.name)}
-              aria-label={`Open ${server.name} monitor`}
-            >
-              {server.name}
-            </button>
-          </h3>
+          <h3>{server.name}</h3>
           <div className={`overview-server-status overview-status-${status}`}>
             <span className="overview-status-dot" aria-hidden="true" />
             <span>{status.toUpperCase()}</span>
           </div>
         </div>
+        <ServerCardMenu serverName={server.name} onNavigate={onOpen} />
       </div>
       <div className="card-body overview-card-body">
         <div className="overview-detail-row">

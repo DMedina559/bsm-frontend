@@ -53,9 +53,9 @@ const Overview = () => {
       (variables) => variables?.options?.path?.server_name === name,
     );
 
-  const handleServerClick = (serverName) => {
+  const handleServerClick = (serverName, path = "/monitor") => {
     setSelectedServer(serverName);
-    navigate("/monitor");
+    navigate(path);
   };
   const handleRefresh = async () => {
     if (refreshing) return;
