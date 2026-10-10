@@ -80,3 +80,84 @@ it("rejects responses and socket frames after changing the configured backend", 
     else localStorage.setItem("api_base_url", previous);
   }
 });
+it("accepts lower revisions after a restart and rejects retired HTTP and socket work", () => {
+  const firstSocket = state.capture();
+  state.accept(
+    ["monitor"],
+    { epoch: "first", revision: 100 },
+    { ticket: firstSocket },
+  );
+  const oldRequest = state.capture();
+  const nextSocket = state.capture();
+  expect(
+    state.accept(
+      ["monitor"],
+      { epoch: "next", revision: 1 },
+      { ticket: nextSocket },
+    ).accepted,
+  ).toBe(true);
+  expect(state.current(firstSocket)).toBe(false);
+  expect(
+    state.accept(
+      ["monitor"],
+      { epoch: "first", revision: 101 },
+      { ticket: firstSocket },
+    ).accepted,
+  ).toBe(false);
+  expect(() =>
+    state.accept(
+      ["monitor"],
+      { epoch: "first", revision: 102 },
+      { source: "http", ticket: oldRequest },
+    ),
+  ).toThrow("Session changed");
+  expect(
+    state.accept(
+      ["monitor"],
+      { epoch: "next", revision: 2 },
+      { ticket: nextSocket },
+    ).accepted,
+  ).toBe(true);
+  expect(
+    state.accept(
+      ["monitor"],
+      { epoch: "first", revision: 999 },
+      { ticket: state.capture() },
+    ).accepted,
+  ).toBe(false);
+});
+it("does not let an established socket switch to an unseen epoch", () => {
+  const socket = state.capture();
+  state.accept(
+    ["monitor"],
+    { epoch: "first", revision: 1 },
+    { ticket: socket },
+  );
+  expect(
+    state.accept(
+      ["monitor"],
+      { epoch: "other", revision: 2 },
+      { ticket: socket },
+    ).accepted,
+  ).toBe(false);
+  expect(state.read(["monitor"]).epoch).toBe("first");
+});
+it("clears task transitions and event deduplication across epochs", () => {
+  state.task(
+    { id: "task", status: "completed", epoch: "first", revision: 100 },
+    { eventId: "reused" },
+  );
+  expect(
+    state.task(
+      { id: "task", status: "running", epoch: "next", revision: 1 },
+      { eventId: "reused" },
+    ).accepted,
+  ).toBe(true);
+});
+it("ignores malformed epoch metadata without clearing accepted state", () => {
+  state.accept(["monitor"], { epoch: "first", revision: 2 });
+  expect(
+    state.accept(["monitor"], { epoch: "next", revision: -1 }).accepted,
+  ).toBe(false);
+  expect(state.read(["monitor"]).epoch).toBe("first");
+});

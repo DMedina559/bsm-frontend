@@ -1,3 +1,4 @@
+import { stateReconciler } from "./app/stateReconciler";
 import { getBackendIdentity } from "./app/backendIdentity";
 import { operationCoordinator } from "./app/operationCoordinator";
 /**
@@ -106,9 +107,11 @@ export async function request(url, options = {}) {
     timeoutSignal,
     ...(restOptions.signal ? [restOptions.signal] : []),
   ]);
+  const stateTicket = stateReconciler.capture(signal);
   const assertCurrent = () => {
     if (
       !sessionRuntime.isCurrent(session) ||
+      !stateReconciler.current(stateTicket) ||
       (session.backend && session.backend !== getBackendIdentity())
     ) {
       throw new DOMException("Session changed", "AbortError");

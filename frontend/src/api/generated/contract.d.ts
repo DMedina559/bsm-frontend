@@ -2427,9 +2427,13 @@ export interface components {
      * @description Response model for server process info.
      */
     ServerProcessInfoResponse: {
+      /** Epoch */
+      epoch?: string | null;
       /** Message */
       message?: string | null;
       process_info?: components["schemas"]["ProcessInfo"] | null;
+      /** Revision */
+      revision?: number | null;
       /**
        * Status
        * @enum {string}
@@ -2441,8 +2445,12 @@ export interface components {
      * @description Response model for server running status.
      */
     ServerRunningStatusResponse: {
+      /** Epoch */
+      epoch?: string | null;
       /** Message */
       message?: string | null;
+      /** Revision */
+      revision?: number | null;
       /** Running */
       running?: boolean | null;
       /**
@@ -2484,6 +2492,8 @@ export interface components {
     };
     /** ServerSummary */
     ServerSummary: {
+      /** Epoch */
+      epoch?: string | null;
       /** Name */
       name: string;
       /**
@@ -2493,6 +2503,8 @@ export interface components {
       player_count?: number;
       /** Players */
       players?: components["schemas"]["PlayerInfo"][];
+      /** Revision */
+      revision?: number | null;
       /** Status */
       status: string;
       /** Version */
@@ -2503,8 +2515,12 @@ export interface components {
      * @description Response model for lists of server data.
      */
     ServersListResponse: {
+      /** Epoch */
+      epoch?: string | null;
       /** Message */
       message?: string | null;
+      /** Revision */
+      revision?: number | null;
       /** Servers */
       servers?: components["schemas"]["ServerSummary"][] | null;
       /**
@@ -2610,12 +2626,16 @@ export interface components {
     };
     /** TaskSnapshot */
     TaskSnapshot: {
+      /** Epoch */
+      epoch?: string | null;
       error?: components["schemas"]["APIErrorResponse"] | null;
       /** Id */
       id: string;
       /** Message */
       message: string;
       result?: components["schemas"]["JsonValue"];
+      /** Revision */
+      revision?: number | null;
       /**
        * Status
        * @enum {string}

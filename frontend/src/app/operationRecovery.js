@@ -7,6 +7,7 @@ import { callOperation } from "../api/operations";
 import { queryClient } from "./queryClient";
 import { queryKeys } from "./queryKeys";
 import { operationCoordinator } from "./operationCoordinator";
+import { stateReconciler } from "./stateReconciler";
 import { sessionRuntime } from "./sessionRuntime";
 /** Polling is owned by the session, so navigation cannot abandon a task. */
 export function startOperationRecovery(identity = null, generation = 0) {
@@ -107,54 +108,66 @@ export function startOperationRecovery(identity = null, generation = 0) {
   };
   // Task lists are account-filtered by the backend. Snapshots lack operation
   // metadata, so unknown tasks are restored as generic background operations.
-  void queryClient
-    .fetchQuery({
-      queryKey: [...queryKeys.tasks(), { identity, generation }],
-      queryFn: async ({ signal }) => {
-        const ticket = captureStateRequest(
-          AbortSignal.any([signal, controller.signal]),
-        );
-        const data = await callOperation("list_tasks", {
-          signal: AbortSignal.any([signal, controller.signal]),
-        });
-        return reconcileResourceSnapshot(
-          "tasks",
-          null,
-          [...queryKeys.tasks(), { identity, generation }],
-          data,
-          ticket,
-        );
-      },
-    })
-    .then((tasks) => {
-      if (
-        stopped ||
-        !sessionRuntime.isCurrent(session) ||
-        !Array.isArray(tasks)
-      )
-        return;
-      tasks.forEach((task) => {
+  const discover = () => {
+    let discoveryTicket;
+    return queryClient
+      .fetchQuery({
+        queryKey: [...queryKeys.tasks(), { identity, generation }],
+        queryFn: async ({ signal }) => {
+          const ticket = captureStateRequest(
+            AbortSignal.any([signal, controller.signal]),
+          );
+          discoveryTicket = ticket;
+          const data = await callOperation("list_tasks", {
+            signal: AbortSignal.any([signal, controller.signal]),
+          });
+          return reconcileResourceSnapshot(
+            "tasks",
+            null,
+            [...queryKeys.tasks(), { identity, generation }],
+            data,
+            ticket,
+          );
+        },
+      })
+      .then((tasks) => {
         if (
-          !task ||
-          typeof task.id !== "string" ||
-          !["queued", "running", "cancelling"].includes(task.status)
+          stopped ||
+          !sessionRuntime.isCurrent(session) ||
+          !Array.isArray(tasks) ||
+          !stateReconciler.current(discoveryTicket)
         )
           return;
-        if (!operationCoordinator.get(task.id))
-          operationCoordinator.register({
-            id: task.id,
-            kind: "background",
-            status: task.status,
-          });
-        operationCoordinator.reconcileTask(
-          { type: "task_update", data: task },
-          { synchronize: true },
-        );
+        tasks.forEach((task) => {
+          if (
+            !task ||
+            typeof task.id !== "string" ||
+            !["queued", "running", "cancelling"].includes(task.status)
+          )
+            return;
+          if (!operationCoordinator.get(task.id))
+            operationCoordinator.register({
+              id: task.id,
+              kind: "background",
+              status: task.status,
+            });
+          operationCoordinator.reconcileTask(
+            { type: "task_update", data: task },
+            { synchronize: true },
+          );
+        });
+      })
+      .catch(() => {
+        /* Poll registered operations even if listing is unavailable. */
       });
-    })
-    .catch(() => {
-      /* Poll registered operations even if listing is unavailable. */
+  };
+  void discover();
+  const stopEpoch = stateReconciler.onEpochChange(() => {
+    attempts.clear();
+    queueMicrotask(() => {
+      if (!stopped) void discover();
     });
+  });
   const timer = setInterval(poll, 5000);
   const unsubscribe = operationCoordinator.subscribe(poll);
   const resume = () => {
@@ -167,6 +180,7 @@ export function startOperationRecovery(identity = null, generation = 0) {
     controller.abort();
     clearInterval(timer);
     unsubscribe();
+    stopEpoch();
     window.removeEventListener("online", resume);
   };
   const removeReset = sessionRuntime.onReset(stop);

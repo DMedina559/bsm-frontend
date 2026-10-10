@@ -6,6 +6,7 @@ import { sessionRuntime } from "./sessionRuntime";
 
 export function createWebSocketManager({ onMessage, onState }) {
   let identity = null;
+  let connectionTicket = null;
   const ref = (current) => ({ current });
   const socketRef = ref(null),
     authenticatedRef = ref(false),
@@ -54,6 +55,7 @@ export function createWebSocketManager({ onMessage, onState }) {
     });
     const currentGeneration = generation.current;
     const session = stateReconciler.capture();
+    connectionTicket = session;
     const base = getApiBaseUrl();
     const url = base
       ? base.replace(/^http(s?):/, "ws$1:") + "/ws"
@@ -195,6 +197,9 @@ export function createWebSocketManager({ onMessage, onState }) {
         identity = null;
         disconnect();
       });
+      const stopEpoch = stateReconciler.onEpochChange(({ ticket }) => {
+        if (ticket !== connectionTicket) reconnect();
+      });
       window.addEventListener("online", online);
       window.addEventListener("offline", offline);
       document.addEventListener("visibilitychange", visibility);
@@ -203,6 +208,7 @@ export function createWebSocketManager({ onMessage, onState }) {
         identity = null;
         disconnect();
         stopReset();
+        stopEpoch();
         window.removeEventListener("online", online);
         window.removeEventListener("offline", offline);
         document.removeEventListener("visibilitychange", visibility);

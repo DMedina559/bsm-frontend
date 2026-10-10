@@ -478,3 +478,107 @@ it("reconciles a delayed process snapshot against a completed stop", async () =>
     ).process_info,
   ).toBeNull();
 });
+it("resets caches and operation state before admitting a restarted backend", async () => {
+  const {
+    captureStateRequest,
+    reconcileMonitorSnapshot,
+    reconcileSocketMessage,
+  } = await import("./applicationState");
+  const { operationCoordinator } = await import("./operationCoordinator");
+  const key = [...queryKeys.serverMonitor("alpha"), { identity: "user" }];
+  reconcileMonitorSnapshot(
+    { epoch: "first", revision: 100, process_info: null },
+    "alpha",
+    captureStateRequest(),
+  );
+  queryClient.setQueryData(key, {
+    epoch: "first",
+    revision: 100,
+    process_info: null,
+  });
+  operationCoordinator.register({ id: "old-task", kind: "backup" });
+  const stale = captureStateRequest();
+  const next = captureStateRequest();
+  expect(
+    reconcileSocketMessage(
+      {
+        type: "resource_update",
+        topic: "resource-monitor:alpha",
+        data: { epoch: "next", revision: 1, process_info: null },
+      },
+      next,
+    ),
+  ).toBe(true);
+  expect(queryClient.getQueryData(key)).toBeUndefined();
+  expect(operationCoordinator.get("old-task")).toBeNull();
+  expect(() =>
+    reconcileMonitorSnapshot(
+      { epoch: "first", revision: 101, process_info: null },
+      "alpha",
+      stale,
+    ),
+  ).toThrow("Session changed");
+  expect(stateReconciler.read(["monitor", "alpha"]).epoch).toBe("next");
+});
+it("does not retain deleted-server tombstones across a restart", async () => {
+  const { captureStateRequest, reconcileSocketMessage } =
+    await import("./applicationState");
+  reconcileSocketMessage(
+    {
+      type: "event",
+      topic: "event:after_delete_server_data",
+      epoch: "first",
+      revision: 100,
+      data: { server_name: "alpha", status: "success" },
+    },
+    captureStateRequest(),
+  );
+  expect(
+    reconcileSocketMessage(
+      {
+        type: "resource_update",
+        topic: "resource-monitor:alpha",
+        data: { epoch: "next", revision: 1, process_info: null },
+      },
+      captureStateRequest(),
+    ),
+  ).toBe(true);
+});
+it("refetches mounted queries when the backend epoch changes", async () => {
+  const { QueryObserver } = await import("@tanstack/react-query");
+  const {
+    captureStateRequest,
+    reconcileMonitorSnapshot,
+    reconcileSocketMessage,
+  } = await import("./applicationState");
+  let backend = { epoch: "first", revision: 100, process_info: null };
+  const observer = new QueryObserver(queryClient, {
+    queryKey: [...queryKeys.serverMonitor("alpha"), { identity: "user" }],
+    queryFn: () =>
+      reconcileMonitorSnapshot(backend, "alpha", captureStateRequest()),
+  });
+  const unsubscribe = observer.subscribe(() => {});
+  try {
+    await vi.waitFor(() =>
+      expect(observer.getCurrentResult().data?.epoch).toBe("first"),
+    );
+    backend = { epoch: "next", revision: 2, process_info: null };
+    reconcileSocketMessage(
+      {
+        type: "resource_update",
+        topic: "resource-monitor:alpha",
+        data: { epoch: "next", revision: 1, process_info: null },
+      },
+      captureStateRequest(),
+    );
+    await vi.waitFor(() =>
+      expect(observer.getCurrentResult().data).toMatchObject({
+        epoch: "next",
+        revision: 2,
+      }),
+    );
+  } finally {
+    unsubscribe();
+    observer.destroy();
+  }
+});

@@ -5,6 +5,12 @@ import { stateReconciler } from "./stateReconciler";
 import { operationCoordinator } from "./operationCoordinator";
 import { resourceInvalidation } from "./queryKeys";
 
+stateReconciler.onEpochChange(() => {
+  operationCoordinator.clear();
+  // Reset cached data as well as watermarks; mounted queries refetch immediately.
+  void queryClient.resetQueries();
+});
+
 export const captureStateRequest = (signal) => stateReconciler.capture(signal);
 const validProcessInfo = (info) =>
   info === null ||
@@ -34,6 +40,7 @@ export function reconcileServerSnapshot(data, ticket) {
         source: "http",
         ticket,
         revision: server.revision ?? data.revision,
+        epoch: server.epoch ?? data.epoch,
       };
       stateReconciler.accept(["membership", server.name], true, options);
       if (typeof server.status === "string")
@@ -154,15 +161,19 @@ export function synchronizeServerEvent(message, ticket) {
   ) {
     const name = message.topic.slice("resource-monitor:".length);
     const info = message.data?.process_info;
+    const membership = stateReconciler.read(["membership", name]);
+    const incomingEpoch = message.epoch ?? message.data?.epoch;
     if (
       !name ||
       !validProcessInfo(info) ||
-      stateReconciler.read(["membership", name])?.value === false
+      (membership?.value === false &&
+        (!incomingEpoch || membership.epoch === incomingEpoch))
     )
       return false;
     const accepted = stateReconciler.accept(["monitor", name], message.data, {
       ticket,
       revision: message.revision ?? message.data?.revision,
+      epoch: message.epoch ?? message.data?.epoch,
       eventId: message.event_id,
     });
     if (!accepted.accepted) return false;
@@ -203,6 +214,7 @@ export function synchronizeServerEvent(message, ticket) {
       !stateReconciler.accept(["players", data.server_name], patch, {
         ticket,
         revision: message.revision ?? data.revision,
+        epoch: message.epoch ?? data.epoch,
         eventId: message.event_id,
       }).accepted
     )
@@ -249,6 +261,7 @@ export function synchronizeServerEvent(message, ticket) {
       {
         ticket,
         revision: message.revision ?? data?.revision,
+        epoch: message.epoch ?? data?.epoch,
         eventId: message.event_id,
       },
     ).accepted
@@ -272,6 +285,7 @@ export function synchronizeServerEvent(message, ticket) {
         !stateReconciler.accept(["status", name], patch, {
           ticket,
           revision: message.revision ?? data.revision,
+          epoch: message.epoch ?? data.epoch,
         }).accepted
       )
         return false;
@@ -282,7 +296,11 @@ export function synchronizeServerEvent(message, ticket) {
       ["stopped", "already_stopped"].includes(data.outcome)
     ) {
       const stopped = { status: "success", process_info: null };
-      stateReconciler.accept(["monitor", name], stopped, { ticket });
+      stateReconciler.accept(["monitor", name], stopped, {
+        ticket,
+        epoch: message.epoch ?? data.epoch,
+        revision: message.revision ?? data.revision,
+      });
       queryClient.setQueriesData(
         { queryKey: queryKeys.serverMonitor(name) },
         (current) => (current ? stopped : current),
@@ -293,6 +311,7 @@ export function synchronizeServerEvent(message, ticket) {
         !stateReconciler.accept(["membership", name], false, {
           ticket,
           revision: message.revision ?? data.revision,
+          epoch: message.epoch ?? data.epoch,
         }).accepted
       )
         return false;
@@ -306,6 +325,7 @@ export function synchronizeServerEvent(message, ticket) {
         !stateReconciler.accept(["membership", name], true, {
           ticket,
           revision: message.revision ?? data.revision,
+          epoch: message.epoch ?? data.epoch,
         }).accepted
       )
         return false;
@@ -334,6 +354,7 @@ export function reconcileSocketMessage(message, ticket) {
     const accepted = stateReconciler.task(message.data, {
       ticket,
       revision: message.data?.revision ?? message.revision,
+      epoch: message.data?.epoch ?? message.epoch,
       eventId: message.event_id,
     });
     if (!accepted.accepted) return false;

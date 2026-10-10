@@ -17,6 +17,11 @@ const taskRank = (status) =>
 /** One ordering policy for HTTP snapshots and socket events in a session. */
 export function createStateReconciler() {
   let clock = 0;
+  let epoch = null;
+  let epochGeneration = 0;
+  const retiredEpochs = new Set();
+  const tickets = new WeakMap();
+  const epochListeners = new Set();
   const records = new Map();
   const seen = new Set();
   const keyOf = (key) => JSON.stringify(key);
@@ -25,13 +30,47 @@ export function createStateReconciler() {
     (sessionRuntime.isCurrent(ticket.session) &&
       !ticket.session.signal.aborted &&
       !ticket.signal?.aborted &&
-      ticket.backend === getBackendIdentity());
-  const capture = (signal) => ({
-    signal,
-    clock: ++clock,
-    session: sessionRuntime.capture(),
-    backend: getBackendIdentity(),
-  });
+      ticket.backend === getBackendIdentity() &&
+      tickets.get(ticket)?.generation === epochGeneration);
+  const capture = (signal) => {
+    const ticket = {
+      signal,
+      clock: ++clock,
+      session: sessionRuntime.capture(),
+      backend: getBackendIdentity(),
+    };
+    tickets.set(ticket, { generation: epochGeneration, observedEpoch: null });
+    return ticket;
+  };
+  const observeEpoch = (incoming, ticket, source) => {
+    if (typeof incoming !== "string" || !incoming) return true;
+    const binding = ticket && tickets.get(ticket);
+    if (
+      retiredEpochs.has(incoming) ||
+      (binding?.observedEpoch && binding.observedEpoch !== incoming)
+    ) {
+      if (source === "http")
+        throw new DOMException("Backend instance changed", "AbortError");
+      return false;
+    }
+    if (incoming !== epoch) {
+      const previous = epoch;
+      epoch = incoming;
+      if (previous !== null) {
+        retiredEpochs.add(previous);
+        epochGeneration += 1;
+        records.clear();
+        seen.clear();
+        // The observation discovering a restart belongs to the new instance.
+        // Every other in-flight request and socket belongs to the old generation.
+        if (binding) binding.generation = epochGeneration;
+        for (const listener of epochListeners)
+          listener({ epoch, previous, ticket });
+      }
+    }
+    if (binding) binding.observedEpoch = incoming;
+    return true;
+  };
   const accept = (
     key,
     value,
@@ -39,6 +78,7 @@ export function createStateReconciler() {
       source = "event",
       ticket,
       revision = value?.revision,
+      epoch: incomingEpoch = value?.epoch,
       eventId,
       transition,
     } = {},
@@ -48,11 +88,20 @@ export function createStateReconciler() {
         throw new DOMException("Session changed", "AbortError");
       return { accepted: false };
     }
+    const versioned = Number.isSafeInteger(revision) && revision > 0;
+    if (
+      incomingEpoch != null &&
+      (typeof incomingEpoch !== "string" || !incomingEpoch || !versioned)
+    ) {
+      if (source === "http") throw new Error("Invalid backend state version");
+      return { accepted: false };
+    }
+    if (!observeEpoch(incomingEpoch, ticket, source))
+      return { accepted: false };
     const name = keyOf(key);
     const previous = records.get(name);
     const id = typeof eventId === "string" ? `${name}:${eventId}` : null;
     if (id && seen.has(id)) return { accepted: false, ...previous };
-    const versioned = Number.isFinite(revision);
     if (previous) {
       if (
         versioned &&
@@ -94,6 +143,7 @@ export function createStateReconciler() {
       clock: ++clock,
       requestClock: ticket?.clock ?? 0,
       revision: versioned ? revision : previous?.revision,
+      epoch,
     };
     records.delete(name);
     records.set(name, record);
@@ -107,6 +157,10 @@ export function createStateReconciler() {
   return {
     capture,
     current,
+    onEpochChange(listener) {
+      epochListeners.add(listener);
+      return () => epochListeners.delete(listener);
+    },
     accept,
     read: (key) => records.get(keyOf(key)),
     entries: (prefix) =>
@@ -114,6 +168,9 @@ export function createStateReconciler() {
     forget: (key) => records.delete(keyOf(key)),
     clear() {
       clock = 0;
+      epoch = null;
+      epochGeneration += 1;
+      retiredEpochs.clear();
       records.clear();
       seen.clear();
     },

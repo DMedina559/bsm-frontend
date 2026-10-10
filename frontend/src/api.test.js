@@ -369,3 +369,32 @@ it("encodes server parameters and preserves task tracking for generated backup c
   });
   operationCoordinator.clear();
 });
+it("does not register an old mutation task after the backend restarts", async () => {
+  const { stateReconciler } = await import("./app/stateReconciler");
+  const { operationCoordinator } = await import("./app/operationCoordinator");
+  stateReconciler.clear();
+  operationCoordinator.clear();
+  stateReconciler.accept(["monitor"], { epoch: "first", revision: 100 });
+  let finish;
+  globalThis.fetch = vi.fn(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const pending = request("/api/server/alpha/backup", { method: "POST" });
+  stateReconciler.accept(
+    ["monitor"],
+    { epoch: "next", revision: 1 },
+    { ticket: stateReconciler.capture() },
+  );
+  finish({
+    status: 200,
+    ok: true,
+    headers: new Headers({ "content-type": "application/json" }),
+    json: async () => ({ status: "accepted", task_id: "old-task" }),
+  });
+  await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+  expect(operationCoordinator.get("old-task")).toBeNull();
+  stateReconciler.clear();
+});

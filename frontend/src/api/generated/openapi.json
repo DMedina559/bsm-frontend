@@ -1714,6 +1714,17 @@
         "additionalProperties": false,
         "description": "Response model for server process info.",
         "properties": {
+          "epoch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Epoch"
+          },
           "message": {
             "anyOf": [
               {
@@ -1735,6 +1746,19 @@
               }
             ]
           },
+          "revision": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision"
+          },
           "status": {
             "enum": ["success", "skipped"],
             "title": "Status",
@@ -1749,6 +1773,17 @@
         "additionalProperties": false,
         "description": "Response model for server running status.",
         "properties": {
+          "epoch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Epoch"
+          },
           "message": {
             "anyOf": [
               {
@@ -1759,6 +1794,19 @@
               }
             ],
             "title": "Message"
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision"
           },
           "running": {
             "anyOf": [
@@ -1849,6 +1897,17 @@
       "ServerSummary": {
         "additionalProperties": false,
         "properties": {
+          "epoch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Epoch"
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -1865,6 +1924,19 @@
             },
             "title": "Players",
             "type": "array"
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision"
           },
           "status": {
             "title": "Status",
@@ -1883,6 +1955,17 @@
         "additionalProperties": false,
         "description": "Response model for lists of server data.",
         "properties": {
+          "epoch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Epoch"
+          },
           "message": {
             "anyOf": [
               {
@@ -1893,6 +1976,19 @@
               }
             ],
             "title": "Message"
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision"
           },
           "servers": {
             "anyOf": [
@@ -2102,6 +2198,17 @@
       "TaskSnapshot": {
         "additionalProperties": false,
         "properties": {
+          "epoch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Epoch"
+          },
           "error": {
             "anyOf": [
               {
@@ -2122,6 +2229,19 @@
           },
           "result": {
             "$ref": "#/components/schemas/JsonValue"
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision"
           },
           "status": {
             "enum": [

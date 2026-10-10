@@ -79,3 +79,45 @@ it("bounds concurrent task polls and backs off failures", async () => {
   ).toBe(10);
   stop();
 });
+it("rediscovers active tasks after a backend epoch change", async () => {
+  const { stateReconciler } = await import("./stateReconciler");
+  stateReconciler.clear();
+  stateReconciler.accept(["monitor"], { epoch: "first", revision: 100 });
+  let restarted = false;
+  get.mockImplementation(async (url) =>
+    url === "/api/tasks/list"
+      ? restarted
+        ? [
+            {
+              id: "new-task",
+              status: "running",
+              message: "Running",
+              epoch: "next",
+              revision: 2,
+            },
+          ]
+        : []
+      : {
+          id: "new-task",
+          status: "running",
+          message: "Running",
+          epoch: "next",
+          revision: 2,
+        },
+  );
+  const stop = startOperationRecovery();
+  await vi.advanceTimersByTimeAsync(1);
+  restarted = true;
+  stateReconciler.accept(
+    ["monitor"],
+    { epoch: "next", revision: 1 },
+    { ticket: stateReconciler.capture() },
+  );
+  await vi.advanceTimersByTimeAsync(1);
+  expect(operationCoordinator.get("new-task")?.status).toBe("running");
+  expect(
+    get.mock.calls.filter(([url]) => url === "/api/tasks/list"),
+  ).toHaveLength(2);
+  stop();
+  stateReconciler.clear();
+});

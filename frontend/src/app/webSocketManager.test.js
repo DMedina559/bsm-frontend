@@ -73,3 +73,43 @@ describe("authenticated websocket runtime", () => {
     stop();
   });
 });
+it("reconnects and rejects the old socket when HTTP discovers a backend restart", async () => {
+  const { stateReconciler } = await import("./stateReconciler");
+  stateReconciler.clear();
+  stateReconciler.accept(["monitor"], { epoch: "first", revision: 100 });
+  const message = vi.fn();
+  const manager = createWebSocketManager({
+    onMessage: message,
+    onState: vi.fn(),
+  });
+  manager.subscribe("resource-monitor:alpha");
+  const stop = manager.start("account");
+  const old = sockets[0];
+  const stale = old.onmessage;
+  stateReconciler.accept(
+    ["monitor"],
+    { epoch: "next", revision: 1 },
+    { source: "http", ticket: stateReconciler.capture() },
+  );
+  expect(old.close).toHaveBeenCalledOnce();
+  expect(sockets).toHaveLength(2);
+  stale({
+    data: JSON.stringify({
+      type: "resource_update",
+      data: { epoch: "first", revision: 101 },
+    }),
+  });
+  expect(message).not.toHaveBeenCalled();
+  sockets[1].onopen();
+  sockets[1].onmessage({
+    data: JSON.stringify({
+      status: "success",
+      message: "Authenticated successfully",
+    }),
+  });
+  expect(sockets[1].send).toHaveBeenCalledWith(
+    JSON.stringify({ action: "subscribe", topic: "resource-monitor:alpha" }),
+  );
+  stop();
+  stateReconciler.clear();
+});
