@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from "../test/utils";
+import { fireEvent } from "@testing-library/react";
 import Monitor from "./Monitor";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import * as api from "../test/httpFixtures";
@@ -86,6 +87,33 @@ describe("Monitor", () => {
     });
 
     expect(await screen.findByText("1h 30m")).toBeInTheDocument();
+
+    expect(
+      screen.getByRole("button", { name: "Start", exact: true }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Stop", exact: true }),
+    ).toBeEnabled();
+    expect(
+      screen.getByRole("textbox", { name: "Console command" }),
+    ).toBeEnabled();
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Refresh server status" }),
+      ).toBeEnabled(),
+    );
+    const before = api.get.mock.calls.filter(([url]) =>
+      url.includes("/process_info"),
+    ).length;
+    fireEvent.click(
+      screen.getByRole("button", { name: "Refresh server status" }),
+    );
+    await waitFor(() =>
+      expect(
+        api.get.mock.calls.filter(([url]) => url.includes("/process_info"))
+          .length,
+      ).toBeGreaterThan(before),
+    );
 
     // Check console
     await waitFor(() => {
