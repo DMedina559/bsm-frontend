@@ -184,10 +184,10 @@ const Overview = () => {
     }
   };
   const healthLabel = health.isPending
-    ? "Checking connection"
+    ? "Connection: checking"
     : health.error
-      ? "Connection unavailable"
-      : "Connection healthy";
+      ? "Connection: unavailable"
+      : "Connection: healthy";
   const unavailable = (loading || error) && servers.length === 0;
   return (
     <div className="container workspace-overview">
