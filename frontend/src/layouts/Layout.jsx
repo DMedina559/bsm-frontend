@@ -103,11 +103,7 @@ const Layout = () => {
               }
             >
               <Radio size={14} />
-              {isConnected
-                ? "WebSocket live"
-                : isFallback
-                  ? "WebSocket offline · polling"
-                  : "WebSocket offline"}
+              {isConnected ? "Live" : "Offline"}
             </span>
             <OperationsStatus />
             <NotificationHistory />
