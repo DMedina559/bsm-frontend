@@ -19,7 +19,7 @@ describe("AuditLog", () => {
   it("renders the backend audit list", async () => {
     render(<AuditLog />);
     expect(await screen.findByText("server.start")).toBeInTheDocument();
-    expect(screen.getByText(/Survival/)).toBeInTheDocument();
+    expect(screen.getByText("Survival", { selector: "span" })).toBeInTheDocument();
   });
   it("loads application log history when the tab opens", async () => {
     render(<AuditLog />);

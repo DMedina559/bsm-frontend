@@ -37,6 +37,25 @@ describe("server card navigation", () => {
       );
     },
   );
+  it.each(["INSTALLED", "UPDATED"])("allows updating a %s server", (status) => {
+    const onUpdate = vi.fn();
+    render(
+      <ServerCard server={{ name: "Test", status }} onUpdate={onUpdate} />,
+    );
+    const button = screen.getByRole("button", { name: "Update Test" });
+    expect(button).toBeEnabled();
+    fireEvent.click(button);
+    expect(onUpdate).toHaveBeenCalledWith(expect.anything(), "Test");
+  });
+  it.each(["INSTALLING", "UPDATING", "STARTING", "STOPPING"])(
+    "disables updating during %s",
+    (status) => {
+      render(<ServerCard server={{ name: "Test", status }} />);
+      expect(
+        screen.getByRole("button", { name: "Update Test" }),
+      ).toBeDisabled();
+    },
+  );
   it("opens Monitor from the card's primary button", () => {
     const handlers = mount();
     fireEvent.click(screen.getByRole("button", { name: "Open Test monitor" }));

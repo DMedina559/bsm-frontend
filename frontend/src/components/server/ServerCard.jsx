@@ -55,8 +55,9 @@ export default function ServerCard({
 }) {
   const status = String(server.status || "unknown").toLowerCase();
   const running = status === "running";
-  const stopped = status === "stopped";
-  const stable = running || stopped;
+  const stable = ["running", "stopped", "installed", "updated"].includes(
+    status,
+  );
   const actions = [
     ...(!running ? ["start"] : []),
     ...(running ? ["stop", "restart"] : []),

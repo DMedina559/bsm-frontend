@@ -1,5 +1,6 @@
 import { useResourceQuery } from "../app/resourceQueries";
 import React, { useState } from "react";
+import TaskOutcome from "../components/TaskOutcome";
 import LogViewer from "../components/LogViewer";
 import QueryStatus from "../components/QueryStatus";
 import { useToast } from "../contexts/ToastContext";
@@ -137,73 +138,27 @@ const AuditLog = () => {
                 Loading logs...
               </div>
             ) : (
-              <div className="table-responsive-wrapper">
-                <table
-                  className="server-table"
-                  style={{
-                    width: "100%",
-                  }}
-                >
-                  <thead>
-                    <tr>
-                      <th>Timestamp</th>
-                      <th>User ID</th>
-                      <th>Action</th>
-                      <th>Details</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {logs.map((log) => (
-                      <tr key={log.id}>
-                        <td>
-                          <div className="scrollable-field">
-                            {formatDate(log.timestamp)}
-                          </div>
-                        </td>
-                        <td>
-                          <div className="scrollable-field">{log.user_id}</div>
-                        </td>
-                        <td>
-                          <div className="scrollable-field">
-                            <span className="badge badge-user">
-                              {log.action}
-                            </span>
-                          </div>
-                        </td>
-                        <td>
-                          <pre
-                            style={{
-                              margin: 0,
-                              whiteSpace: "pre-wrap",
-                              maxHeight: "100px",
-                              overflowY: "auto",
-                              background: "rgba(0,0,0,0.1)",
-                              padding: "5px",
-                              borderRadius: "4px",
-                              fontSize: "0.85em",
-                            }}
-                          >
-                            {JSON.stringify(log.details, null, 2)}
-                          </pre>
-                        </td>
-                      </tr>
-                    ))}
-                    {logs.length === 0 && (
-                      <tr>
-                        <td
-                          colSpan="4"
-                          style={{
-                            textAlign: "center",
-                            padding: "20px",
-                            color: "var(--text-color-secondary)",
-                          }}
-                        >
-                          No user audit logs found.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+              <div className="task-history">
+                {logs.map((log) => (
+                  <article
+                    className="task-history-card"
+                    key={log.id}
+                    aria-label={`Audit event ${log.action}`}
+                  >
+                    <header>
+                      <strong>{log.action}</strong>
+                      <time dateTime={log.timestamp}>
+                        {formatDate(log.timestamp)}
+                      </time>
+                    </header>
+                    <p>User ID: {log.user_id ?? "System"}</p>
+                    <TaskOutcome
+                      result={log.details}
+                      rawLabel="View event details"
+                    />
+                  </article>
+                ))}
+                {logs.length === 0 && <p>No user audit logs found.</p>}
               </div>
             )}
           </>
@@ -238,79 +193,26 @@ const AuditLog = () => {
                 Loading tasks...
               </div>
             ) : (
-              <div className="table-responsive-wrapper">
-                <table
-                  className="server-table"
-                  style={{
-                    width: "100%",
-                  }}
-                >
-                  <thead>
-                    <tr>
-                      <th>Task ID</th>
-                      <th>Status</th>
-                      <th>Message</th>
-                      <th>Result</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tasks.map((task) => (
-                      <tr key={task.id}>
-                        <td
-                          style={{
-                            fontSize: "0.85em",
-                            fontFamily: "monospace",
-                          }}
-                        >
-                          <div className="scrollable-field">{task.id}</div>
-                        </td>
-                        <td>
-                          <div className="scrollable-field">
-                            <span
-                              className={`status-indicator ${task.status === "completed" ? "status-running" : ["failed", "cancelled"].includes(task.status) ? "status-stopped" : "status-starting"}`}
-                            >
-                              {task.status.toUpperCase()}
-                            </span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="scrollable-field">{task.message}</div>
-                        </td>
-                        <td>
-                          {task.error || task.result ? (
-                            <pre
-                              style={{
-                                margin: 0,
-                                maxHeight: "50px",
-                                overflowY: "auto",
-                                fontSize: "0.85em",
-                              }}
-                            >
-                              {task.error?.message ??
-                                JSON.stringify(task.result)}
-                            </pre>
-                          ) : (
-                            "-"
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                    {tasks.length === 0 && (
-                      <tr>
-                        <td
-                          colSpan="4"
-                          style={{
-                            textAlign: "center",
-                            padding: "20px",
-                            color: "var(--text-color-secondary)",
-                          }}
-                        >
-                          No background tasks found.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+              <div className="task-history">
+                {tasks.map((task) => (
+                  <article
+                    className="task-history-card"
+                    key={task.id}
+                    aria-label={`Task ${task.id}`}
+                  >
+                    <header>
+                      <code>{task.id}</code>
+                      <span
+                        className={`status-indicator ${task.status === "completed" ? "status-running" : ["failed", "cancelled"].includes(task.status) ? "status-stopped" : "status-starting"}`}
+                      >
+                        {task.status.toUpperCase()}
+                      </span>
+                    </header>
+                    <p>{task.message}</p>
+                    <TaskOutcome result={task.result} error={task.error} />
+                  </article>
+                ))}
+                {tasks.length === 0 && <p>No background tasks found.</p>}
               </div>
             )}
           </>

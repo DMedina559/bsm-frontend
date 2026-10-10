@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Activity } from "lucide-react";
 import Modal from "./Modal";
+import TaskOutcome from "./TaskOutcome";
 import "../styles/operations.css";
 import { useOperations } from "../app/useOperations";
 import { operationCoordinator } from "../app/operationCoordinator";
@@ -53,13 +54,13 @@ export default function OperationsStatus() {
                     aria-label={`${operation.kind} progress`}
                   />
                 )}
-                {operation.error && (
-                  <p role="alert">
-                    {typeof operation.error === "string"
-                      ? operation.error
-                      : (operation.error.message ?? "Operation failed")}
-                  </p>
+                {operation.task?.message && (
+                  <p className="operation-message">{operation.task.message}</p>
                 )}
+                <TaskOutcome
+                  result={operation.task?.result}
+                  error={operation.error}
+                />
                 {(operation.terminal || operation.status === "unknown") && (
                   <button
                     type="button"
