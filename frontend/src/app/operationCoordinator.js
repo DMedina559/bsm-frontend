@@ -21,7 +21,10 @@ export function createOperationCoordinator(
     );
     terminal
       .slice(0, Math.max(0, terminal.length - 100))
-      .forEach((operation) => operations.delete(operation.id));
+      .forEach((operation) => {
+        operations.delete(operation.id);
+        reconciler.releaseTaskPayload(operation.id);
+      });
     snapshot = [...operations.values()];
     listeners.forEach((listener) => {
       try {
@@ -138,7 +141,10 @@ export function createOperationCoordinator(
     },
     remove(id) {
       const removed = operations.delete(String(id));
-      if (removed) notify();
+      if (removed) {
+        reconciler.releaseTaskPayload(id);
+        notify();
+      }
       return removed;
     },
     clear() {

@@ -146,26 +146,3 @@ it("reconciles socket players arriving during an HTTP refresh", async () => {
     expect(screen.getByTestId("players")).toHaveTextContent("Joined"),
   );
 });
-it("reconciles an authoritative snapshot after reconnect", async () => {
-  request.mockResolvedValue({
-    status: "success",
-    servers: [{ name: "First", players: [] }],
-  });
-  const { rerender, unmount } = render(tree());
-  await waitFor(() =>
-    expect(screen.getByTestId("servers")).toHaveTextContent("First"),
-  );
-  request.mockResolvedValue({
-    status: "success",
-    servers: [{ name: "First", players: [{ name: "Recovered", xuid: "42" }] }],
-  });
-  state.connected = true;
-  rerender(tree());
-  await waitFor(() =>
-    expect(screen.getByTestId("players")).toHaveTextContent("Recovered"),
-  );
-  unmount();
-  expect(state.unsubscribe).toHaveBeenCalledWith(
-    "event:after_server_players_change",
-  );
-});

@@ -1,3 +1,5 @@
+import { coreEventTopics } from "./app/coreEvents";
+import { queryClient } from "./app/queryClient";
 import { getPreferenceIdentity } from "./app/backendIdentity";
 import { startOperationRecovery } from "./app/operationRecovery";
 import { reconcileSocketMessage } from "./app/applicationState";
@@ -57,6 +59,21 @@ export const WebSocketProvider = ({ children }) => {
     if (resourceIdentity === null) return;
     return startOperationRecovery(resourceIdentity, sessionGeneration ?? 0);
   }, [resourceIdentity, sessionGeneration]);
+  useEffect(() => {
+    if (identity === null) return;
+    coreEventTopics.forEach(subscribe);
+    return () => coreEventTopics.forEach(unsubscribe);
+  }, [identity, subscribe, unsubscribe]);
+  useEffect(() => {
+    if (identity !== null && isConnected) void queryClient.invalidateQueries();
+  }, [identity, isConnected]);
+  useEffect(() => {
+    if (identity === null || !isFallback) return;
+    const timer = setInterval(() => {
+      void queryClient.invalidateQueries({ refetchType: "active" });
+    }, 60_000);
+    return () => clearInterval(timer);
+  }, [identity, isFallback]);
   // Backend task topics replay the latest task snapshot upon subscription.
   // Keep subscriptions tied to registered operations, including after reconnect.
   useEffect(() => {

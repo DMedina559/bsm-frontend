@@ -1,3 +1,4 @@
+import { logger } from "../utils/logger";
 import { sessionRuntime } from "./sessionRuntime";
 import { getBackendIdentity } from "./backendIdentity";
 
@@ -66,8 +67,13 @@ export function createStateReconciler() {
         // The observation discovering a restart belongs to the new instance.
         // Every other in-flight request and socket belongs to the old generation.
         if (binding) binding.generation = epochGeneration;
-        for (const listener of epochListeners)
-          listener({ epoch, previous, ticket });
+        for (const listener of epochListeners) {
+          try {
+            listener({ epoch, previous, ticket });
+          } catch (error) {
+            logger.error("Epoch reset listener failed", { error });
+          }
+        }
       }
     }
     if (binding) binding.observedEpoch = incoming;
@@ -177,6 +183,22 @@ export function createStateReconciler() {
     read: (key) => records.get(keyOf(key)),
     entries: (prefix) =>
       [...records.values()].filter((record) => record.key[0] === prefix),
+    releaseTaskPayload(id) {
+      const record = records.get(keyOf(["task", String(id)]));
+      if (
+        record &&
+        (terminalTaskStatus(record.value.status) ||
+          record.value.status === "unknown")
+      ) {
+        record.value = {
+          ...record.value,
+          result: null,
+          error: record.value.error
+            ? { ...record.value.error, details: null }
+            : null,
+        };
+      }
+    },
     forget: (key) => {
       cachedQueries.delete(keyOf(key));
       return records.delete(keyOf(key));

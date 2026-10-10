@@ -1,4 +1,4 @@
-import { beforeEach, expect, it } from "vitest";
+import { beforeEach, expect, it, vi } from "vitest";
 import { createStateReconciler } from "./stateReconciler";
 let state;
 beforeEach(() => {
@@ -170,5 +170,36 @@ it("preserves resource watermarks and terminal tasks through query cache churn",
   );
   expect(
     state.task({ id: "finished", status: "running", revision: 1 }).accepted,
+  ).toBe(false);
+});
+it("continues epoch cleanup after a listener throws", async () => {
+  const engine = createStateReconciler();
+  const error = vi
+    .spyOn((await import("../utils/logger")).logger, "error")
+    .mockImplementation(() => {});
+  const cleanup = vi.fn();
+  engine.onEpochChange(() => {
+    throw new Error("broken cleanup");
+  });
+  engine.onEpochChange(cleanup);
+  engine.accept(["test"], { epoch: "first", revision: 1 });
+  expect(
+    engine.accept(["test"], { epoch: "second", revision: 1 }).accepted,
+  ).toBe(true);
+  expect(cleanup).toHaveBeenCalledOnce();
+  error.mockRestore();
+});
+it("releases terminal payloads while preserving ordering safeguards", () => {
+  const engine = createStateReconciler();
+  engine.task({
+    id: "large",
+    status: "completed",
+    revision: 10,
+    result: { huge: "payload" },
+  });
+  engine.releaseTaskPayload("large");
+  expect(engine.read(["task", "large"]).value.result).toBeNull();
+  expect(
+    engine.task({ id: "large", status: "running", revision: 9 }).accepted,
   ).toBe(false);
 });

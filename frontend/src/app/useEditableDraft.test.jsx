@@ -50,3 +50,18 @@ it("reports backend conflicts without replacing edits", () => {
   expect(result.current.conflicted).toBe(true);
   expect(result.current.value.name).toBe("edit");
 });
+it("does not mistake the cached pre-save value for a remote conflict", () => {
+  const { result, rerender } = renderHook(
+    ({ data }) => useEditableDraft("saved", data, empty),
+    { initialProps: { data: { name: "old" } } },
+  );
+  act(() => result.current.setValue({ name: "submitted" }));
+  const saved = result.current.markSaved;
+  act(() => result.current.setValue({ name: "newer" }));
+  act(() => saved({ name: "submitted" }));
+  rerender({ data: { name: "old" } });
+  expect(result.current.conflicted).toBe(false);
+  expect(result.current.dirty).toBe(true);
+  rerender({ data: { name: "remote" } });
+  expect(result.current.conflicted).toBe(true);
+});

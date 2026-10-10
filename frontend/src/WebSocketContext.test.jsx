@@ -123,3 +123,32 @@ it("delivers stream messages without rerendering connection consumers", () => {
   expect(received).toHaveBeenCalledTimes(25);
   expect(renders).toBe(before);
 });
+it("owns core subscriptions and refreshes resources on authenticated reconnect", async () => {
+  const { coreEventTopics } = await import("./app/coreEvents");
+  const { queryClient } = await import("./app/queryClient");
+  const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+  const { unmount } = render(
+    <WebSocketProvider>
+      <Harness />
+    </WebSocketProvider>,
+  );
+  const socket = sockets.at(-1);
+  socket.readyState = 1;
+  act(() => socket.onopen());
+  act(() =>
+    socket.onmessage({
+      data: JSON.stringify({
+        status: "success",
+        message: "Authenticated successfully",
+      }),
+    }),
+  );
+  const subscriptions = socket.send.mock.calls
+    .map(([raw]) => JSON.parse(raw))
+    .filter((frame) => frame.action === "subscribe")
+    .map((frame) => frame.topic);
+  expect(subscriptions).toEqual(expect.arrayContaining(coreEventTopics));
+  expect(invalidate).toHaveBeenCalledWith();
+  unmount();
+  invalidate.mockRestore();
+});

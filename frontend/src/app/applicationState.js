@@ -1,3 +1,4 @@
+import { mutationResources, lifecycleEvents } from "./coreEvents";
 import { queryClient } from "./queryClient";
 import { queryKeys } from "./queryKeys";
 
@@ -104,6 +105,10 @@ export function reconcileResourceSnapshot(resource, target, key, data, ticket) {
         !known.has(record.value.id ?? record.value.task_id)
       )
         tasks.push(record.value);
+    for (const task of tasks) {
+      const id = task.id ?? task.task_id;
+      if (!operationCoordinator.get(id)) stateReconciler.releaseTaskPayload(id);
+    }
     return tasks;
   }
   return selected;
@@ -343,6 +348,7 @@ export function synchronizeServerEvent(message, ticket) {
         queryKey: queryKeys.serverMonitor(name),
       });
   }
+  void queryClient.invalidateQueries(resourceInvalidation(queryKeys.audit()));
   refreshFleet();
   return true;
 }
@@ -359,6 +365,10 @@ export function reconcileSocketMessage(message, ticket) {
     });
     if (!accepted.accepted) return false;
     publishTaskSnapshot(message, accepted.value);
+    if (!operationCoordinator.get(accepted.value.id ?? accepted.value.task_id))
+      stateReconciler.releaseTaskPayload(
+        accepted.value.id ?? accepted.value.task_id,
+      );
     return true;
   }
   if (
@@ -373,18 +383,38 @@ export function reconcileSocketMessage(message, ticket) {
     )
   ) {
     // Plugin events outside the shared resource set still reach plugin listeners.
-    const watched = [
-      "after_server_status_change",
-      "after_server_start",
-      "after_server_stop",
-      "before_server_stop",
-      "after_delete_server_data",
-      "after_server_update",
-      "after_server_install",
-      "after_server_players_change",
-    ];
-    if (watched.some((topic) => message.topic === `event:${topic}`))
+    if (lifecycleEvents.some((topic) => message.topic === `event:${topic}`))
       return synchronizeServerEvent(message, ticket);
+  }
+  if (message?.type === "event") {
+    const event = message.topic?.replace(/^event:/, "");
+    const resources = Object.hasOwn(mutationResources, event)
+      ? mutationResources[event]
+      : null;
+    if (resources) {
+      const payload = message.data;
+      if (!payload || payload.result?.status !== "success") return true;
+      const name = payload.server_name ?? payload.result.server_name;
+      const accepted = stateReconciler.accept(
+        ["event", message.topic, name ?? ""],
+        null,
+        {
+          ticket,
+          revision: message.revision,
+          epoch: message.epoch,
+          eventId: message.event_id,
+        },
+      );
+      if (!accepted.accepted) return false;
+      const keys = [...resources(name), queryKeys.audit()];
+      for (const key of keys) {
+        const filter = resourceInvalidation(key);
+        void queryClient.cancelQueries(filter).then(() => {
+          if (stateReconciler.current(ticket))
+            return queryClient.invalidateQueries(filter);
+        });
+      }
+    }
   }
   return true;
 }

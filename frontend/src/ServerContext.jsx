@@ -16,10 +16,9 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 import { useAuth } from "./AuthContext";
-import { useWebSocket } from "./WebSocketContext";
 import { queryKeys } from "./app/queryKeys";
 import { createPreferenceStore } from "./app/preferenceStore";
 import { logger } from "./utils/logger";
@@ -27,17 +26,6 @@ import { logger } from "./utils/logger";
 const ServerContext = createContext(null);
 const preferences = createPreferenceStore();
 export const useServer = () => useContext(ServerContext);
-
-const SERVER_TOPICS = [
-  "event:after_server_status_change",
-  "event:after_server_start",
-  "event:after_server_stop",
-  "event:before_server_stop",
-  "event:after_delete_server_data",
-  "event:after_server_update",
-  "event:after_server_install",
-  "event:after_server_players_change",
-];
 
 async function loadServers({ signal }) {
   const data = await callOperation("list_servers", {
@@ -60,8 +48,7 @@ async function loadServers({ signal }) {
 export const ServerProvider = ({ children }) => {
   const { user, sessionGeneration } = useAuth();
   const identity = getPreferenceIdentity(user);
-  const queryClient = useQueryClient();
-  const { isConnected, isFallback, subscribe, unsubscribe } = useWebSocket();
+
   const [selectedServer, setSelectedServerState] = useState(null);
   const selectedServerRef = useRef(selectedServer);
   const [selectionIdentity, setSelectionIdentity] = useState(null);
@@ -129,29 +116,6 @@ export const ServerProvider = ({ children }) => {
     servers,
     setSelectedServer,
   ]);
-
-  // Subscriptions are ref-counted by WebSocketContext; it also resubscribes on reconnect.
-  useEffect(() => {
-    if (identity === null) return;
-    SERVER_TOPICS.forEach((topic) => subscribe(topic));
-    return () => SERVER_TOPICS.forEach((topic) => unsubscribe(topic));
-  }, [identity, subscribe, unsubscribe]);
-
-  useEffect(() => {
-    if (identity === null || !isConnected) return;
-    // Reconcile any events missed while disconnected.
-    void queryClient.invalidateQueries({ queryKey: queryKeys.servers() });
-  }, [identity, isConnected, queryClient]);
-
-  useEffect(() => {
-    if (identity === null || !isFallback) return;
-    const refresh = () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.servers() });
-    };
-    refresh();
-    const timer = setInterval(refresh, 60_000);
-    return () => clearInterval(timer);
-  }, [identity, isFallback, queryClient]);
 
   const { refetch } = serverQuery;
   const refreshServers = useCallback(async () => {

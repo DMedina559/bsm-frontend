@@ -20,6 +20,7 @@ export function startOperationRecovery(identity = null, generation = 0) {
   let discoveryTimer;
   let discoveryFailures = 0;
   let discovering = false;
+  let rediscover = false;
   const poll = async () => {
     if (stopped || polling || navigator.onLine === false) return;
     if (
@@ -112,7 +113,11 @@ export function startOperationRecovery(identity = null, generation = 0) {
   // Task lists are account-filtered by the backend. Snapshots lack operation
   // metadata, so unknown tasks are restored as generic background operations.
   const discover = () => {
-    if (stopped || discovering || navigator.onLine === false) return;
+    if (stopped || navigator.onLine === false) return;
+    if (discovering) {
+      rediscover = true;
+      return;
+    }
     discovering = true;
     clearTimeout(discoveryTimer);
     void queryClient.invalidateQueries({
@@ -178,6 +183,10 @@ export function startOperationRecovery(identity = null, generation = 0) {
       })
       .finally(() => {
         discovering = false;
+        if (rediscover && !stopped) {
+          rediscover = false;
+          void discover();
+        }
       });
   };
   void discover();

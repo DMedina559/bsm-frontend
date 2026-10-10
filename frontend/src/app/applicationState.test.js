@@ -582,3 +582,108 @@ it("refetches mounted queries when the backend epoch changes", async () => {
     observer.destroy();
   }
 });
+it.each([
+  ["after_setting_update", ["settings"]],
+  ["after_set_server_setting", ["servers", "alpha", "settings"]],
+  ["after_properties_change", ["servers", "alpha", "properties"]],
+  ["after_addon_enable", ["servers", "alpha", "addons"]],
+  ["after_allowlist_change", ["servers", "alpha", "allowlist"]],
+  ["after_permission_change", ["servers", "alpha", "permissions"]],
+  ["after_add_server_ban", ["servers", "alpha", "bans"]],
+  ["after_backup", ["servers", "alpha", "backups"]],
+  ["after_restore", ["servers", "alpha"]],
+  ["after_world_export", ["content"]],
+  ["after_set_plugin_status", ["plugins"]],
+  ["after_players_add", ["players"]],
+  ["after_prune_download_cache", ["downloads"]],
+])("refreshes the resource affected by %s", async (event, key) => {
+  const { reconcileSocketMessage } = await import("./applicationState");
+  const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+  reconcileSocketMessage({
+    type: "event",
+    topic: `event:${event}`,
+    epoch: "backend",
+    revision: 5,
+    data: { server_name: "alpha", result: { status: "success" } },
+  });
+  await vi.waitFor(() =>
+    expect(invalidate).toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: key }),
+    ),
+  );
+  expect(
+    reconcileSocketMessage({
+      type: "event",
+      topic: `event:${event}`,
+      epoch: "backend",
+      revision: 4,
+      data: { server_name: "alpha", result: { status: "success" } },
+    }),
+  ).toBe(false);
+  invalidate.mockRestore();
+});
+it("cancels an older settings read before refreshing after a mutation", async () => {
+  const {
+    captureStateRequest,
+    reconcileResourceSnapshot,
+    reconcileSocketMessage,
+  } = await import("./applicationState");
+  const key = ["settings", { identity: "admin", generation: 0 }];
+  queryClient.setQueryData(key, { settings: { value: "cached" } });
+  let finish;
+  let requestSignal;
+  const pending = queryClient
+    .fetchQuery({
+      queryKey: key,
+      staleTime: 0,
+      queryFn: async ({ signal }) => {
+        requestSignal = signal;
+        const ticket = captureStateRequest(signal);
+        const response = await new Promise((resolve) => {
+          finish = resolve;
+        });
+        return reconcileResourceSnapshot(
+          "settings",
+          null,
+          key,
+          response,
+          ticket,
+        );
+      },
+    })
+    .catch(() => {});
+  reconcileSocketMessage({
+    type: "event",
+    topic: "event:after_setting_update",
+    epoch: "backend",
+    revision: 1,
+    data: { key: "value", result: { status: "success" } },
+  });
+  expect(requestSignal.aborted).toBe(true);
+  finish({ settings: { value: "obsolete" } });
+  await pending;
+  await vi.waitFor(() =>
+    expect(queryClient.getQueryState(key).isInvalidated).toBe(true),
+  );
+  expect(queryClient.getQueryData(key).settings.value).toBe("cached");
+});
+it("forwards plugin frames and skipped mutations without changing core caches", async () => {
+  const { reconcileSocketMessage } = await import("./applicationState");
+  const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+  expect(
+    reconcileSocketMessage({
+      type: "broadcast",
+      topic: "custom-plugin",
+      data: { value: 1 },
+    }),
+  ).toBe(true);
+  expect(
+    reconcileSocketMessage({
+      type: "event",
+      topic: "event:after_backup",
+      data: { server_name: "alpha", result: { status: "skipped" } },
+    }),
+  ).toBe(true);
+  expect(invalidate).not.toHaveBeenCalled();
+  invalidate.mockRestore();
+});

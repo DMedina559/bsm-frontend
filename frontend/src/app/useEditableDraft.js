@@ -34,7 +34,14 @@ export function useEditableDraft(resource, data, empty) {
           baseline: data === undefined ? null : serialize(data),
         };
       if (
+        previous.pendingBackend !== undefined &&
         data !== undefined &&
+        serialize(data) !== previous.pendingBackend
+      )
+        previous = { ...previous, pendingBackend: undefined };
+      if (
+        data !== undefined &&
+        serialize(data) !== previous.pendingBackend &&
         (previous.baseline === null ||
           serialize(previous.value) === previous.baseline)
       )
@@ -60,16 +67,23 @@ export function useEditableDraft(resource, data, empty) {
       if (identityRef.current !== identity) return;
       setState((previous) =>
         previous.identity === identity
-          ? { ...previous, baseline: serialize(submitted) }
+          ? {
+              ...previous,
+              baseline: serialize(submitted),
+              pendingBackend: serialize(data),
+            }
           : previous,
       );
     },
-    [identity],
+    [identity, data],
   );
   const dirty =
     current.baseline !== null && serialize(current.value) !== current.baseline;
   const conflicted =
-    dirty && data !== undefined && serialize(data) !== current.baseline;
+    dirty &&
+    data !== undefined &&
+    serialize(data) !== current.baseline &&
+    serialize(data) !== current.pendingBackend;
   useEffect(() => {
     if (dirty) return draftRegistry.register();
   }, [dirty, identity]);

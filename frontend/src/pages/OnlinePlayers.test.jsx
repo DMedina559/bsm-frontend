@@ -133,7 +133,7 @@ function emitPlayers(server_name, players) {
   );
 }
 
-it("subscribes and updates joins, same-count replacements and the last departure", async () => {
+it("updates joins, same-count replacements and the last departure", async () => {
   localStorage.setItem("selectedServer", "TestServer");
   socket.connected = true;
   socket.listeners.clear();
@@ -154,11 +154,6 @@ it("subscribes and updates joins, same-count replacements and the last departure
     ),
   );
   const { unmount } = renderWithProviders(<OnlinePlayers />);
-  await waitFor(() =>
-    expect(socket.subscribe).toHaveBeenCalledWith(
-      "event:after_server_players_change",
-    ),
-  );
   await waitFor(() => expect(screen.getByText("0 Online")).toBeInTheDocument());
   const requests = api.request.mock.calls.length;
   emitPlayers("TestServer", [{ name: "Joined", xuid: "999" }]);
@@ -177,8 +172,5 @@ it("subscribes and updates joins, same-count replacements and the last departure
   expect(screen.queryByText("Replacement")).not.toBeInTheDocument();
   expect(api.request.mock.calls.length).toBe(requests);
   unmount();
-  expect(socket.unsubscribe).toHaveBeenCalledWith(
-    "event:after_server_players_change",
-  );
   expect(socket.listeners.size).toBe(0);
 });

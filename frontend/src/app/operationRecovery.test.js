@@ -141,3 +141,23 @@ it("retries discovery without registered tasks and refreshes on reconnect", asyn
   await vi.advanceTimersByTimeAsync(60000);
   expect(calls).toBe(3);
 });
+it("queues one rediscovery when reconnects arrive during discovery", async () => {
+  let finish;
+  get.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  get.mockResolvedValue([]);
+  const stop = startOperationRecovery();
+  await vi.advanceTimersByTimeAsync(1);
+  window.dispatchEvent(new Event("bsm:socket-connected"));
+  window.dispatchEvent(new Event("bsm:socket-connected"));
+  finish([]);
+  await vi.advanceTimersByTimeAsync(1);
+  expect(
+    get.mock.calls.filter(([url]) => url === "/api/tasks/list"),
+  ).toHaveLength(2);
+  stop();
+});
