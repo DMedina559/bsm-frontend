@@ -91,6 +91,7 @@ it("uses backend revisions to reject reordered player snapshots", () => {
   const frame = (revision, name) => ({
     type: "event",
     topic: "event:after_server_players_change",
+    epoch: "instance",
     revision,
     data: {
       server_name: "Ordered",
@@ -159,6 +160,7 @@ it("rejects older monitor revisions and rebases in-flight HTTP before consumers 
   const frame = (revision, cpu) => ({
     type: "resource_update",
     topic: "resource-monitor:alpha",
+    epoch: "instance",
     revision,
     data: {
       process_info: { pid: 1, cpu_percent: cpu, memory_mb: 100, uptime: "1s" },
@@ -179,7 +181,7 @@ it("rejects older monitor revisions and rebases in-flight HTTP before consumers 
   // A new HTTP request after the last event is a fresh observation.
   expect(
     reconcileMonitorSnapshot(
-      { process_info: null },
+      { epoch: "instance", revision: 5, process_info: null },
       "alpha",
       captureStateRequest(),
     ).process_info,
@@ -338,7 +340,11 @@ it("compares shared backend revisions across fleet HTTP and lifecycle events", a
   queryClient.setQueryData(
     key,
     reconcileServerSnapshot(
-      { revision: 5, servers: [{ name: "alpha", status: "RUNNING" }] },
+      {
+        epoch: "instance",
+        revision: 5,
+        servers: [{ name: "alpha", status: "RUNNING" }],
+      },
       captureStateRequest(),
     ),
   );
@@ -346,6 +352,7 @@ it("compares shared backend revisions across fleet HTTP and lifecycle events", a
     reconcileSocketMessage({
       type: "event",
       topic: "event:after_server_status_change",
+      epoch: "instance",
       revision: 4,
       data: { server_name: "alpha", status: "success", new_status: "STOPPED" },
     }),
@@ -355,12 +362,17 @@ it("compares shared backend revisions across fleet HTTP and lifecycle events", a
   synchronizeServerEvent({
     type: "event",
     topic: "event:after_server_status_change",
+    epoch: "instance",
     revision: 6,
     data: { server_name: "alpha", status: "success", new_status: "STOPPED" },
   });
   expect(
     reconcileServerSnapshot(
-      { revision: 7, servers: [{ name: "alpha", status: "RUNNING" }] },
+      {
+        epoch: "instance",
+        revision: 7,
+        servers: [{ name: "alpha", status: "RUNNING" }],
+      },
       ticket,
     ).servers[0].status,
   ).toBe("RUNNING");
@@ -371,6 +383,7 @@ it("does not let malformed lifecycle frames poison revision watermarks", async (
   const frame = (revision, status) => ({
     type: "event",
     topic: "event:after_server_status_change",
+    epoch: "instance",
     revision,
     data: { server_name: "alpha", status: "success", new_status: status },
   });
@@ -393,6 +406,7 @@ it("rejects malformed monitor data without advancing its revision", async () => 
   const frame = (revision, process_info) => ({
     type: "resource_update",
     topic: "resource-monitor:alpha",
+    epoch: "instance",
     revision,
     data: { process_info },
   });

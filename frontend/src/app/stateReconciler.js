@@ -26,6 +26,26 @@ export function createStateReconciler() {
   const records = new Map();
   const cachedQueries = new Set();
   const seen = new Set();
+  const taskPayloads = new Set();
+  const releaseTaskPayload = (id) => {
+    const name = keyOf(["task", String(id)]);
+    const record = records.get(name);
+    if (
+      record &&
+      (terminalTaskStatus(record.value.status) ||
+        record.value.status === "unknown")
+    ) {
+      record.value = {
+        ...record.value,
+        result: null,
+        error: record.value.error
+          ? { ...record.value.error, details: null }
+          : null,
+      };
+      record.payloadReleased = true;
+      taskPayloads.delete(name);
+    }
+  };
   const keyOf = (key) => JSON.stringify(key);
   const current = (ticket) =>
     !ticket ||
@@ -63,6 +83,7 @@ export function createStateReconciler() {
         epochGeneration += 1;
         records.clear();
         cachedQueries.clear();
+        taskPayloads.clear();
         seen.clear();
         // The observation discovering a restart belongs to the new instance.
         // Every other in-flight request and socket belongs to the old generation.
@@ -98,8 +119,10 @@ export function createStateReconciler() {
     }
     const hasRevision = Number.isSafeInteger(revision) && revision > 0;
     if (
-      incomingEpoch != null &&
-      (typeof incomingEpoch !== "string" || !incomingEpoch || !hasRevision)
+      (revision != null || incomingEpoch != null) &&
+      (typeof incomingEpoch !== "string" ||
+        !incomingEpoch.trim() ||
+        !hasRevision)
     ) {
       if (source === "http") throw new Error("Invalid backend state revision");
       return { accepted: false };
@@ -111,6 +134,35 @@ export function createStateReconciler() {
     const id = typeof eventId === "string" ? `${name}:${eventId}` : null;
     if (id && seen.has(id)) return { accepted: false, ...previous };
     if (previous) {
+      if (Number.isFinite(previous.revision) && !hasRevision)
+        return { accepted: false, ...previous };
+      // Only a full HTTP task snapshot may reload a released payload at the
+      // same revision. It cannot alter task identity or terminal status.
+      if (
+        key[0] === "task" &&
+        previous.payloadReleased &&
+        source === "http" &&
+        hasRevision &&
+        revision === previous.revision &&
+        incomingEpoch === previous.epoch &&
+        value.status === previous.value.status &&
+        (value.id ?? value.task_id) ===
+          (previous.value.id ?? previous.value.task_id) &&
+        Object.hasOwn(value, "result") &&
+        Object.hasOwn(value, "error") &&
+        Object.hasOwn(value, "message")
+      ) {
+        previous.value = {
+          ...previous.value,
+          result: value.result,
+          error: value.error,
+        };
+        previous.payloadReleased = false;
+        taskPayloads.add(name);
+        while (taskPayloads.size > 100)
+          releaseTaskPayload(JSON.parse(taskPayloads.values().next().value)[1]);
+        return { accepted: true, ...previous };
+      }
       if (
         hasRevision &&
         Number.isFinite(previous.revision) &&
@@ -155,6 +207,15 @@ export function createStateReconciler() {
     };
     records.delete(name);
     records.set(name, record);
+    if (
+      key[0] === "task" &&
+      (terminalTaskStatus(value.status) || value.status === "unknown")
+    ) {
+      taskPayloads.delete(name);
+      taskPayloads.add(name);
+      while (taskPayloads.size > 100)
+        releaseTaskPayload(JSON.parse(taskPayloads.values().next().value)[1]);
+    }
     // Only expendable query snapshots participate in LRU eviction. Resource
     // watermarks and terminal tasks protect against replays until session/epoch reset.
     if (key[0] === "query") {
@@ -183,23 +244,9 @@ export function createStateReconciler() {
     read: (key) => records.get(keyOf(key)),
     entries: (prefix) =>
       [...records.values()].filter((record) => record.key[0] === prefix),
-    releaseTaskPayload(id) {
-      const record = records.get(keyOf(["task", String(id)]));
-      if (
-        record &&
-        (terminalTaskStatus(record.value.status) ||
-          record.value.status === "unknown")
-      ) {
-        record.value = {
-          ...record.value,
-          result: null,
-          error: record.value.error
-            ? { ...record.value.error, details: null }
-            : null,
-        };
-      }
-    },
+    releaseTaskPayload,
     forget: (key) => {
+      taskPayloads.delete(keyOf(key));
       cachedQueries.delete(keyOf(key));
       return records.delete(keyOf(key));
     },
@@ -210,6 +257,7 @@ export function createStateReconciler() {
       retiredEpochs.clear();
       records.clear();
       cachedQueries.clear();
+      taskPayloads.clear();
       seen.clear();
     },
     task(data, options) {

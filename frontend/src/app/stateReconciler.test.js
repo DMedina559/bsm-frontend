@@ -22,16 +22,20 @@ it("keeps the later HTTP request when overlapping responses arrive backwards", (
 });
 it("uses comparable backend revisions across transports and retains the watermark", () => {
   const ticket = state.capture();
-  state.accept(["monitor"], { revision: 3, value: "event" });
+  state.accept(["monitor"], { epoch: "instance", revision: 3, value: "event" });
   expect(
     state.accept(
       ["monitor"],
-      { revision: 4, value: "http" },
+      { epoch: "instance", revision: 4, value: "http" },
       { source: "http", ticket },
     ).accepted,
   ).toBe(true);
   expect(
-    state.accept(["monitor"], { revision: 3, value: "old event" }).accepted,
+    state.accept(["monitor"], {
+      epoch: "instance",
+      revision: 3,
+      value: "old event",
+    }).accepted,
   ).toBe(false);
   state.accept(
     ["monitor"],
@@ -39,7 +43,11 @@ it("uses comparable backend revisions across transports and retains the watermar
     { source: "http", ticket: state.capture() },
   );
   expect(
-    state.accept(["monitor"], { revision: 2, value: "replay" }).accepted,
+    state.accept(["monitor"], {
+      epoch: "instance",
+      revision: 2,
+      value: "replay",
+    }).accepted,
   ).toBe(false);
 });
 it("deduplicates events per resource and keeps metadata bounded", () => {
@@ -54,15 +62,26 @@ it("deduplicates events per resource and keeps metadata bounded", () => {
   expect(state.entries("query")).toHaveLength(1000);
 });
 it("prevents task regression and malformed frames poisoning revisions", () => {
-  state.task({ id: "task", status: "running", revision: 2 });
+  state.task({ id: "task", status: "running", epoch: "instance", revision: 2 });
   expect(
-    state.task({ id: "task", status: "invalid", revision: 99 }).accepted,
+    state.task({
+      id: "task",
+      status: "invalid",
+      epoch: "instance",
+      revision: 99,
+    }).accepted,
   ).toBe(false);
   expect(
-    state.task({ id: "task", status: "queued", revision: 3 }).accepted,
+    state.task({ id: "task", status: "queued", epoch: "instance", revision: 3 })
+      .accepted,
   ).toBe(false);
   expect(
-    state.task({ id: "task", status: "completed", revision: 3 }).accepted,
+    state.task({
+      id: "task",
+      status: "completed",
+      epoch: "instance",
+      revision: 3,
+    }).accepted,
   ).toBe(true);
   expect(state.task({ id: "task", status: "failed" }).accepted).toBe(false);
 });
@@ -162,14 +181,25 @@ it("ignores malformed epoch metadata without clearing accepted state", () => {
   expect(state.read(["monitor"]).epoch).toBe("first");
 });
 it("preserves resource watermarks and terminal tasks through query cache churn", () => {
-  state.accept(["monitor", "alpha"], { revision: 100 });
-  state.task({ id: "finished", status: "completed", revision: 100 });
+  state.accept(["monitor", "alpha"], { epoch: "instance", revision: 100 });
+  state.task({
+    id: "finished",
+    status: "completed",
+    epoch: "instance",
+    revision: 100,
+  });
   for (let i = 0; i < 1500; i++) state.accept(["query", i], i);
-  expect(state.accept(["monitor", "alpha"], { revision: 1 }).accepted).toBe(
-    false,
-  );
   expect(
-    state.task({ id: "finished", status: "running", revision: 1 }).accepted,
+    state.accept(["monitor", "alpha"], { epoch: "instance", revision: 1 })
+      .accepted,
+  ).toBe(false);
+  expect(
+    state.task({
+      id: "finished",
+      status: "running",
+      epoch: "instance",
+      revision: 1,
+    }).accepted,
   ).toBe(false);
 });
 it("continues epoch cleanup after a listener throws", async () => {
@@ -194,12 +224,98 @@ it("releases terminal payloads while preserving ordering safeguards", () => {
   engine.task({
     id: "large",
     status: "completed",
+    epoch: "instance",
     revision: 10,
     result: { huge: "payload" },
   });
   engine.releaseTaskPayload("large");
   expect(engine.read(["task", "large"]).value.result).toBeNull();
   expect(
-    engine.task({ id: "large", status: "running", revision: 9 }).accepted,
+    engine.task({
+      id: "large",
+      status: "running",
+      epoch: "instance",
+      revision: 9,
+    }).accepted,
   ).toBe(false);
+});
+
+it("rejects partial metadata and unstamped replacements of revisioned state", () => {
+  for (const data of [
+    { revision: 1 },
+    { epoch: "instance" },
+    { epoch: " ", revision: 1 },
+  ]) {
+    expect(state.accept(["resource"], data).accepted).toBe(false);
+    expect(() => state.accept(["resource"], data, { source: "http" })).toThrow(
+      "Invalid backend state revision",
+    );
+  }
+  state.accept(["resource"], {
+    epoch: "instance",
+    revision: 1,
+    value: "current",
+  });
+  expect(state.accept(["resource"], { value: "legacy" }).accepted).toBe(false);
+  expect(state.read(["resource"]).value.value).toBe("current");
+});
+it("reloads released outcomes only from matching full HTTP snapshots", () => {
+  const task = {
+    id: "reload",
+    status: "failed",
+    epoch: "instance",
+    revision: 5,
+    message: "Failed",
+    result: null,
+    error: { message: "Failed", details: { reason: "missing" } },
+  };
+  state.task(task);
+  state.releaseTaskPayload(task.id);
+  expect(state.task(task).accepted).toBe(false);
+  expect(
+    state.task({ ...task, status: "completed" }, { source: "http" }).accepted,
+  ).toBe(false);
+  expect(
+    state.task({ ...task, revision: 4 }, { source: "http" }).accepted,
+  ).toBe(false);
+  expect(
+    state.task(task, { source: "http", ticket: state.capture() }).accepted,
+  ).toBe(true);
+  expect(state.read(["task", task.id]).value.error.details).toEqual(
+    task.error.details,
+  );
+});
+it("bounds terminal payloads without evicting task ordering metadata", () => {
+  for (let i = 1; i <= 101; i++)
+    state.task({
+      id: String(i),
+      status: "completed",
+      epoch: "instance",
+      revision: i,
+      message: "Done",
+      result: { value: i },
+      error: null,
+    });
+  expect(state.entries("task")).toHaveLength(101);
+  expect(state.read(["task", "1"]).value.result).toBeNull();
+  expect(state.read(["task", "101"]).value.result).toEqual({ value: 101 });
+  expect(
+    state.task({ id: "1", status: "running", epoch: "instance", revision: 1 })
+      .accepted,
+  ).toBe(false);
+  expect(
+    state.task(
+      {
+        id: "1",
+        status: "completed",
+        epoch: "instance",
+        revision: 1,
+        message: "Done",
+        result: { value: 1 },
+        error: null,
+      },
+      { source: "http" },
+    ).accepted,
+  ).toBe(true);
+  expect(state.read(["task", "2"]).value.result).toBeNull();
 });
