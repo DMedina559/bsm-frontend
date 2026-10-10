@@ -687,3 +687,63 @@ it("forwards plugin frames and skipped mutations without changing core caches", 
   expect(invalidate).not.toHaveBeenCalled();
   invalidate.mockRestore();
 });
+
+it("retains untracked task outcomes across repeated list reads at the same revision", async () => {
+  const { reconcileResourceSnapshot, captureStateRequest } =
+    await import("./applicationState");
+  const task = {
+    id: "viewed-task",
+    status: "completed",
+    message: "Task completed.",
+    result: { message: "Already up to date", updated: false },
+    revision: 1,
+    epoch: "backend",
+  };
+  const key = queryKeys.tasks();
+  const first = reconcileResourceSnapshot(
+    "tasks",
+    null,
+    key,
+    [task],
+    captureStateRequest(),
+  );
+  const second = reconcileResourceSnapshot(
+    "tasks",
+    null,
+    key,
+    [task],
+    captureStateRequest(),
+  );
+  expect(first[0].result).toEqual(task.result);
+  expect(second[0].result).toEqual(task.result);
+  expect(stateReconciler.read(["task", task.id]).value.result).toEqual(
+    task.result,
+  );
+});
+it("retains an untracked socket outcome for a later task list read", async () => {
+  const {
+    reconcileSocketMessage,
+    reconcileResourceSnapshot,
+    captureStateRequest,
+  } = await import("./applicationState");
+  const task = {
+    id: "socket-outcome",
+    status: "completed",
+    message: "Done",
+    result: { path: "backup.zip" },
+    revision: 1,
+    epoch: "backend",
+  };
+  reconcileSocketMessage(
+    { type: "task_update", data: task },
+    captureStateRequest(),
+  );
+  const tasks = reconcileResourceSnapshot(
+    "tasks",
+    null,
+    queryKeys.tasks(),
+    [task],
+    captureStateRequest(),
+  );
+  expect(tasks[0].result).toEqual(task.result);
+});

@@ -105,10 +105,6 @@ export function reconcileResourceSnapshot(resource, target, key, data, ticket) {
         !known.has(record.value.id ?? record.value.task_id)
       )
         tasks.push(record.value);
-    for (const task of tasks) {
-      const id = task.id ?? task.task_id;
-      if (!operationCoordinator.get(id)) stateReconciler.releaseTaskPayload(id);
-    }
     return tasks;
   }
   return selected;
@@ -365,10 +361,6 @@ export function reconcileSocketMessage(message, ticket) {
     });
     if (!accepted.accepted) return false;
     publishTaskSnapshot(message, accepted.value);
-    if (!operationCoordinator.get(accepted.value.id ?? accepted.value.task_id))
-      stateReconciler.releaseTaskPayload(
-        accepted.value.id ?? accepted.value.task_id,
-      );
     return true;
   }
   if (
