@@ -42,8 +42,8 @@ async function loadServers({ signal }) {
 }
 
 /**
- * Compatibility provider: query cache owns server data; context exposes the
- * existing useServer() interface until consumers are migrated to query hooks.
+ * Query cache owns fleet data; this provider exposes server selection and
+ * the shared fleet snapshot through useServer().
  */
 export const ServerProvider = ({ children }) => {
   const { user, sessionGeneration } = useAuth();

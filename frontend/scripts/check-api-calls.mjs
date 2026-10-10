@@ -1,8 +1,7 @@
 import ts from "typescript";
 import path from "node:path";
 
-// Check generated-client calls in the existing JS/JSX application without
-// treating this focused contract check as a full JavaScript-to-TypeScript migration.
+// Validate generated-client call signatures in the JS/JSX application.
 const roots = ts.sys.readDirectory(
   "src",
   [".js", ".jsx"],
