@@ -485,20 +485,34 @@ pre.monitor-output {
   margin-top: 20px;
 }
 
-.notification-history-toggle {
+.workspace-topbar .notification-history-toggle {
   position: relative;
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  background: transparent;
+}
+@media (max-width: 768px) {
+  .workspace-topbar .notification-history-toggle {
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
 }
 .notification-count {
   position: absolute;
-  top: -6px;
-  right: -8px;
-  padding: 0 5px;
-  min-width: 18px;
+  top: 1px;
+  right: 1px;
+  padding: 0 3px;
+  min-width: 14px;
   border-radius: 12px;
   background: var(--bsm-accent-strong);
   color: var(--bsm-on-accent);
   font-size: 10px;
-  line-height: 18px;
+  line-height: 14px;
+  text-align: center;
+  pointer-events: none;
 }
 .notification-history-toolbar {
   display: flex;
