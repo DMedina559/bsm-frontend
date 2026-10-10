@@ -47,7 +47,7 @@ const AuditLog = () => {
         style={{
           display: "flex",
           flexWrap: "wrap",
-          gap: "10px",
+          gap: "calc(10px * var(--bsm-spacing-scale))",
           justifyContent: "space-between",
           alignItems: "center",
         }}
@@ -68,7 +68,7 @@ const AuditLog = () => {
           <RefreshCw
             size={16}
             style={{
-              marginRight: "5px",
+              marginRight: "calc(5px * var(--bsm-spacing-scale))",
             }}
             className={loading ? "spin" : ""}
           />
@@ -86,7 +86,7 @@ const AuditLog = () => {
           <User
             size={16}
             style={{
-              marginRight: "5px",
+              marginRight: "calc(5px * var(--bsm-spacing-scale))",
             }}
           />{" "}
           User Actions
@@ -100,7 +100,7 @@ const AuditLog = () => {
           <FileText
             size={16}
             style={{
-              marginRight: "5px",
+              marginRight: "calc(5px * var(--bsm-spacing-scale))",
             }}
           />{" "}
           App Log
@@ -114,7 +114,7 @@ const AuditLog = () => {
           <Activity
             size={16}
             style={{
-              marginRight: "5px",
+              marginRight: "calc(5px * var(--bsm-spacing-scale))",
             }}
           />{" "}
           Background Tasks
@@ -132,7 +132,7 @@ const AuditLog = () => {
                 className="container"
                 style={{
                   textAlign: "center",
-                  padding: "20px",
+                  padding: "calc(20px * var(--bsm-spacing-scale))",
                 }}
               >
                 Loading logs...
@@ -187,7 +187,7 @@ const AuditLog = () => {
                 className="container"
                 style={{
                   textAlign: "center",
-                  padding: "20px",
+                  padding: "calc(20px * var(--bsm-spacing-scale))",
                 }}
               >
                 Loading tasks...

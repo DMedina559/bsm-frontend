@@ -304,9 +304,9 @@ const Content = () => {
         <div
           style={{
             display: "flex",
-            padding: "10px",
+            padding: "calc(10px * var(--bsm-spacing-scale))",
             alignItems: "center",
-            gap: "10px",
+            gap: "calc(10px * var(--bsm-spacing-scale))",
             flex: 1,
             overflow: "hidden",
           }}
@@ -355,7 +355,7 @@ const Content = () => {
               flexDirection: "column",
               height: "100%",
               justifyContent: "center",
-              gap: "6px",
+              gap: "calc(6px * var(--bsm-spacing-scale))",
             }}
           >
             <h4
@@ -376,7 +376,7 @@ const Content = () => {
                 color: "var(--text-color-secondary)",
                 display: "flex",
                 flexWrap: "wrap",
-                gap: "10px",
+                gap: "calc(10px * var(--bsm-spacing-scale))",
                 alignItems: "center",
               }}
             >
@@ -385,7 +385,7 @@ const Content = () => {
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "4px",
+                  gap: "calc(4px * var(--bsm-spacing-scale))",
                   color: statusColor,
                 }}
               >
@@ -407,7 +407,7 @@ const Content = () => {
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "6px",
+                  gap: "calc(6px * var(--bsm-spacing-scale))",
                   marginTop: "auto",
                 }}
               >
@@ -415,7 +415,8 @@ const Content = () => {
                   className="form-input"
                   style={{
                     flex: 1,
-                    padding: "2px 6px",
+                    padding:
+                      "calc(2px * var(--bsm-spacing-scale)) calc(6px * var(--bsm-spacing-scale))",
                     fontSize: "0.8em",
                     height: "24px",
                     maxWidth: "200px",
@@ -440,12 +441,12 @@ const Content = () => {
 
         <div
           style={{
-            padding: "10px",
+            padding: "calc(10px * var(--bsm-spacing-scale))",
             background: "rgba(0,0,0,0.1)",
             borderLeft: "1px solid var(--border-color)",
             display: "flex",
             flexDirection: "column",
-            gap: "8px",
+            gap: "calc(8px * var(--bsm-spacing-scale))",
             justifyContent: "center",
             width: "90px",
             flexShrink: 0,
@@ -455,7 +456,8 @@ const Content = () => {
             <button
               className="action-button warning-button"
               style={{
-                padding: "6px 8px",
+                padding:
+                  "calc(6px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
                 fontSize: "0.85em",
                 width: "100%",
                 justifyContent: "center",
@@ -470,7 +472,8 @@ const Content = () => {
             <button
               className="action-button success-button"
               style={{
-                padding: "6px 8px",
+                padding:
+                  "calc(6px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
                 fontSize: "0.85em",
                 background: "var(--bsm-success)",
                 color: "var(--text-color)",
@@ -487,7 +490,8 @@ const Content = () => {
           <button
             className="action-button danger-button"
             style={{
-              padding: "6px 8px",
+              padding:
+                "calc(6px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
               fontSize: "0.85em",
               width: "100%",
               justifyContent: "center",
@@ -531,8 +535,8 @@ const Content = () => {
           className="message-box message-warning"
           style={{
             textAlign: "center",
-            marginTop: "50px",
-            padding: "20px",
+            marginTop: "calc(50px * var(--bsm-spacing-scale))",
+            padding: "calc(20px * var(--bsm-spacing-scale))",
             border: "1px solid orange",
             color: "orange",
           }}
@@ -551,7 +555,7 @@ const Content = () => {
         style={{
           display: "flex",
           flexWrap: "wrap",
-          gap: "10px",
+          gap: "calc(10px * var(--bsm-spacing-scale))",
           justifyContent: "space-between",
           alignItems: "center",
         }}
@@ -567,7 +571,7 @@ const Content = () => {
           style={{
             display: "flex",
             flexWrap: "wrap",
-            gap: "10px",
+            gap: "calc(10px * var(--bsm-spacing-scale))",
           }}
         >
           <button
@@ -579,7 +583,7 @@ const Content = () => {
             <RefreshCw
               size={16}
               style={{
-                marginRight: "5px",
+                marginRight: "calc(5px * var(--bsm-spacing-scale))",
               }}
               className={loading ? "spin" : ""}
             />{" "}
@@ -595,7 +599,7 @@ const Content = () => {
               <Settings
                 size={16}
                 style={{
-                  marginRight: "5px",
+                  marginRight: "calc(5px * var(--bsm-spacing-scale))",
                 }}
               />{" "}
               Manage Installed Addons
@@ -613,7 +617,7 @@ const Content = () => {
                 <Download
                   size={16}
                   style={{
-                    marginRight: "5px",
+                    marginRight: "calc(5px * var(--bsm-spacing-scale))",
                   }}
                 />{" "}
                 Export World
@@ -628,7 +632,7 @@ const Content = () => {
                 <RefreshCcw
                   size={16}
                   style={{
-                    marginRight: "5px",
+                    marginRight: "calc(5px * var(--bsm-spacing-scale))",
                   }}
                 />{" "}
                 Reset World
@@ -669,7 +673,7 @@ const Content = () => {
           <div
             className="dynamic-modal-header"
             style={{
-              padding: "15px",
+              padding: "calc(15px * var(--bsm-spacing-scale))",
               borderBottom: "1px solid var(--border-color)",
               display: "flex",
               justifyContent: "space-between",
@@ -679,18 +683,18 @@ const Content = () => {
 
           <div
             style={{
-              padding: "0 15px",
+              padding: "0 calc(15px * var(--bsm-spacing-scale))",
               borderBottom: "1px solid var(--border-color)",
               display: "flex",
-              gap: "10px",
-              marginTop: "10px",
+              gap: "calc(10px * var(--bsm-spacing-scale))",
+              marginTop: "calc(10px * var(--bsm-spacing-scale))",
             }}
           >
             <button
               className={`tab-button ${addonModalTab === "behavior" ? "active" : ""}`}
               onClick={() => setAddonModalTab("behavior")}
               style={{
-                padding: "10px",
+                padding: "calc(10px * var(--bsm-spacing-scale))",
                 background: "none",
                 border: "none",
                 borderBottom:
@@ -713,7 +717,7 @@ const Content = () => {
               className={`tab-button ${addonModalTab === "resource" ? "active" : ""}`}
               onClick={() => setAddonModalTab("resource")}
               style={{
-                padding: "10px",
+                padding: "calc(10px * var(--bsm-spacing-scale))",
                 background: "none",
                 border: "none",
                 borderBottom:
@@ -737,7 +741,7 @@ const Content = () => {
           <div
             className="dynamic-modal-body"
             style={{
-              padding: "15px",
+              padding: "calc(15px * var(--bsm-spacing-scale))",
               overflowY: "auto",
               flex: 1,
             }}
@@ -746,7 +750,7 @@ const Content = () => {
               <div
                 style={{
                   textAlign: "center",
-                  padding: "20px",
+                  padding: "calc(20px * var(--bsm-spacing-scale))",
                   color: "var(--text-color-secondary)",
                 }}
               >
@@ -767,7 +771,7 @@ const Content = () => {
                     <div
                       style={{
                         textAlign: "center",
-                        padding: "20px",
+                        padding: "calc(20px * var(--bsm-spacing-scale))",
                         color: "var(--text-color-secondary)",
                       }}
                     >
@@ -787,7 +791,7 @@ const Content = () => {
                     <div
                       style={{
                         textAlign: "center",
-                        padding: "20px",
+                        padding: "calc(20px * var(--bsm-spacing-scale))",
                         color: "var(--text-color-secondary)",
                       }}
                     >
@@ -800,11 +804,11 @@ const Content = () => {
 
           <div
             style={{
-              padding: "15px",
+              padding: "calc(15px * var(--bsm-spacing-scale))",
               borderTop: "1px solid var(--border-color)",
               display: "flex",
               justifyContent: "flex-end",
-              gap: "10px",
+              gap: "calc(10px * var(--bsm-spacing-scale))",
             }}
           >
             <button
@@ -830,8 +834,8 @@ const Content = () => {
         {isUploadEnabled && (
           <div
             style={{
-              marginBottom: "20px",
-              padding: "15px",
+              marginBottom: "calc(20px * var(--bsm-spacing-scale))",
+              padding: "calc(15px * var(--bsm-spacing-scale))",
               background: "var(--input-background-color)",
               borderRadius: "5px",
               border: "1px solid var(--border-color)",
@@ -858,7 +862,7 @@ const Content = () => {
               style={{
                 fontSize: "0.85em",
                 color: "var(--text-color-secondary)",
-                marginTop: "5px",
+                marginTop: "calc(5px * var(--bsm-spacing-scale))",
               }}
             >
               Uploaded files will appear in the list below.
@@ -869,7 +873,7 @@ const Content = () => {
         {loading && items.length === 0 ? (
           <div
             style={{
-              padding: "40px",
+              padding: "calc(40px * var(--bsm-spacing-scale))",
               textAlign: "center",
               color: "var(--text-color-secondary)",
             }}
@@ -911,7 +915,7 @@ const Content = () => {
                           style={{
                             display: "flex",
                             alignItems: "center",
-                            gap: "10px",
+                            gap: "calc(10px * var(--bsm-spacing-scale))",
                           }}
                         >
                           {activeTab === "worlds" ? (
@@ -938,7 +942,8 @@ const Content = () => {
                           onClick={() => handleInstall(item)}
                           title={`Install to ${selectedServer}`}
                           style={{
-                            padding: "5px 10px",
+                            padding:
+                              "calc(5px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
                             fontSize: "0.9em",
                           }}
                           disabled={actionLoading}
@@ -958,7 +963,7 @@ const Content = () => {
                         textAlign: "center",
                         color: "var(--text-color-secondary)",
                         fontStyle: "italic",
-                        padding: "20px",
+                        padding: "calc(20px * var(--bsm-spacing-scale))",
                       }}
                     >
                       No available {activeTab} found in imports directory.

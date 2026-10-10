@@ -104,9 +104,9 @@ export const layoutComponents = {
           className="tabs-header"
           style={{
             display: "flex",
-            gap: "10px",
+            gap: "calc(10px * var(--bsm-spacing-scale))",
             borderBottom: "1px solid var(--border-color)",
-            marginBottom: "15px",
+            marginBottom: "calc(15px * var(--bsm-spacing-scale))",
           }}
         >
           {tabHeaders.map((header) => (
@@ -115,7 +115,8 @@ export const layoutComponents = {
               className={`tab-button ${currentTabId === header.id ? "active" : ""}`}
               onClick={() => handleTabClick(header.id)}
               style={{
-                padding: "8px 16px",
+                padding:
+                  "calc(8px * var(--bsm-spacing-scale)) calc(16px * var(--bsm-spacing-scale))",
                 background: "transparent",
                 border: "none",
                 borderBottom:

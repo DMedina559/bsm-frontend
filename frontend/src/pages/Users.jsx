@@ -236,7 +236,7 @@ const Users = () => {
         <div
           style={{
             display: "flex",
-            gap: "10px",
+            gap: "calc(10px * var(--bsm-spacing-scale))",
           }}
         >
           <button
@@ -248,7 +248,7 @@ const Users = () => {
             <RefreshCw
               size={16}
               style={{
-                marginRight: "5px",
+                marginRight: "calc(5px * var(--bsm-spacing-scale))",
               }}
               className={loading ? "spin" : ""}
             />{" "}
@@ -264,7 +264,7 @@ const Users = () => {
               <UserPlus
                 size={16}
                 style={{
-                  marginRight: "5px",
+                  marginRight: "calc(5px * var(--bsm-spacing-scale))",
                 }}
               />{" "}
               Invite User
@@ -277,7 +277,7 @@ const Users = () => {
         <div
           style={{
             textAlign: "center",
-            padding: "40px",
+            padding: "calc(40px * var(--bsm-spacing-scale))",
           }}
         >
           <div className="spinner"></div> Loading users...
@@ -323,7 +323,7 @@ const Users = () => {
                     {currentUser && currentUser.id === user.id && (
                       <span
                         style={{
-                          marginLeft: "5px",
+                          marginLeft: "calc(5px * var(--bsm-spacing-scale))",
                           fontSize: "0.8em",
                           color: "var(--primary-color)",
                         }}
@@ -337,7 +337,7 @@ const Users = () => {
                       <Shield
                         size={12}
                         style={{
-                          marginRight: "4px",
+                          marginRight: "calc(4px * var(--bsm-spacing-scale))",
                         }}
                       />{" "}
                       {user.role}
@@ -350,7 +350,7 @@ const Users = () => {
                         style={{
                           display: "inline-flex",
                           alignItems: "center",
-                          gap: "5px",
+                          gap: "calc(5px * var(--bsm-spacing-scale))",
                         }}
                       >
                         <Check size={14} /> Active
@@ -361,7 +361,7 @@ const Users = () => {
                         style={{
                           display: "inline-flex",
                           alignItems: "center",
-                          gap: "5px",
+                          gap: "calc(5px * var(--bsm-spacing-scale))",
                         }}
                       >
                         <Ban size={14} /> Disabled
@@ -372,7 +372,7 @@ const Users = () => {
                     <div
                       style={{
                         display: "flex",
-                        gap: "5px",
+                        gap: "calc(5px * var(--bsm-spacing-scale))",
                       }}
                     >
                       {isAdmin && (
@@ -382,7 +382,8 @@ const Users = () => {
                             onClick={() => openEditModal(user)}
                             title="Edit User"
                             style={{
-                              padding: "5px 10px",
+                              padding:
+                                "calc(5px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
                             }}
                             disabled={
                               actionLoading || user.id === currentUser?.id
@@ -397,7 +398,8 @@ const Users = () => {
                             onClick={() => handleDelete(user)}
                             title="Delete User"
                             style={{
-                              padding: "5px 10px",
+                              padding:
+                                "calc(5px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
                             }}
                             disabled={
                               actionLoading || user.id === currentUser?.id
@@ -419,7 +421,7 @@ const Users = () => {
                     colSpan="4"
                     style={{
                       textAlign: "center",
-                      padding: "20px",
+                      padding: "calc(20px * var(--bsm-spacing-scale))",
                       fontStyle: "italic",
                       color: "var(--text-color-secondary)",
                     }}
@@ -444,13 +446,13 @@ const Users = () => {
             <form onSubmit={handleGenerateLink}>
               <div
                 style={{
-                  marginBottom: "20px",
+                  marginBottom: "calc(20px * var(--bsm-spacing-scale))",
                   textAlign: "left",
                 }}
               >
                 <p
                   style={{
-                    marginBottom: "15px",
+                    marginBottom: "calc(15px * var(--bsm-spacing-scale))",
                     color: "var(--text-color-secondary)",
                     lineHeight: "1.5",
                   }}
@@ -462,7 +464,7 @@ const Users = () => {
                   className="form-label"
                   style={{
                     display: "block",
-                    marginBottom: "5px",
+                    marginBottom: "calc(5px * var(--bsm-spacing-scale))",
                   }}
                   htmlFor="users-field-1"
                 >
@@ -487,7 +489,7 @@ const Users = () => {
                 style={{
                   display: "flex",
                   justifyContent: "flex-end",
-                  gap: "10px",
+                  gap: "calc(10px * var(--bsm-spacing-scale))",
                 }}
               >
                 <button
@@ -514,7 +516,7 @@ const Users = () => {
             >
               <p
                 style={{
-                  marginBottom: "10px",
+                  marginBottom: "calc(10px * var(--bsm-spacing-scale))",
                   color: "var(--success-color)",
                   fontWeight: "bold",
                 }}
@@ -524,8 +526,8 @@ const Users = () => {
               <div
                 style={{
                   display: "flex",
-                  gap: "10px",
-                  marginBottom: "20px",
+                  gap: "calc(10px * var(--bsm-spacing-scale))",
+                  marginBottom: "calc(20px * var(--bsm-spacing-scale))",
                 }}
               >
                 <input
@@ -576,20 +578,20 @@ const Users = () => {
         >
           <div
             style={{
-              marginBottom: "20px",
+              marginBottom: "calc(20px * var(--bsm-spacing-scale))",
               textAlign: "left",
             }}
           >
             <div
               style={{
-                marginBottom: "15px",
+                marginBottom: "calc(15px * var(--bsm-spacing-scale))",
               }}
             >
               <label
                 className="form-label"
                 style={{
                   display: "block",
-                  marginBottom: "5px",
+                  marginBottom: "calc(5px * var(--bsm-spacing-scale))",
                 }}
                 htmlFor="users-field-2"
               >
@@ -616,7 +618,7 @@ const Users = () => {
                 className="form-label"
                 style={{
                   display: "block",
-                  marginBottom: "5px",
+                  marginBottom: "calc(5px * var(--bsm-spacing-scale))",
                 }}
               >
                 Account Status
@@ -636,7 +638,7 @@ const Users = () => {
                     <Unlock
                       size={16}
                       style={{
-                        marginRight: "5px",
+                        marginRight: "calc(5px * var(--bsm-spacing-scale))",
                       }}
                     />{" "}
                     Account Active
@@ -646,7 +648,7 @@ const Users = () => {
                     <Lock
                       size={16}
                       style={{
-                        marginRight: "5px",
+                        marginRight: "calc(5px * var(--bsm-spacing-scale))",
                       }}
                     />{" "}
                     Account Disabled
@@ -656,7 +658,7 @@ const Users = () => {
               <small
                 style={{
                   display: "block",
-                  marginTop: "5px",
+                  marginTop: "calc(5px * var(--bsm-spacing-scale))",
                   color: "var(--text-color-secondary)",
                 }}
               >
@@ -669,7 +671,7 @@ const Users = () => {
             style={{
               display: "flex",
               justifyContent: "flex-end",
-              gap: "10px",
+              gap: "calc(10px * var(--bsm-spacing-scale))",
             }}
           >
             <button
@@ -699,7 +701,7 @@ const Users = () => {
         .badge {
             display: inline-flex;
             align-items: center;
-            padding: 2px 8px;
+            padding: calc(2px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale));
             border-radius: 12px;
             font-size: 0.85em;
             font-weight: 500;
@@ -722,7 +724,7 @@ const Users = () => {
         }
         .modal-content {
             background: var(--container-background-color);
-            padding: 25px;
+            padding: calc(25px * var(--bsm-spacing-scale));
             border-radius: 8px;
             width: 100%;
             border: 1px solid var(--border-color);

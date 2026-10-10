@@ -1,9 +1,10 @@
 .operations-trigger {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  min-height: 36px;
-  padding: 5px 8px;
+  gap: calc(6px * var(--bsm-spacing-scale));
+  min-height: var(--bsm-toolbar-height);
+  padding: calc(5px * var(--bsm-spacing-scale))
+    calc(8px * var(--bsm-spacing-scale));
   border: 1px solid var(--border-color);
   border-radius: var(--bsm-radius-md);
   background: transparent;
@@ -18,7 +19,8 @@
 }
 .operations-count {
   min-width: 20px;
-  padding: 2px 5px;
+  padding: calc(2px * var(--bsm-spacing-scale))
+    calc(5px * var(--bsm-spacing-scale));
   border-radius: 20px;
   background: var(--bsm-surface-raised);
   text-align: center;
@@ -34,13 +36,13 @@
 }
 .operations-list {
   display: grid;
-  gap: 10px;
+  gap: calc(10px * var(--bsm-spacing-scale));
   list-style: none;
   margin: 0;
   padding: 0;
 }
 .operations-item {
-  padding: 12px;
+  padding: calc(12px * var(--bsm-spacing-scale));
   border: 1px solid var(--border-color);
   border-radius: var(--bsm-radius-md);
   overflow-wrap: anywhere;
@@ -48,12 +50,12 @@
 .operations-item progress {
   display: block;
   width: 100%;
-  margin: 10px 0;
+  margin: calc(10px * var(--bsm-spacing-scale)) 0;
   accent-color: var(--bsm-accent);
 }
 .operations-item .action-button {
   display: block;
-  margin-top: 10px;
+  margin-top: calc(10px * var(--bsm-spacing-scale));
 }
 @media (max-width: 768px) {
   .operations-trigger {
@@ -66,5 +68,5 @@
 
 .operation-message {
   color: var(--text-color-secondary);
-  margin: 8px 0;
+  margin: calc(8px * var(--bsm-spacing-scale)) 0;
 }

@@ -38,7 +38,7 @@
   right: 0;
   width: 190px;
   max-width: calc(100vw - 48px);
-  padding: 6px;
+  padding: calc(6px * var(--bsm-spacing-scale));
   background: var(--container-background-color);
   border: 1px solid var(--border-color);
   border-radius: var(--bsm-radius-md);
@@ -47,10 +47,10 @@
 .server-card-menu-panel button {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: calc(10px * var(--bsm-spacing-scale));
   width: 100%;
   min-height: 44px;
-  padding: 10px;
+  padding: calc(10px * var(--bsm-spacing-scale));
   border: 0;
   border-radius: var(--bsm-radius-sm);
   background: transparent;
@@ -65,8 +65,9 @@
 }
 
 .workspace-overview .overview-server-card .overview-card-header {
-  padding: 12px 14px 8px;
-  gap: 10px;
+  padding: calc(12px * var(--bsm-spacing-scale))
+    calc(14px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale));
+  gap: calc(10px * var(--bsm-spacing-scale));
 }
 .workspace-overview .overview-server-card .overview-world-icon {
   width: 44px;
@@ -74,25 +75,28 @@
 }
 .workspace-overview .overview-server-card .overview-server-identity h3 {
   font-size: 1rem;
-  margin-bottom: 4px;
+  margin-bottom: calc(4px * var(--bsm-spacing-scale));
 }
 .workspace-overview .overview-server-card .overview-card-body {
-  padding: 0 14px 10px;
+  padding: 0 calc(14px * var(--bsm-spacing-scale))
+    calc(10px * var(--bsm-spacing-scale));
 }
 .workspace-overview .overview-server-card .overview-detail-row {
-  margin-top: 6px;
+  margin-top: calc(6px * var(--bsm-spacing-scale));
   font-size: 0.85rem;
 }
 .workspace-overview .overview-server-card .overview-card-actions {
-  padding: 8px 12px;
-  gap: 6px;
+  padding: calc(8px * var(--bsm-spacing-scale))
+    calc(12px * var(--bsm-spacing-scale));
+  gap: calc(6px * var(--bsm-spacing-scale));
 }
 .workspace-overview
   .overview-server-card
   .overview-card-actions
   .action-button {
-  min-height: 34px;
-  padding: 6px 8px;
+  min-height: var(--bsm-quick-action-height);
+  padding: calc(6px * var(--bsm-spacing-scale))
+    calc(8px * var(--bsm-spacing-scale));
 }
 @media (max-width: 768px) {
   .workspace-overview

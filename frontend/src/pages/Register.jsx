@@ -56,7 +56,7 @@ const Register = () => {
       <div
         className="container auth-page"
         style={{
-          marginTop: "100px",
+          marginTop: "calc(100px * var(--bsm-spacing-scale))",
           textAlign: "center",
         }}
       >
@@ -71,7 +71,7 @@ const Register = () => {
       <div
         className="container auth-page"
         style={{
-          marginTop: "100px",
+          marginTop: "calc(100px * var(--bsm-spacing-scale))",
           textAlign: "center",
         }}
       >
@@ -86,7 +86,7 @@ const Register = () => {
       <div
         className="container auth-page"
         style={{
-          marginTop: "100px",
+          marginTop: "calc(100px * var(--bsm-spacing-scale))",
           textAlign: "center",
         }}
       >
@@ -94,7 +94,7 @@ const Register = () => {
           className="spinner"
           style={{
             display: "inline-block",
-            marginRight: "10px",
+            marginRight: "calc(10px * var(--bsm-spacing-scale))",
           }}
         ></div>{" "}
         Checking registration link...
@@ -106,7 +106,7 @@ const Register = () => {
       className="container auth-page"
       style={{
         maxWidth: "400px",
-        marginTop: "100px",
+        marginTop: "calc(100px * var(--bsm-spacing-scale))",
       }}
     >
       <AuthBrand />
@@ -117,7 +117,7 @@ const Register = () => {
       <form onSubmit={handleSubmit} className="form-group">
         <div
           style={{
-            marginBottom: "15px",
+            marginBottom: "calc(15px * var(--bsm-spacing-scale))",
           }}
         >
           <label className="form-label" htmlFor="username">
@@ -137,7 +137,7 @@ const Register = () => {
 
         <div
           style={{
-            marginBottom: "15px",
+            marginBottom: "calc(15px * var(--bsm-spacing-scale))",
           }}
         >
           <label className="form-label" htmlFor="password">
@@ -157,7 +157,7 @@ const Register = () => {
 
         <div
           style={{
-            marginBottom: "20px",
+            marginBottom: "calc(20px * var(--bsm-spacing-scale))",
           }}
         >
           <label className="form-label" htmlFor="confirmPassword">

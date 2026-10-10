@@ -1,18 +1,18 @@
 .task-outcome {
   overflow-wrap: anywhere;
-  margin-top: 8px;
+  margin-top: calc(8px * var(--bsm-spacing-scale));
   font-size: 0.9rem;
 }
 .task-value-fields {
   margin: 0;
   display: grid;
-  gap: 8px;
+  gap: calc(8px * var(--bsm-spacing-scale));
 }
 .task-value-fields > div {
   display: grid;
   grid-template-columns: minmax(90px, 1fr) minmax(0, 3fr);
-  gap: 12px;
-  padding: 6px 0;
+  gap: calc(12px * var(--bsm-spacing-scale));
+  padding: calc(6px * var(--bsm-spacing-scale)) 0;
   border-bottom: 1px solid var(--border-color);
 }
 .task-value-fields dt {
@@ -24,7 +24,7 @@
   min-width: 0;
 }
 .task-value-list {
-  padding-left: 20px;
+  padding-left: calc(20px * var(--bsm-spacing-scale));
   margin: 0;
 }
 .task-value-empty {
@@ -32,11 +32,11 @@
 }
 .task-outcome-error {
   border-left: 3px solid var(--bsm-danger, #d9534f);
-  padding-left: 10px;
-  margin-bottom: 10px;
+  padding-left: calc(10px * var(--bsm-spacing-scale));
+  margin-bottom: calc(10px * var(--bsm-spacing-scale));
 }
 .task-outcome-raw {
-  margin-top: 12px;
+  margin-top: calc(12px * var(--bsm-spacing-scale));
 }
 .task-outcome-raw summary {
   cursor: pointer;
@@ -47,16 +47,16 @@
   overflow-wrap: anywhere;
   max-height: 240px;
   overflow: auto;
-  padding: 10px;
+  padding: calc(10px * var(--bsm-spacing-scale));
   background: var(--bsm-surface-raised);
   border-radius: var(--bsm-radius-md);
 }
 .task-history {
   display: grid;
-  gap: 12px;
+  gap: calc(12px * var(--bsm-spacing-scale));
 }
 .task-history-card {
-  padding: 16px;
+  padding: calc(16px * var(--bsm-spacing-scale));
   border: 1px solid var(--border-color);
   border-radius: var(--bsm-radius-md);
   background: var(--bsm-surface-raised);
@@ -66,7 +66,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: calc(12px * var(--bsm-spacing-scale));
   flex-wrap: wrap;
 }
 .task-history-card code {
@@ -75,11 +75,11 @@
 }
 .task-history-card > p {
   color: var(--text-color-secondary);
-  margin: 10px 0;
+  margin: calc(10px * var(--bsm-spacing-scale)) 0;
 }
 @media (max-width: 600px) {
   .task-value-fields > div {
     grid-template-columns: 1fr;
-    gap: 4px;
+    gap: calc(4px * var(--bsm-spacing-scale));
   }
 }

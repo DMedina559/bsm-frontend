@@ -181,8 +181,8 @@ const OnlinePlayers = () => {
           className="message-box message-warning"
           style={{
             textAlign: "center",
-            marginTop: "50px",
-            padding: "20px",
+            marginTop: "calc(50px * var(--bsm-spacing-scale))",
+            padding: "calc(20px * var(--bsm-spacing-scale))",
             border: "1px solid orange",
             color: "orange",
           }}
@@ -212,7 +212,7 @@ const OnlinePlayers = () => {
           <Users
             size={16}
             style={{
-              marginRight: "5px",
+              marginRight: "calc(5px * var(--bsm-spacing-scale))",
               verticalAlign: "middle",
             }}
           />
@@ -223,7 +223,7 @@ const OnlinePlayers = () => {
       <div
         style={{
           background: "var(--container-background-color, #333)",
-          padding: "20px",
+          padding: "calc(20px * var(--bsm-spacing-scale))",
           borderRadius: "8px",
           border: "1px solid var(--border-color, #555)",
         }}
@@ -234,7 +234,7 @@ const OnlinePlayers = () => {
               color: "var(--text-color-secondary)",
               fontStyle: "italic",
               textAlign: "center",
-              padding: "20px",
+              padding: "calc(20px * var(--bsm-spacing-scale))",
             }}
           >
             No players currently online.
@@ -244,7 +244,7 @@ const OnlinePlayers = () => {
             style={{
               display: "flex",
               flexDirection: "column",
-              gap: "10px",
+              gap: "calc(10px * var(--bsm-spacing-scale))",
             }}
           >
             {players.map((player) => (
@@ -255,7 +255,7 @@ const OnlinePlayers = () => {
                   justifyContent: "space-between",
                   alignItems: "center",
                   background: "rgba(0,0,0,0.2)",
-                  padding: "15px",
+                  padding: "calc(15px * var(--bsm-spacing-scale))",
                   borderRadius: "4px",
                   border: "1px solid rgba(255,255,255,0.05)",
                 }}
@@ -264,7 +264,7 @@ const OnlinePlayers = () => {
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: "15px",
+                    gap: "calc(15px * var(--bsm-spacing-scale))",
                   }}
                 >
                   <span
@@ -291,7 +291,7 @@ const OnlinePlayers = () => {
                 <div
                   style={{
                     display: "flex",
-                    gap: "10px",
+                    gap: "calc(10px * var(--bsm-spacing-scale))",
                   }}
                 >
                   <button
@@ -347,23 +347,23 @@ const OnlinePlayers = () => {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              marginBottom: "15px",
+              marginBottom: "calc(15px * var(--bsm-spacing-scale))",
               borderBottom: "1px solid var(--border-color, #555)",
-              paddingBottom: "10px",
+              paddingBottom: "calc(10px * var(--bsm-spacing-scale))",
             }}
           ></div>
           <div
             style={{
               display: "flex",
               flexDirection: "column",
-              gap: "15px",
+              gap: "calc(15px * var(--bsm-spacing-scale))",
             }}
           >
             <div
               style={{
                 background: "rgba(244, 67, 54, 0.1)",
                 border: "1px solid rgba(244, 67, 54, 0.3)",
-                padding: "10px",
+                padding: "calc(10px * var(--bsm-spacing-scale))",
                 borderRadius: "4px",
                 color: "var(--bsm-danger)",
                 fontSize: "0.9em",
@@ -375,7 +375,7 @@ const OnlinePlayers = () => {
               <label
                 style={{
                   display: "block",
-                  marginBottom: "5px",
+                  marginBottom: "calc(5px * var(--bsm-spacing-scale))",
                   color: "var(--text-color)",
                 }}
                 htmlFor="onlineplayers-field-1"
@@ -390,7 +390,7 @@ const OnlinePlayers = () => {
                 placeholder="e.g. Breaking rules"
                 style={{
                   width: "100%",
-                  padding: "8px",
+                  padding: "calc(8px * var(--bsm-spacing-scale))",
                   boxSizing: "border-box",
                 }}
                 autoFocus
@@ -401,8 +401,8 @@ const OnlinePlayers = () => {
               style={{
                 display: "flex",
                 justifyContent: "flex-end",
-                gap: "10px",
-                marginTop: "10px",
+                gap: "calc(10px * var(--bsm-spacing-scale))",
+                marginTop: "calc(10px * var(--bsm-spacing-scale))",
               }}
             >
               <button
@@ -437,23 +437,23 @@ const OnlinePlayers = () => {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              marginBottom: "15px",
+              marginBottom: "calc(15px * var(--bsm-spacing-scale))",
               borderBottom: "1px solid var(--border-color, #555)",
-              paddingBottom: "10px",
+              paddingBottom: "calc(10px * var(--bsm-spacing-scale))",
             }}
           ></div>
           <div
             style={{
               display: "flex",
               flexDirection: "column",
-              gap: "15px",
+              gap: "calc(15px * var(--bsm-spacing-scale))",
             }}
           >
             <div>
               <label
                 style={{
                   display: "block",
-                  marginBottom: "5px",
+                  marginBottom: "calc(5px * var(--bsm-spacing-scale))",
                   color: "var(--text-color-secondary)",
                 }}
                 htmlFor="onlineplayers-field-2"
@@ -468,7 +468,7 @@ const OnlinePlayers = () => {
                 placeholder="e.g. Breaking rules"
                 style={{
                   width: "100%",
-                  padding: "8px",
+                  padding: "calc(8px * var(--bsm-spacing-scale))",
                   boxSizing: "border-box",
                 }}
                 autoFocus
@@ -479,8 +479,8 @@ const OnlinePlayers = () => {
               style={{
                 display: "flex",
                 justifyContent: "flex-end",
-                gap: "10px",
-                marginTop: "10px",
+                gap: "calc(10px * var(--bsm-spacing-scale))",
+                marginTop: "calc(10px * var(--bsm-spacing-scale))",
               }}
             >
               <button
@@ -515,23 +515,23 @@ const OnlinePlayers = () => {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              marginBottom: "15px",
+              marginBottom: "calc(15px * var(--bsm-spacing-scale))",
               borderBottom: "1px solid var(--border-color, #555)",
-              paddingBottom: "10px",
+              paddingBottom: "calc(10px * var(--bsm-spacing-scale))",
             }}
           ></div>
           <div
             style={{
               display: "flex",
               flexDirection: "column",
-              gap: "15px",
+              gap: "calc(15px * var(--bsm-spacing-scale))",
             }}
           >
             <div>
               <label
                 style={{
                   display: "block",
-                  marginBottom: "5px",
+                  marginBottom: "calc(5px * var(--bsm-spacing-scale))",
                   color: "var(--text-color-secondary)",
                 }}
                 htmlFor="onlineplayers-field-3"
@@ -546,7 +546,7 @@ const OnlinePlayers = () => {
                 placeholder="play.example.com"
                 style={{
                   width: "100%",
-                  padding: "8px",
+                  padding: "calc(8px * var(--bsm-spacing-scale))",
                   boxSizing: "border-box",
                 }}
                 autoFocus
@@ -557,7 +557,7 @@ const OnlinePlayers = () => {
               <label
                 style={{
                   display: "block",
-                  marginBottom: "5px",
+                  marginBottom: "calc(5px * var(--bsm-spacing-scale))",
                   color: "var(--text-color-secondary)",
                 }}
                 htmlFor="onlineplayers-field-4"
@@ -571,7 +571,7 @@ const OnlinePlayers = () => {
                 className="form-input"
                 style={{
                   width: "100%",
-                  padding: "8px",
+                  padding: "calc(8px * var(--bsm-spacing-scale))",
                   boxSizing: "border-box",
                 }}
                 id="onlineplayers-field-4"
@@ -581,8 +581,8 @@ const OnlinePlayers = () => {
               style={{
                 display: "flex",
                 justifyContent: "flex-end",
-                gap: "10px",
-                marginTop: "10px",
+                gap: "calc(10px * var(--bsm-spacing-scale))",
+                marginTop: "calc(10px * var(--bsm-spacing-scale))",
               }}
             >
               <button

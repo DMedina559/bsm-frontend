@@ -182,16 +182,16 @@ const ServerConfig = () => {
           <div
             key={fullPath}
             style={{
-              marginBottom: "20px",
-              marginLeft: "10px",
-              paddingLeft: "10px",
+              marginBottom: "calc(20px * var(--bsm-spacing-scale))",
+              marginLeft: "calc(10px * var(--bsm-spacing-scale))",
+              paddingLeft: "calc(10px * var(--bsm-spacing-scale))",
               borderLeft: "2px solid var(--border-color)",
             }}
           >
             <h4
               style={{
                 textTransform: "capitalize",
-                margin: "10px 0",
+                margin: "calc(10px * var(--bsm-spacing-scale)) 0",
               }}
             >
               {key.replace(/_/g, " ")}
@@ -201,7 +201,7 @@ const ServerConfig = () => {
                 display: "grid",
                 gridTemplateColumns:
                   "repeat(auto-fill, minmax(min(100%, 300px), 1fr))",
-                gap: "15px",
+                gap: "calc(15px * var(--bsm-spacing-scale))",
               }}
             >
               {renderFields(value, fullPath)}
@@ -230,8 +230,8 @@ const ServerConfig = () => {
           className="message-box message-warning"
           style={{
             textAlign: "center",
-            marginTop: "50px",
-            padding: "20px",
+            marginTop: "calc(50px * var(--bsm-spacing-scale))",
+            padding: "calc(20px * var(--bsm-spacing-scale))",
             border: "1px solid orange",
             color: "orange",
           }}
@@ -257,7 +257,7 @@ const ServerConfig = () => {
         <div
           style={{
             display: "flex",
-            gap: "10px",
+            gap: "calc(10px * var(--bsm-spacing-scale))",
           }}
         >
           {!setupFlow && (
@@ -270,7 +270,7 @@ const ServerConfig = () => {
               <RefreshCw
                 size={16}
                 style={{
-                  marginRight: "5px",
+                  marginRight: "calc(5px * var(--bsm-spacing-scale))",
                 }}
               />{" "}
               Refresh
@@ -285,7 +285,7 @@ const ServerConfig = () => {
               <CheckCircle
                 size={16}
                 style={{
-                  marginRight: "5px",
+                  marginRight: "calc(5px * var(--bsm-spacing-scale))",
                 }}
               />{" "}
               Finish Setup
@@ -298,7 +298,7 @@ const ServerConfig = () => {
         <div
           className="message-box message-info"
           style={{
-            marginBottom: "20px",
+            marginBottom: "calc(20px * var(--bsm-spacing-scale))",
           }}
         >
           <strong>Setup Wizard (Step 5/5):</strong> Configure settings for this
@@ -320,7 +320,7 @@ const ServerConfig = () => {
         <div
           style={{
             textAlign: "center",
-            padding: "20px",
+            padding: "calc(20px * var(--bsm-spacing-scale))",
           }}
         >
           Loading settings...
@@ -331,13 +331,13 @@ const ServerConfig = () => {
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: "20px",
+            gap: "calc(20px * var(--bsm-spacing-scale))",
           }}
         >
           {!setupFlow && (
             <div
               style={{
-                padding: "15px",
+                padding: "calc(15px * var(--bsm-spacing-scale))",
                 background: "var(--border-color)",
                 borderRadius: "5px",
                 display: "flex",
@@ -355,7 +355,7 @@ const ServerConfig = () => {
               <div
                 style={{
                   display: "flex",
-                  gap: "10px",
+                  gap: "calc(10px * var(--bsm-spacing-scale))",
                 }}
               >
                 <button
@@ -366,7 +366,7 @@ const ServerConfig = () => {
                   <Download
                     size={16}
                     style={{
-                      marginRight: "5px",
+                      marginRight: "calc(5px * var(--bsm-spacing-scale))",
                     }}
                   />{" "}
                   Update Server
@@ -379,7 +379,7 @@ const ServerConfig = () => {
                   <Trash2
                     size={16}
                     style={{
-                      marginRight: "5px",
+                      marginRight: "calc(5px * var(--bsm-spacing-scale))",
                     }}
                   />{" "}
                   Delete Server
@@ -396,7 +396,7 @@ const ServerConfig = () => {
               <div
                 style={{
                   background: "var(--container-background-color)",
-                  padding: "20px",
+                  padding: "calc(20px * var(--bsm-spacing-scale))",
                   border: "1px solid var(--border-color)",
                 }}
               >
@@ -410,15 +410,17 @@ const ServerConfig = () => {
                       <div
                         key={group}
                         style={{
-                          marginBottom: "30px",
+                          marginBottom: "calc(30px * var(--bsm-spacing-scale))",
                           borderBottom: "1px solid var(--border-color)",
-                          paddingBottom: "20px",
+                          paddingBottom:
+                            "calc(20px * var(--bsm-spacing-scale))",
                         }}
                       >
                         <h3
                           style={{
                             textTransform: "capitalize",
-                            margin: "0 0 15px 0",
+                            margin:
+                              "0 0 calc(15px * var(--bsm-spacing-scale)) 0",
                           }}
                         >
                           {group.replace(/_/g, " ")}
@@ -427,7 +429,7 @@ const ServerConfig = () => {
                           style={{
                             display: "grid",
                             gridTemplateColumns: "1fr",
-                            gap: "10px",
+                            gap: "calc(10px * var(--bsm-spacing-scale))",
                           }}
                         >
                           {renderFields(groupData, group)}
@@ -443,9 +445,9 @@ const ServerConfig = () => {
               <div
                 style={{
                   background: "var(--container-background-color)",
-                  padding: "20px",
+                  padding: "calc(20px * var(--bsm-spacing-scale))",
                   border: "1px solid var(--border-color)",
-                  marginTop: "20px",
+                  marginTop: "calc(20px * var(--bsm-spacing-scale))",
                 }}
               >
                 <h3
@@ -458,7 +460,7 @@ const ServerConfig = () => {
                 <div
                   style={{
                     display: "flex",
-                    gap: "10px",
+                    gap: "calc(10px * var(--bsm-spacing-scale))",
                     alignItems: "flex-end",
                     flexWrap: "wrap",
                   }}
@@ -510,7 +512,7 @@ const ServerConfig = () => {
                     onClick={handleAddCustom}
                     disabled={!newKey.trim()}
                     style={{
-                      marginBottom: "2px",
+                      marginBottom: "calc(2px * var(--bsm-spacing-scale))",
                     }}
                     type="button"
                   >
@@ -523,7 +525,7 @@ const ServerConfig = () => {
                 style={{
                   display: "flex",
                   justifyContent: "flex-end",
-                  marginTop: "20px",
+                  marginTop: "calc(20px * var(--bsm-spacing-scale))",
                 }}
               >
                 <button
@@ -534,7 +536,7 @@ const ServerConfig = () => {
                   <Save
                     size={16}
                     style={{
-                      marginRight: "5px",
+                      marginRight: "calc(5px * var(--bsm-spacing-scale))",
                     }}
                   />{" "}
                   Save Settings

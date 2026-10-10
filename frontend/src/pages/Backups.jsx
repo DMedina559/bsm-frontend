@@ -134,8 +134,8 @@ const Backups = () => {
           className="message-box message-warning"
           style={{
             textAlign: "center",
-            marginTop: "50px",
-            padding: "20px",
+            marginTop: "calc(50px * var(--bsm-spacing-scale))",
+            padding: "calc(20px * var(--bsm-spacing-scale))",
             border: "1px solid orange",
             color: "orange",
           }}
@@ -150,9 +150,9 @@ const Backups = () => {
   const renderBackupTable = (title, type, files) => (
     <div
       style={{
-        marginBottom: "30px",
+        marginBottom: "calc(30px * var(--bsm-spacing-scale))",
         background: "var(--container-background-color)",
-        padding: "15px",
+        padding: "calc(15px * var(--bsm-spacing-scale))",
         border: "1px solid var(--border-color)",
       }}
     >
@@ -161,9 +161,9 @@ const Backups = () => {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: "10px",
+          marginBottom: "calc(10px * var(--bsm-spacing-scale))",
           borderBottom: "1px solid var(--border-color)",
-          paddingBottom: "10px",
+          paddingBottom: "calc(10px * var(--bsm-spacing-scale))",
         }}
       >
         <h3
@@ -181,7 +181,7 @@ const Backups = () => {
           <Plus
             size={16}
             style={{
-              marginRight: "5px",
+              marginRight: "calc(5px * var(--bsm-spacing-scale))",
             }}
           />{" "}
           New {title} Backup
@@ -222,7 +222,7 @@ const Backups = () => {
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: "10px",
+                      gap: "calc(10px * var(--bsm-spacing-scale))",
                     }}
                   >
                     <Archive
@@ -245,7 +245,8 @@ const Backups = () => {
                     onClick={() => handleRestore(type, file)}
                     title="Restore"
                     style={{
-                      padding: "5px 10px",
+                      padding:
+                        "calc(5px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
                       fontSize: "0.8em",
                     }}
                     type="button"
@@ -253,7 +254,7 @@ const Backups = () => {
                     <RotateCcw
                       size={14}
                       style={{
-                        marginRight: "5px",
+                        marginRight: "calc(5px * var(--bsm-spacing-scale))",
                       }}
                     />{" "}
                     Restore
@@ -269,7 +270,7 @@ const Backups = () => {
                   textAlign: "center",
                   color: "var(--text-color-secondary)",
                   fontStyle: "italic",
-                  padding: "15px",
+                  padding: "calc(15px * var(--bsm-spacing-scale))",
                 }}
               >
                 No backups found.
@@ -295,7 +296,7 @@ const Backups = () => {
         <div
           style={{
             display: "flex",
-            gap: "10px",
+            gap: "calc(10px * var(--bsm-spacing-scale))",
           }}
         >
           <button
@@ -307,7 +308,7 @@ const Backups = () => {
             <Trash2
               size={16}
               style={{
-                marginRight: "5px",
+                marginRight: "calc(5px * var(--bsm-spacing-scale))",
               }}
             />{" "}
             Prune Old
@@ -322,7 +323,7 @@ const Backups = () => {
             <RefreshCw
               size={16}
               style={{
-                marginRight: "5px",
+                marginRight: "calc(5px * var(--bsm-spacing-scale))",
               }}
               className={loading ? "spin" : ""}
             />{" "}
@@ -334,8 +335,8 @@ const Backups = () => {
       {/* Global Backup/Restore Actions */}
       <div
         style={{
-          marginBottom: "20px",
-          padding: "20px",
+          marginBottom: "calc(20px * var(--bsm-spacing-scale))",
+          padding: "calc(20px * var(--bsm-spacing-scale))",
           background: "rgba(0,0,0,0.2)",
           border: "1px solid var(--border-color)",
         }}
@@ -360,7 +361,7 @@ const Backups = () => {
           className="button-group"
           style={{
             display: "flex",
-            gap: "15px",
+            gap: "calc(15px * var(--bsm-spacing-scale))",
           }}
         >
           <button
@@ -371,7 +372,7 @@ const Backups = () => {
             <Layers
               size={16}
               style={{
-                marginRight: "5px",
+                marginRight: "calc(5px * var(--bsm-spacing-scale))",
               }}
             />{" "}
             Backup All
@@ -384,7 +385,7 @@ const Backups = () => {
             <RotateCcw
               size={16}
               style={{
-                marginRight: "5px",
+                marginRight: "calc(5px * var(--bsm-spacing-scale))",
               }}
             />{" "}
             Restore All (Latest)
@@ -395,7 +396,7 @@ const Backups = () => {
       {loading ? (
         <div
           style={{
-            padding: "20px",
+            padding: "calc(20px * var(--bsm-spacing-scale))",
             textAlign: "center",
           }}
         >

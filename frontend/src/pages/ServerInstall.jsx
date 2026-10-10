@@ -66,7 +66,7 @@ const ServerInstall = () => {
           maxWidth: "600px",
           margin: "0 auto",
           background: "var(--container-background-color)",
-          padding: "30px",
+          padding: "calc(30px * var(--bsm-spacing-scale))",
           border: "1px solid var(--border-color)",
           borderRadius: "8px",
         }}
@@ -74,7 +74,7 @@ const ServerInstall = () => {
         <form onSubmit={handleSubmit} className="form-group">
           <div
             style={{
-              marginBottom: "20px",
+              marginBottom: "calc(20px * var(--bsm-spacing-scale))",
             }}
           >
             <label className="form-label" htmlFor="server_name">
@@ -104,7 +104,7 @@ const ServerInstall = () => {
 
           <div
             style={{
-              marginBottom: "20px",
+              marginBottom: "calc(20px * var(--bsm-spacing-scale))",
             }}
           >
             <label className="form-label" htmlFor="server_version">
@@ -130,8 +130,8 @@ const ServerInstall = () => {
           {formData.server_version === "SPECIFIC" && (
             <div
               style={{
-                marginBottom: "20px",
-                padding: "15px",
+                marginBottom: "calc(20px * var(--bsm-spacing-scale))",
+                padding: "calc(15px * var(--bsm-spacing-scale))",
                 background: "var(--text-color)",
                 border: "1px solid var(--border-color)",
                 borderRadius: "5px",
@@ -163,8 +163,8 @@ const ServerInstall = () => {
           {formData.server_version === "CUSTOM" && (
             <div
               style={{
-                marginBottom: "20px",
-                padding: "15px",
+                marginBottom: "calc(20px * var(--bsm-spacing-scale))",
+                padding: "calc(15px * var(--bsm-spacing-scale))",
                 background: "var(--text-color)",
                 border: "1px solid var(--border-color)",
                 borderRadius: "5px",
@@ -205,7 +205,7 @@ const ServerInstall = () => {
 
           <div
             style={{
-              marginBottom: "30px",
+              marginBottom: "calc(30px * var(--bsm-spacing-scale))",
             }}
           >
             <label
@@ -222,7 +222,7 @@ const ServerInstall = () => {
                 checked={formData.overwrite}
                 onChange={handleChange}
                 style={{
-                  marginRight: "10px",
+                  marginRight: "calc(10px * var(--bsm-spacing-scale))",
                 }}
                 disabled={loading}
               />
@@ -244,14 +244,14 @@ const ServerInstall = () => {
                 className="spin"
                 size={20}
                 style={{
-                  marginRight: "8px",
+                  marginRight: "calc(8px * var(--bsm-spacing-scale))",
                 }}
               />
             ) : (
               <PlusSquare
                 size={20}
                 style={{
-                  marginRight: "8px",
+                  marginRight: "calc(8px * var(--bsm-spacing-scale))",
                 }}
               />
             )}

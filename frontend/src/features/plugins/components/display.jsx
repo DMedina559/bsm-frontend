@@ -126,7 +126,7 @@ export const displayComponents = {
         style={{
           display: "inline-flex",
           alignItems: "center",
-          gap: "5px",
+          gap: "calc(5px * var(--bsm-spacing-scale))",
         }}
       >
         {label}
@@ -187,7 +187,8 @@ export const displayComponents = {
               color: "var(--text-color)",
               border: "none",
               borderRadius: "12px",
-              padding: "4px 10px",
+              padding:
+                "calc(4px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
               fontSize: "0.75rem",
               cursor: "pointer",
               boxShadow: "0 2px 5px rgba(0,0,0,0.3)",
@@ -241,7 +242,7 @@ export const displayComponents = {
         className={`progress-bar-container ${className}`}
         style={{
           width: "100%",
-          margin: "8px 0",
+          margin: "calc(8px * var(--bsm-spacing-scale)) 0",
         }}
       >
         <div
@@ -249,7 +250,7 @@ export const displayComponents = {
             display: "flex",
             justifyContent: "space-between",
             fontSize: "0.85rem",
-            marginBottom: "4px",
+            marginBottom: "calc(4px * var(--bsm-spacing-scale))",
           }}
         >
           {showLabel && <span>{percentage}%</span>}

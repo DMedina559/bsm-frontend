@@ -23,7 +23,7 @@ export const formsComponents = {
         style={{
           display: "flex",
           alignItems: "center",
-          gap: "5px",
+          gap: "calc(5px * var(--bsm-spacing-scale))",
         }}
         type="button"
       >
@@ -110,7 +110,7 @@ export const formsComponents = {
       style={{
         display: "flex",
         alignItems: "center",
-        gap: "10px",
+        gap: "calc(10px * var(--bsm-spacing-scale))",
       }}
     >
       <input
@@ -243,7 +243,7 @@ export const formsComponents = {
         ...style,
         display: "flex",
         alignItems: "center",
-        gap: "5px",
+        gap: "calc(5px * var(--bsm-spacing-scale))",
       }}
       type="button"
     >

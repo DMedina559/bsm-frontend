@@ -9,15 +9,15 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: calc(8px * var(--bsm-spacing-scale));
   min-height: var(--bsm-control-height);
-  padding: var(--bsm-button-padding) 16px;
+  padding: var(--bsm-button-padding) calc(16px * var(--bsm-spacing-scale));
   border: 1px solid var(--button-border-color);
   border-radius: var(--bsm-radius-md);
   background: var(--button-background-color);
   color: var(--button-text-color);
   text-decoration: none;
-  font-size: 13px;
+  font-size: calc(13px * var(--bsm-type-scale));
   font-weight: 600;
   line-height: 1.35;
   cursor: pointer;
@@ -109,14 +109,14 @@ button:disabled,
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: calc(10px * var(--bsm-spacing-scale));
 }
 .navigation-link {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: calc(8px * var(--bsm-spacing-scale));
 }
 .card-actions {
-  gap: 8px;
+  gap: calc(8px * var(--bsm-spacing-scale));
   flex-wrap: wrap;
 }

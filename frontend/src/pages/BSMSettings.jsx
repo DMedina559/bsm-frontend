@@ -170,7 +170,7 @@ const BSMSettings = () => {
           <RefreshCw
             size={16}
             style={{
-              marginRight: "5px",
+              marginRight: "calc(5px * var(--bsm-spacing-scale))",
             }}
             className={loading ? "spin" : ""}
           />{" "}
@@ -192,7 +192,7 @@ const BSMSettings = () => {
         <div
           style={{
             textAlign: "center",
-            padding: "40px",
+            padding: "calc(40px * var(--bsm-spacing-scale))",
           }}
         >
           <div className="spinner"></div> Loading settings...
@@ -224,14 +224,14 @@ const BSMSettings = () => {
             <div
               className="settings-group"
               style={{
-                marginTop: "20px",
+                marginTop: "calc(20px * var(--bsm-spacing-scale))",
               }}
             >
               <h3 className="settings-group-title">Add Custom Setting</h3>
               <div
                 style={{
                   display: "flex",
-                  gap: "10px",
+                  gap: "calc(10px * var(--bsm-spacing-scale))",
                   alignItems: "flex-end",
                   flexWrap: "wrap",
                 }}
@@ -277,7 +277,7 @@ const BSMSettings = () => {
                   onClick={handleAddCustom}
                   disabled={!newKey.trim()}
                   style={{
-                    marginBottom: "2px",
+                    marginBottom: "calc(2px * var(--bsm-spacing-scale))",
                   }}
                   type="button"
                 >
@@ -289,9 +289,9 @@ const BSMSettings = () => {
             <div
               className="form-actions"
               style={{
-                marginTop: "20px",
+                marginTop: "calc(20px * var(--bsm-spacing-scale))",
                 borderTop: "1px solid var(--border-color)",
-                paddingTop: "20px",
+                paddingTop: "calc(20px * var(--bsm-spacing-scale))",
               }}
             >
               <button
@@ -302,7 +302,7 @@ const BSMSettings = () => {
                 <Save
                   size={16}
                   style={{
-                    marginRight: "5px",
+                    marginRight: "calc(5px * var(--bsm-spacing-scale))",
                   }}
                 />{" "}
                 {saving ? "Saving…" : "Save Changes"}

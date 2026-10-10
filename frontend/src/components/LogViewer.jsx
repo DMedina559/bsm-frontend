@@ -189,7 +189,13 @@ export default function LogViewer({
 
   return (
     <div>
-      <div style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: "calc(8px * var(--bsm-spacing-scale))",
+          marginBottom: "calc(8px * var(--bsm-spacing-scale))",
+        }}
+      >
         {page.has_more && (
           <button
             type="button"
@@ -238,7 +244,7 @@ export default function LogViewer({
         style={{
           background: "var(--bsm-console)",
           color: "var(--text-color)",
-          padding: "15px",
+          padding: "calc(15px * var(--bsm-spacing-scale))",
           fontFamily: "monospace",
           overflowY: "auto",
           height: "400px",

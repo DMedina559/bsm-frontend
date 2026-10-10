@@ -245,8 +245,8 @@ const AccessControl = () => {
           className="message-box message-warning"
           style={{
             textAlign: "center",
-            marginTop: "50px",
-            padding: "20px",
+            marginTop: "calc(50px * var(--bsm-spacing-scale))",
+            padding: "calc(20px * var(--bsm-spacing-scale))",
             border: "1px solid orange",
             color: "orange",
           }}
@@ -271,7 +271,7 @@ const AccessControl = () => {
         <div
           style={{
             display: "flex",
-            gap: "10px",
+            gap: "calc(10px * var(--bsm-spacing-scale))",
           }}
         >
           {!setupFlow && (
@@ -282,11 +282,12 @@ const AccessControl = () => {
                 disabled={actionLoading}
                 title="View and kick online players"
                 style={{
-                  padding: "4px 8px",
+                  padding:
+                    "calc(4px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
                   fontSize: "0.85em",
                   display: "flex",
                   alignItems: "center",
-                  gap: "5px",
+                  gap: "calc(5px * var(--bsm-spacing-scale))",
                 }}
                 type="button"
               >
@@ -298,11 +299,12 @@ const AccessControl = () => {
                 disabled={actionLoading}
                 title="Scan server logs for player history"
                 style={{
-                  padding: "4px 8px",
+                  padding:
+                    "calc(4px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
                   fontSize: "0.85em",
                   display: "flex",
                   alignItems: "center",
-                  gap: "5px",
+                  gap: "calc(5px * var(--bsm-spacing-scale))",
                 }}
                 type="button"
               >
@@ -314,11 +316,12 @@ const AccessControl = () => {
                 disabled={loading || actionLoading}
                 title="Reload current list"
                 style={{
-                  padding: "4px 8px",
+                  padding:
+                    "calc(4px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
                   fontSize: "0.85em",
                   display: "flex",
                   alignItems: "center",
-                  gap: "5px",
+                  gap: "calc(5px * var(--bsm-spacing-scale))",
                 }}
                 type="button"
               >
@@ -337,7 +340,7 @@ const AccessControl = () => {
               <ArrowRight
                 size={16}
                 style={{
-                  marginLeft: "5px",
+                  marginLeft: "calc(5px * var(--bsm-spacing-scale))",
                 }}
               />
             </button>
@@ -349,7 +352,7 @@ const AccessControl = () => {
         <div
           className="message-box message-info"
           style={{
-            marginBottom: "20px",
+            marginBottom: "calc(20px * var(--bsm-spacing-scale))",
           }}
         >
           <strong>
@@ -396,7 +399,7 @@ const AccessControl = () => {
         className="tab-content"
         style={{
           background: "var(--input-background-color)",
-          padding: "20px",
+          padding: "calc(20px * var(--bsm-spacing-scale))",
           borderRadius: "0 0 5px 5px",
           border: "1px solid var(--border-color)",
           borderTop: "none",
@@ -408,12 +411,12 @@ const AccessControl = () => {
           className="form-group"
           style={{
             display: "flex",
-            gap: "10px",
+            gap: "calc(10px * var(--bsm-spacing-scale))",
             alignItems: "flex-end",
-            marginBottom: "20px",
+            marginBottom: "calc(20px * var(--bsm-spacing-scale))",
             flexWrap: "wrap",
             background: "rgba(0,0,0,0.1)",
-            padding: "15px",
+            padding: "calc(15px * var(--bsm-spacing-scale))",
             borderRadius: "5px",
           }}
         >
@@ -427,7 +430,7 @@ const AccessControl = () => {
               className="form-label"
               style={{
                 display: "block",
-                marginBottom: "5px",
+                marginBottom: "calc(5px * var(--bsm-spacing-scale))",
               }}
               htmlFor="accesscontrol-field-1"
             >
@@ -464,7 +467,7 @@ const AccessControl = () => {
                 className="form-label"
                 style={{
                   display: "block",
-                  marginBottom: "5px",
+                  marginBottom: "calc(5px * var(--bsm-spacing-scale))",
                 }}
                 htmlFor="accesscontrol-field-2"
               >
@@ -496,7 +499,7 @@ const AccessControl = () => {
                 className="form-label"
                 style={{
                   display: "block",
-                  marginBottom: "5px",
+                  marginBottom: "calc(5px * var(--bsm-spacing-scale))",
                 }}
                 htmlFor="accesscontrol-field-3"
               >
@@ -525,7 +528,7 @@ const AccessControl = () => {
                 className="form-label"
                 style={{
                   display: "block",
-                  marginBottom: "5px",
+                  marginBottom: "calc(5px * var(--bsm-spacing-scale))",
                 }}
                 htmlFor="accesscontrol-field-4"
               >
@@ -552,7 +555,7 @@ const AccessControl = () => {
               style={{
                 display: "flex",
                 alignItems: "center",
-                marginBottom: "10px",
+                marginBottom: "calc(10px * var(--bsm-spacing-scale))",
                 minWidth: "150px",
               }}
             >
@@ -569,7 +572,7 @@ const AccessControl = () => {
                   checked={ignoresPlayerLimit}
                   onChange={(e) => setIgnoresPlayerLimit(e.target.checked)}
                   style={{
-                    marginRight: "10px",
+                    marginRight: "calc(10px * var(--bsm-spacing-scale))",
                   }}
                 />
                 <span
@@ -594,7 +597,7 @@ const AccessControl = () => {
             <Plus
               size={16}
               style={{
-                marginRight: "5px",
+                marginRight: "calc(5px * var(--bsm-spacing-scale))",
               }}
             />{" "}
             Add
@@ -605,7 +608,7 @@ const AccessControl = () => {
         {loading ? (
           <div
             style={{
-              padding: "40px",
+              padding: "calc(40px * var(--bsm-spacing-scale))",
               textAlign: "center",
               color: "var(--text-color-secondary)",
             }}
@@ -706,7 +709,8 @@ const AccessControl = () => {
                             }
                             disabled={actionLoading}
                             style={{
-                              padding: "4px 8px",
+                              padding:
+                                "calc(4px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
                               fontSize: "0.9em",
                             }}
                           >
@@ -725,7 +729,8 @@ const AccessControl = () => {
                             onClick={() => handleRemove(item)}
                             title={`Remove from ${activeTab}`}
                             style={{
-                              padding: "5px 10px",
+                              padding:
+                                "calc(5px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
                             }}
                             disabled={actionLoading}
                             type="button"
@@ -746,7 +751,7 @@ const AccessControl = () => {
                         textAlign: "center",
                         color: "var(--text-color-secondary)",
                         fontStyle: "italic",
-                        padding: "30px",
+                        padding: "calc(30px * var(--bsm-spacing-scale))",
                       }}
                     >
                       No entries found in {activeTab}. Use the form above to add
@@ -776,9 +781,9 @@ const AccessControl = () => {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              marginBottom: "15px",
+              marginBottom: "calc(15px * var(--bsm-spacing-scale))",
               borderBottom: "1px solid var(--border-color, #555)",
-              paddingBottom: "10px",
+              paddingBottom: "calc(10px * var(--bsm-spacing-scale))",
             }}
           ></div>
 
@@ -786,7 +791,7 @@ const AccessControl = () => {
             style={{
               overflowY: "auto",
               flexGrow: 1,
-              paddingRight: "5px",
+              paddingRight: "calc(5px * var(--bsm-spacing-scale))",
             }}
           >
             {(() => {
@@ -801,7 +806,7 @@ const AccessControl = () => {
                       color: "var(--text-color-secondary)",
                       fontStyle: "italic",
                       textAlign: "center",
-                      padding: "20px",
+                      padding: "calc(20px * var(--bsm-spacing-scale))",
                     }}
                   >
                     No players online.
@@ -813,7 +818,7 @@ const AccessControl = () => {
                   style={{
                     display: "flex",
                     flexDirection: "column",
-                    gap: "10px",
+                    gap: "calc(10px * var(--bsm-spacing-scale))",
                   }}
                 >
                   {players.map((player, idx) => (
@@ -824,7 +829,7 @@ const AccessControl = () => {
                         justifyContent: "space-between",
                         alignItems: "center",
                         background: "rgba(0,0,0,0.2)",
-                        padding: "10px",
+                        padding: "calc(10px * var(--bsm-spacing-scale))",
                         borderRadius: "4px",
                         border: "1px solid rgba(255,255,255,0.05)",
                       }}
@@ -839,7 +844,7 @@ const AccessControl = () => {
                       <div
                         style={{
                           display: "flex",
-                          gap: "10px",
+                          gap: "calc(10px * var(--bsm-spacing-scale))",
                           alignItems: "center",
                         }}
                       >
@@ -855,7 +860,8 @@ const AccessControl = () => {
                           }
                           className="form-input"
                           style={{
-                            padding: "4px 8px",
+                            padding:
+                              "calc(4px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
                             fontSize: "0.85em",
                             width: "150px",
                           }}
@@ -865,7 +871,8 @@ const AccessControl = () => {
                           onClick={() => handleKickPlayer(player.name)}
                           disabled={actionLoading}
                           style={{
-                            padding: "4px 10px",
+                            padding:
+                              "calc(4px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
                             fontSize: "0.85em",
                           }}
                           type="button"
@@ -883,7 +890,7 @@ const AccessControl = () => {
       )}
 
       <style>{`
-        .badge-success { background-color: rgba(76, 175, 80, 0.2); color: #4caf50; border: 1px solid rgba(76, 175, 80, 0.4); padding: 2px 6px; border-radius: 4px; }
+        .badge-success { background-color: rgba(76, 175, 80, 0.2); color: #4caf50; border: 1px solid rgba(76, 175, 80, 0.4); padding: calc(2px * var(--bsm-spacing-scale)) calc(6px * var(--bsm-spacing-scale)); border-radius: 4px; }
       `}</style>
     </div>
   );

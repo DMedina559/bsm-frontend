@@ -40,7 +40,7 @@ const Setup = () => {
       className="container auth-page"
       style={{
         maxWidth: "500px",
-        marginTop: "50px",
+        marginTop: "calc(50px * var(--bsm-spacing-scale))",
       }}
     >
       <AuthBrand />
@@ -48,7 +48,7 @@ const Setup = () => {
         className="header"
         style={{
           flexDirection: "column",
-          gap: "10px",
+          gap: "calc(10px * var(--bsm-spacing-scale))",
         }}
       >
         <h1>Setup Bedrock Server Manager</h1>
@@ -61,7 +61,7 @@ const Setup = () => {
         style={{
           display: "flex",
           flexDirection: "column",
-          gap: "15px",
+          gap: "calc(15px * var(--bsm-spacing-scale))",
         }}
       >
         <div>

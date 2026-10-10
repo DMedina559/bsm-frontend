@@ -6,7 +6,7 @@
   display: inline-block;
   width: 50px;
   height: 24px;
-  margin-right: 10px;
+  margin-right: calc(10px * var(--bsm-spacing-scale));
   vertical-align: middle;
 }
 
@@ -54,14 +54,14 @@ input:checked + .slider:before {
 
 .switch-label-text {
   vertical-align: middle;
-  margin-left: 8px;
+  margin-left: calc(8px * var(--bsm-spacing-scale));
   font-weight: 500;
 }
 
 .switch-wrapper {
   display: flex;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: calc(10px * var(--bsm-spacing-scale));
 }
 
 /* --- Modal --- */
@@ -95,7 +95,8 @@ input:checked + .slider:before {
 }
 
 .dynamic-modal-header {
-  padding: 15px 20px;
+  padding: calc(15px * var(--bsm-spacing-scale))
+    calc(20px * var(--bsm-spacing-scale));
   border-bottom: 1px solid var(--border-color, #555);
   display: flex;
   justify-content: space-between;
@@ -116,7 +117,7 @@ input:checked + .slider:before {
   border: none;
   color: var(--text-color, #ccc);
   cursor: pointer;
-  padding: 5px;
+  padding: calc(5px * var(--bsm-spacing-scale));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -129,7 +130,7 @@ input:checked + .slider:before {
 }
 
 .dynamic-modal-body {
-  padding: 20px;
+  padding: calc(20px * var(--bsm-spacing-scale));
   overflow-y: auto;
   flex: 1;
 }
@@ -158,13 +159,14 @@ input:checked + .slider:before {
 .accordion {
   border: 1px solid var(--border-color, #555);
   border-radius: 4px;
-  margin-bottom: 10px;
+  margin-bottom: calc(10px * var(--bsm-spacing-scale));
   background-color: rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
 
 .accordion-header {
-  padding: 12px 15px;
+  padding: calc(12px * var(--bsm-spacing-scale))
+    calc(15px * var(--bsm-spacing-scale));
   cursor: pointer;
   display: flex;
   justify-content: space-between;
@@ -180,7 +182,7 @@ input:checked + .slider:before {
 }
 
 .accordion-body {
-  padding: 15px;
+  padding: calc(15px * var(--bsm-spacing-scale));
   border-top: 1px solid var(--border-color, #555);
   background-color: transparent;
 }
@@ -189,7 +191,8 @@ input:checked + .slider:before {
 .badge {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
+  padding: calc(4px * var(--bsm-spacing-scale))
+    calc(10px * var(--bsm-spacing-scale));
   border-radius: 12px;
   font-size: 0.85rem;
   font-weight: 600;
@@ -225,13 +228,13 @@ input:checked + .slider:before {
 .code-block {
   background-color: var(--bsm-console);
   color: var(--bsm-console-text);
-  padding: 15px;
+  padding: calc(15px * var(--bsm-spacing-scale));
   border-radius: 4px;
   font-family: "Consolas", "Monaco", "Courier New", monospace;
   font-size: 0.9rem;
   overflow-x: auto;
   border: 1px solid #333;
-  margin: 10px 0;
+  margin: calc(10px * var(--bsm-spacing-scale)) 0;
   white-space: pre-wrap;
   position: relative;
 }
@@ -239,9 +242,9 @@ input:checked + .slider:before {
 .code-block-header {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 5px;
+  margin-bottom: calc(5px * var(--bsm-spacing-scale));
   border-bottom: 1px solid #333;
-  padding-bottom: 5px;
+  padding-bottom: calc(5px * var(--bsm-spacing-scale));
 }
 
 /* --- Image --- */
@@ -256,7 +259,7 @@ input:checked + .slider:before {
 .divider {
   border: 0;
   border-top: 1px solid var(--border-color, #555);
-  margin: 20px 0;
+  margin: calc(20px * var(--bsm-spacing-scale)) 0;
 }
 
 /* --- iframe --- */
@@ -271,12 +274,12 @@ input:checked + .slider:before {
 .checkbox-wrapper {
   display: flex;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: calc(10px * var(--bsm-spacing-scale));
   cursor: pointer;
 }
 
 .checkbox-wrapper input[type="checkbox"] {
-  margin-right: 10px;
+  margin-right: calc(10px * var(--bsm-spacing-scale));
   cursor: pointer;
   width: 18px;
   height: 18px;
@@ -284,7 +287,7 @@ input:checked + .slider:before {
 
 /* --- Chart --- */
 .chart-container {
-  margin-bottom: 20px;
+  margin-bottom: calc(20px * var(--bsm-spacing-scale));
   min-height: 200px;
 }
 
@@ -292,14 +295,14 @@ input:checked + .slider:before {
 .log-viewer {
   background: var(--bsm-console);
   color: var(--bsm-console-text);
-  padding: 10px;
+  padding: calc(10px * var(--bsm-spacing-scale));
   font-family: "Consolas", "Monaco", "Courier New", monospace;
   font-size: 0.85em;
   overflow-y: auto;
   border-radius: 4px;
   border: 1px solid var(--border-color, #555);
   white-space: pre-wrap;
-  margin-bottom: 10px;
+  margin-bottom: calc(10px * var(--bsm-spacing-scale));
 }
 
 .log-line {
@@ -310,25 +313,25 @@ input:checked + .slider:before {
   color: var(--text-color-secondary);
   font-style: italic;
   text-align: center;
-  padding-top: 20px;
+  padding-top: calc(20px * var(--bsm-spacing-scale));
 }
 
 /* --- StatCard --- */
 .stat-card {
   background-color: var(--server-card-background-color, #444);
-  padding: 15px;
+  padding: calc(15px * var(--bsm-spacing-scale));
   border: 1px solid var(--border-color, #555);
   border-radius: 4px;
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: calc(15px * var(--bsm-spacing-scale));
   flex: 1;
   min-width: 200px;
 }
 
 .stat-icon {
   background-color: var(--bsm-surface-raised);
-  padding: 10px;
+  padding: calc(10px * var(--bsm-spacing-scale));
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -352,12 +355,12 @@ input:checked + .slider:before {
   color: var(--header-text-color, #eee);
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: calc(5px * var(--bsm-spacing-scale));
 }
 
 .stat-trend {
   font-size: 0.8em;
-  margin-left: 5px;
+  margin-left: calc(5px * var(--bsm-spacing-scale));
 }
 
 .trend-up {
@@ -377,7 +380,7 @@ input:checked + .slider:before {
 
 .status-dot {
   font-size: 1.2em;
-  margin-right: 5px;
+  margin-right: calc(5px * var(--bsm-spacing-scale));
   line-height: 1;
 }
 
@@ -395,23 +398,24 @@ input:checked + .slider:before {
 .alert-box {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: calc(12px * var(--bsm-spacing-scale));
+  padding: calc(12px * var(--bsm-spacing-scale))
+    calc(16px * var(--bsm-spacing-scale));
   border-radius: 6px;
-  margin-bottom: 12px;
+  margin-bottom: calc(12px * var(--bsm-spacing-scale));
   border: 1px solid transparent;
 }
 
 .alert-box .alert-icon {
   display: flex;
   align-items: center;
-  margin-top: 2px;
+  margin-top: calc(2px * var(--bsm-spacing-scale));
 }
 
 .alert-box .alert-content {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: calc(4px * var(--bsm-spacing-scale));
 }
 
 .alert-box .alert-title {

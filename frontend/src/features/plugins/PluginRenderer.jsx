@@ -30,7 +30,7 @@ export default function PluginRenderer({
           style={{
             color: "red",
             border: "1px dashed red",
-            padding: "5px",
+            padding: "calc(5px * var(--bsm-spacing-scale))",
           }}
         >
           Unknown component: {node.type}

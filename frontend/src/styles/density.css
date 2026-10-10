@@ -1,5 +1,9 @@
 /* Density changes geometry and typography, independently of color themes. */
 :root {
+  --bsm-spacing-scale: 1;
+  --bsm-type-scale: 1;
+  --bsm-toolbar-height: 36px;
+  --bsm-quick-action-height: 34px;
   --bsm-body-size: 15px;
   --bsm-label-size: 14px;
   --bsm-small-size: 12px;
@@ -18,6 +22,10 @@
   --bsm-line-height: 1.65;
 }
 :root[data-density="compact"] {
+  --bsm-spacing-scale: 0.75;
+  --bsm-type-scale: 0.9;
+  --bsm-toolbar-height: 32px;
+  --bsm-quick-action-height: 30px;
   --bsm-body-size: 13px;
   --bsm-label-size: 12px;
   --bsm-small-size: 11px;
@@ -176,4 +184,19 @@ body {
 }
 .profile-details dd {
   font-size: var(--bsm-body-size);
+}
+
+/* Rem-based component typography follows the same density as inherited text. */
+html {
+  font-size: calc(16px * var(--bsm-type-scale));
+}
+@media (max-width: 768px) {
+  :root[data-density] button {
+    min-height: 44px;
+  }
+  :root[data-density] input:not([type="checkbox"]):not([type="radio"]),
+  :root[data-density] select,
+  :root[data-density] textarea {
+    font-size: 16px;
+  }
 }

@@ -95,7 +95,7 @@ const GlobalPlayers = () => {
         <div
           style={{
             display: "flex",
-            gap: "10px",
+            gap: "calc(10px * var(--bsm-spacing-scale))",
           }}
         >
           <button
@@ -109,7 +109,7 @@ const GlobalPlayers = () => {
             <Scan
               size={16}
               style={{
-                marginRight: "5px",
+                marginRight: "calc(5px * var(--bsm-spacing-scale))",
               }}
               className={scanLoading ? "spin" : ""}
             />
@@ -124,7 +124,7 @@ const GlobalPlayers = () => {
             <RefreshCw
               size={16}
               style={{
-                marginRight: "5px",
+                marginRight: "calc(5px * var(--bsm-spacing-scale))",
               }}
               className={loading ? "spin" : ""}
             />{" "}
@@ -136,14 +136,14 @@ const GlobalPlayers = () => {
       <div
         style={{
           background: "var(--input-background-color)",
-          padding: "20px",
+          padding: "calc(20px * var(--bsm-spacing-scale))",
           borderRadius: "5px",
           border: "1px solid var(--border-color)",
         }}
       >
         <p
           style={{
-            marginBottom: "20px",
+            marginBottom: "calc(20px * var(--bsm-spacing-scale))",
             color: "var(--text-color-secondary)",
           }}
         >
@@ -157,11 +157,11 @@ const GlobalPlayers = () => {
           className="form-group"
           style={{
             display: "flex",
-            gap: "10px",
+            gap: "calc(10px * var(--bsm-spacing-scale))",
             alignItems: "flex-end",
-            marginBottom: "20px",
+            marginBottom: "calc(20px * var(--bsm-spacing-scale))",
             background: "rgba(0,0,0,0.1)",
-            padding: "15px",
+            padding: "calc(15px * var(--bsm-spacing-scale))",
             borderRadius: "5px",
           }}
         >
@@ -174,7 +174,7 @@ const GlobalPlayers = () => {
               className="form-label"
               style={{
                 display: "block",
-                marginBottom: "5px",
+                marginBottom: "calc(5px * var(--bsm-spacing-scale))",
               }}
               htmlFor="globalplayers-field-1"
             >
@@ -200,7 +200,7 @@ const GlobalPlayers = () => {
             <Plus
               size={16}
               style={{
-                marginRight: "5px",
+                marginRight: "calc(5px * var(--bsm-spacing-scale))",
               }}
             />{" "}
             Add / Update
@@ -213,7 +213,7 @@ const GlobalPlayers = () => {
             className="loader-container"
             style={{
               textAlign: "center",
-              padding: "40px",
+              padding: "calc(40px * var(--bsm-spacing-scale))",
             }}
           >
             <div className="spinner"></div>
@@ -254,7 +254,7 @@ const GlobalPlayers = () => {
                       className="no-servers"
                       style={{
                         textAlign: "center",
-                        padding: "30px",
+                        padding: "calc(30px * var(--bsm-spacing-scale))",
                         fontStyle: "italic",
                         color: "var(--text-color-secondary)",
                       }}

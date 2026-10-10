@@ -78,7 +78,7 @@ const Plugins = () => {
           <RefreshCw
             size={16}
             style={{
-              marginRight: "5px",
+              marginRight: "calc(5px * var(--bsm-spacing-scale))",
             }}
             className={loading ? "spin" : ""}
           />{" "}
@@ -90,14 +90,14 @@ const Plugins = () => {
         <div
           style={{
             textAlign: "center",
-            padding: "20px",
+            padding: "calc(20px * var(--bsm-spacing-scale))",
           }}
         >
           <RefreshCw
             className="spin"
             style={{
               display: "inline-block",
-              marginRight: "10px",
+              marginRight: "calc(10px * var(--bsm-spacing-scale))",
             }}
           />{" "}
           Loading plugins...
@@ -108,8 +108,8 @@ const Plugins = () => {
             display: "grid",
             gridTemplateColumns:
               "repeat(auto-fill, minmax(min(100%, 300px), 1fr))",
-            gap: "20px",
-            marginTop: "20px",
+            gap: "calc(20px * var(--bsm-spacing-scale))",
+            marginTop: "calc(20px * var(--bsm-spacing-scale))",
           }}
         >
           {plugins.length === 0 ? (
@@ -127,7 +127,7 @@ const Plugins = () => {
                 style={{
                   background: "var(--container-background-color, #333)",
                   border: "1px solid var(--border-color, #555)",
-                  padding: "15px",
+                  padding: "calc(15px * var(--bsm-spacing-scale))",
                   display: "flex",
                   flexDirection: "column",
                 }}
@@ -137,14 +137,14 @@ const Plugins = () => {
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "flex-start",
-                    marginBottom: "10px",
+                    marginBottom: "calc(10px * var(--bsm-spacing-scale))",
                   }}
                 >
                   <div
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: "10px",
+                      gap: "calc(10px * var(--bsm-spacing-scale))",
                     }}
                   >
                     <Plug size={20} />
@@ -182,7 +182,7 @@ const Plugins = () => {
 
                 <p
                   style={{
-                    margin: "5px 0",
+                    margin: "calc(5px * var(--bsm-spacing-scale)) 0",
                     color: "var(--text-color-secondary)",
                     fontSize: "0.9em",
                     flexGrow: 1,
@@ -195,11 +195,11 @@ const Plugins = () => {
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
-                    marginTop: "15px",
+                    marginTop: "calc(15px * var(--bsm-spacing-scale))",
                     fontSize: "0.85em",
                     color: "var(--text-color-secondary)",
                     borderTop: "1px solid var(--border-color, #555)",
-                    paddingTop: "10px",
+                    paddingTop: "calc(10px * var(--bsm-spacing-scale))",
                   }}
                 >
                   <span>v{plugin.version || "N/A"}</span>
