@@ -88,10 +88,13 @@ const Overview = () => {
       server: serverName,
       action,
     });
-    addToast(`Sending ${action} signal to ${serverName}...`, "info");
+    addToast(`Requesting ${action} for ${serverName}...`, "info");
     try {
-      await writePost(`/api/server/${serverName}/${action}`);
-      addToast(`Signal ${action} sent to ${serverName}.`, "success");
+      const response = await writePost(`/api/server/${serverName}/${action}`);
+      addToast(
+        response?.message || `Server action completed for ${serverName}.`,
+        "success",
+      );
     } catch (error) {
       logger.error("[Overview] Failed to send server action", {
         error,

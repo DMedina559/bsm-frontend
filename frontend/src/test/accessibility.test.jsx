@@ -36,6 +36,7 @@ vi.mock("../api", () => ({
 const stable = vi.hoisted(() => ({
   refreshServers: vi.fn(),
   subscribe: vi.fn(),
+  addMessageListener: () => () => {},
   unsubscribe: vi.fn(),
   reconnect: vi.fn(),
   setSelectedServer: vi.fn(),
@@ -70,7 +71,7 @@ vi.mock("../WebSocketContext", () => ({
     subscribe: stable.subscribe,
     unsubscribe: stable.unsubscribe,
     reconnect: stable.reconnect,
-    addMessageListener: () => () => {},
+    addMessageListener: stable.addMessageListener,
   }),
 }));
 vi.mock("../ThemeContext", () => ({

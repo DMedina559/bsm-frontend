@@ -32,7 +32,7 @@ describe("AccessControl", () => {
         return Promise.resolve({
           status: "success",
           permissions: [
-            { xuid: "123", name: "AdminPlayer", permission: "operator" },
+            { xuid: "123", name: "AdminPlayer", permission_level: "operator" },
           ],
         });
       }

@@ -1,3 +1,4 @@
+import { fixtureResponse } from "../test/fixtures";
 import React from "react";
 import { renderHook, waitFor, act } from "@testing-library/react";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -160,4 +161,91 @@ it.each([
   });
   await waitFor(() => expect(result.current.isError).toBe(true));
   expect(result.current.error.message).toContain("Invalid");
+});
+
+it.each([
+  ["globalPlayers", undefined, "/api/players/get", ["Steve", "Alex"]],
+  ["audit", undefined, "/audit-log/list", ["server.start"]],
+  ["tasks", undefined, "/api/tasks/list", []],
+  [
+    "serverSettings",
+    "Survival",
+    "/api/server/Survival/settings/get",
+    "running",
+  ],
+  [
+    "access",
+    ["Survival", "allowlist"],
+    "/api/server/Survival/allowlist/get",
+    ["Steve"],
+  ],
+  [
+    "access",
+    ["Survival", "permissions"],
+    "/api/server/Survival/permissions/get",
+    ["Steve"],
+  ],
+  ["access", ["Survival", "bans"], "/api/server/Survival/bans/get", []],
+  [
+    "content",
+    "worlds",
+    "/api/content/worlds",
+    ["Survival.mcworld", "Creative.mcworld"],
+  ],
+  ["content", "addons", "/api/content/addons", ["Resources.mcpack"]],
+  ["downloads", undefined, "/api/downloads/list", []],
+  ["monitor", "Survival", "/api/server/Survival/process_info", 123],
+  [
+    "plugins",
+    undefined,
+    "/api/plugins",
+    ["backup_scheduler", "content_uploader_plugin"],
+  ],
+  ["users", undefined, "/api/users/list", ["admin", "moderator"]],
+  [
+    "backups",
+    "Survival",
+    "/api/server/Survival/backup/list/all",
+    ["2026-10-05-world.zip"],
+  ],
+  ["settings", undefined, "/api/settings/get", 11325],
+  ["properties", "Survival", "/api/server/Survival/properties/get", "20"],
+  ["installedAddons", "Survival", "/api/server/Survival/addons", []],
+])(
+  "reads the backend payload for %s (%s)",
+  async (resource, target, url, expected) => {
+    auth.user = { username: "admin" };
+    get.mockImplementation((value) =>
+      Promise.resolve(fixtureResponse(new URL(value, "http://bsm.test"))),
+    );
+    const { result } = renderHook(() => useResourceQuery(resource, target), {
+      wrapper,
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(get).toHaveBeenCalledWith(
+      url,
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+    const data = result.current.data;
+    const projected =
+      {
+        serverSettings: () => data.server_info.status,
+        settings: () => data.web.port,
+        properties: () => data.properties["max-players"],
+        monitor: () => data.pid,
+        backups: () => data.world,
+        installedAddons: () => data.behavior_packs,
+      }[resource]?.() ??
+      data.map((item) => item.name ?? item.username ?? item.action);
+    expect(projected).toEqual(expected);
+  },
+);
+it("accepts the stopped process response", async () => {
+  auth.user = { username: "admin" };
+  get.mockResolvedValue({ status: "success", process_info: null });
+  const { result } = renderHook(() => useResourceQuery("monitor", "Survival"), {
+    wrapper,
+  });
+  await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  expect(result.current.data).toBeNull();
 });

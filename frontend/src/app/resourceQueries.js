@@ -48,17 +48,17 @@ const resources = {
   },
   globalPlayers: {
     key: queryKeys.globalPlayers,
-    url: () => "/api/players/get",
+    url: () => resolveOperationUrl("list_players"),
     select: (data) => array(data?.players, "players"),
   },
   audit: {
     key: queryKeys.audit,
-    url: () => "/audit-log/list",
+    url: () => resolveOperationUrl("list_audit_logs"),
     select: (data) => array(data, "list"),
   },
   tasks: {
     key: queryKeys.tasks,
-    url: () => "/api/tasks/list",
+    url: () => resolveOperationUrl("list_tasks"),
     select: (data) => array(data, "list"),
   },
   serverSettings: {
@@ -72,7 +72,14 @@ const resources = {
   access: {
     key: queryKeys.access,
     url: ([name, kind]) =>
-      `/api/server/${encodeURIComponent(name)}/${kind}/get`,
+      resolveOperationUrl(
+        {
+          allowlist: "get_allowlist",
+          permissions: "get_permissions",
+          bans: "get_server_bans",
+        }[kind],
+        { path: { server_name: name } },
+      ),
     select: (data) =>
       array(data?.players ?? data?.permissions ?? data?.bans, "access"),
   },
@@ -118,7 +125,10 @@ const resources = {
   },
   backups: {
     key: queryKeys.serverBackups,
-    url: (name) => `/api/server/${encodeURIComponent(name)}/backup/list/all`,
+    url: (name) =>
+      resolveOperationUrl("list_server_backups", {
+        path: { server_name: name, backup_type: "all" },
+      }),
     select: (data) => {
       const backups = object(data?.backups, "backups");
       return Object.fromEntries(

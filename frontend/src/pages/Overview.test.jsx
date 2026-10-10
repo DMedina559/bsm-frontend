@@ -1,3 +1,4 @@
+import { assertApiResponse } from "../test/apiContract";
 import { getPreferenceIdentity } from "../app/backendIdentity";
 import { getSessionStorageKey } from "../app/sessionBoundary";
 import { render, screen, fireEvent, waitFor } from "../test/utils";
@@ -128,5 +129,19 @@ describe("Overview", () => {
     expect(screen.getByText("Managed servers")).toBeInTheDocument();
     expect(screen.getByText("Players online")).toBeInTheDocument();
     expect(document.querySelector(".overview-intro")).toBeInTheDocument();
+  });
+  it("shows the backend lifecycle outcome instead of an assumed start", async () => {
+    const response = {
+      status: "success",
+      server_name: "Server1",
+      outcome: "already_running",
+      message: "Server is already running.",
+    };
+    assertApiResponse("POST", "/api/server/Server1/start", response);
+    api.post.mockResolvedValue(response);
+    render(<Overview />);
+    await screen.findByText("Server1");
+    fireEvent.click(screen.getByTitle("Start Server"));
+    expect(await screen.findByText(response.message)).toBeInTheDocument();
   });
 });

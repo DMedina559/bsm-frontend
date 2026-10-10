@@ -102,8 +102,8 @@ const ServerConfig = () => {
     ) {
       addToast("Starting server...", "info");
       try {
-        await writePost(`/api/server/${selectedServer}/start`);
-        addToast("Server start signal sent.", "success");
+        const response = await writePost(`/api/server/${selectedServer}/start`);
+        addToast(response?.message || "Server started.", "success");
       } catch (error) {
         addToast("Failed to start server: " + error.message, "error");
       }
@@ -121,7 +121,7 @@ const ServerConfig = () => {
       return;
     addToast("Updating server...", "info");
     try {
-      await writePost(`/api/server/${selectedServer}/update`, {});
+      await writePost(`/api/server/${selectedServer}/update`);
       addToast("Update task started. Check logs.", "success");
     } catch (error) {
       addToast(error.message || "Failed to start update.", "error");

@@ -79,6 +79,30 @@
     "bodyTypes": [],
     "responseType": "json"
   },
+  "get_log_history": {
+    "method": "GET",
+    "path": "/api/logs/history",
+    "parameters": [
+      {
+        "name": "topic",
+        "in": "query",
+        "required": true
+      },
+      {
+        "name": "before",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "file_id",
+        "in": "query",
+        "required": false
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
   "get_panorama": {
     "method": "GET",
     "path": "/api/panorama",

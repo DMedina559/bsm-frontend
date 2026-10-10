@@ -113,7 +113,7 @@ const Backups = () => {
     if (!(await confirmAction("Prune old backups based on retention policy?")))
       return;
     try {
-      await writePut(`/api/server/${selectedServer}/backups/prune`, {});
+      await writePut(`/api/server/${selectedServer}/backups/prune`);
       addToast("Pruning task started.", "success");
     } catch (error) {
       addToast(error.message || "Failed to prune backups.", "error");

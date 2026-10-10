@@ -1,11 +1,12 @@
 import { it, expect } from "vitest";
 import { readHistory } from "./notificationHistory";
 it("caps notification storage and rejects expired or malformed records", () => {
+  const timestamp = Date.now();
   const entries = Array.from({ length: 110 }, (_, i) => ({
     id: String(i),
     message: "Notice",
     type: "info",
-    timestamp: Date.now(),
+    timestamp,
     read: false,
   }));
   localStorage.setItem(

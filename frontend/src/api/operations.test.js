@@ -109,4 +109,8 @@ it("discovers plugin operations over the session transport and rejects malformed
   );
   request.mockResolvedValueOnce({ paths: [] });
   await expect(discoverOperationClient()).rejects.toThrow("Invalid OpenAPI");
+  expect(request).toHaveBeenLastCalledWith(
+    "/api/openapi.json",
+    expect.objectContaining({ method: "GET" }),
+  );
 });

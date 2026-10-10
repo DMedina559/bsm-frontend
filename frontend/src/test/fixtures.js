@@ -3,10 +3,10 @@ export const servers = [
     name: "Survival",
     status: "running",
     version: "1.21.100",
-    player_count: 3,
+    player_count: 2,
     players: [
-      { name: "Steve", uuid: "1234567890123456" },
-      { name: "Alex", uuid: "1234567890123457" },
+      { name: "Steve", xuid: "1234567890123456" },
+      { name: "Alex", xuid: "1234567890123457" },
     ],
   },
   { name: "Creative", status: "stopped", version: "1.21.100", player_count: 0 },
@@ -14,7 +14,7 @@ export const servers = [
     name: "Community",
     status: "running",
     version: "1.21.100",
-    player_count: 8,
+    player_count: 0,
   },
 ];
 export const user = {
@@ -22,12 +22,14 @@ export const user = {
   id: 1,
   role: "admin",
   theme: "default",
+  is_active: true,
 };
 export function fixtureResponse(url) {
   const p = url.pathname;
   if (p === "/api/setup/status") return { needs_setup: false };
   if (p === "/api/account") return user;
-  if (p === "/auth/reauth") return { access_token: "fixture-only" };
+  if (p === "/auth/reauth")
+    return { access_token: "fixture-only", token_type: "bearer" };
   if (p === "/api/servers") return { status: "success", servers };
   if (p === "/api/info")
     return {
@@ -84,11 +86,11 @@ export function fixtureResponse(url) {
         "server-name": "Survival",
         gamemode: "survival",
         difficulty: "normal",
-        "max-players": 20,
-        "server-port": 19132,
-        "allow-cheats": false,
-        "online-mode": true,
-        "allow-list": true,
+        "max-players": "20",
+        "server-port": "19132",
+        "allow-cheats": "false",
+        "online-mode": "true",
+        "allow-list": "true",
         "level-name": "Bedrock level",
       },
       raw_content: "server-name=Survival\ngamemode=survival\nmax-players=20",
@@ -104,7 +106,7 @@ export function fixtureResponse(url) {
     return {
       status: "success",
       permissions: [
-        { name: "Steve", xuid: "1234567890123456", permission: "member" },
+        { name: "Steve", xuid: "1234567890123456", permission_level: "member" },
       ],
     };
   if (p.endsWith("/bans/get")) return { status: "success", bans: [] };
@@ -153,13 +155,26 @@ export function fixtureResponse(url) {
         details: { server: "Survival" },
       },
     ];
+  if (p === "/api/logs/history")
+    return {
+      data: "",
+      start: 0,
+      end: 0,
+      file_id: "fixture-log",
+      has_more: false,
+    };
   if (p === "/api/tasks/list") return [];
   if (p === "/api/downloads/list")
     return { status: "success", custom_zips: [] };
   if (p.includes("process"))
     return {
       status: "success",
-      process_info: { cpu_percent: 12, memory_mb: 420, uptime: 86400 },
+      process_info: {
+        pid: 123,
+        cpu_percent: 12,
+        memory_mb: 420,
+        uptime: "1 day",
+      },
     };
   return { status: "success" };
 }

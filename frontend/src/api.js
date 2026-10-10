@@ -15,6 +15,8 @@ export class ApiError extends Error {
     this.name = "ApiError";
     this.status = status;
     this.data = data;
+    this.code = data?.error?.code ?? null;
+    this.details = data?.error?.details ?? null;
     this.category =
       status === 401
         ? "unauthorized"
@@ -237,7 +239,9 @@ export async function request(url, options = {}) {
     assertCurrent();
     if (!response.ok) {
       let errorMessage = `Request failed with status ${response.status}`;
-      if (typeof data === "object" && data !== null && data.message) {
+      if (typeof data?.error?.message === "string") {
+        errorMessage = data.error.message;
+      } else if (typeof data === "object" && data !== null && data.message) {
         errorMessage = data.message;
       } else if (typeof data === "object" && data !== null && data.detail) {
         // FastAPI often returns 'detail'

@@ -7,7 +7,7 @@ on:
     inputs:
       backend_ref:
         description: Backend commit or branch to check for contract drift
-        default: a260ed0536946b9ca959f9527d3db8ea4564dcd3
+        default: 0b04fefafb4452f54ba48cc6659d4fbf8ba4e5ad
         required: true
         type: string
   push:
@@ -71,7 +71,7 @@ jobs:
     - uses: actions/checkout@v7
       with:
         repository: DMedina559/bedrock-server-manager
-        ref: ${{ inputs.backend_ref || 'a260ed0536946b9ca959f9527d3db8ea4564dcd3' }}
+        ref: ${{ inputs.backend_ref || '0b04fefafb4452f54ba48cc6659d4fbf8ba4e5ad' }}
         path: backend-contract
     - uses: actions/setup-python@v6
       with:

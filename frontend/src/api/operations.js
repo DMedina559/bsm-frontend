@@ -129,7 +129,7 @@ export function createOperationClient(schema) {
 }
 /** Discover an explicit backend/plugin schema using the authenticated transport. */
 export async function discoverOperationClient(
-  url = "/openapi.json",
+  url = "/api/openapi.json",
   options = {},
 ) {
   const schema = await request(url, {

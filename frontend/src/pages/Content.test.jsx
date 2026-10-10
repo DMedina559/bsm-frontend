@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from "../test/utils";
-import { act } from "@testing-library/react";
+import { act, fireEvent } from "@testing-library/react";
 import Content from "./Content";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import * as api from "../api";
@@ -26,7 +26,7 @@ describe("Content", () => {
       if (url === "/api/plugins") {
         return Promise.resolve({
           status: "success",
-          data: {
+          plugins: {
             content_uploader_plugin: { enabled: true },
           },
         });
@@ -45,10 +45,36 @@ describe("Content", () => {
           files: ["addon.mcpack"],
         });
       }
+      if (url.endsWith("/addons"))
+        return Promise.resolve({
+          status: "success",
+          addons: {
+            behavior_packs: [
+              {
+                uuid: "pack-1",
+                name: "Example Pack",
+                version: [1, 0, 0],
+                status: "ACTIVE",
+                subpacks: [
+                  { folder_name: "low", name: "Low" },
+                  { folder_name: "high", name: "High" },
+                ],
+                active_subpack: "low",
+              },
+            ],
+            resource_packs: [],
+          },
+        });
       // Return a default success object to prevent "Unknown error" on other gets
       return Promise.resolve({ status: "success" });
     });
 
+    api.resolveApiUrl.mockImplementation((url) => url);
+    api.post.mockResolvedValue({
+      status: "accepted",
+      task_id: "addon-task",
+      message: "Queued.",
+    });
     api.del.mockResolvedValue({ status: "success" });
   });
 
@@ -84,11 +110,20 @@ describe("Content", () => {
     });
   });
 
-  it("handles file deletion", async () => {
+  it("sends the typed subpack request from the installed addons modal", async () => {
     render(<Content />);
-
-    await waitFor(() => {
-      expect(api.get).toHaveBeenCalled();
-    });
+    await screen.findByText("world.zip");
+    fireEvent.click(screen.getByRole("button", { name: "Addons" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /Manage Installed Addons/ }),
+    );
+    const select = await screen.findByTitle("Active Subpack");
+    fireEvent.change(select, { target: { value: "high" } });
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith(
+        "/api/server/TestServer/addon/subpack",
+        { pack_uuid: "pack-1", pack_type: "behavior", subpack_name: "high" },
+      ),
+    );
   });
 });

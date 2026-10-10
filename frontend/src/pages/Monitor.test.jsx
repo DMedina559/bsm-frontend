@@ -43,16 +43,22 @@ describe("Monitor", () => {
       if (url.includes("/process_info")) {
         return Promise.resolve({
           status: "success",
-          data: {
-            process_info: {
-              pid: 12345,
-              uptime: "1h 30m",
-              cpu_percent: 10.5,
-              memory_mb: 2048,
-            },
+          process_info: {
+            pid: 12345,
+            uptime: "1h 30m",
+            cpu_percent: 10.5,
+            memory_mb: 2048,
           },
         });
       }
+      if (url.startsWith("/api/logs/history"))
+        return Promise.resolve({
+          data: "",
+          start: 0,
+          end: 0,
+          file_id: "test-log",
+          has_more: false,
+        });
       return Promise.resolve({});
     });
   });
@@ -75,6 +81,8 @@ describe("Monitor", () => {
     await waitFor(() => {
       expect(screen.getByText("Process Status")).toBeInTheDocument();
     });
+
+    expect(await screen.findByText("1h 30m")).toBeInTheDocument();
 
     // Check console
     await waitFor(() => {

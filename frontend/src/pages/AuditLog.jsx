@@ -1,7 +1,8 @@
 import { useResourceQuery } from "../app/resourceQueries";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
+import LogViewer from "../components/LogViewer";
+import QueryStatus from "../components/QueryStatus";
 import { useToast } from "../ToastContext";
-import { useWebSocket } from "../WebSocketContext";
 import { RefreshCw, Activity, User, FileText } from "lucide-react";
 const AuditLog = () => {
   const [activeTab, setActiveTab] = useState("users");
@@ -16,48 +17,8 @@ const AuditLog = () => {
   const loading =
     activeTab === "users" ? logsQuery.isFetching : tasksQuery.isFetching;
 
-  // App Log State
-  const [appLogLines, setAppLogLines] = useState([]);
-  const appLogEndRef = useRef(null);
-
-  // Tasks State
+  const [logRefreshKey, setLogRefreshKey] = useState(0);
   const { addToast } = useToast();
-  const { isConnected, addMessageListener, subscribe, unsubscribe } =
-    useWebSocket();
-
-  // App Log Subscription
-  useEffect(() => {
-    if (activeTab === "app_log" && isConnected) {
-      subscribe("app_log");
-      return () => unsubscribe("app_log");
-    }
-  }, [activeTab, isConnected, subscribe, unsubscribe]);
-
-  // Consume each subscribed frame directly and keep a bounded log history.
-  useEffect(() => {
-    if (activeTab !== "app_log") return;
-    return addMessageListener((message) => {
-      if (
-        message.topic !== "app_log" ||
-        message.type !== "log_update" ||
-        typeof message.data !== "string"
-      )
-        return;
-      setAppLogLines((previous) =>
-        [...previous, ...message.data.split("\n").filter(Boolean)].slice(-1000),
-      );
-    });
-  }, [activeTab, addMessageListener]);
-
-  // Auto-scroll App Log
-  useEffect(() => {
-    if (appLogEndRef.current && activeTab === "app_log") {
-      const container = appLogEndRef.current.parentElement;
-      if (container) {
-        container.scrollTop = container.scrollHeight;
-      }
-    }
-  }, [appLogLines, activeTab]);
   const fetchLogs = async () => (await logsQuery.refetch()).isSuccess;
   const fetchTasks = async () => (await tasksQuery.refetch()).isSuccess;
   const handleRefresh = async () => {
@@ -68,8 +29,7 @@ const AuditLog = () => {
       const success = await fetchTasks();
       if (success) addToast("Tasks list refreshed", "success");
     } else if (activeTab === "app_log") {
-      setAppLogLines([]); // Clear logs on refresh? Or maybe just re-subscribe?
-      addToast("App log cleared", "info");
+      setLogRefreshKey((key) => key + 1);
     }
   };
   const formatDate = (dateString) => {
@@ -161,6 +121,9 @@ const AuditLog = () => {
       </div>
 
       <div className="tab-content">
+        {activeTab !== "app_log" && (
+          <QueryStatus query={activeTab === "users" ? logsQuery : tasksQuery} />
+        )}
         {activeTab === "users" && (
           <>
             {loading && logs.length === 0 ? (
@@ -247,44 +210,19 @@ const AuditLog = () => {
         )}
 
         {activeTab === "app_log" && (
-          <div
+          <LogViewer
+            topic="app_log"
+            label="Application log output"
+            emptyMessage="Waiting for application logs..."
+            refreshKey={logRefreshKey}
             style={{
-              background: "var(--bsm-console)",
-              color: "var(--text-color)",
-              padding: "15px",
-              fontFamily: "monospace",
-              fontSize: "0.9em",
-              overflowY: "auto",
               height: "calc(100vh - 250px)",
               minHeight: "400px",
+              fontSize: "0.9em",
               borderRadius: "5px",
               border: "1px solid var(--border-color)",
-              whiteSpace: "pre-wrap",
             }}
-          >
-            {appLogLines.length === 0 ? (
-              <div
-                style={{
-                  color: "var(--text-color-secondary)",
-                  fontStyle: "italic",
-                }}
-              >
-                Waiting for application logs...
-              </div>
-            ) : (
-              appLogLines.map((line, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    minHeight: "1.2em",
-                  }}
-                >
-                  {line}
-                </div>
-              ))
-            )}
-            <div ref={appLogEndRef} />
-          </div>
+          />
         )}
 
         {activeTab === "tasks" && (
@@ -311,7 +249,6 @@ const AuditLog = () => {
                     <tr>
                       <th>Task ID</th>
                       <th>Status</th>
-                      <th>User</th>
                       <th>Message</th>
                       <th>Result</th>
                     </tr>
@@ -330,22 +267,17 @@ const AuditLog = () => {
                         <td>
                           <div className="scrollable-field">
                             <span
-                              className={`status-indicator ${task.status === "success" ? "status-running" : task.status === "error" ? "status-stopped" : "status-starting"}`}
+                              className={`status-indicator ${task.status === "completed" ? "status-running" : ["failed", "cancelled"].includes(task.status) ? "status-stopped" : "status-starting"}`}
                             >
                               {task.status.toUpperCase()}
                             </span>
                           </div>
                         </td>
                         <td>
-                          <div className="scrollable-field">
-                            {task.username || "-"}
-                          </div>
-                        </td>
-                        <td>
                           <div className="scrollable-field">{task.message}</div>
                         </td>
                         <td>
-                          {task.result ? (
+                          {task.error || task.result ? (
                             <pre
                               style={{
                                 margin: 0,
@@ -354,7 +286,8 @@ const AuditLog = () => {
                                 fontSize: "0.85em",
                               }}
                             >
-                              {JSON.stringify(task.result)}
+                              {task.error?.message ??
+                                JSON.stringify(task.result)}
                             </pre>
                           ) : (
                             "-"
@@ -365,7 +298,7 @@ const AuditLog = () => {
                     {tasks.length === 0 && (
                       <tr>
                         <td
-                          colSpan="5"
+                          colSpan="4"
                           style={{
                             textAlign: "center",
                             padding: "20px",

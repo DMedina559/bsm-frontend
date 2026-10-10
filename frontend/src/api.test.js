@@ -298,3 +298,31 @@ it("serializes explicit JSON objects and scalar zero without losing the request 
   await post("/api/example", 0);
   expect(fetch.mock.calls[1][1].body).toBe("0");
 });
+
+it.each([400, 403, 404, 409, 422, 500])(
+  "preserves the backend error envelope for HTTP %s",
+  async (status) => {
+    const error = {
+      code: "validation_error",
+      message: "Invalid request.",
+      details: {
+        errors: [{ location: ["body", "subpack_name"], code: "missing" }],
+      },
+    };
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status,
+      headers: new Headers({ "content-type": "application/json" }),
+      json: async () => ({ error }),
+    });
+    await expect(
+      request("/api/server/Survival/addon/subpack"),
+    ).rejects.toMatchObject({
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      data: { error },
+      status,
+    });
+  },
+);

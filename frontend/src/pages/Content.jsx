@@ -7,7 +7,8 @@ import { useDialog } from "../DialogContext";
 import React, { useState } from "react";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
-import { getApiBaseUrl } from "../api";
+import { resolveApiUrl } from "../api";
+import { resolveOperationUrl } from "../api/operations";
 import { post, del, request } from "../api";
 import {
   Upload,
@@ -213,11 +214,10 @@ const Content = () => {
   };
   const handleSubpackChange = async (pack, packType, newSubpackFolderName) => {
     try {
-      // The old UI used dynamic form state with names like `subpack_${uuid}`
       await writePost(`/api/server/${selectedServer}/addon/subpack`, {
         pack_uuid: pack.uuid,
         pack_type: packType,
-        [`subpack_${pack.uuid}`]: newSubpackFolderName,
+        subpack_name: newSubpackFolderName,
       });
       addToast("Subpack updated.", "success");
 
@@ -287,7 +287,12 @@ const Content = () => {
         >
           {item.icon ? (
             <img
-              src={`${getApiBaseUrl()}/api/server/${selectedServer}/addon/icon?pack_type=${packType}&uuid=${item.uuid}`}
+              src={resolveApiUrl(
+                resolveOperationUrl("get_server_addon_icon", {
+                  path: { server_name: selectedServer },
+                  query: { pack_type: packType, uuid: item.uuid },
+                }),
+              )}
               alt={`${item.name} icon`}
               style={{
                 width: "48px",
