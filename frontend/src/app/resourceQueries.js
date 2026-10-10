@@ -2,9 +2,9 @@ import { getPreferenceIdentity, getBackendIdentity } from "./backendIdentity";
 import { sessionRuntime } from "./sessionRuntime";
 import { callOperation } from "../api/operations";
 import {
-  captureServerRevision,
-  reconcileMonitorSnapshot,
-} from "./synchronizeServerEvent";
+  captureStateRequest,
+  reconcileResourceSnapshot,
+} from "./applicationState";
 import {
   useQuery,
   useMutation,
@@ -177,11 +177,18 @@ export function useResourceQuery(resource, target, options = {}) {
       { identity, generation: sessionGeneration ?? 0 },
     ],
     queryFn: async ({ signal }) => {
-      const startedAt = captureServerRevision();
+      const startedAt = captureStateRequest(signal);
       const data = await definition.load(target, { signal });
-      return resource === "monitor"
-        ? reconcileMonitorSnapshot(data, target, startedAt)
-        : data;
+      return reconcileResourceSnapshot(
+        resource,
+        target,
+        [
+          ...definition.key(target),
+          { identity, generation: sessionGeneration ?? 0 },
+        ],
+        data,
+        startedAt,
+      );
     },
     select: definition.select,
     enabled:

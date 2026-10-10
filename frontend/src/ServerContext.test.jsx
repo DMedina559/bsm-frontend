@@ -11,7 +11,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { it, expect, vi, beforeEach } from "vitest";
 import { ServerProvider, useServer } from "./ServerContext";
 import { queryClient } from "./app/queryClient";
-import { synchronizeServerEvent } from "./app/synchronizeServerEvent";
+import { synchronizeServerEvent } from "./app/applicationState";
 import { sessionRuntime } from "./app/sessionRuntime";
 import { createPreferenceStore } from "./app/preferenceStore";
 import { request } from "./api";

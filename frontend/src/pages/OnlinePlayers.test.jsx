@@ -1,6 +1,6 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../app/queryClient";
-import { synchronizeServerEvent } from "../app/synchronizeServerEvent";
+import { synchronizeServerEvent } from "../app/applicationState";
 import React from "react";
 import { render, screen, waitFor, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";

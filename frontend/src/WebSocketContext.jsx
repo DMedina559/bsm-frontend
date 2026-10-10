@@ -1,5 +1,6 @@
+import { getPreferenceIdentity } from "./app/backendIdentity";
 import { startOperationRecovery } from "./app/operationRecovery";
-import { synchronizeServerEvent } from "./app/synchronizeServerEvent";
+import { reconcileSocketMessage } from "./app/applicationState";
 import { operationCoordinator } from "./app/operationCoordinator";
 import React, {
   createContext,
@@ -22,6 +23,7 @@ export const useWebSocket = () => {
 export const WebSocketProvider = ({ children }) => {
   const { user, sessionGeneration } = useAuth();
   const identity = user?.id ?? user?.username ?? null;
+  const resourceIdentity = getPreferenceIdentity(user);
   const [lastMessage, setLastMessage] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isFallback, setIsFallback] = useState(false);
@@ -34,9 +36,8 @@ export const WebSocketProvider = ({ children }) => {
         setIsFallback(state.isFallback);
         setConnectionState(state.connectionState);
       },
-      onMessage: (message) => {
-        synchronizeServerEvent(message);
-        operationCoordinator.reconcileTask(message);
+      onMessage: (message, ticket) => {
+        if (!reconcileSocketMessage(message, ticket)) return;
         listeners.forEach((listener) => {
           try {
             listener(message);
@@ -55,9 +56,9 @@ export const WebSocketProvider = ({ children }) => {
   }, [identity, sessionGeneration, manager]);
   const { subscribe, unsubscribe, sendMessage, reconnect } = manager;
   useEffect(() => {
-    if (identity === null) return;
-    return startOperationRecovery(identity, sessionGeneration ?? 0);
-  }, [identity, sessionGeneration]);
+    if (resourceIdentity === null) return;
+    return startOperationRecovery(resourceIdentity, sessionGeneration ?? 0);
+  }, [resourceIdentity, sessionGeneration]);
   // Backend task topics replay the latest task snapshot upon subscription.
   // Keep subscriptions tied to registered operations, including after reconnect.
   useEffect(() => {

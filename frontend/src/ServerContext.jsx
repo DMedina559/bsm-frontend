@@ -4,9 +4,9 @@ import {
   migrateAccountPreference,
 } from "./app/backendIdentity";
 import {
-  captureServerRevision,
+  captureStateRequest,
   reconcileServerSnapshot,
-} from "./app/synchronizeServerEvent";
+} from "./app/applicationState";
 import React, {
   createContext,
   useCallback,
@@ -90,7 +90,7 @@ export const ServerProvider = ({ children }) => {
       { identity, generation: sessionGeneration ?? 0 },
     ],
     queryFn: async ({ signal }) => {
-      const revisionAtStart = captureServerRevision();
+      const revisionAtStart = captureStateRequest(signal);
       const data = await loadServers({ signal });
       return reconcileServerSnapshot(data, revisionAtStart);
     },

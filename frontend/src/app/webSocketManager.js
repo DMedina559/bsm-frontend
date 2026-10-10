@@ -1,3 +1,4 @@
+import { stateReconciler } from "./stateReconciler";
 import { getApiBaseUrl } from "../api";
 import { getApiProxyBasePath } from "../utils/basePath";
 import { logger } from "../utils/logger";
@@ -52,6 +53,7 @@ export function createWebSocketManager({ onMessage, onState }) {
         : "connecting",
     });
     const currentGeneration = generation.current;
+    const session = stateReconciler.capture();
     const base = getApiBaseUrl();
     const url = base
       ? base.replace(/^http(s?):/, "ws$1:") + "/ws"
@@ -77,6 +79,7 @@ export function createWebSocketManager({ onMessage, onState }) {
       socketRef.current = socket;
       const current = () =>
         generation.current === currentGeneration &&
+        stateReconciler.current(session) &&
         socketRef.current === socket;
       socket.onopen = () => {
         if (!current()) return;
@@ -119,7 +122,7 @@ export function createWebSocketManager({ onMessage, onState }) {
             return;
           }
           if (message && typeof message === "object" && !Array.isArray(message))
-            onMessage(message);
+            onMessage(message, session);
         } catch (error) {
           logger.warn("[WebSocket] Invalid message", { error });
         }

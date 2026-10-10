@@ -1,3 +1,8 @@
+import {
+  captureStateRequest,
+  reconcileResourceSnapshot,
+  reconcileTaskResponse,
+} from "./applicationState";
 import { callOperation } from "../api/operations";
 import { queryClient } from "./queryClient";
 import { queryKeys } from "./queryKeys";
@@ -48,6 +53,7 @@ export function startOperationRecovery(identity = null, generation = 0) {
             index < work.length
           ) {
             const operation = work[index++];
+            const ticket = captureStateRequest(controller.signal);
             try {
               const data = await callOperation("get_task_status", {
                 path: { task_id: operation.id },
@@ -55,23 +61,27 @@ export function startOperationRecovery(identity = null, generation = 0) {
               });
               if (!stopped && sessionRuntime.isCurrent(session)) {
                 attempts.delete(operation.id);
-                operationCoordinator.reconcileTask({
-                  type: "task_update",
-                  data: { ...data, task_id: operation.id },
-                });
+                reconcileTaskResponse(
+                  { ...data, id: data.id ?? operation.id },
+                  ticket,
+                );
               }
             } catch (error) {
               if (stopped || !sessionRuntime.isCurrent(session)) return;
               if (error.status === 404) {
                 attempts.delete(operation.id);
-                operationCoordinator.reconcileTask({
-                  type: "task_update",
-                  data: {
+                reconcileTaskResponse(
+                  {
                     task_id: operation.id,
                     status: "unknown",
-                    error: "Task snapshot is unavailable",
+                    error: {
+                      code: "task_unavailable",
+                      message: "Task snapshot is unavailable",
+                      details: null,
+                    },
                   },
-                });
+                  ticket,
+                );
               } else {
                 const failures =
                   (attempts.get(operation.id)?.failures ?? 0) + 1;
@@ -100,10 +110,21 @@ export function startOperationRecovery(identity = null, generation = 0) {
   void queryClient
     .fetchQuery({
       queryKey: [...queryKeys.tasks(), { identity, generation }],
-      queryFn: ({ signal }) =>
-        callOperation("list_tasks", {
+      queryFn: async ({ signal }) => {
+        const ticket = captureStateRequest(
+          AbortSignal.any([signal, controller.signal]),
+        );
+        const data = await callOperation("list_tasks", {
           signal: AbortSignal.any([signal, controller.signal]),
-        }),
+        });
+        return reconcileResourceSnapshot(
+          "tasks",
+          null,
+          [...queryKeys.tasks(), { identity, generation }],
+          data,
+          ticket,
+        );
+      },
     })
     .then((tasks) => {
       if (
@@ -125,7 +146,10 @@ export function startOperationRecovery(identity = null, generation = 0) {
             kind: "background",
             status: task.status,
           });
-        operationCoordinator.reconcileTask({ type: "task_update", data: task });
+        operationCoordinator.reconcileTask(
+          { type: "task_update", data: task },
+          { synchronize: true },
+        );
       });
     })
     .catch(() => {

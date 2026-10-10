@@ -1,19 +1,17 @@
+import {
+  createStateReconciler,
+  stateReconciler,
+  terminalTaskStatus,
+} from "./stateReconciler";
 import { queryClient } from "./queryClient";
 import { queryKeys, resourceInvalidation } from "./queryKeys";
 /**
  * Tracks operation progress independently from page lifecycles.
  * Backend responses and WebSocket task snapshots remain authoritative.
  */
-const TERMINAL = new Set([
-  "completed",
-  "complete",
-  "success",
-  "failed",
-  "error",
-  "cancelled",
-  "canceled",
-]);
-export function createOperationCoordinator() {
+export function createOperationCoordinator(
+  reconciler = createStateReconciler(),
+) {
   const operations = new Map();
   const listeners = new Set();
   let snapshot = [];
@@ -54,7 +52,11 @@ export function createOperationCoordinator() {
         throw new Error("Operation ID required");
       const key = String(id);
       const previous = operations.get(key);
-      const nextStatus = status ?? previous?.status ?? "pending";
+      if (!reconciler.read(["task", key]) && terminalTaskStatus(status))
+        reconciler.task({ id: key, status }, { source: "local" });
+      const authoritative = reconciler.read(["task", key])?.value;
+      const nextStatus =
+        authoritative?.status ?? status ?? previous?.status ?? "pending";
       const next = {
         createdAt: previous?.createdAt ?? Date.now(),
         updatedAt: Date.now(),
@@ -63,14 +65,21 @@ export function createOperationCoordinator() {
         kind,
         serverName,
         status: nextStatus,
-        terminal: TERMINAL.has(String(nextStatus).toLowerCase()),
+        terminal: terminalTaskStatus(nextStatus),
         ...extra,
+        ...(authoritative
+          ? {
+              task: authoritative,
+              error: authoritative.error ?? null,
+              progress: authoritative.progress ?? previous?.progress,
+            }
+          : {}),
       };
       operations.set(key, next);
       notify();
       return next;
     },
-    reconcileTask(message) {
+    reconcileTask(message, options = {}) {
       if (message?.type !== "task_update" || !message.data) return false;
       const data = message.data;
       const id = data.task_id ?? data.id;
@@ -80,24 +89,23 @@ export function createOperationCoordinator() {
       if (!previous) return false;
       const status = data.status ?? previous.status;
       if (typeof status !== "string") return false;
-      if (previous.terminal && !TERMINAL.has(String(status).toLowerCase()))
+      const result = options.synchronize
+        ? { accepted: false, value: reconciler.read(["task", key])?.value }
+        : reconciler.task({ ...data, status }, options);
+      if (!result.value || (!result.accepted && previous.task === result.value))
         return false;
-      if (
-        Number.isFinite(data.revision) &&
-        Number.isFinite(previous.task?.revision) &&
-        data.revision <= previous.task.revision
-      )
-        return false;
+      const accepted = result.value;
+      const acceptedStatus = accepted.status;
       operations.set(key, {
         ...previous,
-        status,
+        status: acceptedStatus,
         updatedAt: Date.now(),
-        progress: data.progress ?? previous.progress,
-        error: data.error ?? null,
-        task: data,
-        terminal: TERMINAL.has(String(status).toLowerCase()),
+        progress: accepted.progress ?? previous.progress,
+        error: accepted.error ?? null,
+        task: accepted,
+        terminal: terminalTaskStatus(acceptedStatus),
       });
-      if (!previous.terminal && TERMINAL.has(status.toLowerCase())) {
+      if (!previous.terminal && terminalTaskStatus(acceptedStatus)) {
         const keys = [queryKeys.tasks()];
         const kind = previous.kind ?? "background";
         const name = previous.serverName;
@@ -134,10 +142,11 @@ export function createOperationCoordinator() {
       return removed;
     },
     clear() {
+      for (const id of operations.keys()) reconciler.forget(["task", id]);
       operations.clear();
       notify();
     },
   };
 }
 
-export const operationCoordinator = createOperationCoordinator();
+export const operationCoordinator = createOperationCoordinator(stateReconciler);
