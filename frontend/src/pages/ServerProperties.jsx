@@ -99,7 +99,6 @@ const ServerProperties = () => {
     markSaved,
   } = draft;
   const loading = resourceQuery.isFetching;
-  const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [showRawModal, setShowRawModal] = useState(false);
   const { addToast } = useToast();
@@ -107,6 +106,8 @@ const ServerProperties = () => {
     ({ url, body }) => post(url, body),
     [queryKeys.serverProperties(selectedServer)],
   );
+
+  const saving = write.isPending;
   const writePost = (url, body) =>
     write.mutateAsync({ method: "post", url, body });
 
@@ -143,7 +144,7 @@ const ServerProperties = () => {
     e.preventDefault();
     if (!selectedServer) return;
     if (saving) return;
-    setSaving(true);
+
     const propsObj = properties.reduce((acc, curr) => {
       acc[curr.key] = curr.value;
       return acc;
@@ -164,8 +165,6 @@ const ServerProperties = () => {
       }
     } catch (error) {
       addToast(error.message || "Failed to save properties.", "error");
-    } finally {
-      setSaving(false);
     }
   };
   const handleChange = (key, newValue) => {

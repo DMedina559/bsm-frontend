@@ -87,3 +87,42 @@ it.each([
     expect(result.current.error.message).toContain("Invalid");
   },
 );
+it("cancels a multi-step mutation after account switch and resets pending state for the new scope", async () => {
+  const { sessionRuntime } = await import("./sessionRuntime");
+  auth.user = { username: "first" };
+  let finish;
+  const second = vi.fn();
+  const first = new Promise((resolve) => {
+    finish = resolve;
+  });
+  const { result, rerender } = renderHook(
+    () =>
+      useResourceMutation(
+        async (_variables, context) => {
+          await first;
+          context.assertCurrent();
+          second();
+        },
+        [queryKeys.settings()],
+      ),
+    { wrapper },
+  );
+  let promise;
+  act(() => {
+    promise = result.current.mutateAsync({});
+  });
+  const assertion = expect(promise).rejects.toMatchObject({
+    name: "AbortError",
+  });
+  await waitFor(() => expect(result.current.isPending).toBe(true));
+  sessionRuntime.reset();
+  auth.user = { username: "second" };
+  auth.sessionGeneration++;
+  rerender();
+  expect(result.current.isPending).toBe(false);
+  await act(async () => {
+    finish();
+    await assertion;
+  });
+  expect(second).not.toHaveBeenCalled();
+});

@@ -10,7 +10,6 @@ import { Users, X } from "lucide-react";
 const OnlinePlayers = () => {
   const { selectedServer, servers } = useServer();
   const { addToast } = useToast();
-  const [loadingAction, setLoadingAction] = useState(false);
 
   // Modals state
   const [kickModalOpen, setKickModalOpen] = useState(false);
@@ -33,6 +32,8 @@ const OnlinePlayers = () => {
     },
     [queryKeys.servers(), queryKeys.access([selectedServer, "bans"])],
   );
+
+  const loadingAction = write.isPending;
   const writePost = (url, body) =>
     write.mutateAsync({ url, body, method: "post" });
   const handleOpenKickModal = (playerName) => {
@@ -75,7 +76,7 @@ const OnlinePlayers = () => {
       server: selectedServer,
       reason: banReason,
     });
-    setLoadingAction(true);
+
     try {
       await writePost(`/api/server/${selectedServer}/bans/add`, {
         player_name: selectedPlayer,
@@ -91,8 +92,6 @@ const OnlinePlayers = () => {
         server: selectedServer,
       });
       addToast(error.message || `Failed to ban ${selectedPlayer}.`, "error");
-    } finally {
-      setLoadingAction(false);
     }
   };
   const handleKickPlayer = async () => {
@@ -105,7 +104,7 @@ const OnlinePlayers = () => {
       server: selectedServer,
       reason: kickReason,
     });
-    setLoadingAction(true);
+
     try {
       await writePost(`/api/server/${selectedServer}/send_command`, {
         command: commandToExecute,
@@ -119,8 +118,6 @@ const OnlinePlayers = () => {
         server: selectedServer,
       });
       addToast(error.message || `Failed to kick ${selectedPlayer}.`, "error");
-    } finally {
-      setLoadingAction(false);
     }
   };
   const handleTransferPlayer = async () => {
@@ -148,7 +145,7 @@ const OnlinePlayers = () => {
       port: transferPort,
       server: selectedServer,
     });
-    setLoadingAction(true);
+
     try {
       await writePost(`/api/server/${selectedServer}/send_command`, {
         command: commandToExecute,
@@ -165,8 +162,6 @@ const OnlinePlayers = () => {
         error.message || `Failed to transfer ${selectedPlayer}.`,
         "error",
       );
-    } finally {
-      setLoadingAction(false);
     }
   };
   if (!selectedServer) {

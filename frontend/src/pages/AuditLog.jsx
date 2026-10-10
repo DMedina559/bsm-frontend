@@ -1,7 +1,7 @@
 import { useResourceQuery } from "../app/resourceQueries";
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useToast } from "../ToastContext";
-import LogViewer from "../components/LogViewer";
+import { useWebSocket } from "../WebSocketContext";
 import { RefreshCw, Activity, User, FileText } from "lucide-react";
 const AuditLog = () => {
   const [activeTab, setActiveTab] = useState("users");
@@ -17,10 +17,47 @@ const AuditLog = () => {
     activeTab === "users" ? logsQuery.isFetching : tasksQuery.isFetching;
 
   // App Log State
-  const [logRefresh, setLogRefresh] = useState(0);
+  const [appLogLines, setAppLogLines] = useState([]);
+  const appLogEndRef = useRef(null);
 
   // Tasks State
   const { addToast } = useToast();
+  const { isConnected, addMessageListener, subscribe, unsubscribe } =
+    useWebSocket();
+
+  // App Log Subscription
+  useEffect(() => {
+    if (activeTab === "app_log" && isConnected) {
+      subscribe("app_log");
+      return () => unsubscribe("app_log");
+    }
+  }, [activeTab, isConnected, subscribe, unsubscribe]);
+
+  // Consume each subscribed frame directly and keep a bounded log history.
+  useEffect(() => {
+    if (activeTab !== "app_log") return;
+    return addMessageListener((message) => {
+      if (
+        message.topic !== "app_log" ||
+        message.type !== "log_update" ||
+        typeof message.data !== "string"
+      )
+        return;
+      setAppLogLines((previous) =>
+        [...previous, ...message.data.split("\n").filter(Boolean)].slice(-1000),
+      );
+    });
+  }, [activeTab, addMessageListener]);
+
+  // Auto-scroll App Log
+  useEffect(() => {
+    if (appLogEndRef.current && activeTab === "app_log") {
+      const container = appLogEndRef.current.parentElement;
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+  }, [appLogLines, activeTab]);
   const fetchLogs = async () => (await logsQuery.refetch()).isSuccess;
   const fetchTasks = async () => (await tasksQuery.refetch()).isSuccess;
   const handleRefresh = async () => {
@@ -31,7 +68,8 @@ const AuditLog = () => {
       const success = await fetchTasks();
       if (success) addToast("Tasks list refreshed", "success");
     } else if (activeTab === "app_log") {
-      setLogRefresh((value) => value + 1);
+      setAppLogLines([]); // Clear logs on refresh? Or maybe just re-subscribe?
+      addToast("App log cleared", "info");
     }
   };
   const formatDate = (dateString) => {
@@ -73,7 +111,7 @@ const AuditLog = () => {
             }}
             className={loading ? "spin" : ""}
           />
-          Refresh
+          {activeTab === "app_log" ? "Clear" : "Refresh"}
         </button>
       </div>
 
@@ -209,13 +247,44 @@ const AuditLog = () => {
         )}
 
         {activeTab === "app_log" && (
-          <LogViewer
-            topic="app_log"
-            label="Application log"
-            emptyMessage="Waiting for application logs..."
-            refreshKey={logRefresh}
-            style={{ height: "calc(100vh - 290px)", minHeight: "400px" }}
-          />
+          <div
+            style={{
+              background: "var(--bsm-console)",
+              color: "var(--text-color)",
+              padding: "15px",
+              fontFamily: "monospace",
+              fontSize: "0.9em",
+              overflowY: "auto",
+              height: "calc(100vh - 250px)",
+              minHeight: "400px",
+              borderRadius: "5px",
+              border: "1px solid var(--border-color)",
+              whiteSpace: "pre-wrap",
+            }}
+          >
+            {appLogLines.length === 0 ? (
+              <div
+                style={{
+                  color: "var(--text-color-secondary)",
+                  fontStyle: "italic",
+                }}
+              >
+                Waiting for application logs...
+              </div>
+            ) : (
+              appLogLines.map((line, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    minHeight: "1.2em",
+                  }}
+                >
+                  {line}
+                </div>
+              ))
+            )}
+            <div ref={appLogEndRef} />
+          </div>
         )}
 
         {activeTab === "tasks" && (

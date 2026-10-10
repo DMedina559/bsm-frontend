@@ -48,3 +48,28 @@ it("recovers task completion independently of pages and drops obsolete responses
   expect(operationCoordinator.get("old").status).toBe("pending");
   stop();
 });
+it("bounds concurrent task polls and backs off failures", async () => {
+  for (let i = 0; i < 10; i++)
+    operationCoordinator.register({ id: String(i), kind: "backup" });
+  let active = 0;
+  let maximum = 0;
+  get.mockImplementation(async (url) => {
+    if (url === "/api/tasks/list") return [];
+    active++;
+    maximum = Math.max(maximum, active);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    active--;
+    throw new Error("offline backend");
+  });
+  const stop = startOperationRecovery();
+  await vi.advanceTimersByTimeAsync(50);
+  expect(maximum).toBe(4);
+  expect(
+    get.mock.calls.filter(([url]) => url.includes("/status/")).length,
+  ).toBe(10);
+  await vi.advanceTimersByTimeAsync(5000);
+  expect(
+    get.mock.calls.filter(([url]) => url.includes("/status/")).length,
+  ).toBe(10);
+  stop();
+});

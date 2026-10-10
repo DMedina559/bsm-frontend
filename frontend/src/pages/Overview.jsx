@@ -30,7 +30,6 @@ const Overview = () => {
   const { addToast } = useToast();
   const { isConnected, isFallback, reconnect } = useWebSocket();
   const navigate = useNavigate();
-  const [actionLoading, setActionLoading] = useState({});
   const [refreshing, setRefreshing] = useState(false);
   const [layout, updateLayout] = usePreference("overviewLayout", "grid");
   const [sort, setSort] = usePreference("serverSort", {
@@ -47,6 +46,10 @@ const Overview = () => {
     },
     [queryKeys.servers()],
   );
+  const isServerPending = (name) =>
+    write.pendingVariables.some((variables) =>
+      variables?.url?.startsWith(`/api/server/${name}/`),
+    );
   const writePost = (url, body) =>
     write.mutateAsync({ url, body, method: "post" });
   const handleServerClick = (serverName) => {
@@ -80,15 +83,11 @@ const Overview = () => {
     if (!isConnected) {
       reconnect();
     }
-    if (actionLoading[serverName]) return;
+    if (isServerPending(serverName)) return;
     logger.info("[Overview] Sending server action", {
       server: serverName,
       action,
     });
-    setActionLoading((prev) => ({
-      ...prev,
-      [serverName]: true,
-    }));
     addToast(`Sending ${action} signal to ${serverName}...`, "info");
     try {
       await writePost(`/api/server/${serverName}/${action}`);
@@ -100,12 +99,6 @@ const Overview = () => {
         action,
       });
       addToast(error.message || `Failed to ${action} server.`, "error");
-    } finally {
-      setActionLoading((prev) => ({
-        ...prev,
-        [serverName]: false,
-      }));
-      // Ensure UI reflects the latest state, even if WS messages are missed
     }
   };
   const handleUpdate = async (e, serverName) => {
@@ -124,10 +117,6 @@ const Overview = () => {
     logger.info("[Overview] Initiating server update", {
       server: serverName,
     });
-    setActionLoading((prev) => ({
-      ...prev,
-      [serverName]: true,
-    }));
     addToast(`Updating ${serverName}...`, "info");
     try {
       await writePost(`/api/server/${serverName}/update`);
@@ -138,11 +127,6 @@ const Overview = () => {
         server: serverName,
       });
       addToast(error.message || `Failed to update ${serverName}.`, "error");
-    } finally {
-      setActionLoading((prev) => ({
-        ...prev,
-        [serverName]: false,
-      }));
     }
   };
   const handleSendCommand = async (e, serverName) => {
@@ -161,10 +145,6 @@ const Overview = () => {
       server: serverName,
       command,
     });
-    setActionLoading((prev) => ({
-      ...prev,
-      [serverName]: true,
-    }));
     try {
       await writePost(`/api/server/${serverName}/send_command`, {
         command,
@@ -180,11 +160,6 @@ const Overview = () => {
         error.message || `Failed to send command to ${serverName}.`,
         "error",
       );
-    } finally {
-      setActionLoading((prev) => ({
-        ...prev,
-        [serverName]: false,
-      }));
     }
   };
   const connection = isConnected
@@ -323,7 +298,7 @@ const Overview = () => {
             <OverviewServerCard
               key={server.name}
               server={server}
-              busy={Boolean(actionLoading[server.name])}
+              busy={isServerPending(server.name)}
               onOpen={handleServerClick}
               onAction={handleAction}
               onUpdate={handleUpdate}

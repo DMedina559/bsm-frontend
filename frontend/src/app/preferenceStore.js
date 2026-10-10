@@ -67,11 +67,20 @@ export function createPreferenceStore(storage, definitions = {}) {
         return fallback;
       }
     },
+    validate(name, value) {
+      try {
+        return (
+          !definitions[name]?.validate ||
+          Boolean(definitions[name].validate(value))
+        );
+      } catch {
+        return false;
+      }
+    },
     write(identity, name, value) {
       const key = keyFor(identity, name);
       const definition = definitions[name];
-      if (!key || (definition?.validate && !definition.validate(value)))
-        return false;
+      if (!key || !store.validate(name, value)) return false;
       try {
         const target = getStorage();
         if (!target) return false;

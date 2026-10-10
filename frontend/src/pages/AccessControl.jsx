@@ -36,7 +36,6 @@ const AccessControl = () => {
   const [playerXuid, setPlayerXuid] = useState(""); // New state for XUID
   const [permissionLevel, setPermissionLevel] = useState("member");
   const [ignoresPlayerLimit, setIgnoresPlayerLimit] = useState(false);
-  const [actionLoading, setActionLoading] = useState(false);
   const [banReason, setBanReason] = useState("");
 
   // Online Players Modal State
@@ -62,6 +61,8 @@ const AccessControl = () => {
     },
     [queryKeys.access([selectedServer, activeTab]), queryKeys.globalPlayers()],
   );
+
+  const actionLoading = write.isPending;
   const writePost = (url, body) =>
     write.mutateAsync({ url, body, method: "post" });
   const writePut = (url, body) =>
@@ -94,7 +95,7 @@ const AccessControl = () => {
       addToast("XUID is required.", "error");
       return;
     }
-    setActionLoading(true);
+
     try {
       if (activeTab === "allowlist") {
         await writePost(`/api/server/${selectedServer}/allowlist/add`, {
@@ -126,8 +127,6 @@ const AccessControl = () => {
       setIgnoresPlayerLimit(false);
     } catch (error) {
       addToast(error.message || "Failed to add item.", "error");
-    } finally {
-      setActionLoading(false);
     }
   };
   const handleKickPlayer = async (kickPlayerName) => {
@@ -141,7 +140,7 @@ const AccessControl = () => {
       server: selectedServer,
       reason,
     });
-    setActionLoading(true);
+
     try {
       await writePost(`/api/server/${selectedServer}/send_command`, {
         command: commandToExecute,
@@ -158,8 +157,6 @@ const AccessControl = () => {
         server: selectedServer,
       });
       addToast(error.message || `Failed to kick ${kickPlayerName}.`, "error");
-    } finally {
-      setActionLoading(false);
     }
   };
   const handleRemove = async (item) => {
@@ -167,7 +164,7 @@ const AccessControl = () => {
     const name =
       item.name || item.player_name || item.xuid || item.uuid || "Unknown";
     if (!(await confirmAction(`Remove ${name} from ${activeTab}?`))) return;
-    setActionLoading(true);
+
     try {
       if (activeTab === "allowlist") {
         await writeDelete(`/api/server/${selectedServer}/allowlist/remove`, {
@@ -191,13 +188,11 @@ const AccessControl = () => {
       }
     } catch (error) {
       addToast(error.message || "Failed to remove item.", "error");
-    } finally {
-      setActionLoading(false);
     }
   };
   const handlePermissionChange = async (item, newLevel) => {
     if (!selectedServer) return;
-    setActionLoading(true);
+
     try {
       await writePost(`/api/server/${selectedServer}/permissions/set`, {
         permissions: [
@@ -212,20 +207,15 @@ const AccessControl = () => {
     } catch (error) {
       addToast(error.message || "Failed to update permission.", "error");
       fetchItems(); // Revert on error
-    } finally {
-      setActionLoading(false);
     }
   };
   const handleScanPlayers = async () => {
-    setActionLoading(true);
     try {
       await writePut("/api/players/scan");
       addToast("Player scan initiated. Logs are being processed.", "success");
       // Optionally refresh, though scan is async and updates global DB, might not affect local list immediately
     } catch (error) {
       addToast(error.message || "Failed to scan players.", "error");
-    } finally {
-      setActionLoading(false);
     }
   };
 

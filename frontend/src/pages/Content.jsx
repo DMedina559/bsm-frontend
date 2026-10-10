@@ -1,15 +1,14 @@
 import { queryKeys } from "../app/queryKeys";
 import QueryStatus from "../components/QueryStatus";
 import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
-import { useRequestTracker } from "../utils/useRequestTracker";
+import { useEditableDraft } from "../app/useEditableDraft";
 import Modal from "../components/Modal";
 import { useDialog } from "../DialogContext";
 import React, { useState } from "react";
 import { useServer } from "../ServerContext";
 import { useToast } from "../ToastContext";
 import { getApiBaseUrl } from "../api";
-import { get, post, del, request } from "../api";
-import { logger } from "../utils/logger";
+import { post, del, request } from "../api";
 import {
   Upload,
   Trash2,
@@ -22,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import DraggableList from "../components/DraggableList";
+const EMPTY_ADDONS = { behavior_packs: [], resource_packs: [] };
 const Content = () => {
   const { confirmAction } = useDialog();
   const { selectedServer } = useServer();
@@ -37,7 +37,6 @@ const Content = () => {
   }));
   const loading = contentQuery.isFetching;
   const pluginQuery = useResourceQuery("plugins");
-  const [actionLoading, setActionLoading] = useState(false);
   const isUploadEnabled = Boolean(
     pluginQuery.data?.find(
       (plugin) => plugin.name === "content_uploader_plugin",
@@ -45,22 +44,35 @@ const Content = () => {
   );
   const [isAddonModalOpen, setIsAddonModalOpen] = useState(false);
   const [addonModalTab, setAddonModalTab] = useState("behavior");
-  const [installedAddons, setInstalledAddons] = useState({
-    behavior_packs: [],
-    resource_packs: [],
+  const addonsQuery = useResourceQuery("installedAddons", selectedServer, {
+    enabled: isAddonModalOpen,
   });
-  const [addonsLoading, setAddonsLoading] = useState(false);
-  const [orderChanged, setOrderChanged] = useState(false);
+  const addonDraft = useEditableDraft(
+    selectedServer,
+    addonsQuery.data,
+    EMPTY_ADDONS,
+  );
+  const {
+    value: installedAddons,
+    setValue: setInstalledAddons,
+    dirty: orderChanged,
+  } = addonDraft;
+  const addonsLoading = addonsQuery.isFetching;
   const { addToast } = useToast();
-  const beginRequest = useRequestTracker(selectedServer + ":" + activeTab);
   const write = useResourceMutation(
     ({ method, url, body, options }) => {
       if (method === "post") return post(url, body);
       if (method === "del") return del(url, options);
       if (method === "request") return request(url, options);
     },
-    [queryKeys.content(), queryKeys.servers()],
+    [
+      queryKeys.content(),
+      queryKeys.servers(),
+      queryKeys.serverAddons(selectedServer),
+    ],
   );
+
+  const actionLoading = write.isPending;
   const writePost = (url, body) =>
     write.mutateAsync({ url, body, method: "post" });
   const writeDelete = (url, options) =>
@@ -88,7 +100,7 @@ const Content = () => {
       ))
     )
       return;
-    setActionLoading(true);
+
     try {
       const endpoint =
         activeTab === "worlds"
@@ -100,8 +112,6 @@ const Content = () => {
       addToast(`Installation of ${item.name} started.`, "success");
     } catch (error) {
       addToast(error.message || "Installation failed.", "error");
-    } finally {
-      setActionLoading(false);
     }
   };
   const handleResetWorld = async () => {
@@ -111,78 +121,29 @@ const Content = () => {
       ))
     )
       return;
-    setActionLoading(true);
+
     try {
       await writeDelete(`/api/server/${selectedServer}/world/reset`);
       addToast(`World reset initiated for ${selectedServer}.`, "success");
     } catch (error) {
       addToast(error.message || "World reset failed.", "error");
-    } finally {
-      setActionLoading(false);
     }
   };
   const handleExportWorld = async () => {
-    setActionLoading(true);
     try {
       await writePost(`/api/server/${selectedServer}/world/export`);
       addToast(`World export initiated for ${selectedServer}.`, "success");
       // Optionally refresh list after a delay, but it's async background task
     } catch (error) {
       addToast(error.message || "World export failed.", "error");
-    } finally {
-      setActionLoading(false);
-    }
-  };
-  const fetchInstalledAddons = async () => {
-    const requestTicket = beginRequest("fetchInstalledAddons");
-    if (!selectedServer) return;
-    setAddonsLoading(true);
-    setOrderChanged(false);
-    try {
-      const data = await get(`/api/server/${selectedServer}/addons`);
-      if (!requestTicket.current()) return false;
-      if (data && data.status === "success" && data.addons) {
-        const bp = (data.addons.behavior_packs || []).map((p) => ({
-          ...p,
-          id: p.uuid,
-        }));
-        const rp = (data.addons.resource_packs || []).map((p) => ({
-          ...p,
-          id: p.uuid,
-        }));
-        setInstalledAddons({
-          behavior_packs: bp,
-          resource_packs: rp,
-        });
-      } else {
-        addToast("Failed to load installed addons", "error");
-        setInstalledAddons({
-          behavior_packs: [],
-          resource_packs: [],
-        });
-      }
-    } catch (error) {
-      if (!requestTicket.current()) return false;
-      logger.error("[Content] Error fetching installed addons", {
-        error,
-        selectedServer,
-      });
-      addToast("Error fetching installed addons", "error");
-      setInstalledAddons({
-        behavior_packs: [],
-        resource_packs: [],
-      });
-    } finally {
-      if (requestTicket.current()) {
-        setAddonsLoading(false);
-      }
     }
   };
   const handleOpenAddonModal = () => {
     setIsAddonModalOpen(true);
-    fetchInstalledAddons();
   };
-  const handleCloseAddonModal = () => {
+  const handleCloseAddonModal = async () => {
+    if (orderChanged && !(await confirmAction("Discard unsaved addon order?")))
+      return;
     setIsAddonModalOpen(false);
   };
   const handleReorderAddons = (newItems, type) => {
@@ -190,11 +151,10 @@ const Content = () => {
       ...prev,
       [type === "behavior" ? "behavior_packs" : "resource_packs"]: newItems,
     }));
-    setOrderChanged(true);
   };
   const handleSaveAddonOrder = async () => {
     if (!selectedServer) return;
-    setActionLoading(true);
+
     try {
       if (addonModalTab === "behavior") {
         // Save behavior packs order
@@ -220,12 +180,9 @@ const Content = () => {
         }
       }
       addToast("Addon order saved.", "success");
-      setOrderChanged(false);
-      fetchInstalledAddons();
+      addonDraft.markSaved(installedAddons);
     } catch (error) {
       addToast(error.message || "Failed to save order", "error");
-    } finally {
-      setActionLoading(false);
     }
   };
   const handleAddonAction = async (pack, packType, action) => {
@@ -234,7 +191,7 @@ const Content = () => {
       !(await confirmAction(`Are you sure you want to uninstall ${pack.name}?`))
     )
       return;
-    setActionLoading(true);
+
     try {
       if (action === "uninstall") {
         await writeDelete(`/api/server/${selectedServer}/addon/uninstall`, {
@@ -250,15 +207,11 @@ const Content = () => {
         });
       }
       addToast(`${action} successful.`, "success");
-      fetchInstalledAddons();
     } catch (error) {
       addToast(error.message || `Failed to ${action} addon`, "error");
-    } finally {
-      setActionLoading(false);
     }
   };
   const handleSubpackChange = async (pack, packType, newSubpackFolderName) => {
-    setActionLoading(true);
     try {
       // The old UI used dynamic form state with names like `subpack_${uuid}`
       await writePost(`/api/server/${selectedServer}/addon/subpack`, {
@@ -286,8 +239,6 @@ const Content = () => {
       });
     } catch (error) {
       addToast(error.message || "Failed to update subpack", "error");
-    } finally {
-      setActionLoading(false);
     }
   };
   const renderAddonItem = (item, packType) => {
@@ -530,7 +481,6 @@ const Content = () => {
     const type = activeTab === "worlds" ? "world" : "addon";
     formData.append("type", type);
     try {
-      setActionLoading(true);
       const data = await writeRequest(`/api/content/upload`, {
         method: "POST",
         body: formData,
@@ -543,7 +493,6 @@ const Content = () => {
     } catch {
       addToast("Upload failed.", "error");
     } finally {
-      setActionLoading(false);
       e.target.value = null; // Reset input
     }
   };
@@ -687,6 +636,7 @@ const Content = () => {
           closeDisabled={actionLoading}
           className="addon-dialog"
         >
+          <QueryStatus query={addonsQuery} />
           <div
             className="dynamic-modal-header"
             style={{

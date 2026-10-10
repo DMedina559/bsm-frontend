@@ -1,12 +1,17 @@
 import { callOperation } from "./operations";
 async function contracts() {
-  const history = await callOperation("get_log_history", {
-    query: { topic: "app_log" },
-  });
-  history.data.toUpperCase();
   const servers = await callOperation("list_servers");
   servers.servers?.forEach((server) => server.name.toUpperCase());
   await callOperation("get_properties", { path: { server_name: "server" } });
+  await callOperation("login", {
+    body: { username: "user", password: "password" },
+  });
+  const file = await callOperation("get_server_addon_icon", {
+    path: { server_name: "server" },
+    query: { uuid: "uuid", pack_type: "behavior" },
+    responseType: "blob",
+  });
+  file?.slice();
   // @ts-expect-error Required paths cannot be omitted.
   await callOperation("get_properties");
   // @ts-expect-error Required request bodies cannot be omitted.

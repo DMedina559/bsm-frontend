@@ -105,6 +105,7 @@ export function createOperationCoordinator() {
           keys.push(queryKeys.servers());
         if (/world|addon|export|upload|background/.test(kind))
           keys.push(queryKeys.content());
+        if (name && /addon/.test(kind)) keys.push(queryKeys.serverAddons(name));
         if (name && /backup|restore/.test(kind))
           keys.push(queryKeys.serverBackups(name));
         if (name && /properties|restore/.test(kind))

@@ -111,3 +111,23 @@ it("backup completion only invalidates task and backup resources", () => {
   ]);
   invalidate.mockRestore();
 });
+
+it("refreshes installed addons after background addon completion", () => {
+  const invalidate = vi
+    .spyOn(queryClient, "invalidateQueries")
+    .mockResolvedValue();
+  const coordinator = createOperationCoordinator();
+  coordinator.register({
+    id: "addon",
+    kind: "addon:install",
+    serverName: "alpha",
+  });
+  coordinator.reconcileTask({
+    type: "task_update",
+    data: { id: "addon", status: "completed" },
+  });
+  expect(
+    invalidate.mock.calls.map(([options]) => options.queryKey),
+  ).toContainEqual(["servers", "alpha", "addons"]);
+  invalidate.mockRestore();
+});

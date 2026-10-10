@@ -9,6 +9,8 @@ export function startOperationRecovery(identity = null, generation = 0) {
   const controller = new AbortController();
   let stopped = false;
   let polling = false;
+  const attempts = new Map();
+  let cursor = 0;
   const poll = async () => {
     if (stopped || polling || navigator.onLine === false) return;
     if (
@@ -21,30 +23,47 @@ export function startOperationRecovery(identity = null, generation = 0) {
       return;
     polling = true;
     try {
+      const pending = operationCoordinator
+        .list()
+        .filter(
+          (operation) => !operation.terminal && operation.status !== "unknown",
+        );
+      const eligible = pending.filter(
+        (operation) => (attempts.get(operation.id)?.next ?? 0) <= Date.now(),
+      );
+      const work = eligible.length
+        ? [
+            ...eligible.slice(cursor % eligible.length),
+            ...eligible.slice(0, cursor % eligible.length),
+          ]
+        : [];
+      cursor += 4;
+      // Four workers bound concurrent requests; backoff is tracked per task.
+      let index = 0;
       await Promise.allSettled(
-        operationCoordinator
-          .list()
-          .filter(
-            (operation) =>
-              !operation.terminal && operation.status !== "unknown",
-          )
-          .map(async (operation) => {
+        Array.from({ length: Math.min(4, work.length) }, async () => {
+          while (
+            !stopped &&
+            sessionRuntime.isCurrent(session) &&
+            index < work.length
+          ) {
+            const operation = work[index++];
             try {
               const data = await get(
                 `/api/tasks/status/${encodeURIComponent(operation.id)}`,
                 { signal: controller.signal },
               );
-              if (!stopped && sessionRuntime.isCurrent(session))
+              if (!stopped && sessionRuntime.isCurrent(session)) {
+                attempts.delete(operation.id);
                 operationCoordinator.reconcileTask({
                   type: "task_update",
                   data: { ...data, task_id: operation.id },
                 });
+              }
             } catch (error) {
-              if (
-                !stopped &&
-                sessionRuntime.isCurrent(session) &&
-                error.status === 404
-              )
+              if (stopped || !sessionRuntime.isCurrent(session)) return;
+              if (error.status === 404) {
+                attempts.delete(operation.id);
                 operationCoordinator.reconcileTask({
                   type: "task_update",
                   data: {
@@ -53,9 +72,25 @@ export function startOperationRecovery(identity = null, generation = 0) {
                     error: "Task snapshot is unavailable",
                   },
                 });
+              } else {
+                const failures =
+                  (attempts.get(operation.id)?.failures ?? 0) + 1;
+                const delay = Math.min(
+                  60000,
+                  5000 * 2 ** Math.min(failures, 4),
+                );
+                attempts.set(operation.id, {
+                  failures,
+                  next: Date.now() + delay * (0.8 + Math.random() * 0.4),
+                });
+              }
             }
-          }),
+          }
+        }),
       );
+      for (const id of attempts.keys())
+        if (!pending.some((operation) => operation.id === id))
+          attempts.delete(id);
     } finally {
       polling = false;
     }
@@ -98,13 +133,17 @@ export function startOperationRecovery(identity = null, generation = 0) {
     });
   const timer = setInterval(poll, 5000);
   const unsubscribe = operationCoordinator.subscribe(poll);
-  window.addEventListener("online", poll);
+  const resume = () => {
+    attempts.clear();
+    void poll();
+  };
+  window.addEventListener("online", resume);
   const stop = () => {
     stopped = true;
     controller.abort();
     clearInterval(timer);
     unsubscribe();
-    window.removeEventListener("online", poll);
+    window.removeEventListener("online", resume);
   };
   const removeReset = sessionRuntime.onReset(stop);
   return () => {

@@ -1,4 +1,3 @@
-import LogViewer from "../components/LogViewer";
 import { queryKeys } from "../app/queryKeys";
 import QueryStatus from "../components/QueryStatus";
 import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
@@ -61,7 +60,8 @@ const Monitor = () => {
       observer.disconnect();
     };
   }, [processInfo]); // Re-bind observer when server status changes panel visibility
-  const [loadingAction, setLoadingAction] = useState(false);
+  const [logLines, setLogLines] = useState([]);
+  const logEndRef = useRef(null);
   const { refetch: fetchStatus } = monitorQuery;
   useEffect(() => {
     if (!isFallback || !processInfo) return;
@@ -77,8 +77,19 @@ const Monitor = () => {
     );
   }, [isFallback, processInfo, monitorQuery.dataUpdatedAt]);
 
+  // Auto-scroll logs
+  useEffect(() => {
+    if (logEndRef.current) {
+      const container = logEndRef.current.parentElement;
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+  }, [logLines]);
+
   // Clear logs on server switch
   useEffect(() => {
+    setLogLines([]);
     setUsageHistory([]);
   }, [selectedServer]);
 
@@ -86,12 +97,15 @@ const Monitor = () => {
   useEffect(() => {
     if (isConnected && selectedServer) {
       const topic = `resource-monitor:${selectedServer}`;
+      const logTopic = `server_log:${selectedServer}`;
       subscribe(topic);
+      subscribe(logTopic);
 
       // Perform an initial fetch of the status when we connect or switch servers
       fetchStatus();
       return () => {
         unsubscribe(topic);
+        unsubscribe(logTopic);
       };
     }
   }, [isConnected, selectedServer, subscribe, unsubscribe, fetchStatus]);
@@ -101,6 +115,7 @@ const Monitor = () => {
     if (!selectedServer) return;
     return addMessageListener((lastMessage) => {
       const resourceTopic = `resource-monitor:${selectedServer}`;
+      const logTopic = `server_log:${selectedServer}`;
       if (
         lastMessage.topic === resourceTopic &&
         lastMessage.type === "resource_update"
@@ -119,6 +134,23 @@ const Monitor = () => {
             return newData;
           });
         }
+      } else if (
+        lastMessage.topic === logTopic &&
+        lastMessage.type === "log_update"
+      ) {
+        if (typeof lastMessage.data === "string") {
+          setLogLines((prev) => {
+            // Split by newline but keep empty lines if needed, or filter.
+            // Usually log files end with newline, so split gives empty string at end.
+            const newLines = lastMessage.data.split("\n");
+            // Filter out last empty string if data ends with newline
+            if (newLines.length > 0 && newLines[newLines.length - 1] === "") {
+              newLines.pop();
+            }
+            const updated = [...prev, ...newLines].slice(-1000); // Keep last 1000 lines
+            return updated;
+          });
+        }
       }
     });
   }, [addMessageListener, selectedServer]);
@@ -129,6 +161,8 @@ const Monitor = () => {
     },
     [queryKeys.servers(), queryKeys.serverMonitor(selectedServer)],
   );
+
+  const loadingAction = write.isPending;
   const writePost = (url, body) =>
     write.mutateAsync({ url, body, method: "post" });
   const handleCommand = async (e) => {
@@ -137,8 +171,9 @@ const Monitor = () => {
     if (!selectedServer) return;
     logger.info(`[Monitor] Sending command`, {
       server: selectedServer,
+      command: command.trim(),
     });
-    setLoadingAction(true);
+
     try {
       await writePost(`/api/server/${selectedServer}/send_command`, {
         command: command.trim(),
@@ -149,10 +184,9 @@ const Monitor = () => {
       logger.error(`[Monitor] Command failed`, {
         error,
         server: selectedServer,
+        command: command.trim(),
       });
       addToast(error.message || "Failed to send command.", "error");
-    } finally {
-      setLoadingAction(false);
     }
   };
   const sendAction = async (action) => {
@@ -161,7 +195,7 @@ const Monitor = () => {
       action,
       server: selectedServer,
     });
-    setLoadingAction(true);
+
     addToast(`Sending ${action} signal...`, "info");
     try {
       // Pass empty body explicitely to ensure headers are set if needed, though usually not required for this endpoint
@@ -174,8 +208,6 @@ const Monitor = () => {
         server: selectedServer,
       });
       addToast(error.message || `Failed to ${action} server.`, "error");
-    } finally {
-      setLoadingAction(false);
     }
   };
   if (!selectedServer) {
@@ -559,11 +591,42 @@ const Monitor = () => {
           >
             <FileText size={18} /> Server Log
           </h3>
-          <div>
-            <LogViewer
-              topic={`server_log:${selectedServer}`}
-              label="Server log"
-            />
+          <div
+            style={{
+              flexGrow: 1,
+              background: "var(--bsm-console)",
+              color: "var(--text-color)",
+              padding: "10px",
+              fontFamily: "monospace",
+              fontSize: "0.85em",
+              overflowY: "auto",
+              height: "150px",
+              borderRadius: "4px",
+              whiteSpace: "pre-wrap",
+            }}
+          >
+            {logLines.length === 0 ? (
+              <div
+                style={{
+                  color: "var(--text-color-secondary)",
+                  fontStyle: "italic",
+                }}
+              >
+                Waiting for logs...
+              </div>
+            ) : (
+              logLines.map((line, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    minHeight: "1.2em",
+                  }}
+                >
+                  {line}
+                </div>
+              ))
+            )}
+            <div ref={logEndRef} />
           </div>
         </div>
       </div>

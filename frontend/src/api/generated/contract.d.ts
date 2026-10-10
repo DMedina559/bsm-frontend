@@ -196,23 +196,6 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/logs/history": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /** Get Log History */
-    get: operations["get_log_history"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   "/api/panorama": {
     parameters: {
       query?: never;
@@ -1586,7 +1569,7 @@ export interface components {
        * @default success
        * @enum {string}
        */
-      status: "success" | "skipped";
+      status?: "success" | "skipped";
     };
     /**
      * AddPlayersPayload
@@ -1626,7 +1609,7 @@ export interface components {
        * @default success
        * @enum {string}
        */
-      status: "success" | "skipped";
+      status?: "success" | "skipped";
     };
     /**
      * AddonActionPayload
@@ -1708,7 +1691,7 @@ export interface components {
        * @description Set 'ignoresPlayerLimit' for these players.
        * @default false
        */
-      ignoresPlayerLimit: boolean;
+      ignoresPlayerLimit?: boolean;
       /**
        * Players
        * @description List of player gamertags to add.
@@ -1721,7 +1704,7 @@ export interface components {
        * Ignoresplayerlimit
        * @default false
        */
-      ignoresPlayerLimit: boolean;
+      ignoresPlayerLimit?: boolean;
       /** Name */
       name: string;
       /** Xuid */
@@ -1804,7 +1787,7 @@ export interface components {
        * @default success
        * @constant
        */
-      status: "success";
+      status?: "success";
     };
     /** BanAddRequest */
     BanAddRequest: {
@@ -1861,12 +1844,12 @@ export interface components {
        * Remember Me
        * @default false
        */
-      remember_me: boolean;
+      remember_me?: boolean;
       /**
        * Scope
        * @default
        */
-      scope: string;
+      scope?: string;
       /** Username */
       username: string;
     };
@@ -1964,7 +1947,7 @@ export interface components {
        * @default success
        * @constant
        */
-      status: "success";
+      status?: "success";
     };
     /** GetPermissionsResponse */
     GetPermissionsResponse: {
@@ -1977,7 +1960,7 @@ export interface components {
        * @default success
        * @constant
        */
-      status: "success";
+      status?: "success";
     };
     /** GetPropertiesResponse */
     GetPropertiesResponse: {
@@ -1994,7 +1977,7 @@ export interface components {
        * @default success
        * @constant
        */
-      status: "success";
+      status?: "success";
     };
     /** GetServerBansResponse */
     GetServerBansResponse: {
@@ -2007,7 +1990,7 @@ export interface components {
        * @default success
        * @constant
        */
-      status: "success";
+      status?: "success";
     };
     /** HTTPValidationError */
     HTTPValidationError: {
@@ -2025,7 +2008,7 @@ export interface components {
        * @default confirm_needed
        * @constant
        */
-      status: "confirm_needed";
+      status?: "confirm_needed";
     };
     /**
      * InstallServerPayload
@@ -2037,7 +2020,7 @@ export interface components {
        * @description If True, confirm overwriting an existing installation.
        * @default false
        */
-      overwrite: boolean | null;
+      overwrite?: boolean | null;
       /**
        * Server Name
        * @description Name for the new server.
@@ -2049,7 +2032,7 @@ export interface components {
        * @description Version to install (e.g., 'LATEST', '1.20.10.01', 'CUSTOM').
        * @default LATEST
        */
-      server_version: string;
+      server_version?: string;
       /**
        * Server Zip Path
        * @description Path to a custom ZIP file, if 'CUSTOM' version is selected.
@@ -2067,7 +2050,7 @@ export interface components {
        * @default accepted
        * @constant
        */
-      status: "accepted";
+      status?: "accepted";
       /** Task Id */
       task_id: string;
     };
@@ -2112,20 +2095,7 @@ export interface components {
        * @default success
        * @constant
        */
-      status: "success";
-    };
-    /** LogHistoryPage */
-    LogHistoryPage: {
-      /** Data */
-      data: string;
-      /** End */
-      end: number;
-      /** File Id */
-      file_id: string;
-      /** Has More */
-      has_more: boolean;
-      /** Start */
-      start: number;
+      status?: "success";
     };
     /**
      * PermissionsSetPayload
@@ -2225,24 +2195,24 @@ export interface components {
        * Author
        * @default
        */
-      author: string;
+      author?: string;
       /**
        * Description
        * @default
        */
-      description: string;
+      description?: string;
       /** Enabled */
       enabled: boolean;
       /**
        * Status
        * @default UNKNOWN
        */
-      status: string;
+      status?: string;
       /**
        * Version
        * @default N/A
        */
-      version: string;
+      version?: string;
     };
     /**
      * PluginPagesResponse
@@ -2373,7 +2343,7 @@ export interface components {
        * @default success
        * @constant
        */
-      status: "success";
+      status?: "success";
     };
     /** RemoveServerBanResponse */
     RemoveServerBanResponse: {
@@ -2384,7 +2354,7 @@ export interface components {
        * @default success
        * @enum {string}
        */
-      status: "success" | "skipped";
+      status?: "success" | "skipped";
     };
     /** RestartServerResponse */
     RestartServerResponse: {
@@ -2405,7 +2375,7 @@ export interface components {
        * @default success
        * @constant
        */
-      status: "success";
+      status?: "success";
     };
     /**
      * RestoreActionPayload
@@ -2491,7 +2461,7 @@ export interface components {
        * Player Count
        * @default 0
        */
-      player_count: number;
+      player_count?: number;
       /** Players */
       players?: components["schemas"]["PlayerInfo"][];
       /** Status */
@@ -2564,7 +2534,7 @@ export interface components {
        * @default success
        * @constant
        */
-      status: "success";
+      status?: "success";
     };
     /** StopServerResponse */
     StopServerResponse: {
@@ -2585,7 +2555,7 @@ export interface components {
        * @default success
        * @constant
        */
-      status: "success";
+      status?: "success";
     };
     /** Subpack */
     Subpack: {
@@ -2605,7 +2575,7 @@ export interface components {
        * @default accepted
        * @constant
        */
-      status: "accepted";
+      status?: "accepted";
       /** Task Id */
       task_id: string;
     };
@@ -2727,7 +2697,7 @@ export interface components {
        * Remember Me
        * @default false
        */
-      remember_me: boolean;
+      remember_me?: boolean;
       /** Username */
       username: string;
     };
@@ -2759,7 +2729,7 @@ export interface components {
        * Theme
        * @default default
        */
-      theme: string;
+      theme?: string;
       /** Username */
       username: string;
     };
@@ -3033,39 +3003,6 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["ThemeListResponse"];
-        };
-      };
-    };
-  };
-  get_log_history: {
-    parameters: {
-      query: {
-        topic: string;
-        before?: number | null;
-        file_id?: string | null;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["LogHistoryPage"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };

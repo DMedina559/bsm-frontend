@@ -1,314 +1,921 @@
 {
   "get_account": {
     "method": "GET",
-    "path": "/api/account"
+    "path": "/api/account",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "change_password": {
     "method": "POST",
-    "path": "/api/account/change-password"
+    "path": "/api/account/change-password",
+    "parameters": [],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "update_account_profile": {
     "method": "POST",
-    "path": "/api/account/profile"
+    "path": "/api/account/profile",
+    "parameters": [],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "update_account_theme": {
     "method": "POST",
-    "path": "/api/account/theme"
+    "path": "/api/account/theme",
+    "parameters": [],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "list_available_addons": {
     "method": "GET",
-    "path": "/api/content/addons"
+    "path": "/api/content/addons",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "list_available_worlds": {
     "method": "GET",
-    "path": "/api/content/worlds"
+    "path": "/api/content/worlds",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "list_downloads": {
     "method": "GET",
-    "path": "/api/downloads/list"
+    "path": "/api/downloads/list",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "prune_downloads": {
     "method": "PUT",
-    "path": "/api/downloads/prune"
+    "path": "/api/downloads/prune",
+    "parameters": [],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "get_system_info": {
     "method": "GET",
-    "path": "/api/info"
+    "path": "/api/info",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "list_themes": {
     "method": "GET",
-    "path": "/api/info/themes"
-  },
-  "get_log_history": {
-    "method": "GET",
-    "path": "/api/logs/history"
+    "path": "/api/info/themes",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "get_panorama": {
     "method": "GET",
-    "path": "/api/panorama"
+    "path": "/api/panorama",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "add_players": {
     "method": "POST",
-    "path": "/api/players/add"
+    "path": "/api/players/add",
+    "parameters": [],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "list_players": {
     "method": "GET",
-    "path": "/api/players/get"
+    "path": "/api/players/get",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "scan_players": {
     "method": "PUT",
-    "path": "/api/players/scan"
+    "path": "/api/players/scan",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "list_plugins": {
     "method": "GET",
-    "path": "/api/plugins"
+    "path": "/api/plugins",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "get_plugin_pages": {
     "method": "GET",
-    "path": "/api/plugins/pages"
+    "path": "/api/plugins/pages",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "reload_plugins": {
     "method": "PUT",
-    "path": "/api/plugins/reload"
+    "path": "/api/plugins/reload",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "trigger_plugin_event": {
     "method": "POST",
-    "path": "/api/plugins/trigger_event"
+    "path": "/api/plugins/trigger_event",
+    "parameters": [],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "set_plugin_status": {
     "method": "POST",
-    "path": "/api/plugins/{plugin_name}"
+    "path": "/api/plugins/{plugin_name}",
+    "parameters": [
+      {
+        "name": "plugin_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "reload_plugin": {
     "method": "POST",
-    "path": "/api/plugins/{plugin_name}/reload"
+    "path": "/api/plugins/{plugin_name}/reload",
+    "parameters": [
+      {
+        "name": "plugin_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "generate_registration_token": {
     "method": "POST",
-    "path": "/api/register/generate-token"
+    "path": "/api/register/generate-token",
+    "parameters": [],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "validate_registration_token": {
     "method": "GET",
-    "path": "/api/register/validate/{token}"
+    "path": "/api/register/validate/{token}",
+    "parameters": [
+      {
+        "name": "token",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "register_user": {
     "method": "POST",
-    "path": "/api/register/{token}"
+    "path": "/api/register/{token}",
+    "parameters": [
+      {
+        "name": "token",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "install_server": {
     "method": "POST",
-    "path": "/api/server/install"
+    "path": "/api/server/install",
+    "parameters": [],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "disable_addon": {
     "method": "POST",
-    "path": "/api/server/{server_name}/addon/disable"
+    "path": "/api/server/{server_name}/addon/disable",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "enable_addon": {
     "method": "POST",
-    "path": "/api/server/{server_name}/addon/enable"
+    "path": "/api/server/{server_name}/addon/enable",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "get_server_addon_icon": {
     "method": "GET",
-    "path": "/api/server/{server_name}/addon/icon"
+    "path": "/api/server/{server_name}/addon/icon",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      },
+      {
+        "name": "pack_type",
+        "in": "query",
+        "required": true
+      },
+      {
+        "name": "uuid",
+        "in": "query",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "install_addon": {
     "method": "POST",
-    "path": "/api/server/{server_name}/addon/install"
+    "path": "/api/server/{server_name}/addon/install",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "reorder_addons": {
     "method": "POST",
-    "path": "/api/server/{server_name}/addon/reorder"
+    "path": "/api/server/{server_name}/addon/reorder",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "update_addon_subpack": {
     "method": "POST",
-    "path": "/api/server/{server_name}/addon/subpack"
+    "path": "/api/server/{server_name}/addon/subpack",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "uninstall_addon": {
     "method": "DELETE",
-    "path": "/api/server/{server_name}/addon/uninstall"
+    "path": "/api/server/{server_name}/addon/uninstall",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "list_server_addons": {
     "method": "GET",
-    "path": "/api/server/{server_name}/addons"
+    "path": "/api/server/{server_name}/addons",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "add_allowlist_players": {
     "method": "POST",
-    "path": "/api/server/{server_name}/allowlist/add"
+    "path": "/api/server/{server_name}/allowlist/add",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "get_allowlist": {
     "method": "GET",
-    "path": "/api/server/{server_name}/allowlist/get"
+    "path": "/api/server/{server_name}/allowlist/get",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "remove_allowlist_players": {
     "method": "DELETE",
-    "path": "/api/server/{server_name}/allowlist/remove"
+    "path": "/api/server/{server_name}/allowlist/remove",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "create_backup": {
     "method": "POST",
-    "path": "/api/server/{server_name}/backup/action"
+    "path": "/api/server/{server_name}/backup/action",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "list_server_backups": {
     "method": "GET",
-    "path": "/api/server/{server_name}/backup/list/{backup_type}"
+    "path": "/api/server/{server_name}/backup/list/{backup_type}",
+    "parameters": [
+      {
+        "name": "backup_type",
+        "in": "path",
+        "required": true
+      },
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "prune_backups": {
     "method": "PUT",
-    "path": "/api/server/{server_name}/backups/prune"
+    "path": "/api/server/{server_name}/backups/prune",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "add_server_ban": {
     "method": "POST",
-    "path": "/api/server/{server_name}/bans/add"
+    "path": "/api/server/{server_name}/bans/add",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "get_server_bans": {
     "method": "GET",
-    "path": "/api/server/{server_name}/bans/get"
+    "path": "/api/server/{server_name}/bans/get",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "remove_server_ban": {
     "method": "DELETE",
-    "path": "/api/server/{server_name}/bans/remove"
+    "path": "/api/server/{server_name}/bans/remove",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "delete_server": {
     "method": "DELETE",
-    "path": "/api/server/{server_name}/delete"
+    "path": "/api/server/{server_name}/delete",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "get_permissions": {
     "method": "GET",
-    "path": "/api/server/{server_name}/permissions/get"
+    "path": "/api/server/{server_name}/permissions/get",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "set_permissions": {
     "method": "POST",
-    "path": "/api/server/{server_name}/permissions/set"
+    "path": "/api/server/{server_name}/permissions/set",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "get_server_process_info": {
     "method": "GET",
-    "path": "/api/server/{server_name}/process_info"
+    "path": "/api/server/{server_name}/process_info",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "get_properties": {
     "method": "GET",
-    "path": "/api/server/{server_name}/properties/get"
+    "path": "/api/server/{server_name}/properties/get",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "set_properties": {
     "method": "POST",
-    "path": "/api/server/{server_name}/properties/set"
+    "path": "/api/server/{server_name}/properties/set",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "restart_server": {
     "method": "POST",
-    "path": "/api/server/{server_name}/restart"
+    "path": "/api/server/{server_name}/restart",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "restore_backup": {
     "method": "POST",
-    "path": "/api/server/{server_name}/restore/action"
+    "path": "/api/server/{server_name}/restore/action",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "send_command": {
     "method": "POST",
-    "path": "/api/server/{server_name}/send_command"
+    "path": "/api/server/{server_name}/send_command",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "get_server_settings": {
     "method": "GET",
-    "path": "/api/server/{server_name}/settings/get"
+    "path": "/api/server/{server_name}/settings/get",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "set_server_setting": {
     "method": "POST",
-    "path": "/api/server/{server_name}/settings/set"
+    "path": "/api/server/{server_name}/settings/set",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "start_server": {
     "method": "POST",
-    "path": "/api/server/{server_name}/start"
+    "path": "/api/server/{server_name}/start",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "get_server_status": {
     "method": "GET",
-    "path": "/api/server/{server_name}/status"
+    "path": "/api/server/{server_name}/status",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "stop_server": {
     "method": "POST",
-    "path": "/api/server/{server_name}/stop"
+    "path": "/api/server/{server_name}/stop",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "get_server_summary": {
     "method": "GET",
-    "path": "/api/server/{server_name}/summary"
+    "path": "/api/server/{server_name}/summary",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "update_server": {
     "method": "POST",
-    "path": "/api/server/{server_name}/update"
+    "path": "/api/server/{server_name}/update",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "validate_server": {
     "method": "GET",
-    "path": "/api/server/{server_name}/validate"
+    "path": "/api/server/{server_name}/validate",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "export_world": {
     "method": "POST",
-    "path": "/api/server/{server_name}/world/export"
+    "path": "/api/server/{server_name}/world/export",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "get_world_icon": {
     "method": "GET",
-    "path": "/api/server/{server_name}/world/icon"
+    "path": "/api/server/{server_name}/world/icon",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "install_world": {
     "method": "POST",
-    "path": "/api/server/{server_name}/world/install"
+    "path": "/api/server/{server_name}/world/install",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "reset_world": {
     "method": "DELETE",
-    "path": "/api/server/{server_name}/world/reset"
+    "path": "/api/server/{server_name}/world/reset",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "list_servers": {
     "method": "GET",
-    "path": "/api/servers"
+    "path": "/api/servers",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "get_settings": {
     "method": "GET",
-    "path": "/api/settings/get"
+    "path": "/api/settings/get",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "reload_settings": {
     "method": "PUT",
-    "path": "/api/settings/reload"
+    "path": "/api/settings/reload",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "set_setting": {
     "method": "POST",
-    "path": "/api/settings/set"
+    "path": "/api/settings/set",
+    "parameters": [],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "list_tasks": {
     "method": "GET",
-    "path": "/api/tasks/list"
+    "path": "/api/tasks/list",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "get_task_status": {
     "method": "GET",
-    "path": "/api/tasks/status/{task_id}"
+    "path": "/api/tasks/status/{task_id}",
+    "parameters": [
+      {
+        "name": "task_id",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "list_users": {
     "method": "GET",
-    "path": "/api/users/list"
+    "path": "/api/users/list",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "delete_user": {
     "method": "POST",
-    "path": "/api/users/{user_id}/delete"
+    "path": "/api/users/{user_id}/delete",
+    "parameters": [
+      {
+        "name": "user_id",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "disable_user": {
     "method": "POST",
-    "path": "/api/users/{user_id}/disable"
+    "path": "/api/users/{user_id}/disable",
+    "parameters": [
+      {
+        "name": "user_id",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "enable_user": {
     "method": "POST",
-    "path": "/api/users/{user_id}/enable"
+    "path": "/api/users/{user_id}/enable",
+    "parameters": [
+      {
+        "name": "user_id",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "update_user_role": {
     "method": "POST",
-    "path": "/api/users/{user_id}/role"
+    "path": "/api/users/{user_id}/role",
+    "parameters": [
+      {
+        "name": "user_id",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
   },
   "list_audit_logs": {
     "method": "GET",
-    "path": "/audit-log/list"
+    "path": "/audit-log/list",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "logout": {
     "method": "GET",
-    "path": "/auth/logout"
+    "path": "/auth/logout",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "reauthenticate": {
     "method": "POST",
-    "path": "/auth/reauth"
+    "path": "/auth/reauth",
+    "parameters": [
+      {
+        "name": "remember_me",
+        "in": "query",
+        "required": false
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
   },
   "login": {
     "method": "POST",
-    "path": "/auth/token"
+    "path": "/auth/token",
+    "parameters": [],
+    "bodyRequired": true,
+    "bodyTypes": ["application/x-www-form-urlencoded"],
+    "responseType": "json"
   }
 }

@@ -1120,33 +1120,6 @@
         "title": "ListAvailableAddonsResponse",
         "type": "object"
       },
-      "LogHistoryPage": {
-        "properties": {
-          "data": {
-            "title": "Data",
-            "type": "string"
-          },
-          "end": {
-            "title": "End",
-            "type": "integer"
-          },
-          "file_id": {
-            "title": "File Id",
-            "type": "string"
-          },
-          "has_more": {
-            "title": "Has More",
-            "type": "boolean"
-          },
-          "start": {
-            "title": "Start",
-            "type": "integer"
-          }
-        },
-        "required": ["data", "start", "end", "file_id", "has_more"],
-        "title": "LogHistoryPage",
-        "type": "object"
-      },
       "PermissionsSetPayload": {
         "additionalProperties": false,
         "description": "Request model for setting multiple player permissions.",
@@ -2769,90 +2742,6 @@
         },
         "summary": "Get Themes",
         "tags": ["Themes"]
-      }
-    },
-    "/api/logs/history": {
-      "get": {
-        "operationId": "get_log_history",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "topic",
-            "required": true,
-            "schema": {
-              "maxLength": 256,
-              "minLength": 1,
-              "title": "Topic",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "before",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "minimum": 0,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Before"
-            }
-          },
-          {
-            "in": "query",
-            "name": "file_id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maxLength": 64,
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "File Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LogHistoryPage"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          },
-          {
-            "APIKeyCookie": []
-          }
-        ],
-        "summary": "Get Log History",
-        "tags": ["Logs"]
       }
     },
     "/api/panorama": {

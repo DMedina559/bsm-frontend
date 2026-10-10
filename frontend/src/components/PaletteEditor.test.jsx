@@ -1,9 +1,14 @@
+import { getPreferenceIdentity } from "../app/backendIdentity";
+import { getSessionStorageKey } from "../app/sessionBoundary";
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ThemeProvider } from "../ThemeContext";
 import PaletteEditor from "./PaletteEditor";
-const PALETTE_KEY = "bsm:test:preference:palettes";
+const PALETTE_KEY = getSessionStorageKey(
+  getPreferenceIdentity({ username: "test" }),
+  "preference:palettes",
+);
 vi.mock("../AuthContext", () => ({
   useAuth: () => ({
     user: { username: "test", theme: "default" },

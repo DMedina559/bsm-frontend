@@ -1,3 +1,4 @@
+import { callOperation } from "../api/operations";
 import { queryKeys } from "../app/queryKeys";
 import { useEditableDraft } from "../app/useEditableDraft";
 import QueryStatus from "../components/QueryStatus";
@@ -32,7 +33,6 @@ const ServerConfig = () => {
     markSaved,
   } = draft;
   const loading = resourceQuery.isFetching;
-  const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const [newKey, setNewKey] = useState("");
   const [newValue, setNewValue] = useState("");
@@ -41,9 +41,14 @@ const ServerConfig = () => {
   const navigate = useNavigate();
   const setupFlow = location.state?.setupFlow;
   const write = useResourceMutation(
-    async ({ method, url, body, options, entries }) => {
+    async ({ method, url, body, options, entries }, { session }) => {
       if (entries) {
-        for (const [key, value] of entries) await post(url, { key, value });
+        for (const [key, value] of entries)
+          await callOperation("set_server_setting", {
+            path: { server_name: selectedServer },
+            body: { key, value },
+            session,
+          });
         return;
       }
       if (method === "post") return post(url, body);
@@ -52,6 +57,8 @@ const ServerConfig = () => {
     },
     [queryKeys.serverSettings(selectedServer), queryKeys.servers()],
   );
+
+  const saving = write.isPending;
   const writePost = (url, body) =>
     write.mutateAsync({ url, body, method: "post" });
   const writeDelete = (url, options) =>
@@ -72,7 +79,7 @@ const ServerConfig = () => {
     e.preventDefault();
     if (!selectedServer) return;
     if (saving) return;
-    setSaving(true);
+
     try {
       const flattened = flattenSettings(settings);
       await write.mutateAsync({
@@ -85,8 +92,6 @@ const ServerConfig = () => {
       addToast("Server settings saved successfully.", "success");
     } catch (error) {
       addToast(error.message || "Failed to save settings.", "error");
-    } finally {
-      setSaving(false);
     }
   };
   const handleFinishSetup = async () => {
@@ -128,7 +133,7 @@ const ServerConfig = () => {
       `Are you sure you want to delete server "${selectedServer}"?\n\nThis action cannot be undone. All server data will be permanently lost.`,
     );
     if (!confirmed) return;
-    setSaving(true);
+
     addToast(`Deleting server "${selectedServer}"...`, "info");
     try {
       await writeDelete(`/api/server/${selectedServer}/delete`);
@@ -136,7 +141,6 @@ const ServerConfig = () => {
       navigate("/");
     } catch (error) {
       addToast(error.message || "Failed to delete server.", "error");
-      setSaving(false);
     }
   };
   const handleChange = (path, value) =>

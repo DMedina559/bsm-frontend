@@ -78,3 +78,14 @@ describe("notification memory", () => {
     );
   });
 });
+it("bounds visible notification bursts while retaining history", () => {
+  render(tree());
+  for (let i = 0; i < 20; i++) fireEvent.click(screen.getByText("Notify"));
+  expect(screen.getAllByLabelText("Dismiss notification")).toHaveLength(8);
+  fireEvent.click(
+    screen.getByRole("button", { name: "Notification history, 20 unread" }),
+  );
+  expect(
+    within(screen.getByRole("dialog")).getAllByText("Backup completed"),
+  ).toHaveLength(20);
+});

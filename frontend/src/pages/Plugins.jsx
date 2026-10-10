@@ -19,7 +19,7 @@ const Plugins = () => {
 
   const resourceQuery = useResourceQuery("plugins", undefined);
   const plugins = resourceQuery.data ?? [];
-  const loading = resourceQuery.isFetching;
+  const loading = resourceQuery.isFetching || write.isPending;
   const fetchPlugins = async () => {
     const result = await resourceQuery.refetch();
     if (result.error) addToast(result.error.message, "error");
@@ -30,7 +30,6 @@ const Plugins = () => {
     try {
       await writePut("/api/plugins/reload");
       addToast("Plugins reloaded successfully", "success");
-      fetchPlugins();
     } catch (error) {
       addToast(error.message || "Failed to reload plugins", "error");
     }
@@ -46,8 +45,6 @@ const Plugins = () => {
         `Plugin ${pluginName} ${newEnabled ? "enabled" : "disabled"}.`,
         "success",
       );
-
-      await fetchPlugins();
     } catch (error) {
       addToast(
         error.message || `Failed to toggle plugin ${pluginName}`,

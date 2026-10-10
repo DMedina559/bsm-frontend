@@ -273,3 +273,28 @@ it("downloads revoke object URLs even if clicking the link fails", async () => {
   expect(document.querySelector('a[href="blob:test"]')).toBeNull();
   click.mockRestore();
 });
+it("bound session transport refuses later requests after logout before fetch", async () => {
+  const { sessionRuntime } = await import("./app/sessionRuntime");
+  const session = sessionRuntime.capture();
+  sessionRuntime.reset();
+  globalThis.fetch = vi.fn();
+  await expect(
+    post(
+      "/api/settings/set",
+      { key: "name", value: "second step" },
+      { session },
+    ),
+  ).rejects.toMatchObject({ name: "AbortError" });
+  expect(fetch).not.toHaveBeenCalled();
+});
+it("serializes explicit JSON objects and scalar zero without losing the request body", async () => {
+  globalThis.fetch = vi.fn().mockResolvedValue({ status: 204 });
+  await post(
+    "/api/example",
+    { value: 1 },
+    { headers: { "Content-Type": "application/json" } },
+  );
+  expect(fetch.mock.calls[0][1].body).toBe('{"value":1}');
+  await post("/api/example", 0);
+  expect(fetch.mock.calls[1][1].body).toBe("0");
+});

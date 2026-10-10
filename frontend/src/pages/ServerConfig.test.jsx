@@ -68,7 +68,10 @@ describe("ServerConfig", () => {
     fireEvent.click(saveBtn);
 
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalled();
+      expect(api.request).toHaveBeenCalledWith(
+        "/api/server/TestServer/settings/set",
+        expect.objectContaining({ method: "POST" }),
+      );
     });
   });
 

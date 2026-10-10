@@ -1,3 +1,4 @@
+import { callOperation } from "../api/operations";
 import { useEditableDraft } from "../app/useEditableDraft";
 import QueryStatus from "../components/QueryStatus";
 import { queryKeys } from "../app/queryKeys";
@@ -28,22 +29,23 @@ const BSMSettings = () => {
     markSaved,
   } = draft;
   const loading = resourceQuery.isFetching;
-  const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const [newKey, setNewKey] = useState("");
   const [newValue, setNewValue] = useState("");
   const { addToast } = useToast();
   const write = useResourceMutation(
-    async ({ method, url, body, entries }) => {
+    async ({ method, url, body, entries }, { session }) => {
       if (entries) {
         for (const [key, value] of entries)
-          await post("/api/settings/set", { key, value });
+          await callOperation("set_setting", { body: { key, value }, session });
         return;
       }
       return method === "put" ? put(url, body) : post(url, body);
     },
     [queryKeys.settings()],
   );
+
+  const saving = write.isPending;
   const writePut = (url, body) =>
     write.mutateAsync({ method: "put", url, body });
 
@@ -53,7 +55,7 @@ const BSMSettings = () => {
   const handleSave = async (e) => {
     e.preventDefault();
     if (saving) return;
-    setSaving(true);
+
     try {
       const flattened = flattenSettings(settings);
 
@@ -70,12 +72,9 @@ const BSMSettings = () => {
         error,
       });
       addToast(error.message || "Failed to save settings.", "error");
-    } finally {
-      setSaving(false);
     }
   };
   const handleReload = async () => {
-    setSaving(true);
     try {
       const refreshed = await draft.refresh(async () => {
         await writePut("/api/settings/reload");
@@ -84,8 +83,6 @@ const BSMSettings = () => {
       if (refreshed) addToast("Settings reloaded from disk.", "success");
     } catch (error) {
       addToast(error.message || "Failed to reload settings.", "error");
-    } finally {
-      setSaving(false);
     }
   };
   const handleChange = (path, value) =>

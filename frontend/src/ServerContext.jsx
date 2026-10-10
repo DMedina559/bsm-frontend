@@ -1,4 +1,8 @@
 import {
+  getPreferenceIdentity,
+  migrateAccountPreference,
+} from "./app/backendIdentity";
+import {
   captureServerRevision,
   reconcileServerSnapshot,
 } from "./app/synchronizeServerEvent";
@@ -55,7 +59,7 @@ async function loadServers({ signal }) {
  */
 export const ServerProvider = ({ children }) => {
   const { user, sessionGeneration } = useAuth();
-  const identity = user?.id ?? user?.username ?? null;
+  const identity = getPreferenceIdentity(user);
   const queryClient = useQueryClient();
   const { isConnected, isFallback, subscribe, unsubscribe } = useWebSocket();
   const [selectedServer, setSelectedServerState] = useState(null);
@@ -64,6 +68,7 @@ export const ServerProvider = ({ children }) => {
 
   useEffect(() => {
     const restore = () => {
+      migrateAccountPreference(preferences, user, "selectedServer");
       const saved = preferences.read(
         identity,
         "selectedServer",
@@ -76,6 +81,8 @@ export const ServerProvider = ({ children }) => {
     };
     restore();
     return preferences.subscribe(identity, "selectedServer", restore);
+    // Identity captures the account and backend.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [identity]);
   const serverQuery = useQuery({
     queryKey: [

@@ -1,3 +1,5 @@
+import { getPreferenceIdentity } from "./app/backendIdentity";
+import { getSessionStorageKey } from "./app/sessionBoundary";
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach } from "vitest";
@@ -104,8 +106,14 @@ describe("theme engine", () => {
       document.documentElement.style.getPropertyValue("--bsm-panorama-image"),
     ).toContain("/api/panorama");
     expect(
-      JSON.parse(localStorage.getItem("bsm:admin:preference:appearance")).value
-        .panorama,
+      JSON.parse(
+        localStorage.getItem(
+          getSessionStorageKey(
+            getPreferenceIdentity({ username: "admin" }),
+            "preference:appearance",
+          ),
+        ),
+      ).value.panorama,
     ).toBe(true);
     expect(request).not.toHaveBeenCalled();
     fireEvent.click(screen.getByText("Panorama"));
@@ -126,8 +134,14 @@ describe("theme engine", () => {
       document.documentElement.style.getPropertyValue("--bsm-panorama-overlay"),
     ).toBe("25%");
     expect(
-      JSON.parse(localStorage.getItem("bsm:admin:preference:appearance")).value
-        .panoramaVisibility,
+      JSON.parse(
+        localStorage.getItem(
+          getSessionStorageKey(
+            getPreferenceIdentity({ username: "admin" }),
+            "preference:appearance",
+          ),
+        ),
+      ).value.panoramaVisibility,
     ).toBe(75);
     expect(document.documentElement.dataset.panorama).toBe("false");
   });
@@ -201,7 +215,14 @@ describe("appearance reset", () => {
       body: { theme: "default" },
     });
     expect(
-      JSON.parse(localStorage.getItem("bsm:admin:preference:appearance")).value,
+      JSON.parse(
+        localStorage.getItem(
+          getSessionStorageKey(
+            getPreferenceIdentity({ username: "admin" }),
+            "preference:appearance",
+          ),
+        ),
+      ).value,
     ).toEqual({
       mode: "theme",
       density: "comfortable",
@@ -210,7 +231,12 @@ describe("appearance reset", () => {
       sidebarTransparency: 0,
     });
     const palettes = JSON.parse(
-      localStorage.getItem("bsm:admin:preference:palettes"),
+      localStorage.getItem(
+        getSessionStorageKey(
+          getPreferenceIdentity({ username: "admin" }),
+          "preference:palettes",
+        ),
+      ),
     ).value;
     expect(palettes.active).toBeNull();
     expect(palettes.palettes).toHaveLength(1);
@@ -229,12 +255,24 @@ describe("appearance reset", () => {
     await waitFor(() => expect(request).toHaveBeenCalled());
     expect(document.documentElement.dataset.theme).toBe("blue");
     expect(
-      JSON.parse(localStorage.getItem("bsm:admin:preference:appearance")).value
-        .panorama,
+      JSON.parse(
+        localStorage.getItem(
+          getSessionStorageKey(
+            getPreferenceIdentity({ username: "admin" }),
+            "preference:appearance",
+          ),
+        ),
+      ).value.panorama,
     ).toBe(true);
     expect(
-      JSON.parse(localStorage.getItem("bsm:admin:preference:palettes")).value
-        .active,
+      JSON.parse(
+        localStorage.getItem(
+          getSessionStorageKey(
+            getPreferenceIdentity({ username: "admin" }),
+            "preference:palettes",
+          ),
+        ),
+      ).value.active,
     ).toBe("Custom");
   });
 });

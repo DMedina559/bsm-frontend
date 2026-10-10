@@ -1,3 +1,5 @@
+import { getPreferenceIdentity } from "../app/backendIdentity";
+import { getSessionStorageKey } from "../app/sessionBoundary";
 import { render, screen, fireEvent, waitFor } from "../test/utils";
 import Overview from "./Overview";
 import { vi, describe, it, expect, beforeEach } from "vitest";
@@ -103,8 +105,14 @@ describe("Overview", () => {
       "true",
     );
     expect(
-      JSON.parse(localStorage.getItem("bsm:admin:preference:overviewLayout"))
-        .value,
+      JSON.parse(
+        localStorage.getItem(
+          getSessionStorageKey(
+            getPreferenceIdentity({ username: "admin" }),
+            "preference:overviewLayout",
+          ),
+        ),
+      ).value,
     ).toBe("list");
     expect(document.querySelector(".overview-layout-list")).toBeInTheDocument();
   });

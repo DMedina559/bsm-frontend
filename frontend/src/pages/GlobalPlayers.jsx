@@ -9,8 +9,6 @@ const GlobalPlayers = () => {
   const resourceQuery = useResourceQuery("globalPlayers");
   const players = resourceQuery.data ?? [];
   const loading = resourceQuery.isFetching;
-  const [scanLoading, setScanLoading] = useState(false);
-  const [addLoading, setAddLoading] = useState(false);
 
   // Add form state
   const [newPlayerString, setNewPlayerString] = useState(""); // Format: Name:XUID
@@ -24,6 +22,12 @@ const GlobalPlayers = () => {
         return body === undefined ? put(url) : put(url, body);
     },
     [queryKeys.globalPlayers()],
+  );
+  const scanLoading = write.pendingVariables.some(
+    (variables) => variables?.url === "/api/players/scan",
+  );
+  const addLoading = write.pendingVariables.some(
+    (variables) => variables?.url === "/api/players/add",
   );
   const writePost = (url, body) =>
     write.mutateAsync({ url, body, method: "post" });
@@ -41,7 +45,6 @@ const GlobalPlayers = () => {
     }
   };
   const handleScan = async () => {
-    setScanLoading(true);
     try {
       const response = await writePut("/api/players/scan");
       if (response && response.status === "success") {
@@ -51,8 +54,6 @@ const GlobalPlayers = () => {
       }
     } catch {
       addToast("Error triggering scan.", "error");
-    } finally {
-      setScanLoading(false);
     }
   };
   const handleAdd = async (e) => {
@@ -65,7 +66,6 @@ const GlobalPlayers = () => {
       .map((s) => s.trim())
       .filter((s) => s);
     if (inputs.length === 0) return;
-    setAddLoading(true);
     try {
       // payload expects { players: ["Name:XUID", ...] }
       const response = await writePost("/api/players/add", {
@@ -79,8 +79,6 @@ const GlobalPlayers = () => {
       }
     } catch (error) {
       addToast(error.message || "Error adding players.", "error");
-    } finally {
-      setAddLoading(false);
     }
   };
   return (

@@ -57,9 +57,15 @@ describe("BSMSettings", () => {
     fireEvent.click(saveBtn);
 
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith(
+      expect(api.request).toHaveBeenCalledWith(
         "/api/settings/set",
-        expect.objectContaining({ key: "server.name", value: "New Name" }),
+        expect.objectContaining({
+          method: "POST",
+          body: expect.objectContaining({
+            key: "server.name",
+            value: "New Name",
+          }),
+        }),
       );
     });
   });

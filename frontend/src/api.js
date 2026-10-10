@@ -1,3 +1,4 @@
+import { getBackendIdentity } from "./app/backendIdentity";
 import { operationCoordinator } from "./app/operationCoordinator";
 /**
  * @fileoverview Core API client for making HTTP requests.
@@ -94,9 +95,9 @@ export async function request(url, options = {}) {
     headers = {},
     timeout = 30000,
     responseType = "json",
+    session = sessionRuntime.capture(),
     ...restOptions
   } = options;
-  const session = sessionRuntime.capture();
   const timeoutSignal = AbortSignal.timeout(timeout);
   const signal = AbortSignal.any([
     session.signal,
@@ -104,12 +105,16 @@ export async function request(url, options = {}) {
     ...(restOptions.signal ? [restOptions.signal] : []),
   ]);
   const assertCurrent = () => {
-    if (!sessionRuntime.isCurrent(session)) {
+    if (
+      !sessionRuntime.isCurrent(session) ||
+      (session.backend && session.backend !== getBackendIdentity())
+    ) {
       throw new DOMException("Session changed", "AbortError");
     }
     signal.throwIfAborted();
   };
 
+  assertCurrent();
   const defaultHeaders = {
     Accept: responseType === "blob" ? "*/*" : "application/json",
   };
@@ -128,17 +133,22 @@ export async function request(url, options = {}) {
     config.headers["Authorization"] = `Bearer ${token}`;
   }
 
-  if (body) {
+  if (body !== undefined) {
+    const raw =
+      body instanceof FormData ||
+      body instanceof URLSearchParams ||
+      body instanceof Blob ||
+      body instanceof ArrayBuffer ||
+      ArrayBuffer.isView(body);
+    const contentType = config.headers["Content-Type"];
     if (
-      !config.headers["Content-Type"] &&
-      !(body instanceof FormData) &&
-      typeof body === "object"
+      !raw &&
+      typeof body !== "string" &&
+      (!contentType || contentType.includes("application/json"))
     ) {
-      config.headers["Content-Type"] = "application/json";
+      config.headers["Content-Type"] = contentType || "application/json";
       config.body = JSON.stringify(body);
-    } else {
-      config.body = body;
-    }
+    } else config.body = body;
   }
 
   try {

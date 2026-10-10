@@ -1,3 +1,7 @@
+import {
+  getPreferenceIdentity,
+  migrateAccountPreference,
+} from "./backendIdentity";
 import { normalizeAppearance } from "../utils/theme";
 import { validatePalette } from "../utils/palettes";
 import { useState, useEffect, useCallback } from "react";
@@ -40,7 +44,7 @@ const legacy = {
 };
 export function usePreference(name, fallback) {
   const { user } = useAuth();
-  const identity = user?.id ?? user?.username ?? null;
+  const identity = getPreferenceIdentity(user);
   const [snapshot, setSnapshot] = useState(() => ({
     identity,
     value: preferenceStore.read(identity, name, fallback),
@@ -51,6 +55,7 @@ export function usePreference(name, fallback) {
         identity,
         value: preferenceStore.read(identity, name, fallback),
       });
+    migrateAccountPreference(preferenceStore, user, name);
     if (identity !== null && legacy[name]) {
       try {
         const old = localStorage.getItem(legacy[name]);
@@ -79,6 +84,7 @@ export function usePreference(name, fallback) {
   }, [identity, name]);
   const write = useCallback(
     (value) => {
+      if (!preferenceStore.validate(name, value)) return false;
       setSnapshot({ identity, value });
       return preferenceStore.write(identity, name, value);
     },

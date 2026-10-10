@@ -59,7 +59,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       proxy: {
-        "^/(api|auth|users|setup|server|plugin|plugins|content|audit-log|register|static|themes)":
+        "^/(api|auth|users|setup|server|plugin|plugins|content|audit-log|register|static|themes|openapi\\.json)":
           {
             target,
             changeOrigin: true,

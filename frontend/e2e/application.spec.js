@@ -157,3 +157,35 @@ test("layout preferences synchronize between tabs for the same account", async (
   ).toHaveAttribute("aria-pressed", "true");
   await second.close();
 });
+test("notifications synchronize messages, read state and clearing across tabs", async ({
+  context,
+  page,
+}) => {
+  await backend(context);
+  await login(page, "alice");
+  const second = await context.newPage();
+  await login(second, "alice");
+  await page.getByRole("button", { name: "Refresh", exact: true }).click();
+  await expect(
+    second.getByRole("button", {
+      name: "Notification history, 2 unread",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await second.getByRole("button", { name: /Notification history/ }).click();
+  await expect(
+    second
+      .getByRole("dialog")
+      .getByText("Server list refreshed.", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Notification history", exact: true }),
+  ).toBeVisible();
+  await second.getByRole("button", { name: "Clear history" }).click();
+  await page
+    .getByRole("button", { name: "Notification history", exact: true })
+    .click();
+  await expect(
+    page.getByRole("dialog").getByText("No notifications yet."),
+  ).toBeVisible();
+});

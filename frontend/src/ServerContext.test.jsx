@@ -1,3 +1,4 @@
+import { getPreferenceIdentity } from "./app/backendIdentity";
 import React from "react";
 import {
   render,
@@ -74,7 +75,11 @@ it("restores account selection without refetching on selection changes", async (
     status: "success",
     servers: [{ name: "First" }, { name: "Second" }],
   });
-  createPreferenceStore().write("admin", "selectedServer", "Second");
+  createPreferenceStore().write(
+    getPreferenceIdentity({ username: "admin" }),
+    "selectedServer",
+    "Second",
+  );
   render(tree());
   await waitFor(() =>
     expect(screen.getByTestId("selection")).toHaveTextContent("Second"),

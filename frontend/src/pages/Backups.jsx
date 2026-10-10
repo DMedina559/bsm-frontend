@@ -30,7 +30,7 @@ const Backups = () => {
 
   const resourceQuery = useResourceQuery("backups", selectedServer);
   const backups = resourceQuery.data ?? {};
-  const loading = resourceQuery.isFetching;
+  const loading = resourceQuery.isFetching || write.isPending;
   const fetchBackups = async () => {
     const result = await resourceQuery.refetch();
     if (result.error) addToast(result.error.message, "error");

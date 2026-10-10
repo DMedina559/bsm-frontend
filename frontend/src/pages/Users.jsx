@@ -22,7 +22,6 @@ import { useAuth } from "../AuthContext";
 import { logger } from "../utils/logger";
 const Users = () => {
   const { confirmAction } = useDialog();
-  const [actionLoading, setActionLoading] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -40,6 +39,8 @@ const Users = () => {
     ({ url, body }) => post(url, body),
     [queryKeys.users()],
   );
+
+  const actionLoading = write.isPending;
   const writePost = (url, body) =>
     write.mutateAsync({ method: "post", url, body });
 
@@ -77,7 +78,7 @@ const Users = () => {
       ))
     )
       return;
-    setActionLoading(true);
+
     try {
       await writePost(`/api/users/${userToDelete.id}/delete`);
       addToast(`User ${userToDelete.username} deleted.`, "success");
@@ -89,13 +90,11 @@ const Users = () => {
         username: userToDelete?.username,
       });
       addToast(error.message || "Failed to delete user.", "error");
-    } finally {
-      setActionLoading(false);
     }
   };
   const handleGenerateLink = async (e) => {
     e.preventDefault();
-    setActionLoading(true);
+
     try {
       const response = await writePost("/api/register/generate-token", {
         role: inviteRole,
@@ -121,8 +120,6 @@ const Users = () => {
       }
     } catch (error) {
       addToast(error.message || "Failed to generate invitation link.", "error");
-    } finally {
-      setActionLoading(false);
     }
   };
   const openEditModal = (user) => {
@@ -140,7 +137,7 @@ const Users = () => {
   };
   const saveUserChanges = async () => {
     if (!editingUser) return;
-    setActionLoading(true);
+
     try {
       let updated = false;
 
@@ -176,8 +173,6 @@ const Users = () => {
         editingUser,
       });
       addToast(error.message || "Failed to update user.", "error");
-    } finally {
-      setActionLoading(false);
     }
   };
   const copyToClipboard = async () => {

@@ -15,6 +15,7 @@ export const queryKeys = Object.freeze({
   task: (id) => ["tasks", id],
   globalPlayers: () => ["players"],
   audit: () => ["audit"],
+  serverAddons: (name) => ["servers", name, "addons"],
   serverSettings: (name) => ["servers", name, "settings"],
   access: ([name, kind]) => ["servers", name, kind],
   users: () => ["users"],
