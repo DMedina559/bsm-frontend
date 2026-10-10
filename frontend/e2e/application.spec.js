@@ -93,7 +93,10 @@ async function login(page, name) {
   await page.getByLabel("Password", { exact: true }).fill("password");
   await page.getByRole("button", { name: "Sign In", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: `Open ${name}-server monitor` }),
+    page.getByRole("button", {
+      name: `Open ${name}-server monitor`,
+      exact: true,
+    }),
   ).toBeVisible();
 }
 test("login, logout and a different account clear the previous fleet", async ({
