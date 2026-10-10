@@ -109,18 +109,20 @@ const Layout = () => {
         </header>
         <main
           id="main-content"
-          className="main-content"
+          className={`main-content${pathname === "/" ? " overview-main" : ""}`}
           ref={mainRef}
           tabIndex={-1}
         >
-          <div className="page-context">
-            <span>{description}</span>
-            {group === "Selected server" && (
-              <span className="workspace-server">
-                {selectedServer || "No server selected"}
-              </span>
-            )}
-          </div>
+          {pathname !== "/" && (
+            <div className="page-context">
+              <span>{description}</span>
+              {group === "Selected server" && (
+                <span className="workspace-server">
+                  {selectedServer || "No server selected"}
+                </span>
+              )}
+            </div>
+          )}
           <Outlet />
           <Footer />
         </main>

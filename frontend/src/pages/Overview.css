@@ -639,3 +639,8 @@
 .workspace-overview .overview-metrics small {
   display: none;
 }
+
+.workspace-overview .overview-page-heading {
+  padding-bottom: 4px;
+  border-bottom: 0;
+}
