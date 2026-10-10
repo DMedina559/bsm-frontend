@@ -88,12 +88,12 @@ export function createStateReconciler() {
         throw new DOMException("Session changed", "AbortError");
       return { accepted: false };
     }
-    const versioned = Number.isSafeInteger(revision) && revision > 0;
+    const hasRevision = Number.isSafeInteger(revision) && revision > 0;
     if (
       incomingEpoch != null &&
-      (typeof incomingEpoch !== "string" || !incomingEpoch || !versioned)
+      (typeof incomingEpoch !== "string" || !incomingEpoch || !hasRevision)
     ) {
-      if (source === "http") throw new Error("Invalid backend state version");
+      if (source === "http") throw new Error("Invalid backend state revision");
       return { accepted: false };
     }
     if (!observeEpoch(incomingEpoch, ticket, source))
@@ -104,7 +104,7 @@ export function createStateReconciler() {
     if (id && seen.has(id)) return { accepted: false, ...previous };
     if (previous) {
       if (
-        versioned &&
+        hasRevision &&
         Number.isFinite(previous.revision) &&
         revision <= previous.revision
       )
@@ -116,7 +116,7 @@ export function createStateReconciler() {
         source === "http" &&
         ticket &&
         !(
-          versioned &&
+          hasRevision &&
           Number.isFinite(previous.revision) &&
           revision > previous.revision
         ) &&
@@ -129,7 +129,7 @@ export function createStateReconciler() {
         !transition(
           previous.value,
           value,
-          versioned &&
+          hasRevision &&
             Number.isFinite(previous.revision) &&
             revision > previous.revision,
         )
@@ -142,7 +142,7 @@ export function createStateReconciler() {
       source,
       clock: ++clock,
       requestClock: ticket?.clock ?? 0,
-      revision: versioned ? revision : previous?.revision,
+      revision: hasRevision ? revision : previous?.revision,
       epoch,
     };
     records.delete(name);
