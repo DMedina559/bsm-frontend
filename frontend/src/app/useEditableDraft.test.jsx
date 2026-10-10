@@ -40,3 +40,13 @@ it("requires confirmation to replace a dirty draft", async () => {
   expect(result.current.value.name).toBe("backend");
   expect(result.current.dirty).toBe(false);
 });
+it("reports backend conflicts without replacing edits", () => {
+  const { result, rerender } = renderHook(
+    ({ data }) => useEditableDraft("one", data, empty),
+    { initialProps: { data: { name: "old" } } },
+  );
+  act(() => result.current.setValue({ name: "edit" }));
+  rerender({ data: { name: "other editor" } });
+  expect(result.current.conflicted).toBe(true);
+  expect(result.current.value.name).toBe("edit");
+});

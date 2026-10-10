@@ -71,3 +71,20 @@ describe("App", () => {
     });
   });
 });
+it("routes setup correctly through the data router under a proxy basename", async () => {
+  const { createMemoryRouter, RouterProvider } =
+    await import("react-router-dom");
+  const api = await import("./test/httpFixtures");
+  api.get.mockImplementation(async (url) =>
+    url === "/api/setup/status" ? { needs_setup: true } : {},
+  );
+  const router = createMemoryRouter([{ path: "*", element: <App /> }], {
+    basename: "/ingress/app",
+    initialEntries: ["/ingress/app/"],
+  });
+  const view = render(<RouterProvider router={router} />);
+  await screen.findByText("Setup Bedrock Server Manager");
+  expect(router.state.location.pathname).toBe("/ingress/app/setup");
+  view.unmount();
+  router.dispose();
+});

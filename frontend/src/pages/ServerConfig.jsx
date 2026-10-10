@@ -1,3 +1,4 @@
+import DraftConflictNotice from "../components/DraftConflictNotice";
 import { callOperation } from "../api/operations";
 import { queryKeys } from "../app/queryKeys";
 import { useEditableDraft } from "../app/useEditableDraft";
@@ -243,6 +244,7 @@ const ServerConfig = () => {
   return (
     <div className="container">
       <QueryStatus query={resourceQuery} />
+      <DraftConflictNotice draft={draft} />
       <div
         className="header"
         style={{

@@ -50,8 +50,8 @@ it("deduplicates events per resource and keeps metadata bounded", () => {
   expect(state.accept(["monitor", "b"], 2, { eventId: "one" }).accepted).toBe(
     true,
   );
-  for (let i = 0; i < 1200; i++) state.accept(["monitor", String(i)], i);
-  expect(state.entries("monitor")).toHaveLength(1000);
+  for (let i = 0; i < 1200; i++) state.accept(["query", String(i)], i);
+  expect(state.entries("query")).toHaveLength(1000);
 });
 it("prevents task regression and malformed frames poisoning revisions", () => {
   state.task({ id: "task", status: "running", revision: 2 });
@@ -160,4 +160,15 @@ it("ignores malformed epoch metadata without clearing accepted state", () => {
     state.accept(["monitor"], { epoch: "next", revision: -1 }).accepted,
   ).toBe(false);
   expect(state.read(["monitor"]).epoch).toBe("first");
+});
+it("preserves resource watermarks and terminal tasks through query cache churn", () => {
+  state.accept(["monitor", "alpha"], { revision: 100 });
+  state.task({ id: "finished", status: "completed", revision: 100 });
+  for (let i = 0; i < 1500; i++) state.accept(["query", i], i);
+  expect(state.accept(["monitor", "alpha"], { revision: 1 }).accepted).toBe(
+    false,
+  );
+  expect(
+    state.task({ id: "finished", status: "running", revision: 1 }).accepted,
+  ).toBe(false);
 });

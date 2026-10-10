@@ -17,6 +17,9 @@ export function startOperationRecovery(identity = null, generation = 0) {
   let polling = false;
   const attempts = new Map();
   let cursor = 0;
+  let discoveryTimer;
+  let discoveryFailures = 0;
+  let discovering = false;
   const poll = async () => {
     if (stopped || polling || navigator.onLine === false) return;
     if (
@@ -109,6 +112,13 @@ export function startOperationRecovery(identity = null, generation = 0) {
   // Task lists are account-filtered by the backend. Snapshots lack operation
   // metadata, so unknown tasks are restored as generic background operations.
   const discover = () => {
+    if (stopped || discovering || navigator.onLine === false) return;
+    discovering = true;
+    clearTimeout(discoveryTimer);
+    void queryClient.invalidateQueries({
+      queryKey: [...queryKeys.tasks(), { identity, generation }],
+      refetchType: "none",
+    });
     let discoveryTicket;
     return queryClient
       .fetchQuery({
@@ -138,6 +148,7 @@ export function startOperationRecovery(identity = null, generation = 0) {
           !stateReconciler.current(discoveryTicket)
         )
           return;
+        discoveryFailures = 0;
         tasks.forEach((task) => {
           if (
             !task ||
@@ -158,7 +169,15 @@ export function startOperationRecovery(identity = null, generation = 0) {
         });
       })
       .catch(() => {
-        /* Poll registered operations even if listing is unavailable. */
+        if (stopped) return;
+        discoveryFailures += 1;
+        discoveryTimer = setTimeout(
+          discover,
+          Math.min(60000, 1000 * 2 ** Math.min(discoveryFailures, 6)),
+        );
+      })
+      .finally(() => {
+        discovering = false;
       });
   };
   void discover();
@@ -172,16 +191,23 @@ export function startOperationRecovery(identity = null, generation = 0) {
   const unsubscribe = operationCoordinator.subscribe(poll);
   const resume = () => {
     attempts.clear();
+    void discover();
     void poll();
   };
+  const onConnected = () => {
+    void discover();
+  };
+  window.addEventListener("bsm:socket-connected", onConnected);
   window.addEventListener("online", resume);
   const stop = () => {
     stopped = true;
     controller.abort();
     clearInterval(timer);
+    clearTimeout(discoveryTimer);
     unsubscribe();
     stopEpoch();
     window.removeEventListener("online", resume);
+    window.removeEventListener("bsm:socket-connected", onConnected);
   };
   const removeReset = sessionRuntime.onReset(stop);
   return () => {

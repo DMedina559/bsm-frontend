@@ -71,3 +71,25 @@ it("notifies subscribers and releases them", () => {
   store.write("alice", "layout", "list");
   expect(calls).toBe(2);
 });
+it("synchronizes memory preferences when durable storage throws, including removal", () => {
+  const store = createPreferenceStore({
+    getItem() {
+      throw new Error("blocked");
+    },
+    setItem() {
+      throw new Error("full");
+    },
+    removeItem() {
+      throw new Error("blocked");
+    },
+  });
+  let notifications = 0;
+  const stop = store.subscribe("alice", "layout", () => notifications++);
+  expect(store.write("alice", "layout", "grid")).toBe(true);
+  expect(store.read("alice", "layout", "list")).toBe("grid");
+  expect(store.read("bob", "layout", "list")).toBe("list");
+  expect(store.remove("alice", "layout")).toBe(true);
+  expect(store.read("alice", "layout", "list")).toBe("list");
+  expect(notifications).toBe(2);
+  stop();
+});

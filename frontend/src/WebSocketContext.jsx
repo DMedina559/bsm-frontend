@@ -8,6 +8,7 @@ import React, {
   useEffect,
   useState,
   useCallback,
+  useMemo,
 } from "react";
 import { useAuth } from "./AuthContext";
 import { createWebSocketManager } from "./app/webSocketManager";
@@ -24,7 +25,6 @@ export const WebSocketProvider = ({ children }) => {
   const { user, sessionGeneration } = useAuth();
   const identity = user?.id ?? user?.username ?? null;
   const resourceIdentity = getPreferenceIdentity(user);
-  const [lastMessage, setLastMessage] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isFallback, setIsFallback] = useState(false);
   const [listeners] = useState(() => new Set());
@@ -45,12 +45,10 @@ export const WebSocketProvider = ({ children }) => {
             logger.error("[WebSocket] Message listener failed", { error });
           }
         });
-        setLastMessage(message);
       },
     }),
   );
   useEffect(() => {
-    setLastMessage(null);
     setIsFallback(false);
     return manager.start(identity);
   }, [identity, sessionGeneration, manager]);
@@ -97,20 +95,30 @@ export const WebSocketProvider = ({ children }) => {
     },
     [listeners],
   );
+  const value = useMemo(
+    () => ({
+      connectionState,
+      isConnected,
+      isFallback,
+      sendMessage,
+      subscribe,
+      unsubscribe,
+      reconnect,
+      addMessageListener,
+    }),
+    [
+      connectionState,
+      isConnected,
+      isFallback,
+      sendMessage,
+      subscribe,
+      unsubscribe,
+      reconnect,
+      addMessageListener,
+    ],
+  );
   return (
-    <WebSocketContext.Provider
-      value={{
-        connectionState,
-        isConnected,
-        isFallback,
-        lastMessage,
-        sendMessage,
-        subscribe,
-        unsubscribe,
-        reconnect,
-        addMessageListener,
-      }}
-    >
+    <WebSocketContext.Provider value={value}>
       {children}
     </WebSocketContext.Provider>
   );

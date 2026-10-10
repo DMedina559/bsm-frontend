@@ -1,5 +1,6 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./app/queryClient";
+import DraftNavigationGuard from "./app/DraftNavigationGuard";
 import { DialogProvider } from "./DialogContext";
 import React, { Suspense, lazy } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -136,6 +137,7 @@ const App = () => {
         <ThemeProvider>
           <ToastProvider>
             <DialogProvider>
+              <DraftNavigationGuard />
               <WebSocketProvider>
                 <ServerProvider>
                   <ErrorBoundary>

@@ -1,3 +1,4 @@
+import DraftConflictNotice from "../components/DraftConflictNotice";
 import { callOperation } from "../api/operations";
 import { useEditableDraft } from "../app/useEditableDraft";
 import QueryStatus from "../components/QueryStatus";
@@ -149,6 +150,7 @@ const BSMSettings = () => {
   };
   return (
     <div className="container">
+      <DraftConflictNotice draft={draft} />
       <QueryStatus query={resourceQuery} />
       <div
         className="header"

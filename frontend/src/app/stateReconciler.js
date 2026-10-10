@@ -23,6 +23,7 @@ export function createStateReconciler() {
   const tickets = new WeakMap();
   const epochListeners = new Set();
   const records = new Map();
+  const cachedQueries = new Set();
   const seen = new Set();
   const keyOf = (key) => JSON.stringify(key);
   const current = (ticket) =>
@@ -60,6 +61,7 @@ export function createStateReconciler() {
         retiredEpochs.add(previous);
         epochGeneration += 1;
         records.clear();
+        cachedQueries.clear();
         seen.clear();
         // The observation discovering a restart belongs to the new instance.
         // Every other in-flight request and socket belongs to the old generation.
@@ -147,7 +149,17 @@ export function createStateReconciler() {
     };
     records.delete(name);
     records.set(name, record);
-    if (records.size > 1000) records.delete(records.keys().next().value);
+    // Only expendable query snapshots participate in LRU eviction. Resource
+    // watermarks and terminal tasks protect against replays until session/epoch reset.
+    if (key[0] === "query") {
+      cachedQueries.delete(name);
+      cachedQueries.add(name);
+      if (cachedQueries.size > 1000) {
+        const oldest = cachedQueries.values().next().value;
+        cachedQueries.delete(oldest);
+        records.delete(oldest);
+      }
+    }
     if (id) {
       seen.add(id);
       if (seen.size > 1000) seen.delete(seen.values().next().value);
@@ -165,13 +177,17 @@ export function createStateReconciler() {
     read: (key) => records.get(keyOf(key)),
     entries: (prefix) =>
       [...records.values()].filter((record) => record.key[0] === prefix),
-    forget: (key) => records.delete(keyOf(key)),
+    forget: (key) => {
+      cachedQueries.delete(keyOf(key));
+      return records.delete(keyOf(key));
+    },
     clear() {
       clock = 0;
       epoch = null;
       epochGeneration += 1;
       retiredEpochs.clear();
       records.clear();
+      cachedQueries.clear();
       seen.clear();
     },
     task(data, options) {

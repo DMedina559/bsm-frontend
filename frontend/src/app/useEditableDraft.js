@@ -1,3 +1,4 @@
+import { draftRegistry } from "./draftRegistry";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../AuthContext";
 import { useDialog } from "../DialogContext";
@@ -67,6 +68,11 @@ export function useEditableDraft(resource, data, empty) {
   );
   const dirty =
     current.baseline !== null && serialize(current.value) !== current.baseline;
+  const conflicted =
+    dirty && data !== undefined && serialize(data) !== current.baseline;
+  useEffect(() => {
+    if (dirty) return draftRegistry.register();
+  }, [dirty, identity]);
   const refresh = async (refetch) => {
     if (dirty && !(await confirmAction("Discard unsaved changes and refresh?")))
       return false;
@@ -86,6 +92,7 @@ export function useEditableDraft(resource, data, empty) {
     savedSnapshot: current.baseline,
     markSaved,
     dirty,
+    conflicted,
     refresh,
   };
 }

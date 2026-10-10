@@ -109,6 +109,7 @@ export function createWebSocketManager({ onMessage, onState }) {
             reconnectAttempts.current = 0;
             setIsConnected(true);
             setIsFallback(false);
+            window.dispatchEvent(new Event("bsm:socket-connected"));
             subscriptions.current.forEach((count, topic) => {
               if (count > 0)
                 socket.send(JSON.stringify({ action: "subscribe", topic }));

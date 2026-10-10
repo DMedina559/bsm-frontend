@@ -90,3 +90,36 @@ describe("WebSocket lifecycle", () => {
     expect(socket.onclose).toBeNull();
   });
 });
+it("delivers stream messages without rerendering connection consumers", () => {
+  let renders = 0;
+  const received = vi.fn();
+  function Consumer() {
+    const { addMessageListener } = useWebSocket();
+    renders++;
+    React.useEffect(() => addMessageListener(received), [addMessageListener]);
+    return null;
+  }
+  render(
+    <WebSocketProvider>
+      <Consumer />
+    </WebSocketProvider>,
+  );
+  const socket = sockets.at(-1);
+  act(() =>
+    socket.onmessage({
+      data: JSON.stringify({
+        status: "success",
+        message: "Authenticated successfully",
+      }),
+    }),
+  );
+  const before = renders;
+  act(() => {
+    for (let i = 0; i < 25; i++)
+      socket.onmessage({
+        data: JSON.stringify({ type: "log", topic: "logs", data: { line: i } }),
+      });
+  });
+  expect(received).toHaveBeenCalledTimes(25);
+  expect(renders).toBe(before);
+});

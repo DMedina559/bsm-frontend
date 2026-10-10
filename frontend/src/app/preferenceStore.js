@@ -2,6 +2,7 @@ import { getSessionStorageKey } from "./sessionBoundary";
 /** Versioned, validated preferences with safe migrations and tab subscriptions. */
 export function createPreferenceStore(storage, definitions = {}) {
   const listeners = new Map();
+  const memory = new Map();
   const getStorage = () => {
     try {
       return storage ?? globalThis.localStorage;
@@ -13,11 +14,15 @@ export function createPreferenceStore(storage, definitions = {}) {
     getSessionStorageKey(identity, `preference:${name}`);
   const notify = (key) => listeners.get(key)?.forEach((listener) => listener());
   const onStorage = (event) => {
-    if (event.key === null)
+    if (event.key === null) {
+      memory.clear();
       listeners.forEach((callbacks) =>
         callbacks.forEach((listener) => listener()),
       );
-    else notify(event.key);
+    } else {
+      memory.delete(event.key);
+      notify(event.key);
+    }
   };
   const store = {
     subscribe(identity, name, listener) {
@@ -37,7 +42,9 @@ export function createPreferenceStore(storage, definitions = {}) {
       const key = keyFor(identity, name);
       if (!key) return fallback;
       try {
-        const raw = getStorage()?.getItem(key);
+        const raw = memory.has(key)
+          ? memory.get(key)
+          : getStorage()?.getItem(key);
         if (raw == null) return fallback;
         let parsed = JSON.parse(raw);
         const definition = definitions[name];
@@ -81,31 +88,36 @@ export function createPreferenceStore(storage, definitions = {}) {
       const key = keyFor(identity, name);
       const definition = definitions[name];
       if (!key || !store.validate(name, value)) return false;
+      let raw;
       try {
-        const target = getStorage();
-        if (!target) return false;
-        target.setItem(
-          key,
-          JSON.stringify({ version: definition?.version ?? 1, value }),
-        );
-        notify(key);
-        return true;
+        raw = JSON.stringify({ version: definition?.version ?? 1, value });
       } catch {
         return false;
       }
+      try {
+        const target = getStorage();
+        if (!target) throw new Error("Storage unavailable");
+        target.setItem(key, raw);
+        memory.delete(key);
+      } catch {
+        memory.set(key, raw);
+      }
+      notify(key);
+      return true;
     },
     remove(identity, name) {
       const key = keyFor(identity, name);
       if (!key) return false;
       try {
         const target = getStorage();
-        if (!target) return false;
+        if (!target) throw new Error("Storage unavailable");
         target.removeItem(key);
-        notify(key);
-        return true;
+        memory.delete(key);
       } catch {
-        return false;
+        memory.set(key, null);
       }
+      notify(key);
+      return true;
     },
   };
   return store;

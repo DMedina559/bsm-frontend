@@ -1,3 +1,4 @@
+import DraftConflictNotice from "../components/DraftConflictNotice";
 import { callOperation } from "../api/operations";
 import { queryKeys } from "../app/queryKeys";
 import QueryStatus from "../components/QueryStatus";
@@ -543,6 +544,7 @@ const Content = () => {
   }
   return (
     <div className="container">
+      <DraftConflictNotice draft={addonDraft} />
       <QueryStatus query={contentQuery} />
       <div
         className="header"

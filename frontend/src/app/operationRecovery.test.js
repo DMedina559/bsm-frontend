@@ -121,3 +121,23 @@ it("rediscovers active tasks after a backend epoch change", async () => {
   stop();
   stateReconciler.clear();
 });
+it("retries discovery without registered tasks and refreshes on reconnect", async () => {
+  let calls = 0;
+  get.mockImplementation(async (url) => {
+    if (url !== "/api/tasks/list")
+      return { id: "recovered", status: "running" };
+    calls++;
+    if (calls === 1) throw new Error("offline");
+    return [];
+  });
+  const stop = startOperationRecovery();
+  await vi.advanceTimersByTimeAsync(2100);
+  expect(calls).toBe(2);
+  window.dispatchEvent(new Event("bsm:socket-connected"));
+  await vi.advanceTimersByTimeAsync(1);
+  expect(calls).toBe(3);
+  stop();
+  window.dispatchEvent(new Event("bsm:socket-connected"));
+  await vi.advanceTimersByTimeAsync(60000);
+  expect(calls).toBe(3);
+});
