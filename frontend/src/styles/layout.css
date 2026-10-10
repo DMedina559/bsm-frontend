@@ -281,8 +281,10 @@
 
 /* Slim breadcrumb and account bar on desktop and mobile. */
 .workspace-shell > .workspace-topbar {
-  min-height: 44px;
-  padding: 3px clamp(16px, 2vw, 28px);
+  min-height: 52px;
+  height: auto;
+  box-sizing: border-box;
+  padding: 8px clamp(16px, 2vw, 28px);
   gap: 12px;
 }
 .workspace-topbar .workspace-indicators {
@@ -293,11 +295,17 @@
 }
 @media (max-width: 768px) {
   .workspace-shell > .workspace-topbar {
-    min-height: 52px;
-    padding: 4px 12px;
+    min-height: 60px;
+    padding: 8px 12px;
     gap: 8px;
   }
   .workspace-topbar .workspace-indicators {
     gap: 8px;
   }
+}
+
+.workspace-topbar .icon-button {
+  box-sizing: border-box;
+  margin-block: 0;
+  flex-shrink: 0;
 }
