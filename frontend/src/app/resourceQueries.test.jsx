@@ -126,3 +126,38 @@ it("cancels a multi-step mutation after account switch and resets pending state 
   });
   expect(second).not.toHaveBeenCalled();
 });
+
+it.each([
+  [{}, []],
+  [{ world_backups: ["world.zip"] }, ["world.zip"]],
+])(
+  "reads typed backup responses with omitted empty categories",
+  async (backups, world) => {
+    auth.user = { username: "admin" };
+    get.mockResolvedValue({ status: "success", backups });
+    const { result } = renderHook(() => useResourceQuery("backups", "test"), {
+      wrapper,
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual({
+      world,
+      properties: [],
+      allowlist: [],
+      permissions: [],
+    });
+  },
+);
+
+it.each([
+  { unexpected: true },
+  { backups: [] },
+  { backups: { world_backups: null } },
+])("rejects malformed backup responses", async (response) => {
+  auth.user = { username: "admin" };
+  get.mockResolvedValue(response);
+  const { result } = renderHook(() => useResourceQuery("backups", "test"), {
+    wrapper,
+  });
+  await waitFor(() => expect(result.current.isError).toBe(true));
+  expect(result.current.error.message).toContain("Invalid");
+});

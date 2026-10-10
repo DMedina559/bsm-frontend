@@ -111,13 +111,11 @@ export function fixtureResponse(url) {
   if (p.endsWith("/backup/list/all"))
     return {
       status: "success",
-      details: {
-        all_backups: {
-          world_backups: ["2026-10-05-world.zip"],
-          properties_backups: ["2026-10-05-properties.json"],
-          permissions_backups: [],
-          allowlist_backups: [],
-        },
+      backups: {
+        world_backups: ["2026-10-05-world.zip"],
+        properties_backups: ["2026-10-05-properties.json"],
+        permissions_backups: [],
+        allowlist_backups: [],
       },
     };
   if (p === "/api/content/worlds")

@@ -120,14 +120,16 @@ const resources = {
     key: queryKeys.serverBackups,
     url: (name) => `/api/server/${encodeURIComponent(name)}/backup/list/all`,
     select: (data) => {
-      const backups = data.details?.all_backups;
-      if (!backups) throw new Error("Invalid backups response");
-      return {
-        world: array(backups.world_backups, "world backups"),
-        properties: array(backups.properties_backups, "properties backups"),
-        allowlist: array(backups.allowlist_backups, "allowlist backups"),
-        permissions: array(backups.permissions_backups, "permissions backups"),
-      };
+      const backups = object(data?.backups, "backups");
+      return Object.fromEntries(
+        ["world", "properties", "allowlist", "permissions"].map((category) => {
+          const files = backups[`${category}_backups`];
+          return [
+            category,
+            array(files === undefined ? [] : files, `${category} backups`),
+          ];
+        }),
+      );
     },
   },
   settings: {

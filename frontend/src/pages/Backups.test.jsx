@@ -26,13 +26,11 @@ describe("Backups", () => {
       if (url.includes("/backup/list/all")) {
         return Promise.resolve({
           status: "success",
-          details: {
-            all_backups: {
-              world_backups: ["world_backup_1.zip"],
-              properties_backups: [],
-              allowlist_backups: [],
-              permissions_backups: [],
-            },
+          backups: {
+            world_backups: ["world_backup_1.zip"],
+            properties_backups: [],
+            allowlist_backups: [],
+            permissions_backups: [],
           },
         });
       }
