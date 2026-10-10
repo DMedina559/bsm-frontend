@@ -1,5 +1,5 @@
 import { callOperation } from "../api/operations";
-import { useResourceMutation } from "../app/resourceQueries";
+import { useResourceMutation, useResourceQuery } from "../app/resourceQueries";
 import { queryKeys } from "../app/queryKeys";
 import { usePreference } from "../app/usePreference";
 import "./Overview.css";
@@ -29,7 +29,11 @@ const Overview = () => {
     useServer();
   const { user } = useAuth();
   const { addToast } = useToast();
-  const { isConnected, isFallback, reconnect } = useWebSocket();
+  const { isConnected, reconnect } = useWebSocket();
+  const health = useResourceQuery("applicationInfo", undefined, {
+    refetchInterval: 30000,
+    retry: false,
+  });
   const navigate = useNavigate();
   const [refreshing, setRefreshing] = useState(false);
   const [layout, updateLayout] = usePreference("overviewLayout", "grid");
@@ -179,11 +183,13 @@ const Overview = () => {
       );
     }
   };
-  const connection = isConnected
-    ? "Live updates connected"
-    : isFallback
-      ? "Polling fallback"
-      : "Live updates disconnected";
+  const healthLabel = health.isPending
+    ? "Checking backend"
+    : health.error
+      ? "Backend unavailable"
+      : isConnected
+        ? "Backend online"
+        : "Backend online · live updates unavailable";
   const unavailable = (loading || error) && servers.length === 0;
   return (
     <div className="container workspace-overview">
@@ -211,26 +217,14 @@ const Overview = () => {
             src={`${getApiProxyBasePath()}/app/image/icon/manager-logo.png`}
             alt=""
           />
-          <div>
-            <span className="workspace-eyebrow">BEDROCK SERVER MANAGER</span>
-            <h2>Your Bedrock workspace</h2>
-            <p>Manage servers, players, backups, and extensions.</p>
-            <div
-              className={`connection-pill ${isConnected ? "connected" : "degraded"}`}
-              role="status"
-            >
-              {connection}
-            </div>
+          <h2>Bedrock Server Manager</h2>
+          <div
+            className={`connection-pill ${!health.error && isConnected ? "connected" : "degraded"}`}
+            role="status"
+            aria-label="Backend availability"
+          >
+            {healthLabel}
           </div>
-          {!isConnected && (
-            <button
-              className="action-button secondary"
-              onClick={reconnect}
-              type="button"
-            >
-              Reconnect
-            </button>
-          )}
         </section>
         <OverviewFleetMetrics servers={servers} unavailable={unavailable} />
       </div>

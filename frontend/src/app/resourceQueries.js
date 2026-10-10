@@ -25,6 +25,11 @@ const object = (value, resource) => {
   return value;
 };
 const resources = {
+  applicationInfo: {
+    key: queryKeys.applicationInfo,
+    load: (_target, options) => callOperation("get_system_info", options),
+    select: (data) => object(data?.info, "application info"),
+  },
   themes: {
     key: queryKeys.themes,
     load: (_target, options) => callOperation("list_themes", options),

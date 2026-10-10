@@ -644,3 +644,29 @@
   padding-bottom: 4px;
   border-bottom: 0;
 }
+
+.workspace-overview .overview-dashboard-top .overview-intro {
+  padding: 10px 14px;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.workspace-overview .overview-dashboard-top .overview-intro > img {
+  width: 40px;
+  height: 40px;
+}
+.workspace-overview .overview-dashboard-top .overview-intro h2 {
+  flex: 1;
+  margin: 0;
+  font-size: 1rem;
+}
+.workspace-overview .overview-intro .connection-pill {
+  margin: 0;
+  padding: 5px 9px;
+  font-size: 0.75rem;
+}
+
+.workspace-overview .overview-intro > .connection-pill {
+  flex: 0 1 auto;
+  min-width: 0;
+}
