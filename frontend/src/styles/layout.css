@@ -309,3 +309,43 @@
   margin-block: 0;
   flex-shrink: 0;
 }
+
+/* Header controls share geometry independently of form and sidebar density. */
+.workspace-topbar .icon-button,
+.workspace-topbar .operations-trigger,
+.workspace-topbar .account-chip {
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 36px;
+  min-height: 36px;
+  margin: 0;
+  border-radius: var(--bsm-radius-md);
+  flex-shrink: 0;
+}
+.workspace-topbar .icon-button {
+  width: 36px;
+  min-width: 36px;
+  padding: 0;
+  background: transparent;
+}
+.workspace-topbar .account-chip {
+  padding-inline: 6px;
+  gap: 8px;
+}
+.workspace-topbar .avatar {
+  width: 28px;
+  height: 28px;
+}
+@media (max-width: 768px) {
+  .workspace-topbar .icon-button,
+  .workspace-topbar .operations-trigger,
+  .workspace-topbar .account-chip {
+    height: 44px;
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .workspace-topbar .icon-button {
+    width: 44px;
+  }
+}

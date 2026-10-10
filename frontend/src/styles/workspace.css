@@ -485,20 +485,8 @@ pre.monitor-output {
   margin-top: 20px;
 }
 
-.workspace-topbar .notification-history-toggle {
+.notification-history-toggle {
   position: relative;
-  width: 36px;
-  height: 36px;
-  min-height: 36px;
-  padding: 0;
-  background: transparent;
-}
-@media (max-width: 768px) {
-  .workspace-topbar .notification-history-toggle {
-    width: 44px;
-    height: 44px;
-    min-height: 44px;
-  }
 }
 .notification-count {
   position: absolute;
