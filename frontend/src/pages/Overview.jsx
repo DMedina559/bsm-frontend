@@ -184,12 +184,10 @@ const Overview = () => {
     }
   };
   const healthLabel = health.isPending
-    ? "Checking backend"
+    ? "Checking connection"
     : health.error
-      ? "Backend unavailable"
-      : isConnected
-        ? "Backend online"
-        : "Backend online · live updates unavailable";
+      ? "Connection unavailable"
+      : "Connection healthy";
   const unavailable = (loading || error) && servers.length === 0;
   return (
     <div className="container workspace-overview">
@@ -219,9 +217,10 @@ const Overview = () => {
           />
           <h2>Bedrock Server Manager</h2>
           <div
-            className={`connection-pill ${!health.error && isConnected ? "connected" : "degraded"}`}
+            className={`connection-pill ${!health.isPending && !health.error ? "connected" : "degraded"}`}
             role="status"
-            aria-label="Backend availability"
+            aria-label="Connection health"
+            title="Backend API availability, checked every 30 seconds"
           >
             {healthLabel}
           </div>

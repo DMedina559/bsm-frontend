@@ -92,10 +92,22 @@ const Layout = () => {
           <div className="workspace-indicators">
             <span
               className={`connection-indicator ${isConnected ? "connected" : "degraded"}`}
-              title="Update connection; not an overall system health check"
+              role="status"
+              aria-label="WebSocket health"
+              title={
+                isConnected
+                  ? "WebSocket connected"
+                  : isFallback
+                    ? "WebSocket disconnected; HTTP polling active"
+                    : "WebSocket disconnected"
+              }
             >
               <Radio size={14} />
-              {isConnected ? "Live" : isFallback ? "Polling" : "Offline"}
+              {isConnected
+                ? "WebSocket live"
+                : isFallback
+                  ? "WebSocket offline · polling"
+                  : "WebSocket offline"}
             </span>
             <OperationsStatus />
             <NotificationHistory />
