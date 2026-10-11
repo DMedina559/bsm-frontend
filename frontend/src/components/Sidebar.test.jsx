@@ -2,6 +2,7 @@ import { render, screen, waitFor, fireEvent, act } from "../test/utils";
 import Sidebar from "./Sidebar";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import * as api from "../test/httpFixtures";
+import { within } from "@testing-library/react";
 
 vi.mock("../api/transport", async (importOriginal) => {
   const { createHttpTransport } = await import("../test/httpFixtures");
@@ -76,7 +77,23 @@ describe("Sidebar", () => {
     });
 
     expect(screen.getByText("Monitor")).toBeInTheDocument();
-    expect(screen.getByText("Settings")).toBeInTheDocument();
+    const group = (name) =>
+      within(screen.getByRole("heading", { name }).closest(".nav-group"));
+    expect(
+      group("Selected server").getByRole("link", { name: "Settings" }),
+    ).toBeInTheDocument();
+    expect(
+      group("Global").getByRole("link", { name: "Settings" }),
+    ).toHaveAttribute("href", "/bsm-settings");
+    expect(
+      group("Global").getByRole("link", { name: "Players" }),
+    ).toHaveAttribute("href", "/global-players");
+    expect(
+      group("Plugins").getByRole("link", { name: "Settings" }),
+    ).toHaveAttribute("href", "/plugin-settings");
+    expect(
+      group("Plugins").getByRole("link", { name: "Manage" }),
+    ).toHaveAttribute("href", "/plugins");
     // Admin item
     expect(screen.getByText("Install Server")).toBeInTheDocument();
   });

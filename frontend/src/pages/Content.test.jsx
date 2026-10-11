@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from "../test/utils";
 import { act, fireEvent } from "@testing-library/react";
+import { reconcileSocketMessage } from "../app/applicationState";
 import Content from "./Content";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import * as api from "../test/httpFixtures";
@@ -129,4 +130,66 @@ describe("Content", () => {
       ),
     );
   });
+  it.each([
+    "import",
+    "enable",
+    "disable",
+    "subpack_update",
+    "uninstall",
+    "reorder",
+  ])(
+    "refreshes the open installed modal after addon %s events, including after a local subpack change",
+    async (action) => {
+      render(<Content />);
+      await screen.findByText("world.zip");
+      fireEvent.click(screen.getByRole("button", { name: "Addons" }));
+      fireEvent.click(
+        screen.getByRole("button", { name: /Manage Installed Addons/ }),
+      );
+      const select = await screen.findByTitle("Active Subpack");
+      fireEvent.change(select, { target: { value: "high" } });
+      await waitFor(() => expect(api.post).toHaveBeenCalled());
+      await waitFor(() =>
+        expect(
+          screen.getByRole("button", { name: "Save Order" }),
+        ).toBeDisabled(),
+      );
+      const previous = api.get.getMockImplementation();
+      api.get.mockImplementation((url, ...args) =>
+        url.endsWith("/addons")
+          ? Promise.resolve({
+              status: "success",
+              addons: {
+                behavior_packs: [
+                  {
+                    uuid: "pack-1",
+                    name: "Changed Elsewhere",
+                    version: [1, 0, 0],
+                    status: "ACTIVE",
+                    subpacks: [
+                      { folder_name: "low", name: "Low" },
+                      { folder_name: "high", name: "High" },
+                    ],
+                    active_subpack: "high",
+                  },
+                ],
+                resource_packs: [],
+              },
+            })
+          : previous(url, ...args),
+      );
+      await act(async () => {
+        reconcileSocketMessage({
+          type: "event",
+          topic: `event:after_addon_${action}`,
+          data: { server_name: "TestServer", result: { status: "success" } },
+        });
+      });
+      expect(await screen.findByText("Changed Elsewhere")).toBeInTheDocument();
+      await waitFor(() =>
+        expect(screen.getByTitle("Active Subpack")).toHaveValue("high"),
+      );
+      expect(screen.getByRole("button", { name: "Save Order" })).toBeDisabled();
+    },
+  );
 });

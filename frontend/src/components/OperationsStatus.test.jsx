@@ -1,8 +1,15 @@
 import { render, screen, fireEvent, within } from "@testing-library/react";
-import { beforeEach, expect, it } from "vitest";
+import { beforeEach, expect, it, vi } from "vitest";
 import OperationsStatus from "./OperationsStatus";
 import { operationCoordinator } from "../app/operationCoordinator";
-beforeEach(() => operationCoordinator.clear());
+const taskQuery = vi.hoisted(() => ({ data: [] }));
+vi.mock("../app/resourceQueries", () => ({
+  useResourceQuery: () => taskQuery,
+}));
+beforeEach(() => {
+  operationCoordinator.clear();
+  taskQuery.data = [];
+});
 it("keeps operation details in a dismissible dialog", () => {
   operationCoordinator.register({
     id: "job",
@@ -66,4 +73,30 @@ it.each([false, 0, "Backup created"])("shows a scalar outcome %s", (result) => {
       },
     ),
   ).toBeInTheDocument();
+});
+
+it("keeps the button after viewing a completed backend task until the backend list is empty", () => {
+  taskQuery.data = [
+    {
+      id: "backend-job",
+      status: "completed",
+      message: "Done",
+      result: { outcome: "Installed" },
+    },
+  ];
+  const { rerender } = render(<OperationsStatus />);
+  fireEvent.click(screen.getByRole("button", { name: /View operations/ }));
+  expect(screen.getByText("Done")).toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: /Dismiss/ }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Close dialog" }));
+  expect(
+    screen.getByRole("button", { name: /View operations/ }),
+  ).toBeInTheDocument();
+  taskQuery.data = [];
+  rerender(<OperationsStatus />);
+  expect(
+    screen.queryByRole("button", { name: /View operations/ }),
+  ).not.toBeInTheDocument();
 });

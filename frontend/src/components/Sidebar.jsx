@@ -17,7 +17,6 @@ import {
   Package,
   User,
   Plug,
-  Wrench,
   Shield,
   RefreshCw,
   PlusSquare,
@@ -133,7 +132,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
         {
           path: "/server-config",
           label: "Settings",
-          icon: Wrench,
+          icon: Settings,
           server: true,
         },
         {
@@ -163,21 +162,16 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
       ],
     },
     {
-      label: "Players",
+      label: "Global",
       items: [
         {
           path: "/global-players",
           label: "Players",
           icon: Gamepad2,
         },
-      ],
-    },
-    {
-      label: "Global",
-      items: [
         {
           path: "/bsm-settings",
-          label: "Global Settings",
+          label: "Settings",
           icon: Settings,
         },
         ...(sessionStorage.getItem("show_hidden_flag") === "true"
@@ -209,8 +203,8 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
     {
       label: "Plugins",
       items: [
-        { path: "/plugins", label: "Plugin Management", icon: Plug },
-        { path: "/plugin-settings", label: "Plugin Settings", icon: Settings },
+        { path: "/plugins", label: "Manage", icon: Plug },
+        { path: "/plugin-settings", label: "Settings", icon: Settings },
         ...pluginPages.map((page) => ({
           path: `/plugin-native-view?url=${encodeURIComponent(page.path)}`,
           label: page.name,

@@ -3,10 +3,33 @@ import { Activity } from "lucide-react";
 import Modal from "./Modal";
 import TaskOutcome from "./TaskOutcome";
 import "../styles/operations.css";
+import { useResourceQuery } from "../app/resourceQueries";
+import { terminalTaskStatus } from "../app/stateReconciler";
 import { useOperations } from "../app/useOperations";
 import { operationCoordinator } from "../app/operationCoordinator";
 export default function OperationsStatus() {
-  const operations = useOperations();
+  const tracked = useOperations();
+  const { data: tasks = [] } = useResourceQuery("tasks", null, {
+    refetchInterval: 15000,
+  });
+  const backendIds = new Set(tasks.map((task) => String(task.id)));
+  const operations = [
+    ...tracked.filter((operation) => !backendIds.has(operation.id)),
+    ...tasks.map((task) => {
+      const previous = tracked.find(
+        (operation) => operation.id === String(task.id),
+      );
+      return {
+        ...previous,
+        id: String(task.id),
+        kind: previous?.kind || "Background task",
+        status: task.status,
+        terminal: terminalTaskStatus(task.status),
+        task,
+        error: task.error,
+      };
+    }),
+  ];
   const [open, setOpen] = useState(false);
   if (!operations.length && !open) return null;
   const active = operations.filter(
@@ -61,16 +84,17 @@ export default function OperationsStatus() {
                   result={operation.task?.result}
                   error={operation.error}
                 />
-                {(operation.terminal || operation.status === "unknown") && (
-                  <button
-                    type="button"
-                    onClick={() => operationCoordinator.remove(operation.id)}
-                    className="action-button secondary"
-                    aria-label={`Dismiss ${operation.kind}${operation.serverName ? ` for ${operation.serverName}` : ""}`}
-                  >
-                    Dismiss
-                  </button>
-                )}
+                {!backendIds.has(operation.id) &&
+                  (operation.terminal || operation.status === "unknown") && (
+                    <button
+                      type="button"
+                      onClick={() => operationCoordinator.remove(operation.id)}
+                      className="action-button secondary"
+                      aria-label={`Dismiss ${operation.kind}${operation.serverName ? ` for ${operation.serverName}` : ""}`}
+                    >
+                      Dismiss
+                    </button>
+                  )}
               </li>
             ))}
         </ul>

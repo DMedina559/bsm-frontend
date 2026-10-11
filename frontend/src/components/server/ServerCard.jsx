@@ -1,3 +1,4 @@
+import { useResourceQuery } from "../../app/resourceQueries";
 import ServerCardMenu from "./ServerCardMenu";
 import "../../styles/server-card.css";
 import {
@@ -47,12 +48,26 @@ const actionDefinitions = {
 
 export default function ServerCard({
   server,
+  isAdmin = false,
   busy,
   onOpen,
   onAction,
   onUpdate,
   onCommand,
 }) {
+  const {
+    data: propertyData,
+    isPending: portsPending,
+    isError: portsError,
+  } = useResourceQuery("properties", server.name, { enabled: isAdmin });
+  const properties = propertyData?.properties;
+  const ports = [
+    ["IPv4", properties?.["server-port"]],
+    ["IPv6", properties?.["server-portv6"]],
+  ]
+    .filter(([, port]) => port != null && String(port).trim() !== "")
+    .map(([family, port]) => `${family} ${port}`)
+    .join(" · ");
   const status = String(server.status || "unknown").toLowerCase();
   const running = status === "running";
   const stable = ["running", "stopped", "installed", "updated"].includes(
@@ -114,6 +129,23 @@ export default function ServerCard({
           <span>Version</span>
           <strong>{server.version || "N/A"}</strong>
         </div>
+        {isAdmin && (
+          <div
+            className="overview-detail-row"
+            aria-label={`${server.name} ports`}
+          >
+            <span>Ports</span>
+            <strong
+              title={
+                portsError
+                  ? "Could not refresh server ports"
+                  : "Configured UDP ports"
+              }
+            >
+              {ports || (portsPending ? "Loading…" : "Unavailable")}
+            </strong>
+          </div>
+        )}
         <div className="overview-detail-row">
           <span className="overview-player-label">
             <Users size={15} aria-hidden="true" /> Players

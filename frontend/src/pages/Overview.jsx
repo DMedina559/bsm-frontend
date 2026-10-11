@@ -211,7 +211,7 @@ const Overview = () => {
             title="Application monitor"
           >
             <img
-              src={`${getApiProxyBasePath()}/app/image/icon/manager-logo.png`}
+              src={`${getApiProxyBasePath()}/app/image/icon/web-app-manifest-512x512.png`}
               alt=""
             />
           </Link>
@@ -302,6 +302,7 @@ const Overview = () => {
             <ServerCard
               key={server.name}
               server={server}
+              isAdmin={user?.role === "admin"}
               busy={isServerPending(server.name)}
               onOpen={handleServerClick}
               onAction={handleAction}
