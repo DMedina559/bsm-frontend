@@ -61,6 +61,9 @@ function Harness() {
       <button onClick={() => updateAppearance({ reducedMotion: "reduce" })}>
         Reduce motion
       </button>
+      <button onClick={() => updateAppearance({ reducedMotion: "allow" })}>
+        Allow motion
+      </button>
       <button onClick={() => changeTheme("blue").catch(() => {})}>
         Change
       </button>
@@ -399,6 +402,8 @@ it("reacts to device reduced-motion changes and removes its listener on unmount"
     );
     act(() => motionListener({ matches: true }));
     expect(document.documentElement.dataset.reducedMotion).toBe("true");
+    fireEvent.click(screen.getByText("Allow motion"));
+    expect(document.documentElement.dataset.reducedMotion).toBe("false");
     act(() => motionListener({ matches: false }));
     expect(document.documentElement.dataset.reducedMotion).toBe("false");
     view.unmount();

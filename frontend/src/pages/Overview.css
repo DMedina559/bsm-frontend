@@ -361,10 +361,14 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .workspace-overview .overview-server-card {
+  :root:not([data-reduced-motion="false"])
+    .workspace-overview
+    .overview-server-card {
     transition: none;
   }
-  .workspace-overview .overview-server-card:hover {
+  :root:not([data-reduced-motion="false"])
+    .workspace-overview
+    .overview-server-card:hover {
     transform: none;
   }
 }

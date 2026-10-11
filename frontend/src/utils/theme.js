@@ -74,7 +74,9 @@ export function normalizeAppearance(value) {
     panoramaDuration: Number.isFinite(value?.panoramaDuration)
       ? Math.max(20, Math.min(180, Math.round(value.panoramaDuration)))
       : 60,
-    reducedMotion: value?.reducedMotion === "reduce" ? "reduce" : "system",
+    reducedMotion: ["system", "reduce", "allow"].includes(value?.reducedMotion)
+      ? value.reducedMotion
+      : "system",
     sidebarTransparency: Number.isFinite(value?.sidebarTransparency)
       ? Math.max(0, Math.min(100, Math.round(value.sidebarTransparency)))
       : 0,

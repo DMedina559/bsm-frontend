@@ -57,7 +57,8 @@ export const ThemeProvider = ({ children }) => {
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false,
   );
   const reducedMotion =
-    appearance.reducedMotion === "reduce" || systemReducedMotion;
+    appearance.reducedMotion === "reduce" ||
+    (appearance.reducedMotion === "system" && systemReducedMotion);
   const [systemDark, setSystemDark] = useState(
     () => window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? true,
   );

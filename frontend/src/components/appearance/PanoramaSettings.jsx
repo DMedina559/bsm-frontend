@@ -95,6 +95,7 @@ export default function PanoramaSettings() {
         {select("reducedMotion", "Reduced motion", [
           ["system", "Follow device setting"],
           ["reduce", "Always reduce motion"],
+          ["allow", "Always allow motion"],
         ])}
         <p className="form-help-text">
           Limits interface animations, transitions, and panorama movement.{" "}
