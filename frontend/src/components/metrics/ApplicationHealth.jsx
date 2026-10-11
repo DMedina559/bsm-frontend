@@ -27,15 +27,25 @@ export default function ApplicationHealth() {
         }
       }}
     >
-      <summary aria-label={`Application health: ${label}`}>{label}</summary>
+      <summary
+        aria-label={`Connection and application health: ${label}`}
+        title="API connection and application health"
+      >
+        <span className="application-health-dot" aria-hidden="true" />
+        {query.error || query.isPending ? label : `Connected · ${label}`}
+      </summary>
       <div className="application-health-popover">
-        <h3>Application health</h3>
+        <h3>Connection and health</h3>
         {query.error ? (
           <p role="status">Health checks unavailable. Try again shortly.</p>
         ) : query.isPending ? (
           <p role="status">Checking services…</p>
         ) : (
           <ul>
+            <li>
+              <strong>API connection</strong>
+              <span className="check-healthy">Connected</span>
+            </li>
             {Object.entries(query.data?.checks ?? {}).map(([name, check]) => (
               <li key={name}>
                 <strong>{labels[name] ?? name}</strong>

@@ -17,7 +17,9 @@ const query = vi.hoisted(() => ({
 vi.mock("../../app/resourceQueries", () => ({ useResourceQuery: () => query }));
 it("opens individual health checks, refreshes, and closes with Escape", () => {
   render(<ApplicationHealth />);
-  const summary = screen.getByLabelText("Application health: Degraded");
+  const summary = screen.getByLabelText(
+    "Connection and application health: Degraded",
+  );
   fireEvent.click(summary);
   expect(screen.getByText("Database reachable")).toBeVisible();
   expect(screen.getByText("Metrics sampler stopped or stale")).toBeVisible();

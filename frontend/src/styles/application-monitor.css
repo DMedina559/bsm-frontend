@@ -162,3 +162,19 @@
     align-items: center;
   }
 }
+
+.application-health summary {
+  display: flex;
+  align-items: center;
+  gap: var(--bsm-space-2);
+}
+.application-health-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+.health-unavailable summary {
+  color: var(--bsm-warning);
+}

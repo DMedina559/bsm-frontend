@@ -1,5 +1,5 @@
 import { callOperation } from "../api/operations";
-import { useResourceMutation, useResourceQuery } from "../app/resourceQueries";
+import { useResourceMutation } from "../app/resourceQueries";
 import { queryKeys } from "../app/queryKeys";
 import { usePreference } from "../app/usePreference";
 import "./Overview.css";
@@ -32,10 +32,6 @@ const Overview = () => {
   const { user } = useAuth();
   const { addToast } = useToast();
   const { isConnected, reconnect } = useWebSocket();
-  const health = useResourceQuery("applicationInfo", undefined, {
-    refetchInterval: 30000,
-    retry: false,
-  });
   const navigate = useNavigate();
   const [refreshing, setRefreshing] = useState(false);
   const [layout, updateLayout] = usePreference("overviewLayout", "grid");
@@ -185,11 +181,6 @@ const Overview = () => {
       );
     }
   };
-  const healthLabel = health.isPending
-    ? "Checking"
-    : health.error
-      ? "Unavailable"
-      : "Connected";
   const unavailable = (loading || error) && servers.length === 0;
   return (
     <div className="container workspace-overview">
@@ -225,14 +216,6 @@ const Overview = () => {
             />
           </Link>
           <h2>Bedrock Server Manager</h2>
-          <div
-            className={`connection-pill ${!health.isPending && !health.error ? "connected" : "degraded"}`}
-            role="status"
-            aria-label="Connection health"
-            title="Backend API availability, checked every 30 seconds"
-          >
-            {healthLabel}
-          </div>
           <ApplicationHealth />
           <ApplicationMetricsSummary />
         </section>
