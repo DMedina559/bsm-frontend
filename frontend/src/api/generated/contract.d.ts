@@ -2063,6 +2063,7 @@ export interface components {
        * @enum {string}
        */
       health: "healthy" | "degraded";
+      lifecycle: components["schemas"]["LifecyclePhase"];
       /** Message */
       message?: string | null;
       /**
@@ -2237,6 +2238,11 @@ export interface components {
       resource_packs?: components["schemas"]["InstalledAddon"][];
     };
     JsonValue: unknown;
+    /**
+     * LifecyclePhase
+     * @enum {string}
+     */
+    LifecyclePhase: "starting" | "ready" | "stopping" | "stopped" | "failed";
     /** ListAvailableAddonsResponse */
     ListAvailableAddonsResponse: {
       /** Files */

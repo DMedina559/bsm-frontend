@@ -819,6 +819,9 @@
             "title": "Health",
             "type": "string"
           },
+          "lifecycle": {
+            "$ref": "#/components/schemas/LifecyclePhase"
+          },
           "message": {
             "anyOf": [
               {
@@ -837,7 +840,7 @@
             "type": "string"
           }
         },
-        "required": ["health", "checks", "checked_at"],
+        "required": ["lifecycle", "health", "checks", "checked_at"],
         "title": "GetApplicationHealthResponse",
         "type": "object"
       },
@@ -1220,6 +1223,11 @@
         "type": "object"
       },
       "JsonValue": {},
+      "LifecyclePhase": {
+        "enum": ["starting", "ready", "stopping", "stopped", "failed"],
+        "title": "LifecyclePhase",
+        "type": "string"
+      },
       "ListAvailableAddonsResponse": {
         "additionalProperties": false,
         "properties": {
