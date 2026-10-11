@@ -1762,6 +1762,11 @@
             "title": "Enabled",
             "type": "boolean"
           },
+          "has_settings": {
+            "default": false,
+            "title": "Has Settings",
+            "type": "boolean"
+          },
           "status": {
             "default": "UNKNOWN",
             "title": "Status",

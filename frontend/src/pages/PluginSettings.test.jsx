@@ -13,7 +13,11 @@ beforeEach(() => {
     if (url === "/api/plugins")
       return Promise.resolve({
         status: "success",
-        plugins: { typed: { enabled: true }, legacy: { enabled: false } },
+        plugins: {
+          typed: { enabled: true, has_settings: true },
+          legacy: { enabled: false, has_settings: true },
+          empty: { enabled: true, has_settings: false },
+        },
       });
     if (url === "/api/plugins/typed/settings")
       return Promise.resolve({
@@ -76,4 +80,10 @@ it("preserves legacy JSON types and blocks malformed JSON", async () => {
   );
   fireEvent.change(input, { target: { value: "{broken" } });
   expect(input).toBeInvalid();
+});
+
+it("hides plugins without settings", async () => {
+  render(<PluginSettings />);
+  await screen.findByRole("tab", { name: "typed" });
+  expect(screen.queryByRole("tab", { name: "empty" })).not.toBeInTheDocument();
 });

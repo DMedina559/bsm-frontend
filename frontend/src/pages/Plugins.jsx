@@ -145,12 +145,14 @@ const Plugins = () => {
                 <span>{plugin.author || "Unknown Author"}</span>
               </div>
               <div className="plugin-card-heading">
-                <Link
-                  className="action-button secondary"
-                  to={`/plugin-settings?plugin=${encodeURIComponent(plugin.name)}`}
-                >
-                  Settings
-                </Link>
+                {plugin.has_settings && (
+                  <Link
+                    className="action-button secondary"
+                    to={`/plugin-settings?plugin=${encodeURIComponent(plugin.name)}`}
+                  >
+                    Settings
+                  </Link>
+                )}
                 <button
                   className="action-button secondary"
                   disabled={loading}

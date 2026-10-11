@@ -100,7 +100,7 @@ function PluginEditor({ name }) {
 }
 export default function PluginSettings() {
   const query = useResourceQuery("plugins");
-  const plugins = query.data ?? [];
+  const plugins = (query.data ?? []).filter((plugin) => plugin.has_settings);
   const [params, setParams] = useSearchParams();
   const selected =
     plugins.find((plugin) => plugin.name === params.get("plugin"))?.name ??
@@ -167,7 +167,7 @@ export default function PluginSettings() {
           </div>
         </>
       ) : (
-        !query.isFetching && <p>No plugins installed.</p>
+        !query.isFetching && <p>No plugins provide settings.</p>
       )}
     </div>
   );

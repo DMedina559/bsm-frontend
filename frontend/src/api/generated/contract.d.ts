@@ -2454,6 +2454,11 @@ export interface components {
       /** Enabled */
       enabled: boolean;
       /**
+       * Has Settings
+       * @default false
+       */
+      has_settings?: boolean;
+      /**
        * Status
        * @default UNKNOWN
        */
