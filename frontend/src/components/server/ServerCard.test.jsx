@@ -2,6 +2,11 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import ServerCard from "./ServerCard";
 
+vi.mock("../../app/resourceQueries", () => ({
+  useResourceQuery: vi.fn(() => ({
+    data: { properties: { "server-port": "19132", "server-portv6": "19133" } },
+  })),
+}));
 function mount() {
   const handlers = {
     onOpen: vi.fn(),
@@ -106,4 +111,15 @@ describe("server card navigation", () => {
     );
     expect(handlers.onOpen).not.toHaveBeenCalled();
   });
+});
+
+it("shows configured IPv4 and IPv6 ports for admins", () => {
+  render(<ServerCard server={{ name: "Test", status: "stopped" }} isAdmin />);
+  expect(screen.getByLabelText("Test ports")).toHaveTextContent(
+    "IPv4 19132 · IPv6 19133",
+  );
+});
+it("does not show a ports row for other users", () => {
+  mount();
+  expect(screen.queryByLabelText("Test ports")).not.toBeInTheDocument();
 });

@@ -302,6 +302,7 @@ const Overview = () => {
             <ServerCard
               key={server.name}
               server={server}
+              isAdmin={user?.role === "admin"}
               busy={isServerPending(server.name)}
               onOpen={handleServerClick}
               onAction={handleAction}
