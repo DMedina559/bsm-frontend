@@ -37,3 +37,27 @@ it("keeps server-reported fields read only", () => {
   );
   expect(screen.getByLabelText("status")).toHaveAttribute("readonly");
 });
+
+it("uses bounds and units for metric intervals and protects reported server state", () => {
+  render(
+    <>
+      <SettingsField
+        path="monitoring.app_metrics_interval_sec"
+        value={3}
+        onChange={vi.fn()}
+      />
+      <SettingsField
+        path="server_info.status"
+        value="running"
+        onChange={vi.fn()}
+      />
+    </>,
+  );
+  const interval = screen.getByLabelText("Application metrics interval");
+  expect(interval).toHaveAttribute("type", "number");
+  expect(interval).toHaveAttribute("min", "1");
+  expect(interval).toHaveAttribute("max", "3600");
+  expect(interval).toHaveAttribute("step", "1");
+  expect(interval).toHaveAccessibleDescription(/seconds/);
+  expect(screen.getByLabelText("status")).toHaveAttribute("readonly");
+});
