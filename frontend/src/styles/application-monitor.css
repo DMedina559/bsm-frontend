@@ -1,0 +1,91 @@
+.application-summary {
+  margin-bottom: var(--bsm-grid-gap);
+}
+.application-summary-heading,
+.application-monitor-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bsm-space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--bsm-space-2);
+}
+.application-summary .application-summary-heading h2 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--bsm-space-2);
+  font-size: 1rem;
+}
+.application-summary-heading a {
+  font-size: 0.8rem;
+}
+.application-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--bsm-space-2);
+  margin: 0;
+}
+.application-metric-grid > div,
+.application-chart {
+  background: var(--bsm-surface-raised);
+  border: 1px solid var(--border-color);
+  border-radius: var(--bsm-radius-md);
+  padding: var(--bsm-space-3);
+  min-width: 0;
+}
+.application-metric-grid dt {
+  font-size: 0.75rem;
+  color: var(--text-color-secondary);
+}
+.application-metric-grid dd {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: var(--bsm-space-1) 0 0;
+  overflow-wrap: anywhere;
+}
+.application-monitor .application-monitor-heading h1 {
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: var(--bsm-space-2);
+  margin: 0;
+}
+.application-monitor-heading p,
+.application-metrics-hint {
+  color: var(--text-color-secondary);
+  font-size: 0.8rem;
+  margin: var(--bsm-space-2) 0;
+}
+.application-charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--bsm-grid-gap);
+  margin: var(--bsm-grid-gap) 0;
+}
+.application-monitor .application-chart h2,
+.application-monitor .application-server-metrics h2 {
+  font-size: 1rem;
+  margin: 0 0 var(--bsm-space-2);
+}
+.application-chart-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bsm-space-3);
+  font-size: 0.75rem;
+  margin-bottom: var(--bsm-space-2);
+}
+.application-chart-canvas {
+  height: 220px;
+  min-width: 0;
+}
+@media (max-width: 900px) {
+  .application-charts {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 600px) {
+  .application-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -799,6 +799,76 @@
         "title": "GetAllowlistResponse",
         "type": "object"
       },
+      "GetApplicationMetricsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "epoch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Epoch"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/MetricsSample"
+            },
+            "title": "History",
+            "type": "array"
+          },
+          "history_limit": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 180.0,
+            "title": "History Limit",
+            "type": "integer"
+          },
+          "interval_seconds": {
+            "exclusiveMinimum": 0.0,
+            "title": "Interval Seconds",
+            "type": "number"
+          },
+          "latest": {
+            "$ref": "#/components/schemas/MetricsSample"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision"
+          },
+          "status": {
+            "const": "success",
+            "default": "success",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["latest", "history", "interval_seconds", "history_limit"],
+        "title": "GetApplicationMetricsResponse",
+        "type": "object"
+      },
       "GetPermissionsResponse": {
         "additionalProperties": false,
         "properties": {
@@ -1143,6 +1213,204 @@
         },
         "required": ["data", "start", "end", "file_id", "has_more"],
         "title": "LogHistoryPage",
+        "type": "object"
+      },
+      "MetricsSample": {
+        "additionalProperties": false,
+        "properties": {
+          "app_cpu_percent": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "App Cpu Percent"
+          },
+          "app_ram_mb": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "App Ram Mb"
+          },
+          "asyncio_task_count": {
+            "minimum": 0.0,
+            "title": "Asyncio Task Count",
+            "type": "integer"
+          },
+          "disk_read_kib_s": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disk Read Kib S"
+          },
+          "disk_write_kib_s": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disk Write Kib S"
+          },
+          "epoch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Epoch"
+          },
+          "loop_lag_ms": {
+            "minimum": 0.0,
+            "title": "Loop Lag Ms",
+            "type": "number"
+          },
+          "net_rx_kib_s": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Net Rx Kib S"
+          },
+          "net_tx_kib_s": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Net Tx Kib S"
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision"
+          },
+          "servers": {
+            "items": {
+              "$ref": "#/components/schemas/ServerMetrics"
+            },
+            "title": "Servers",
+            "type": "array"
+          },
+          "sys_cpu_percent": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sys Cpu Percent"
+          },
+          "sys_ram_mb": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sys Ram Mb"
+          },
+          "sys_ram_percent": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sys Ram Percent"
+          },
+          "sys_ram_total_mb": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sys Ram Total Mb"
+          },
+          "thread_count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thread Count"
+          },
+          "timestamp": {
+            "exclusiveMinimum": 0.0,
+            "title": "Timestamp",
+            "type": "number"
+          },
+          "uptime_seconds": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uptime Seconds"
+          }
+        },
+        "required": ["timestamp", "asyncio_task_count", "loop_lag_ms"],
+        "title": "MetricsSample",
         "type": "object"
       },
       "PermissionsSetPayload": {
@@ -1708,6 +1976,54 @@
         },
         "required": ["restore_type"],
         "title": "RestoreActionPayload",
+        "type": "object"
+      },
+      "ServerMetrics": {
+        "additionalProperties": false,
+        "properties": {
+          "cpu_percent": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cpu Percent"
+          },
+          "memory_mb": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Memory Mb"
+          },
+          "pid": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pid"
+          },
+          "server_name": {
+            "title": "Server Name",
+            "type": "string"
+          }
+        },
+        "required": ["server_name"],
+        "title": "ServerMetrics",
         "type": "object"
       },
       "ServerProcessInfoResponse": {
@@ -3693,6 +4009,103 @@
         ],
         "summary": "Get Log History",
         "tags": ["Logs"]
+      }
+    },
+    "/api/metrics": {
+      "get": {
+        "description": "Authenticated application and host performance observations.",
+        "operationId": "get_application_metrics",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetApplicationMetricsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Get Application Metrics"
       }
     },
     "/api/panorama": {

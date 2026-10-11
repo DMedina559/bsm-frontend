@@ -103,6 +103,14 @@
     "bodyTypes": [],
     "responseType": "json"
   },
+  "get_application_metrics": {
+    "method": "GET",
+    "path": "/api/metrics",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
   "get_panorama": {
     "method": "GET",
     "path": "/api/panorama",

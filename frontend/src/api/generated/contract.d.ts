@@ -213,6 +213,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/metrics": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Application Metrics
+     * @description Authenticated application and host performance observations.
+     */
+    get: operations["get_application_metrics"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/panorama": {
     parameters: {
       query?: never;
@@ -2010,6 +2030,28 @@ export interface components {
        */
       status?: "success";
     };
+    /** GetApplicationMetricsResponse */
+    GetApplicationMetricsResponse: {
+      /** Epoch */
+      epoch?: string | null;
+      /** History */
+      history: components["schemas"]["MetricsSample"][];
+      /** History Limit */
+      history_limit: number;
+      /** Interval Seconds */
+      interval_seconds: number;
+      latest: components["schemas"]["MetricsSample"];
+      /** Message */
+      message?: string | null;
+      /** Revision */
+      revision?: number | null;
+      /**
+       * Status
+       * @default success
+       * @constant
+       */
+      status?: "success";
+    };
     /** GetPermissionsResponse */
     GetPermissionsResponse: {
       /** Message */
@@ -2165,6 +2207,45 @@ export interface components {
       has_more: boolean;
       /** Start */
       start: number;
+    };
+    /** MetricsSample */
+    MetricsSample: {
+      /** App Cpu Percent */
+      app_cpu_percent?: number | null;
+      /** App Ram Mb */
+      app_ram_mb?: number | null;
+      /** Asyncio Task Count */
+      asyncio_task_count: number;
+      /** Disk Read Kib S */
+      disk_read_kib_s?: number | null;
+      /** Disk Write Kib S */
+      disk_write_kib_s?: number | null;
+      /** Epoch */
+      epoch?: string | null;
+      /** Loop Lag Ms */
+      loop_lag_ms: number;
+      /** Net Rx Kib S */
+      net_rx_kib_s?: number | null;
+      /** Net Tx Kib S */
+      net_tx_kib_s?: number | null;
+      /** Revision */
+      revision?: number | null;
+      /** Servers */
+      servers?: components["schemas"]["ServerMetrics"][];
+      /** Sys Cpu Percent */
+      sys_cpu_percent?: number | null;
+      /** Sys Ram Mb */
+      sys_ram_mb?: number | null;
+      /** Sys Ram Percent */
+      sys_ram_percent?: number | null;
+      /** Sys Ram Total Mb */
+      sys_ram_total_mb?: number | null;
+      /** Thread Count */
+      thread_count?: number | null;
+      /** Timestamp */
+      timestamp: number;
+      /** Uptime Seconds */
+      uptime_seconds?: number | null;
     };
     /**
      * PermissionsSetPayload
@@ -2461,6 +2542,17 @@ export interface components {
        * @description Type of restore: 'world', 'properties', 'allowlist', 'permissions', or 'all'.
        */
       restore_type: string;
+    };
+    /** ServerMetrics */
+    ServerMetrics: {
+      /** Cpu Percent */
+      cpu_percent?: number | null;
+      /** Memory Mb */
+      memory_mb?: number | null;
+      /** Pid */
+      pid?: number | null;
+      /** Server Name */
+      server_name: string;
     };
     /**
      * ServerProcessInfoResponse
@@ -3723,6 +3815,89 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["LogHistoryPage"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  get_application_metrics: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GetApplicationMetricsResponse"];
         };
       };
       /** @description Bad Request */

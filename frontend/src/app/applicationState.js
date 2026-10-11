@@ -1,3 +1,7 @@
+import {
+  reconcileMetricsSnapshot,
+  reconcileMetricsEvent,
+} from "./applicationMetrics";
 import { mutationResources, lifecycleEvents } from "./coreEvents";
 import { queryClient } from "./queryClient";
 import { queryKeys } from "./queryKeys";
@@ -86,6 +90,8 @@ function rebaseFleet(data, requestClock) {
 }
 /** All shared resource reads enter here before React Query publishes a result. */
 export function reconcileResourceSnapshot(resource, target, key, data, ticket) {
+  if (resource === "applicationMetrics")
+    return reconcileMetricsSnapshot(data, { source: "http", ticket }).value;
   if (resource === "monitor")
     return reconcileMonitorSnapshot(data, target, ticket);
   const selected = stateReconciler.accept(["query", key], data, {
@@ -352,6 +358,18 @@ export function synchronizeServerEvent(message, ticket) {
 /** Socket consumers only receive state frames accepted by the director. */
 export function reconcileSocketMessage(message, ticket) {
   if (!stateReconciler.current(ticket)) return false;
+  if (
+    message?.type === "resource_update" &&
+    message.topic === "application-metrics"
+  ) {
+    const result = reconcileMetricsEvent(message.data, { ticket });
+    if (!result.accepted) return false;
+    queryClient.setQueriesData(
+      { queryKey: queryKeys.applicationMetrics() },
+      result.value,
+    );
+    return true;
+  }
   if (message?.type === "task_update") {
     const accepted = stateReconciler.task(message.data, {
       ticket,

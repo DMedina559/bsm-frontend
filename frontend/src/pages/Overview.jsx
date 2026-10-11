@@ -3,6 +3,7 @@ import { useResourceMutation, useResourceQuery } from "../app/resourceQueries";
 import { queryKeys } from "../app/queryKeys";
 import { usePreference } from "../app/usePreference";
 import "./Overview.css";
+import ApplicationMetricsSummary from "../components/metrics/ApplicationMetricsSummary";
 import ServerCard from "../components/server/ServerCard";
 import OverviewFleetMetrics from "./OverviewFleetMetrics";
 import { useDialog } from "../contexts/DialogContext";
@@ -227,6 +228,7 @@ const Overview = () => {
         </section>
         <OverviewFleetMetrics servers={servers} unavailable={unavailable} />
       </div>
+      <ApplicationMetricsSummary />
       <div className="fleet-heading">
         <h2>Server fleet</h2>
         <div className="fleet-sort-controls">

@@ -25,6 +25,12 @@ const object = (value, resource) => {
   return value;
 };
 const resources = {
+  applicationMetrics: {
+    key: queryKeys.applicationMetrics,
+    load: (_target, options) =>
+      callOperation("get_application_metrics", options),
+    select: (data) => object(data, "application metrics"),
+  },
   applicationInfo: {
     key: queryKeys.applicationInfo,
     load: (_target, options) => callOperation("get_system_info", options),

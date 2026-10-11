@@ -4,6 +4,11 @@ export const PAGE_INFO = {
     "Overview",
     "A live view of the servers available to your account.",
   ],
+  "/application-monitor": [
+    "Global",
+    "Application Monitor",
+    "Inspect application, host, and Bedrock process performance.",
+  ],
   "/monitor": [
     "Selected server",
     "Monitor",
