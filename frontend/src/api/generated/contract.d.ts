@@ -156,6 +156,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/health": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Application Health
+     * @description Dependency readiness. A degraded response remains HTTP 200 for UI clients.
+     */
+    get: operations["get_application_health"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/info": {
     parameters: {
       query?: never;
@@ -2030,6 +2050,28 @@ export interface components {
        */
       status?: "success";
     };
+    /** GetApplicationHealthResponse */
+    GetApplicationHealthResponse: {
+      /** Checked At */
+      checked_at: number;
+      /** Checks */
+      checks: {
+        [key: string]: components["schemas"]["HealthCheck"];
+      };
+      /**
+       * Health
+       * @enum {string}
+       */
+      health: "healthy" | "degraded";
+      /** Message */
+      message?: string | null;
+      /**
+       * Status
+       * @default success
+       * @constant
+       */
+      status?: "success";
+    };
     /** GetApplicationMetricsResponse */
     GetApplicationMetricsResponse: {
       /** Epoch */
@@ -2088,6 +2130,19 @@ export interface components {
       bans: components["schemas"]["BanInfo"][];
       /** Message */
       message?: string | null;
+      /**
+       * Status
+       * @default success
+       * @constant
+       */
+      status?: "success";
+    };
+    /** HealthCheck */
+    HealthCheck: {
+      /** Healthy */
+      healthy: boolean;
+      /** Message */
+      message: string;
       /**
        * Status
        * @default success
@@ -3562,6 +3617,89 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["PruneDownloadsResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  get_application_health: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GetApplicationHealthResponse"];
         };
       };
       /** @description Bad Request */

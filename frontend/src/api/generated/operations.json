@@ -63,6 +63,14 @@
     "bodyTypes": ["application/json"],
     "responseType": "json"
   },
+  "get_application_health": {
+    "method": "GET",
+    "path": "/api/health",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
   "get_system_info": {
     "method": "GET",
     "path": "/api/info",
