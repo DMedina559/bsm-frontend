@@ -6,7 +6,7 @@ import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
 import { useEditableDraft } from "../app/useEditableDraft";
 import Modal from "../components/Modal";
 import { useDialog } from "../contexts/DialogContext";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useServer } from "../contexts/ServerContext";
 import { useToast } from "../contexts/ToastContext";
 import { request, resolveApiUrl } from "../api/transport";
@@ -25,6 +25,13 @@ import {
 } from "lucide-react";
 import DraggableList from "../components/DraggableList";
 const EMPTY_ADDONS = { behavior_packs: [], resource_packs: [] };
+const addonOrder = (addons) =>
+  Object.fromEntries(
+    Object.entries(addons ?? EMPTY_ADDONS).map(([key, packs]) => [
+      key,
+      packs.map((pack) => pack.uuid),
+    ]),
+  );
 const Content = () => {
   const { confirmAction } = useDialog();
   const { selectedServer } = useServer();
@@ -50,16 +57,29 @@ const Content = () => {
   const addonsQuery = useResourceQuery("installedAddons", selectedServer, {
     enabled: isAddonModalOpen,
   });
-  const addonDraft = useEditableDraft(
-    selectedServer,
-    addonsQuery.data,
-    EMPTY_ADDONS,
+  const liveAddons = addonsQuery.data ?? EMPTY_ADDONS;
+  const savedOrder = useMemo(
+    () =>
+      addonsQuery.data === undefined ? undefined : addonOrder(addonsQuery.data),
+    [addonsQuery.data],
   );
-  const {
-    value: installedAddons,
-    setValue: setInstalledAddons,
-    dirty: orderChanged,
-  } = addonDraft;
+  const addonDraft = useEditableDraft(selectedServer, savedOrder, EMPTY_ADDONS);
+  const orderChanged = addonDraft.dirty;
+  const installedAddons = Object.fromEntries(
+    Object.entries(liveAddons).map(([key, packs]) => {
+      const order = addonDraft.value[key] || [];
+      return [
+        key,
+        [...packs].sort((a, b) => {
+          const position = (pack) => {
+            const index = order.indexOf(pack.uuid);
+            return index < 0 ? order.length : index;
+          };
+          return position(a) - position(b);
+        }),
+      ];
+    }),
+  );
   const addonsLoading = addonsQuery.isFetching;
   const { addToast } = useToast();
   const write = useResourceMutation(
@@ -154,13 +174,15 @@ const Content = () => {
     setIsAddonModalOpen(false);
   };
   const handleReorderAddons = (newItems, type) => {
-    setInstalledAddons((prev) => ({
+    addonDraft.setValue((prev) => ({
       ...prev,
-      [type === "behavior" ? "behavior_packs" : "resource_packs"]: newItems,
+      [type === "behavior" ? "behavior_packs" : "resource_packs"]: newItems.map(
+        (pack) => pack.uuid,
+      ),
     }));
   };
   const handleSaveAddonOrder = async () => {
-    if (!selectedServer) return;
+    if (!selectedServer || addonDraft.conflicted) return;
 
     try {
       if (addonModalTab === "behavior") {
@@ -193,7 +215,9 @@ const Content = () => {
         }
       }
       addToast("Addon order saved.", "success");
-      addonDraft.markSaved(installedAddons);
+      const key =
+        addonModalTab === "behavior" ? "behavior_packs" : "resource_packs";
+      addonDraft.markSaved({ ...savedOrder, [key]: addonDraft.value[key] });
     } catch (error) {
       addToast(error.message || "Failed to save order", "error");
     }
@@ -246,23 +270,6 @@ const Content = () => {
         },
       });
       addToast("Subpack updated.", "success");
-
-      // Update local state immediately so dropdown shows the new value without waiting for slow fetch
-      setInstalledAddons((prev) => {
-        const listKey =
-          packType === "behavior" ? "behavior_packs" : "resource_packs";
-        return {
-          ...prev,
-          [listKey]: prev[listKey].map((p) =>
-            p.uuid === pack.uuid
-              ? {
-                  ...p,
-                  active_subpack: newSubpackFolderName,
-                }
-              : p,
-          ),
-        };
-      });
     } catch (error) {
       addToast(error.message || "Failed to update subpack", "error");
     }
@@ -548,7 +555,6 @@ const Content = () => {
   }
   return (
     <div className="container">
-      <DraftConflictNotice draft={addonDraft} />
       <QueryStatus query={contentQuery} />
       <div
         className="header"
@@ -746,6 +752,7 @@ const Content = () => {
               flex: 1,
             }}
           >
+            <DraftConflictNotice draft={addonDraft} />
             {addonsLoading ? (
               <div
                 style={{
@@ -819,9 +826,22 @@ const Content = () => {
               Close
             </button>
             <button
+              className="action-button secondary"
+              disabled={actionLoading || addonsLoading}
+              onClick={() =>
+                addonDraft.refresh(async () => {
+                  const result = await addonsQuery.refetch();
+                  return { ...result, data: addonOrder(result.data) };
+                })
+              }
+              type="button"
+            >
+              Reload add-ons
+            </button>
+            <button
               className="action-button primary"
               onClick={handleSaveAddonOrder}
-              disabled={!orderChanged || actionLoading}
+              disabled={!orderChanged || actionLoading || addonDraft.conflicted}
               type="button"
             >
               Save Order
