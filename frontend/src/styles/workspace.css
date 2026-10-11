@@ -483,10 +483,49 @@ pre.monitor-output {
       )
     ),
     var(--bsm-panorama-image);
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
+  background-size: auto, var(--bsm-panorama-size, cover);
+  background-position: center, var(--bsm-panorama-position, center);
+  background-repeat: no-repeat, var(--bsm-panorama-repeat, no-repeat);
+  background-attachment: var(--bsm-panorama-attachment, fixed);
+}
+:root[data-panorama="true"][data-panorama-motion="horizontal"] body {
+  animation: panorama-horizontal var(--bsm-panorama-duration, 60s) ease-in-out
+    infinite alternate;
+}
+:root[data-panorama="true"][data-panorama-motion="diagonal"] body {
+  animation: panorama-diagonal var(--bsm-panorama-duration, 60s) ease-in-out
+    infinite alternate;
+}
+@keyframes panorama-horizontal {
+  from {
+    background-position:
+      center,
+      0% 50%;
+  }
+  to {
+    background-position:
+      center,
+      100% 50%;
+  }
+}
+@keyframes panorama-diagonal {
+  from {
+    background-position:
+      center,
+      0% 0%;
+  }
+  to {
+    background-position:
+      center,
+      100% 100%;
+  }
+}
+:root[data-reduced-motion="true"] *,
+:root[data-reduced-motion="true"] *::before,
+:root[data-reduced-motion="true"] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
 }
 .panorama-preference {
   margin-top: calc(20px * var(--bsm-spacing-scale));

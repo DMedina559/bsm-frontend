@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   normalizeAppearance,
+  DEFAULT_APPEARANCE,
   resolveMode,
   themeStylesheetUrl,
   readAppearance,
@@ -10,6 +11,7 @@ describe("theme preferences", () => {
   it("falls back safely on malformed storage", () => {
     localStorage.setItem(APPEARANCE_KEY, "{");
     expect(readAppearance()).toEqual({
+      ...DEFAULT_APPEARANCE,
       mode: "theme",
       density: "comfortable",
       panorama: false,
@@ -19,6 +21,7 @@ describe("theme preferences", () => {
   });
   it("rejects unknown preferences", () => {
     expect(normalizeAppearance({ mode: "broken", density: "tiny" })).toEqual({
+      ...DEFAULT_APPEARANCE,
       mode: "theme",
       density: "comfortable",
       panorama: false,
@@ -77,4 +80,33 @@ it("versions built-in theme CSS independently from the frontend release label", 
   expect(themeStylesheetUrl("custom", "/app/", "/ingress", "abc123")).toBe(
     "/ingress/themes/custom.css",
   );
+});
+
+it("validates panorama layout, movement, and motion preferences", () => {
+  expect(
+    normalizeAppearance({
+      panoramaSize: "invalid",
+      panoramaRepeat: "url(x)",
+      panoramaAttachment: "unsafe",
+      reducedMotion: "invalid",
+    }),
+  ).toEqual(DEFAULT_APPEARANCE);
+  const value = normalizeAppearance({
+    panoramaSize: "custom",
+    panoramaScale: 400,
+    panoramaScrollStrength: -5,
+    panoramaDuration: 0,
+    panoramaAttachment: "parallax",
+    panoramaMotion: "diagonal",
+    reducedMotion: "reduce",
+  });
+  expect(value).toMatchObject({
+    panoramaSize: "custom",
+    panoramaScale: 300,
+    panoramaScrollStrength: 0,
+    panoramaDuration: 20,
+    panoramaAttachment: "parallax",
+    panoramaMotion: "diagonal",
+    reducedMotion: "reduce",
+  });
 });

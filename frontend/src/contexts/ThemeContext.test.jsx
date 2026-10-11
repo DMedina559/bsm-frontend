@@ -5,12 +5,14 @@ import { getSessionStorageKey } from "../app/sessionBoundary";
 import React from "react";
 import {
   render as renderUI,
+  act,
   screen,
   fireEvent,
   waitFor,
 } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { ThemeProvider, useTheme } from "./ThemeContext";
+import { DEFAULT_APPEARANCE } from "../utils/theme";
 import { request } from "../api/transport";
 vi.mock("../api/transport", () => ({
   request: vi.fn(),
@@ -40,6 +42,24 @@ function Harness() {
       </button>
       <button onClick={() => updateAppearance({ panoramaVisibility: 75 })}>
         Visibility
+      </button>
+      <button
+        onClick={() =>
+          updateAppearance({
+            panorama: true,
+            panoramaSize: "custom",
+            panoramaScale: 150,
+            panoramaRepeat: "repeat-x",
+            panoramaAttachment: "parallax",
+            panoramaDuration: 90,
+            panoramaMotion: "horizontal",
+          })
+        }
+      >
+        Customize
+      </button>
+      <button onClick={() => updateAppearance({ reducedMotion: "reduce" })}>
+        Reduce motion
       </button>
       <button onClick={() => changeTheme("blue").catch(() => {})}>
         Change
@@ -264,6 +284,7 @@ describe("appearance reset", () => {
         ),
       ).value,
     ).toEqual({
+      ...DEFAULT_APPEARANCE,
       mode: "theme",
       density: "comfortable",
       panorama: false,
@@ -322,3 +343,68 @@ function render(element) {
     <QueryClientProvider client={queryClient}>{element}</QueryClientProvider>,
   );
 }
+
+it("applies customized backgrounds and disables movement for reduced motion", async () => {
+  renderUI(
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <Harness />
+      </ThemeProvider>
+    </QueryClientProvider>,
+  );
+  fireEvent.click(screen.getByText("Customize"));
+  const root = document.documentElement;
+  expect(root.style.getPropertyValue("--bsm-panorama-size")).toBe("150% auto");
+  expect(root.style.getPropertyValue("--bsm-panorama-repeat")).toBe("repeat-x");
+  expect(root.style.getPropertyValue("--bsm-panorama-duration")).toBe("90s");
+  expect(root.dataset.panoramaMotion).toBe("none");
+  const scroller = document.createElement("div");
+  scroller.className = "main-content";
+  scroller.scrollTop = 300;
+  document.body.append(scroller);
+  fireEvent.scroll(scroller);
+  await waitFor(() =>
+    expect(root.style.getPropertyValue("--bsm-panorama-position")).toBe(
+      "50% calc(50% + 60px)",
+    ),
+  );
+  scroller.remove();
+  fireEvent.click(screen.getByText("Reduce motion"));
+  expect(root.dataset.reducedMotion).toBe("true");
+  expect(root.style.getPropertyValue("--bsm-panorama-attachment")).toBe(
+    "scroll",
+  );
+});
+
+it("reacts to device reduced-motion changes and removes its listener on unmount", () => {
+  const original = window.matchMedia;
+  let motionListener;
+  const remove = vi.fn();
+  window.matchMedia = vi.fn((query) => ({
+    matches: false,
+    addEventListener: (_type, listener) => {
+      if (query === "(prefers-reduced-motion: reduce)")
+        motionListener = listener;
+    },
+    removeEventListener: remove,
+  }));
+  try {
+    localStorage.clear();
+    const view = renderUI(
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <Harness />
+        </ThemeProvider>
+      </QueryClientProvider>,
+    );
+    act(() => motionListener({ matches: true }));
+    expect(document.documentElement.dataset.reducedMotion).toBe("true");
+    act(() => motionListener({ matches: false }));
+    expect(document.documentElement.dataset.reducedMotion).toBe("false");
+    view.unmount();
+    expect(remove).toHaveBeenCalledWith("change", motionListener);
+    expect(document.documentElement.dataset.reducedMotion).toBeUndefined();
+  } finally {
+    window.matchMedia = original;
+  }
+});

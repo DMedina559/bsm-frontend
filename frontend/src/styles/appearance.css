@@ -107,3 +107,19 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.panorama-customization {
+  margin-top: var(--bsm-space-4);
+  display: grid;
+  gap: var(--bsm-space-3);
+}
+.panorama-controls {
+  border: 1px solid var(--border-color);
+  border-radius: var(--bsm-radius-md);
+  padding: var(--bsm-space-3);
+  min-width: 0;
+}
+.panorama-controls legend {
+  padding-inline: var(--bsm-space-2);
+  font-size: 0.85rem;
+}

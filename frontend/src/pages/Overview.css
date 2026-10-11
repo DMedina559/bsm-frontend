@@ -755,3 +755,9 @@
 .workspace-overview .overview-intro .application-metric-grid > div {
   padding: var(--bsm-space-2);
 }
+
+:root[data-reduced-motion="true"]
+  .workspace-overview
+  .overview-server-card:hover {
+  transform: none;
+}
