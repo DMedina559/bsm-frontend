@@ -3,8 +3,16 @@ import { DEFAULT_METRIC_UNITS, UNIT_OPTIONS } from "../../utils/metricUnits";
 export default function MetricUnitSettings() {
   const [units, setUnits] = usePreference("metricUnits", DEFAULT_METRIC_UNITS);
   return (
-    <section className="form-group">
-      <h3>Metric display</h3>
+    <section
+      className="settings-panel metric-unit-settings"
+      aria-labelledby="metric-display-title"
+    >
+      <div className="section-heading">
+        <div>
+          <h2 id="metric-display-title">Metrics</h2>
+          <p>Choose units and precision for values and charts.</p>
+        </div>
+      </div>
       <div className="form-grid">
         {[
           ["memory", "Memory and storage units"],
@@ -69,9 +77,7 @@ export default function MetricUnitSettings() {
         </div>
       </div>
       <p className="form-help-text">
-        Applies to overview and monitor metrics, chart axes, and tooltips.
-        MB/GB/TB use powers of 1000; MiB/GiB/TiB use powers of 1024. Saved for
-        this account in this browser and synchronized between tabs.
+        MB/GB/TB use powers of 1000; MiB/GiB/TiB use powers of 1024.
       </p>
       <button
         type="button"
