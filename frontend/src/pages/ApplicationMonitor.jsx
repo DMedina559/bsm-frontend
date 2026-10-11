@@ -1,25 +1,27 @@
+import { useMetricFormat } from "../app/useMetricFormat";
 import { RefreshCw, Activity } from "lucide-react";
 import { useApplicationMetrics } from "../app/useApplicationMetrics";
 import QueryStatus from "../components/QueryStatus";
 import MetricsChart from "../components/metrics/MetricsChart";
-import { metric, uptime } from "../components/metrics/format";
+import { uptime } from "../components/metrics/format";
 import "../styles/application-monitor.css";
 export default function ApplicationMonitor() {
   const query = useApplicationMetrics();
+  const { memory, duration, number: metric } = useMetricFormat();
   const sample = query.data?.latest;
   const samples = query.data?.history ?? [];
   const metrics = [
     ["App CPU", metric(sample?.app_cpu_percent, "%")],
-    ["App memory", metric(sample?.app_ram_mb, " MB")],
+    ["App memory", memory(sample?.app_ram_mb)],
     ["Threads", metric(sample?.thread_count, "", 0)],
     ["Background tasks", metric(sample?.background_task_count, "", 0)],
     ["Async tasks", metric(sample?.asyncio_task_count, "", 0)],
-    ["Loop delay", metric(sample?.loop_lag_ms, " ms")],
+    ["Loop delay", duration(sample?.loop_lag_ms)],
     ["App uptime", uptime(sample?.uptime_seconds)],
     ["Host CPU", metric(sample?.sys_cpu_percent, "%")],
     [
       "Host memory",
-      `${metric(sample?.sys_ram_mb, " MB")} / ${metric(sample?.sys_ram_total_mb, " MB")}`,
+      `${memory(sample?.sys_ram_mb)} / ${memory(sample?.sys_ram_total_mb)}`,
     ],
   ];
   return (
@@ -145,7 +147,7 @@ export default function ApplicationMonitor() {
                   <td>{server.server_name}</td>
                   <td>{server.pid ?? "—"}</td>
                   <td>{metric(server.cpu_percent, "%")}</td>
-                  <td>{metric(server.memory_mb, " MB")}</td>
+                  <td>{memory(server.memory_mb)}</td>
                 </tr>
               ))}
             </tbody>

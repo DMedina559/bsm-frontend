@@ -1,8 +1,9 @@
+import { useMetricFormat } from "../../app/useMetricFormat";
 import { useApplicationMetrics } from "../../app/useApplicationMetrics";
-import { metric } from "./format";
 import "../../styles/application-monitor.css";
 export default function ApplicationMetricsSummary() {
   const query = useApplicationMetrics();
+  const { memory, number: metric } = useMetricFormat();
   const sample = query.data?.latest;
   return (
     <section
@@ -15,7 +16,7 @@ export default function ApplicationMetricsSummary() {
             "Application",
             [
               ["CPU", metric(sample?.app_cpu_percent, "%")],
-              ["Memory", metric(sample?.app_ram_mb, " MB")],
+              ["Memory", memory(sample?.app_ram_mb)],
               [
                 "Background tasks",
                 metric(sample?.background_task_count, "", 0),
@@ -27,7 +28,7 @@ export default function ApplicationMetricsSummary() {
             [
               ["CPU", metric(sample?.sys_cpu_percent, "%")],
               ["Memory", metric(sample?.sys_ram_percent, "%")],
-              ["Used memory", metric(sample?.sys_ram_mb, " MB")],
+              ["Used memory", memory(sample?.sys_ram_mb)],
             ],
           ],
         ].map(([title, metrics]) => (

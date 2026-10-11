@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { expect, it, vi } from "vitest";
 import ApplicationMonitor from "./ApplicationMonitor";
+vi.mock("../contexts/AuthContext", () => ({ useAuth: () => ({ user: null }) }));
 const query = vi.hoisted(() => ({
   data: {
     latest: {

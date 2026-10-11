@@ -1,3 +1,5 @@
+import { usePreference } from "../app/usePreference";
+import { DEFAULT_METRIC_UNITS } from "../utils/metricUnits";
 import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
 import { callOperation } from "../api/operations";
 import React, { useState } from "react";
@@ -8,9 +10,11 @@ import { useToast } from "../contexts/ToastContext";
 import { Save, User, Palette, RotateCcw } from "lucide-react";
 import { BUILT_IN_THEMES, THEME_LABELS } from "../utils/theme";
 import themePreviews from "../utils/themePreviews.json";
+import MetricUnitSettings from "../components/metrics/MetricUnitSettings";
 import PaletteEditor from "../components/PaletteEditor";
 const Account = ({ appearanceOnly = false }) => {
   const { user } = useAuth();
+  const [, setMetricUnits] = usePreference("metricUnits", DEFAULT_METRIC_UNITS);
   const {
     theme,
     activePalette,
@@ -253,6 +257,7 @@ const Account = ({ appearanceOnly = false }) => {
               </small>
             </div>
           </div>
+          <MetricUnitSettings />
           <div className="form-group panorama-preference">
             <label className="checkbox-wrapper" htmlFor="panorama-background">
               <input
@@ -332,8 +337,10 @@ const Account = ({ appearanceOnly = false }) => {
             className="action-button secondary"
             onClick={async () => {
               try {
-                if (await resetAppearance())
+                if (await resetAppearance()) {
+                  setMetricUnits(DEFAULT_METRIC_UNITS);
                   addToast("Appearance reset to defaults.", "success");
+                }
               } catch (error) {
                 addToast(
                   error.message || "Appearance could not be reset.",
