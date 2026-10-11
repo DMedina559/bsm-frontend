@@ -211,6 +211,34 @@
     "bodyTypes": [],
     "responseType": "json"
   },
+  "get_plugin_settings": {
+    "method": "GET",
+    "path": "/api/plugins/{plugin_name}/settings",
+    "parameters": [
+      {
+        "name": "plugin_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "update_plugin_settings": {
+    "method": "PUT",
+    "path": "/api/plugins/{plugin_name}/settings",
+    "parameters": [
+      {
+        "name": "plugin_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
+  },
   "generate_registration_token": {
     "method": "POST",
     "path": "/api/register/generate-token",

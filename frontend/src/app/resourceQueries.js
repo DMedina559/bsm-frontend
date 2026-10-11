@@ -151,6 +151,18 @@ const resources = {
         ? null
         : object(data?.process_info, "monitor"),
   },
+  pluginSettings: {
+    key: queryKeys.pluginSettings,
+    load: (name, options) =>
+      callOperation("get_plugin_settings", {
+        path: { plugin_name: name },
+        ...options,
+      }),
+    select: (data) => ({
+      settings: object(data?.settings, "plugin settings"),
+      settings_schema: data?.settings_schema ?? null,
+    }),
+  },
   plugins: {
     key: queryKeys.plugins,
     load: (_target, options) => callOperation("list_plugins", { ...options }),
@@ -239,7 +251,8 @@ export function useResourceQuery(resource, target, options = {}) {
         resource === "properties" ||
         resource === "monitor" ||
         resource === "serverSettings" ||
-        resource === "installedAddons"
+        resource === "installedAddons" ||
+        resource === "pluginSettings"
       ) ||
         Boolean(target)),
   });

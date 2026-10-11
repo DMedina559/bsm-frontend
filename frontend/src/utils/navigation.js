@@ -44,10 +44,15 @@ export const PAGE_INFO = {
     "Content",
     "Manage worlds, resource packs, and behavior packs.",
   ],
-  "/plugins": [
-    "Global",
+  "/plugin-settings": [
     "Plugins",
-    "Manage the extensions installed in your manager.",
+    "Plugin Settings",
+    "Configure each plugin independently.",
+  ],
+  "/plugins": [
+    "Plugins",
+    "Plugins",
+    "Manage installed plugins and their runtime status.",
   ],
   "/bsm-settings": [
     "Global",
@@ -78,7 +83,7 @@ export const PAGE_INFO = {
   ],
   "/playground": ["Global", "Playground", "Preview native plugin components."],
   "/plugin-native-view": [
-    "Extensions",
+    "Plugins",
     "Plugin workspace",
     "An interface provided by an installed plugin.",
   ],

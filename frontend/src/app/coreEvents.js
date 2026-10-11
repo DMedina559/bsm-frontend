@@ -12,7 +12,7 @@ export const lifecycleEvents = [
 ];
 const server = (name, key) => (name ? [key(name)] : []);
 export const mutationResources = {
-  after_setting_update: () => [q.settings(), q.bootstrap()],
+  after_setting_update: () => [q.settings(), q.bootstrap(), q.pluginSettings()],
   after_set_server_setting: (name) => [
     ...server(name, q.serverSettings),
     q.servers(),
@@ -43,6 +43,7 @@ export const mutationResources = {
     q.servers(),
   ],
   after_prune_download_cache: () => [q.downloads()],
+  after_plugin_settings_update: () => [q.pluginSettings(), q.settings()],
   after_set_plugin_status: () => [q.plugins()],
   after_command_send: () => [],
 };
