@@ -2,12 +2,15 @@ import { callOperation } from "../api/operations";
 import QueryStatus from "../components/QueryStatus";
 import { queryKeys } from "../app/queryKeys";
 import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
-import React from "react";
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { Plug, RefreshCw, ToggleLeft, ToggleRight } from "lucide-react";
 import { useToast } from "../contexts/ToastContext";
 
 const Plugins = () => {
   const { addToast } = useToast();
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("all");
   const write = useResourceMutation(
     ({ id, options }, { session }) =>
       callOperation(id, { ...options, session }),
@@ -86,129 +89,90 @@ const Plugins = () => {
         </button>
       </div>
 
-      {loading ? (
-        <div
-          style={{
-            textAlign: "center",
-            padding: "calc(20px * var(--bsm-spacing-scale))",
-          }}
+      <div className="plugin-toolbar">
+        <input
+          className="form-input"
+          aria-label="Search plugins"
+          type="search"
+          placeholder="Search plugins…"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+        />
+        <select
+          className="form-input"
+          aria-label="Plugin status"
+          value={filter}
+          onChange={(event) => setFilter(event.target.value)}
         >
-          <RefreshCw
-            className="spin"
-            style={{
-              display: "inline-block",
-              marginRight: "calc(10px * var(--bsm-spacing-scale))",
-            }}
-          />{" "}
-          Loading plugins...
-        </div>
-      ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fill, minmax(min(100%, 300px), 1fr))",
-            gap: "calc(20px * var(--bsm-spacing-scale))",
-            marginTop: "calc(20px * var(--bsm-spacing-scale))",
-          }}
-        >
-          {plugins.length === 0 ? (
-            <p
-              style={{
-                color: "var(--text-color-secondary)",
-              }}
-            >
-              No plugins installed.
-            </p>
-          ) : (
-            plugins.map((plugin) => (
-              <div
-                key={plugin.name}
-                style={{
-                  background: "var(--container-background-color, #333)",
-                  border: "1px solid var(--border-color, #555)",
-                  padding: "calc(15px * var(--bsm-spacing-scale))",
-                  display: "flex",
-                  flexDirection: "column",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    marginBottom: "calc(10px * var(--bsm-spacing-scale))",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "calc(10px * var(--bsm-spacing-scale))",
-                    }}
-                  >
-                    <Plug size={20} />
-                    <h3
-                      style={{
-                        margin: 0,
-                        fontSize: "1.1em",
-                      }}
-                    >
-                      {plugin.name}
-                    </h3>
-                  </div>
-
-                  <button
-                    onClick={() => handleToggle(plugin.name, plugin.enabled)}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      color: plugin.enabled
-                        ? "var(--primary-button-background-color)"
-                        : "var(--text-color-secondary)",
-                    }}
-                    title={plugin.enabled ? "Disable" : "Enable"}
-                    type="button"
-                    aria-label={plugin.enabled ? "Disable" : "Enable"}
-                  >
-                    {plugin.enabled ? (
-                      <ToggleRight size={32} />
-                    ) : (
-                      <ToggleLeft size={32} />
-                    )}
-                  </button>
-                </div>
-
-                <p
-                  style={{
-                    margin: "calc(5px * var(--bsm-spacing-scale)) 0",
-                    color: "var(--text-color-secondary)",
-                    fontSize: "0.9em",
-                    flexGrow: 1,
-                  }}
-                >
-                  {plugin.description || "No description provided."}
-                </p>
-
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "calc(15px * var(--bsm-spacing-scale))",
-                    fontSize: "0.85em",
-                    color: "var(--text-color-secondary)",
-                    borderTop: "1px solid var(--border-color, #555)",
-                    paddingTop: "calc(10px * var(--bsm-spacing-scale))",
-                  }}
-                >
-                  <span>v{plugin.version || "N/A"}</span>
-                  <span>{plugin.author || "Unknown Author"}</span>
-                </div>
+          <option value="all">All plugins ({plugins.length})</option>
+          <option value="enabled">Enabled</option>
+          <option value="disabled">Disabled</option>
+          <option value="error">Errors</option>
+        </select>
+        <Link className="action-button secondary" to="/plugin-settings">
+          Plugin Settings
+        </Link>
+      </div>
+      {resourceQuery.isPending && <p>Loading plugins…</p>}
+      <div className="plugin-grid">
+        {plugins
+          .filter(
+            (plugin) =>
+              `${plugin.name} ${plugin.description} ${plugin.author}`
+                .toLowerCase()
+                .includes(search.toLowerCase()) &&
+              (filter === "all" ||
+                (filter === "enabled" && plugin.enabled) ||
+                (filter === "disabled" && !plugin.enabled) ||
+                (filter === "error" && plugin.status === "ERROR")),
+          )
+          .map((plugin) => (
+            <article className="plugin-card" key={plugin.name}>
+              <div className="plugin-card-heading">
+                <Plug size={20} />
+                <h3>{plugin.name}</h3>
+                <span className="status-badge">
+                  {plugin.status === "UNKNOWN" || !plugin.status
+                    ? plugin.enabled
+                      ? "Enabled"
+                      : "Disabled"
+                    : plugin.status}
+                </span>
               </div>
-            ))
-          )}
-        </div>
+              <p>{plugin.description || "No description provided."}</p>
+              <div className="plugin-card-footer">
+                <span>v{plugin.version || "N/A"}</span>
+                <span>{plugin.author || "Unknown Author"}</span>
+              </div>
+              <div className="plugin-card-heading">
+                {plugin.has_settings && (
+                  <Link
+                    className="action-button secondary"
+                    to={`/plugin-settings?plugin=${encodeURIComponent(plugin.name)}`}
+                  >
+                    Settings
+                  </Link>
+                )}
+                <button
+                  className="action-button secondary"
+                  disabled={loading}
+                  onClick={() => handleToggle(plugin.name, plugin.enabled)}
+                  title={plugin.enabled ? "Disable" : "Enable"}
+                  type="button"
+                >
+                  {plugin.enabled ? (
+                    <ToggleRight size={18} />
+                  ) : (
+                    <ToggleLeft size={18} />
+                  )}{" "}
+                  {plugin.enabled ? "Disable" : "Enable"}
+                </button>
+              </div>
+            </article>
+          ))}
+      </div>
+      {!resourceQuery.isPending && plugins.length === 0 && (
+        <p>No plugins installed.</p>
       )}
     </div>
   );

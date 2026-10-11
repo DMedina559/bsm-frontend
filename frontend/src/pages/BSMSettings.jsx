@@ -63,7 +63,9 @@ const BSMSettings = () => {
 
       // Iterate through keys and save each one individually as the API expects
       await write.mutateAsync({
-        entries: Object.entries(flattened),
+        entries: Object.entries(flattened).filter(
+          ([key]) => !key.startsWith("plugin_settings."),
+        ),
       });
       markSaved(settings);
       addToast("Settings saved successfully.", "success");
@@ -168,7 +170,14 @@ const BSMSettings = () => {
             disabled={loading || saving || !!loadError}
             className="form-fields"
           >
-            <SettingsGroups settings={settings} onChange={handleChange} />
+            <SettingsGroups
+              settings={Object.fromEntries(
+                Object.entries(settings).filter(
+                  ([group]) => group !== "plugin_settings",
+                ),
+              )}
+              onChange={handleChange}
+            />
 
             {/* Custom Settings Entry */}
             <div

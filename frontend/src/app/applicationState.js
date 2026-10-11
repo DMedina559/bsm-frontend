@@ -350,6 +350,16 @@ export function synchronizeServerEvent(message, ticket) {
         queryKey: queryKeys.serverMonitor(name),
       });
   }
+  if (
+    [
+      "event:after_server_install",
+      "event:after_server_update",
+      "event:after_delete_server_data",
+    ].includes(message.topic)
+  )
+    void queryClient.invalidateQueries(
+      resourceInvalidation(queryKeys.pluginSettings()),
+    );
   void queryClient.invalidateQueries(resourceInvalidation(queryKeys.audit()));
   refreshFleet();
   return true;

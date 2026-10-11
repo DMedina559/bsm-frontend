@@ -16,6 +16,8 @@ export const queryKeys = Object.freeze({
   content: (kind) => (kind === undefined ? ["content"] : ["content", kind]),
   downloads: () => ["downloads"],
   plugins: () => ["plugins"],
+  pluginSettings: (name) =>
+    name ? ["plugin-settings", name] : ["plugin-settings"],
   plugin: (name) => ["plugins", name],
   tasks: () => ["tasks"],
   task: (id) => ["tasks", id],

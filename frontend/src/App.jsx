@@ -24,6 +24,7 @@ const Content = lazy(() => import("./pages/Content"));
 const Users = lazy(() => import("./pages/Users"));
 const AuditLog = lazy(() => import("./pages/AuditLog"));
 const Account = lazy(() => import("./pages/Account"));
+const PluginSettings = lazy(() => import("./pages/PluginSettings"));
 const Plugins = lazy(() => import("./pages/Plugins"));
 const ServerConfig = lazy(() => import("./pages/ServerConfig"));
 const AccessControl = lazy(() => import("./pages/AccessControl"));
@@ -90,6 +91,7 @@ const AppRoutes = () => {
         <Route path="bsm-settings" element={<BSMSettings />} />
         <Route path="content" element={<Content />} />
         <Route path="plugins" element={<Plugins />} />
+        <Route path="plugin-settings" element={<PluginSettings />} />
         <Route path="users" element={<Users />} />
         <Route path="global-players" element={<GlobalPlayers />} />
         <Route path="audit-log" element={<AuditLog />} />

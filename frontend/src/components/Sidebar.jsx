@@ -176,11 +176,6 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
       label: "Global",
       items: [
         {
-          path: "/plugins",
-          label: "Plugins",
-          icon: Plug,
-        },
-        {
           path: "/bsm-settings",
           label: "Global Settings",
           icon: Settings,
@@ -211,19 +206,19 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
         },
       ],
     },
-    ...(pluginPages.length
-      ? [
-          {
-            label: "Extensions",
-            items: pluginPages.map((page) => ({
-              path: `/plugin-native-view?url=${encodeURIComponent(page.path)}`,
-              label: page.name,
-              icon: Plug,
-              pluginPath: page.path,
-            })),
-          },
-        ]
-      : []),
+    {
+      label: "Plugins",
+      items: [
+        { path: "/plugins", label: "Plugin Management", icon: Plug },
+        { path: "/plugin-settings", label: "Plugin Settings", icon: Settings },
+        ...pluginPages.map((page) => ({
+          path: `/plugin-native-view?url=${encodeURIComponent(page.path)}`,
+          label: page.name,
+          icon: Plug,
+          pluginPath: page.path,
+        })),
+      ],
+    },
   ];
   const filtered = groups
     .map((group) => ({
