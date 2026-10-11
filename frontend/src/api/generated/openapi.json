@@ -799,6 +799,121 @@
         "title": "GetAllowlistResponse",
         "type": "object"
       },
+      "GetApplicationHealthResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "checked_at": {
+            "exclusiveMinimum": 0.0,
+            "title": "Checked At",
+            "type": "number"
+          },
+          "checks": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/HealthCheck"
+            },
+            "title": "Checks",
+            "type": "object"
+          },
+          "health": {
+            "enum": ["healthy", "degraded"],
+            "title": "Health",
+            "type": "string"
+          },
+          "lifecycle": {
+            "$ref": "#/components/schemas/LifecyclePhase"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "status": {
+            "const": "success",
+            "default": "success",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["lifecycle", "health", "checks", "checked_at"],
+        "title": "GetApplicationHealthResponse",
+        "type": "object"
+      },
+      "GetApplicationMetricsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "epoch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Epoch"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/MetricsSample"
+            },
+            "title": "History",
+            "type": "array"
+          },
+          "history_limit": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 180.0,
+            "title": "History Limit",
+            "type": "integer"
+          },
+          "interval_seconds": {
+            "exclusiveMinimum": 0.0,
+            "title": "Interval Seconds",
+            "type": "number"
+          },
+          "latest": {
+            "$ref": "#/components/schemas/MetricsSample"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision"
+          },
+          "status": {
+            "const": "success",
+            "default": "success",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["latest", "history", "interval_seconds", "history_limit"],
+        "title": "GetApplicationMetricsResponse",
+        "type": "object"
+      },
       "GetPermissionsResponse": {
         "additionalProperties": false,
         "properties": {
@@ -897,6 +1012,28 @@
         },
         "required": ["bans"],
         "title": "GetServerBansResponse",
+        "type": "object"
+      },
+      "HealthCheck": {
+        "additionalProperties": false,
+        "properties": {
+          "healthy": {
+            "title": "Healthy",
+            "type": "boolean"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "status": {
+            "const": "success",
+            "default": "success",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["message", "healthy"],
+        "title": "HealthCheck",
         "type": "object"
       },
       "InstallConfirmationResponse": {
@@ -1086,6 +1223,11 @@
         "type": "object"
       },
       "JsonValue": {},
+      "LifecyclePhase": {
+        "enum": ["starting", "ready", "stopping", "stopped", "failed"],
+        "title": "LifecyclePhase",
+        "type": "string"
+      },
       "ListAvailableAddonsResponse": {
         "additionalProperties": false,
         "properties": {
@@ -1143,6 +1285,214 @@
         },
         "required": ["data", "start", "end", "file_id", "has_more"],
         "title": "LogHistoryPage",
+        "type": "object"
+      },
+      "MetricsSample": {
+        "additionalProperties": false,
+        "properties": {
+          "app_cpu_percent": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "App Cpu Percent"
+          },
+          "app_ram_mb": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "App Ram Mb"
+          },
+          "asyncio_task_count": {
+            "minimum": 0.0,
+            "title": "Asyncio Task Count",
+            "type": "integer"
+          },
+          "background_task_count": {
+            "minimum": 0.0,
+            "title": "Background Task Count",
+            "type": "integer"
+          },
+          "disk_read_kib_s": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disk Read Kib S"
+          },
+          "disk_write_kib_s": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disk Write Kib S"
+          },
+          "epoch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Epoch"
+          },
+          "loop_lag_ms": {
+            "minimum": 0.0,
+            "title": "Loop Lag Ms",
+            "type": "number"
+          },
+          "net_rx_kib_s": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Net Rx Kib S"
+          },
+          "net_tx_kib_s": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Net Tx Kib S"
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision"
+          },
+          "servers": {
+            "items": {
+              "$ref": "#/components/schemas/ServerMetrics"
+            },
+            "title": "Servers",
+            "type": "array"
+          },
+          "sys_cpu_percent": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sys Cpu Percent"
+          },
+          "sys_ram_mb": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sys Ram Mb"
+          },
+          "sys_ram_percent": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sys Ram Percent"
+          },
+          "sys_ram_total_mb": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sys Ram Total Mb"
+          },
+          "thread_count": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thread Count"
+          },
+          "timestamp": {
+            "exclusiveMinimum": 0.0,
+            "title": "Timestamp",
+            "type": "number"
+          },
+          "uptime_seconds": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uptime Seconds"
+          }
+        },
+        "required": [
+          "timestamp",
+          "asyncio_task_count",
+          "background_task_count",
+          "loop_lag_ms"
+        ],
+        "title": "MetricsSample",
         "type": "object"
       },
       "PermissionsSetPayload": {
@@ -1708,6 +2058,54 @@
         },
         "required": ["restore_type"],
         "title": "RestoreActionPayload",
+        "type": "object"
+      },
+      "ServerMetrics": {
+        "additionalProperties": false,
+        "properties": {
+          "cpu_percent": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cpu Percent"
+          },
+          "memory_mb": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Memory Mb"
+          },
+          "pid": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pid"
+          },
+          "server_name": {
+            "title": "Server Name",
+            "type": "string"
+          }
+        },
+        "required": ["server_name"],
+        "title": "ServerMetrics",
         "type": "object"
       },
       "ServerProcessInfoResponse": {
@@ -2751,7 +3149,7 @@
           }
         ],
         "summary": "Post Change Password",
-        "tags": ["Account Management", "Password", "Authentication"]
+        "tags": ["Account Management"]
       }
     },
     "/api/account/profile": {
@@ -2967,7 +3365,7 @@
           }
         ],
         "summary": "Post Update Theme",
-        "tags": ["Account Management", "Themes"]
+        "tags": ["Account Management"]
       }
     },
     "/api/content/addons": {
@@ -3065,7 +3463,7 @@
           }
         ],
         "summary": "Get Addons",
-        "tags": ["Addon Management", "Content Management"]
+        "tags": ["Addon Management"]
       }
     },
     "/api/content/worlds": {
@@ -3163,7 +3561,7 @@
           }
         ],
         "summary": "Get Worlds List",
-        "tags": ["World Management", "Content Management"]
+        "tags": ["World Management"]
       }
     },
     "/api/downloads/list": {
@@ -3260,7 +3658,7 @@
           }
         ],
         "summary": "Get Custom Zips",
-        "tags": ["Application", "Downloads"]
+        "tags": ["Downloads"]
       }
     },
     "/api/downloads/prune": {
@@ -3368,7 +3766,105 @@
           }
         ],
         "summary": "Put Prune Downloads",
-        "tags": ["Cleanup", "Downloads"]
+        "tags": ["Downloads"]
+      }
+    },
+    "/api/health": {
+      "get": {
+        "description": "Dependency readiness. A degraded response remains HTTP 200 for UI clients.",
+        "operationId": "get_application_health",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetApplicationHealthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Get Application Health",
+        "tags": ["Application"]
       }
     },
     "/api/info": {
@@ -3548,7 +4044,7 @@
           }
         },
         "summary": "Get Themes",
-        "tags": ["Themes"]
+        "tags": ["Appearance"]
       }
     },
     "/api/logs/history": {
@@ -3695,6 +4191,104 @@
         "tags": ["Logs"]
       }
     },
+    "/api/metrics": {
+      "get": {
+        "description": "Authenticated application and host performance observations.",
+        "operationId": "get_application_metrics",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetApplicationMetricsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Get Application Metrics",
+        "tags": ["Application"]
+      }
+    },
     "/api/panorama": {
       "get": {
         "description": "Serves a custom `panorama.jpeg` background image if available, otherwise a default.\n\nThis endpoint attempts to locate a `panorama.jpeg` file in the application's\nconfiguration directory. If found, it's served. If not, or if the config\ndirectory isn't set, it falls back to serving a default panorama image\nfrom the static assets.",
@@ -3775,7 +4369,7 @@
           }
         },
         "summary": "Serve Custom Panorama Api",
-        "tags": ["Application"]
+        "tags": ["Appearance"]
       }
     },
     "/api/players/add": {
@@ -3883,7 +4477,7 @@
           }
         ],
         "summary": "Post Add Players",
-        "tags": ["Global Players", "Application", "Player Management"]
+        "tags": ["Player Management"]
       }
     },
     "/api/players/get": {
@@ -3981,7 +4575,7 @@
           }
         ],
         "summary": "Get All Players",
-        "tags": ["Global Players", "Player Management", "Application"]
+        "tags": ["Player Management"]
       }
     },
     "/api/players/scan": {
@@ -4079,7 +4673,7 @@
           }
         ],
         "summary": "Put Scan Players",
-        "tags": ["Global Players", "Player Management", "Application"]
+        "tags": ["Player Management"]
       }
     },
     "/api/plugins": {
@@ -4177,7 +4771,7 @@
           }
         ],
         "summary": "Get Plugins Status",
-        "tags": ["Plugin Management", "Application"]
+        "tags": ["Plugin Management"]
       }
     },
     "/api/plugins/pages": {
@@ -4275,7 +4869,7 @@
           }
         ],
         "summary": "Get Plugin Pages",
-        "tags": ["Plugin Management", "Application"]
+        "tags": ["Plugin Management"]
       }
     },
     "/api/plugins/reload": {
@@ -4373,7 +4967,7 @@
           }
         ],
         "summary": "Put Reload Plugins",
-        "tags": ["Plugin Management", "Application"]
+        "tags": ["Plugin Management"]
       }
     },
     "/api/plugins/trigger_event": {
@@ -4481,7 +5075,7 @@
           }
         ],
         "summary": "Post Trigger Event",
-        "tags": ["Plugin Management", "Application"]
+        "tags": ["Plugin Management"]
       }
     },
     "/api/plugins/{plugin_name}": {
@@ -4600,7 +5194,7 @@
           }
         ],
         "summary": "Post Set Plugin Status",
-        "tags": ["Plugin Management", "Application"]
+        "tags": ["Plugin Management"]
       }
     },
     "/api/plugins/{plugin_name}/reload": {
@@ -4709,7 +5303,7 @@
           }
         ],
         "summary": "Post Reload Single Plugin",
-        "tags": ["Plugin Management", "Application"]
+        "tags": ["Plugin Management"]
       }
     },
     "/api/register/generate-token": {
@@ -4817,7 +5411,7 @@
           }
         ],
         "summary": "Generate Token",
-        "tags": ["Registration", "User Management"]
+        "tags": ["Registration"]
       }
     },
     "/api/register/validate/{token}": {
@@ -4916,7 +5510,7 @@
           }
         },
         "summary": "Validate Token",
-        "tags": ["Registration", "User Management"]
+        "tags": ["Registration"]
       }
     },
     "/api/register/{token}": {
@@ -5025,7 +5619,7 @@
           }
         },
         "summary": "Register User",
-        "tags": ["Registration", "User Management"]
+        "tags": ["Registration"]
       }
     },
     "/api/server/install": {
@@ -5140,7 +5734,7 @@
           }
         ],
         "summary": "Post Install Server",
-        "tags": ["Server Installation"]
+        "tags": ["Server Management"]
       }
     },
     "/api/server/{server_name}/addon/disable": {
@@ -5260,7 +5854,7 @@
           }
         ],
         "summary": "Post Disable Addon",
-        "tags": ["Addon Management", "Content Management"]
+        "tags": ["Addon Management"]
       }
     },
     "/api/server/{server_name}/addon/enable": {
@@ -5380,7 +5974,7 @@
           }
         ],
         "summary": "Post Enable Addon",
-        "tags": ["Addon Management", "Content Management"]
+        "tags": ["Addon Management"]
       }
     },
     "/api/server/{server_name}/addon/icon": {
@@ -5498,7 +6092,7 @@
           }
         },
         "summary": "Get Server Addon Icon",
-        "tags": ["Addon Management", "Content Management"]
+        "tags": ["Addon Management"]
       }
     },
     "/api/server/{server_name}/addon/install": {
@@ -5618,7 +6212,7 @@
           }
         ],
         "summary": "Post Install Addon",
-        "tags": ["Addon Management", "Content Management"]
+        "tags": ["Addon Management"]
       }
     },
     "/api/server/{server_name}/addon/reorder": {
@@ -5738,7 +6332,7 @@
           }
         ],
         "summary": "Post Reorder Addons",
-        "tags": ["Addon Management", "Content Management"]
+        "tags": ["Addon Management"]
       }
     },
     "/api/server/{server_name}/addon/subpack": {
@@ -5858,7 +6452,7 @@
           }
         ],
         "summary": "Post Update Subpack",
-        "tags": ["Addon Management", "Content Management"]
+        "tags": ["Addon Management"]
       }
     },
     "/api/server/{server_name}/addon/uninstall": {
@@ -5978,7 +6572,7 @@
           }
         ],
         "summary": "Delete Uninstall Addon",
-        "tags": ["Addon Management", "Content Management"]
+        "tags": ["Addon Management"]
       }
     },
     "/api/server/{server_name}/addons": {
@@ -6088,7 +6682,7 @@
           }
         ],
         "summary": "Get Server Addons",
-        "tags": ["Addon Management", "Content Management"]
+        "tags": ["Addon Management"]
       }
     },
     "/api/server/{server_name}/allowlist/add": {
@@ -6207,11 +6801,7 @@
           }
         ],
         "summary": "Post Allowlist",
-        "tags": [
-          "Allowlist Management",
-          "Player Management",
-          "Server Management"
-        ]
+        "tags": ["Server Access"]
       }
     },
     "/api/server/{server_name}/allowlist/get": {
@@ -6320,11 +6910,7 @@
           }
         ],
         "summary": "Get Allowlist",
-        "tags": [
-          "Allowlist Management",
-          "Player Management",
-          "Server Management"
-        ]
+        "tags": ["Server Access"]
       }
     },
     "/api/server/{server_name}/allowlist/remove": {
@@ -6443,11 +7029,7 @@
           }
         ],
         "summary": "Delete Allowlist",
-        "tags": [
-          "Allowlist Management",
-          "Player Management",
-          "Server Management"
-        ]
+        "tags": ["Server Access"]
       }
     },
     "/api/server/{server_name}/backup/action": {
@@ -6567,7 +7149,7 @@
           }
         ],
         "summary": "Post Backup Action",
-        "tags": ["Backup & Restore", "Backup"]
+        "tags": ["Backup & Restore"]
       }
     },
     "/api/server/{server_name}/backup/list/{backup_type}": {
@@ -6686,7 +7268,7 @@
           }
         ],
         "summary": "Get List Server Backups",
-        "tags": ["Backup & Restore", "Backup"]
+        "tags": ["Backup & Restore"]
       }
     },
     "/api/server/{server_name}/backups/prune": {
@@ -6796,7 +7378,7 @@
           }
         ],
         "summary": "Put Prune Backups",
-        "tags": ["Backup & Restore", "Backup", "Cleanup"]
+        "tags": ["Backup & Restore"]
       }
     },
     "/api/server/{server_name}/bans/add": {
@@ -6916,7 +7498,7 @@
           }
         ],
         "summary": "Post Add Server Ban",
-        "tags": ["Server Bans", "Player Management"]
+        "tags": ["Server Access"]
       }
     },
     "/api/server/{server_name}/bans/get": {
@@ -7026,7 +7608,7 @@
           }
         ],
         "summary": "Get Server Bans",
-        "tags": ["Server Bans", "Player Management"]
+        "tags": ["Server Access"]
       }
     },
     "/api/server/{server_name}/bans/remove": {
@@ -7146,7 +7728,7 @@
           }
         ],
         "summary": "Delete Remove Server Ban",
-        "tags": ["Server Bans", "Player Management"]
+        "tags": ["Server Access"]
       }
     },
     "/api/server/{server_name}/delete": {
@@ -7256,7 +7838,7 @@
           }
         ],
         "summary": "Delete Server",
-        "tags": ["Server Mannagement", "Server Installation"]
+        "tags": ["Server Management"]
       }
     },
     "/api/server/{server_name}/permissions/get": {
@@ -7365,11 +7947,7 @@
           }
         ],
         "summary": "Get Permissions",
-        "tags": [
-          "Player Management",
-          "Server Management",
-          "Permissions Management"
-        ]
+        "tags": ["Server Access"]
       }
     },
     "/api/server/{server_name}/permissions/set": {
@@ -7488,11 +8066,7 @@
           }
         ],
         "summary": "Post Permissions Set",
-        "tags": [
-          "Player Management",
-          "Server Management",
-          "Permissions Management"
-        ]
+        "tags": ["Server Access"]
       }
     },
     "/api/server/{server_name}/process_info": {
@@ -7602,7 +8176,7 @@
           }
         ],
         "summary": "Get Server Process Info",
-        "tags": ["Server Management", "Process Info"]
+        "tags": ["Server Processes"]
       }
     },
     "/api/server/{server_name}/properties/get": {
@@ -7711,7 +8285,7 @@
           }
         ],
         "summary": "Get Properties",
-        "tags": ["Properties Management", "Server Management"]
+        "tags": ["Server Properties"]
       }
     },
     "/api/server/{server_name}/properties/set": {
@@ -7830,7 +8404,7 @@
           }
         ],
         "summary": "Post Properties Set",
-        "tags": ["Properties Management", "Server Management"]
+        "tags": ["Server Properties"]
       }
     },
     "/api/server/{server_name}/restart": {
@@ -7940,7 +8514,7 @@
           }
         ],
         "summary": "Post Restart Server",
-        "tags": ["Server Mannagement", "Process Management"]
+        "tags": ["Server Processes"]
       }
     },
     "/api/server/{server_name}/restore/action": {
@@ -8060,7 +8634,7 @@
           }
         ],
         "summary": "Post Restore Action",
-        "tags": ["Backup & Restore", "Restore"]
+        "tags": ["Backup & Restore"]
       }
     },
     "/api/server/{server_name}/send_command": {
@@ -8180,7 +8754,7 @@
           }
         ],
         "summary": "Post Send Command",
-        "tags": ["Server Mannagement", "Send Command"]
+        "tags": ["Server Processes"]
       }
     },
     "/api/server/{server_name}/settings/get": {
@@ -8520,7 +9094,7 @@
           }
         ],
         "summary": "Post Start Server",
-        "tags": ["Server Mannagement", "Process Management"]
+        "tags": ["Server Processes"]
       }
     },
     "/api/server/{server_name}/status": {
@@ -8630,7 +9204,7 @@
           }
         ],
         "summary": "Get Server Running Status",
-        "tags": ["Server Management", "Process Info"]
+        "tags": ["Server Processes"]
       }
     },
     "/api/server/{server_name}/stop": {
@@ -8740,7 +9314,7 @@
           }
         ],
         "summary": "Post Stop Server",
-        "tags": ["Server Mannagement", "Process Management"]
+        "tags": ["Server Processes"]
       }
     },
     "/api/server/{server_name}/summary": {
@@ -8850,7 +9424,7 @@
           }
         ],
         "summary": "Get Server Summary",
-        "tags": ["Server Mannagement", "Server Information"]
+        "tags": ["Server Management"]
       }
     },
     "/api/server/{server_name}/update": {
@@ -8960,7 +9534,7 @@
           }
         ],
         "summary": "Post Update Server",
-        "tags": ["Server Mannagement", "Server Installation"]
+        "tags": ["Server Management"]
       }
     },
     "/api/server/{server_name}/validate": {
@@ -9179,7 +9753,7 @@
           }
         ],
         "summary": "Post World Export",
-        "tags": ["World Management", "Content Management"]
+        "tags": ["World Management"]
       }
     },
     "/api/server/{server_name}/world/icon": {
@@ -9394,7 +9968,7 @@
           }
         ],
         "summary": "Post World Install",
-        "tags": ["World Management", "Content Management"]
+        "tags": ["World Management"]
       }
     },
     "/api/server/{server_name}/world/reset": {
@@ -9504,7 +10078,7 @@
           }
         ],
         "summary": "Delete World Reset",
-        "tags": ["World Management", "Server Management"]
+        "tags": ["World Management"]
       }
     },
     "/api/servers": {
@@ -9602,7 +10176,7 @@
           }
         ],
         "summary": "Get Servers List",
-        "tags": ["Server Management", "Application"]
+        "tags": ["Server Management"]
       }
     },
     "/api/settings/get": {
@@ -10954,7 +11528,7 @@
           }
         ],
         "summary": "List Audit Logs Api",
-        "tags": ["Audit Logs", "Application"]
+        "tags": ["Audit Logs"]
       }
     },
     "/auth/logout": {
@@ -11166,7 +11740,7 @@
           }
         ],
         "summary": "Reauth",
-        "tags": ["Authentication", "Login"]
+        "tags": ["Authentication"]
       }
     },
     "/auth/token": {
@@ -11266,8 +11840,98 @@
           }
         },
         "summary": "Api Login For Access Token",
-        "tags": ["Authentication", "Login"]
+        "tags": ["Authentication"]
       }
     }
-  }
+  },
+  "tags": [
+    {
+      "description": "Application information, health, and performance metrics.",
+      "name": "Application"
+    },
+    {
+      "description": "Initial application setup.",
+      "name": "Application Setup"
+    },
+    {
+      "description": "Global configuration and lifecycle limits.",
+      "name": "Application Settings"
+    },
+    {
+      "description": "Sign in, reauthenticate, and sign out.",
+      "name": "Authentication"
+    },
+    {
+      "description": "Registration tokens and account creation.",
+      "name": "Registration"
+    },
+    {
+      "description": "Your profile, password, and appearance preferences.",
+      "name": "Account Management"
+    },
+    {
+      "description": "Administrative account and role management.",
+      "name": "User Management"
+    },
+    {
+      "description": "Discover, validate, install, update, and delete servers.",
+      "name": "Server Management"
+    },
+    {
+      "description": "Server status, resources, process control, and commands.",
+      "name": "Server Processes"
+    },
+    {
+      "description": "Per-server application configuration.",
+      "name": "Server Settings"
+    },
+    {
+      "description": "Bedrock server.properties configuration.",
+      "name": "Server Properties"
+    },
+    {
+      "description": "Server allowlists, player permissions, and bans.",
+      "name": "Server Access"
+    },
+    {
+      "description": "Discover and manage the global player directory.",
+      "name": "Player Management"
+    },
+    {
+      "description": "Install, export, and reset server worlds.",
+      "name": "World Management"
+    },
+    {
+      "description": "Install and configure server addons.",
+      "name": "Addon Management"
+    },
+    {
+      "description": "Create, list, prune, and restore server backups.",
+      "name": "Backup & Restore"
+    },
+    {
+      "description": "Downloaded Bedrock versions and cleanup.",
+      "name": "Downloads"
+    },
+    {
+      "description": "Plugin discovery, configuration, events, and reloads.",
+      "name": "Plugin Management"
+    },
+    {
+      "description": "Managed operations and their outcomes.",
+      "name": "Background Tasks"
+    },
+    {
+      "description": "Application and server log history.",
+      "name": "Logs"
+    },
+    {
+      "description": "Administrative audit history.",
+      "name": "Audit Logs"
+    },
+    {
+      "description": "Available themes and panorama backgrounds.",
+      "name": "Appearance"
+    }
+  ]
 }

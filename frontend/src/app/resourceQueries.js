@@ -25,6 +25,36 @@ const object = (value, resource) => {
   return value;
 };
 const resources = {
+  applicationHealth: {
+    key: queryKeys.applicationHealth,
+    load: (_target, options) =>
+      callOperation("get_application_health", options),
+    select: (data) => {
+      const health = object(data, "application health");
+      const checks = object(health.checks, "health checks");
+      if (
+        !["healthy", "degraded"].includes(health.health) ||
+        !["starting", "ready", "stopping", "stopped", "failed"].includes(
+          health.lifecycle,
+        ) ||
+        !Number.isFinite(health.checked_at) ||
+        health.checked_at <= 0 ||
+        !Object.values(checks).every(
+          (check) =>
+            typeof check?.healthy === "boolean" &&
+            typeof check.message === "string",
+        )
+      )
+        throw new Error("Invalid application health response");
+      return health;
+    },
+  },
+  applicationMetrics: {
+    key: queryKeys.applicationMetrics,
+    load: (_target, options) =>
+      callOperation("get_application_metrics", options),
+    select: (data) => object(data, "application metrics"),
+  },
   applicationInfo: {
     key: queryKeys.applicationInfo,
     load: (_target, options) => callOperation("get_system_info", options),

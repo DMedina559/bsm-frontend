@@ -4,7 +4,7 @@ import { queryKeys } from "../app/queryKeys";
 import { useEditableDraft } from "../app/useEditableDraft";
 import QueryStatus from "../components/QueryStatus";
 import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
-import SettingsField from "../components/SettingsField";
+import SettingsGroups from "../components/SettingsGroups";
 import {
   flattenSettings,
   updateSetting,
@@ -168,60 +168,6 @@ const ServerConfig = () => {
     setNewKey("");
     setNewValue("");
     addToast(`Added ${fullKey} to pending changes.`, "info");
-  };
-  const renderFields = (obj, prefix = "") => {
-    return Object.entries(obj).map(([key, value]) => {
-      const fullPath = prefix ? `${prefix}.${key}` : key;
-      if (key === "config_schema_version") return null;
-      if (
-        typeof value === "object" &&
-        value !== null &&
-        !Array.isArray(value)
-      ) {
-        return (
-          <div
-            key={fullPath}
-            style={{
-              marginBottom: "calc(20px * var(--bsm-spacing-scale))",
-              marginLeft: "calc(10px * var(--bsm-spacing-scale))",
-              paddingLeft: "calc(10px * var(--bsm-spacing-scale))",
-              borderLeft: "2px solid var(--border-color)",
-            }}
-          >
-            <h4
-              style={{
-                textTransform: "capitalize",
-                margin: "calc(10px * var(--bsm-spacing-scale)) 0",
-              }}
-            >
-              {key.replace(/_/g, " ")}
-            </h4>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns:
-                  "repeat(auto-fill, minmax(min(100%, 300px), 1fr))",
-                gap: "calc(15px * var(--bsm-spacing-scale))",
-              }}
-            >
-              {renderFields(value, fullPath)}
-            </div>
-          </div>
-        );
-      }
-      return (
-        <SettingsField
-          key={`${selectedServer}:${fullPath}`}
-          path={fullPath}
-          value={value}
-          onChange={handleChange}
-          readOnly={
-            prefix.includes("server_info") &&
-            (key === "status" || key === "installed_version")
-          }
-        />
-      );
-    });
   };
   if (!selectedServer) {
     return (
@@ -393,53 +339,11 @@ const ServerConfig = () => {
               disabled={loading || saving || !!loadError}
               className="form-fields"
             >
-              <div
-                style={{
-                  background: "var(--container-background-color)",
-                  padding: "calc(20px * var(--bsm-spacing-scale))",
-                  border: "1px solid var(--border-color)",
-                }}
-              >
-                {Object.entries(settings).map(([group, groupData]) => {
-                  if (
-                    typeof groupData === "object" &&
-                    groupData !== null &&
-                    !Array.isArray(groupData)
-                  ) {
-                    return (
-                      <div
-                        key={group}
-                        style={{
-                          marginBottom: "calc(30px * var(--bsm-spacing-scale))",
-                          borderBottom: "1px solid var(--border-color)",
-                          paddingBottom:
-                            "calc(20px * var(--bsm-spacing-scale))",
-                        }}
-                      >
-                        <h3
-                          style={{
-                            textTransform: "capitalize",
-                            margin:
-                              "0 0 calc(15px * var(--bsm-spacing-scale)) 0",
-                          }}
-                        >
-                          {group.replace(/_/g, " ")}
-                        </h3>
-                        <div
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "1fr",
-                            gap: "calc(10px * var(--bsm-spacing-scale))",
-                          }}
-                        >
-                          {renderFields(groupData, group)}
-                        </div>
-                      </div>
-                    );
-                  }
-                  return null;
-                })}
-              </div>
+              <SettingsGroups
+                settings={settings}
+                onChange={handleChange}
+                identity={selectedServer}
+              />
 
               {/* Custom Settings Entry */}
               <div

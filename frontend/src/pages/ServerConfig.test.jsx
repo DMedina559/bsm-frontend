@@ -53,7 +53,9 @@ describe("ServerConfig", () => {
     render(<ServerConfig />);
 
     await waitFor(() => {
-      expect(screen.getByText("server info")).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: "Server information" }),
+      ).toBeInTheDocument();
     });
     expect(screen.getByDisplayValue("1.0")).toBeInTheDocument();
   });

@@ -1,3 +1,4 @@
+import { useMetricFormat } from "../app/useMetricFormat";
 import { callOperation } from "../api/operations";
 import LogViewer from "../components/LogViewer";
 import "../styles/monitor.css";
@@ -29,6 +30,7 @@ import {
 } from "lucide-react";
 import { logger } from "../utils/logger";
 const Monitor = () => {
+  const { memory, number, scale, units } = useMetricFormat();
   const {
     isConnected,
     isFallback,
@@ -212,20 +214,22 @@ const Monitor = () => {
   const status = isRunning
     ? "RUNNING"
     : String(server?.status ?? "unknown").toUpperCase();
+  const memoryScale = scale(
+    usageHistory.map((sample) => sample.memory * 1024 ** 2),
+    "memory",
+  );
   const metrics = [
     ["PID", processInfo?.pid ?? "—"],
     ["Uptime", processInfo?.uptime ?? "—"],
     [
       "CPU",
       processInfo?.cpu_percent != null
-        ? `${processInfo.cpu_percent.toFixed(1)}%`
+        ? number(processInfo.cpu_percent, "%")
         : "—",
     ],
     [
       "Memory",
-      processInfo?.memory_mb != null
-        ? `${processInfo.memory_mb.toFixed(1)} MB`
-        : "—",
+      processInfo?.memory_mb != null ? memory(processInfo.memory_mb) : "—",
     ],
     ["Players", server?.player_count ?? "—"],
   ];
@@ -327,7 +331,7 @@ const Monitor = () => {
             <h2 id="monitor-resource-title">Resource Usage</h2>
             <div className="monitor-chart-key">
               <span>CPU %</span>
-              <span>RAM (MB)</span>
+              <span>RAM ({memoryScale.unit})</span>
             </div>
           </div>
           <div className="monitor-chart" ref={chartContainerRef}>
@@ -352,11 +356,20 @@ const Monitor = () => {
                   />
                   <YAxis
                     yAxisId="right"
+                    tickFormatter={(value) =>
+                      number((value * 1024 ** 2) / memoryScale.factor)
+                    }
                     orientation="right"
                     stroke="var(--bsm-chart-2)"
                     width={40}
                   />
                   <Tooltip
+                    formatter={(value, label) => [
+                      label === "CPU %"
+                        ? number(value, "%")
+                        : `${number((value * 1024 ** 2) / memoryScale.factor, "", units.precision)} ${memoryScale.unit}`,
+                      label,
+                    ]}
                     contentStyle={{
                       backgroundColor: "var(--bsm-surface-raised)",
                       border: "1px solid var(--border-color)",
@@ -379,7 +392,7 @@ const Monitor = () => {
                     type="monotone"
                     dataKey="memory"
                     stroke="var(--bsm-chart-2)"
-                    name="RAM (MB)"
+                    name={`RAM (${memoryScale.unit})`}
                     dot={false}
                     isAnimationActive={false}
                   />

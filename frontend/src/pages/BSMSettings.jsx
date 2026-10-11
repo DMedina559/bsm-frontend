@@ -4,7 +4,7 @@ import { useEditableDraft } from "../app/useEditableDraft";
 import QueryStatus from "../components/QueryStatus";
 import { queryKeys } from "../app/queryKeys";
 import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
-import SettingsField from "../components/SettingsField";
+import SettingsGroups from "../components/SettingsGroups";
 import {
   flattenSettings,
   updateSetting,
@@ -109,45 +109,6 @@ const BSMSettings = () => {
     setNewValue("");
     addToast(`Added ${fullKey} to pending changes.`, "info");
   };
-  const renderField = (key, value, fullPath) => (
-    <SettingsField
-      key={fullPath}
-      path={fullPath}
-      label={key.replace(/_/g, " ")}
-      value={value}
-      onChange={handleChange}
-    />
-  );
-  const renderGroup = (groupName, data, prefix = "") => {
-    return (
-      <div
-        key={prefix ? `${prefix}.${groupName}` : groupName}
-        className="settings-group"
-      >
-        <h3 className="settings-group-title">{groupName.replace(/_/g, " ")}</h3>
-        <div className="settings-grid">
-          {Object.entries(data).map(([key, value]) => {
-            const currentPath = prefix
-              ? `${prefix}.${groupName}.${key}`
-              : `${groupName}.${key}`;
-            // Check if value is nested object (and not array)
-            if (
-              typeof value === "object" &&
-              value !== null &&
-              !Array.isArray(value)
-            ) {
-              return renderGroup(
-                key,
-                value,
-                prefix ? `${prefix}.${groupName}` : groupName,
-              );
-            }
-            return renderField(key, value, currentPath);
-          })}
-        </div>
-      </div>
-    );
-  };
   return (
     <div className="container">
       <DraftConflictNotice draft={draft} />
@@ -207,18 +168,7 @@ const BSMSettings = () => {
             disabled={loading || saving || !!loadError}
             className="form-fields"
           >
-            <div className="settings-container">
-              {Object.entries(settings).map(([group, groupData]) => {
-                if (
-                  typeof groupData === "object" &&
-                  groupData !== null &&
-                  !Array.isArray(groupData)
-                ) {
-                  return renderGroup(group, groupData);
-                }
-                return renderField(group, groupData, group);
-              })}
-            </div>
+            <SettingsGroups settings={settings} onChange={handleChange} />
 
             {/* Custom Settings Entry */}
             <div

@@ -236,3 +236,14 @@ input[type="radio"] {
     flex-wrap: wrap;
   }
 }
+
+.settings-grid > .settings-group {
+  grid-column: 1 / -1;
+  margin-bottom: 0;
+}
+.settings-group-description {
+  color: var(--text-color-secondary);
+  font-size: calc(13px * var(--bsm-type-scale));
+  margin: calc(-10px * var(--bsm-spacing-scale)) 0
+    calc(18px * var(--bsm-spacing-scale));
+}

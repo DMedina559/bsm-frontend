@@ -99,6 +99,11 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
           icon: LayoutDashboard,
           end: true,
         },
+        {
+          path: "/application-monitor",
+          label: "Metrics",
+          icon: LayoutDashboard,
+        },
         ...(user?.role === "admin"
           ? [
               {

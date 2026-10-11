@@ -2,12 +2,14 @@ import {
   getPreferenceIdentity,
   migrateAccountPreference,
 } from "./backendIdentity";
+import { validMetricUnits } from "../utils/metricUnits";
 import { normalizeAppearance } from "../utils/theme";
 import { validatePalette } from "../utils/palettes";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { createPreferenceStore } from "./preferenceStore";
 const definitions = {
+  metricUnits: { validate: validMetricUnits },
   appearance: {
     validate: (value) =>
       value &&

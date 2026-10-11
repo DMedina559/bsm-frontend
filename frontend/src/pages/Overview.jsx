@@ -1,8 +1,10 @@
 import { callOperation } from "../api/operations";
-import { useResourceMutation, useResourceQuery } from "../app/resourceQueries";
+import { useResourceMutation } from "../app/resourceQueries";
 import { queryKeys } from "../app/queryKeys";
 import { usePreference } from "../app/usePreference";
 import "./Overview.css";
+import ApplicationHealth from "../components/metrics/ApplicationHealth";
+import ApplicationMetricsSummary from "../components/metrics/ApplicationMetricsSummary";
 import ServerCard from "../components/server/ServerCard";
 import OverviewFleetMetrics from "./OverviewFleetMetrics";
 import { useDialog } from "../contexts/DialogContext";
@@ -12,7 +14,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { getApiProxyBasePath } from "../utils/basePath";
 import { useWebSocket } from "../contexts/WebSocketContext";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { logger } from "../utils/logger";
 import { sortServers, SERVER_SORTS } from "../utils/serverSort";
@@ -30,10 +32,6 @@ const Overview = () => {
   const { user } = useAuth();
   const { addToast } = useToast();
   const { isConnected, reconnect } = useWebSocket();
-  const health = useResourceQuery("applicationInfo", undefined, {
-    refetchInterval: 30000,
-    retry: false,
-  });
   const navigate = useNavigate();
   const [refreshing, setRefreshing] = useState(false);
   const [layout, updateLayout] = usePreference("overviewLayout", "grid");
@@ -183,11 +181,6 @@ const Overview = () => {
       );
     }
   };
-  const healthLabel = health.isPending
-    ? "Checking"
-    : health.error
-      ? "Unavailable"
-      : "Connected";
   const unavailable = (loading || error) && servers.length === 0;
   return (
     <div className="container workspace-overview">
@@ -211,19 +204,20 @@ const Overview = () => {
           className="workspace-hero overview-intro"
           aria-label="Application overview"
         >
-          <img
-            src={`${getApiProxyBasePath()}/app/image/icon/manager-logo.png`}
-            alt=""
-          />
-          <h2>Bedrock Server Manager</h2>
-          <div
-            className={`connection-pill ${!health.isPending && !health.error ? "connected" : "degraded"}`}
-            role="status"
-            aria-label="Connection health"
-            title="Backend API availability, checked every 30 seconds"
+          <Link
+            to="/application-monitor"
+            className="overview-monitor-link"
+            aria-label="Open application monitor"
+            title="Application monitor"
           >
-            {healthLabel}
-          </div>
+            <img
+              src={`${getApiProxyBasePath()}/app/image/icon/manager-logo.png`}
+              alt=""
+            />
+          </Link>
+          <h2>Bedrock Server Manager</h2>
+          <ApplicationHealth />
+          <ApplicationMetricsSummary />
         </section>
         <OverviewFleetMetrics servers={servers} unavailable={unavailable} />
       </div>
