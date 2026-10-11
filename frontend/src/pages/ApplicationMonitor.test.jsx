@@ -26,9 +26,7 @@ vi.mock("../app/useApplicationMetrics", () => ({
 }));
 it("renders application metrics and separates unavailable process readings from zero", () => {
   render(<ApplicationMonitor />);
-  expect(
-    screen.getByRole("heading", { name: "Application Monitor" }),
-  ).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Metrics" })).toBeInTheDocument();
   expect(screen.getByText("250.0%")).toBeInTheDocument();
   expect(screen.getByText("0.0 ms")).toBeInTheDocument();
   expect(screen.getByRole("row", { name: /Test/ })).toHaveTextContent(

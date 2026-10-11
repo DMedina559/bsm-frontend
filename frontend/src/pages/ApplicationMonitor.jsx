@@ -29,7 +29,7 @@ export default function ApplicationMonitor() {
       <div className="application-monitor-heading">
         <div>
           <h1>
-            <Activity size={24} aria-hidden="true" /> Application Monitor
+            <Activity size={24} aria-hidden="true" /> Metrics
           </h1>
           <p>
             {query.isLive ? "Live" : "Polling"} ·{" "}

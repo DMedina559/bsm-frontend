@@ -6,7 +6,7 @@ export const PAGE_INFO = {
   ],
   "/application-monitor": [
     "Global",
-    "Application Monitor",
+    "Metrics",
     "Inspect application, host, and Bedrock process performance.",
   ],
   "/monitor": [
