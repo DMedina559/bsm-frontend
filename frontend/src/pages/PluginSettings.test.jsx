@@ -22,10 +22,20 @@ beforeEach(() => {
     if (url === "/api/plugins/typed/settings")
       return Promise.resolve({
         status: "success",
-        settings: { count: 3, enabled: true, mode: "safe" },
+        settings: { count: 3, enabled: true, mode: "safe", servers: [] },
         settings_schema: {
           type: "object",
           properties: {
+            servers: {
+              type: "array",
+              title: "Servers",
+              description: "Empty selects all servers",
+              items: {
+                type: "string",
+                "x-bsm-server-name": true,
+                enum: ["alpha", "beta"],
+              },
+            },
             count: { type: "integer", title: "Count", minimum: 1, maximum: 10 },
             enabled: { type: "boolean", title: "Enabled" },
             mode: { type: "string", title: "Mode", enum: ["safe", "fast"] },
@@ -62,7 +72,7 @@ it("opens plugin tabs and preserves typed values when saving", async () => {
     expect(api.put).toHaveBeenCalledWith(
       "/api/plugins/typed/settings",
       expect.objectContaining({
-        settings: { count: 5, enabled: false, mode: "safe" },
+        settings: { count: 5, enabled: false, mode: "safe", servers: [] },
       }),
     ),
   );
@@ -86,4 +96,24 @@ it("hides plugins without settings", async () => {
   render(<PluginSettings />);
   await screen.findByRole("tab", { name: "typed" });
   expect(screen.queryByRole("tab", { name: "empty" })).not.toBeInTheDocument();
+});
+
+it("offers current server choices and lets users clear the selection", async () => {
+  render(<PluginSettings />);
+  fireEvent.click(await screen.findByRole("tab", { name: "typed" }));
+  const servers = await screen.findByLabelText("Servers");
+  expect(servers).toHaveAttribute("multiple");
+  servers.options[0].selected = true;
+  fireEvent.change(servers);
+  fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
+  await waitFor(() =>
+    expect(api.put).toHaveBeenCalledWith(
+      "/api/plugins/typed/settings",
+      expect.objectContaining({
+        settings: expect.objectContaining({ servers: ["alpha"] }),
+      }),
+    ),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Clear selection" }));
+  expect(servers.selectedOptions).toHaveLength(0);
 });
