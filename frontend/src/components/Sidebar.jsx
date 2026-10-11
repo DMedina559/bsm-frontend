@@ -17,7 +17,6 @@ import {
   Package,
   User,
   Plug,
-  Wrench,
   Shield,
   RefreshCw,
   PlusSquare,
