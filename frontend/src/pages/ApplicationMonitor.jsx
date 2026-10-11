@@ -12,6 +12,7 @@ export default function ApplicationMonitor() {
     ["App CPU", metric(sample?.app_cpu_percent, "%")],
     ["App memory", metric(sample?.app_ram_mb, " MB")],
     ["Threads", metric(sample?.thread_count, "", 0)],
+    ["Background tasks", metric(sample?.background_task_count, "", 0)],
     ["Async tasks", metric(sample?.asyncio_task_count, "", 0)],
     ["Loop delay", metric(sample?.loop_lag_ms, " ms")],
     ["App uptime", uptime(sample?.uptime_seconds)],
@@ -106,6 +107,12 @@ export default function ApplicationMonitor() {
             ["disk_write_kib_s", "Written"],
           ]}
           unit="KiB/s"
+        />
+        <MetricsChart
+          title="Background tasks"
+          samples={samples}
+          series={[["background_task_count", "Tasks"]]}
+          unit="tasks"
         />
         <MetricsChart
           title="Async tasks"

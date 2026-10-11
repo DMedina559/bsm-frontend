@@ -1,6 +1,7 @@
 /** Central query keys for the BSM application data layer. */
 export const queryKeys = Object.freeze({
   bootstrap: () => ["bootstrap"],
+  applicationHealth: () => ["application-health"],
   applicationMetrics: () => ["application-metrics"],
   applicationInfo: () => ["application-info"],
   account: () => ["account"],

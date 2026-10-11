@@ -2271,6 +2271,8 @@ export interface components {
       app_ram_mb?: number | null;
       /** Asyncio Task Count */
       asyncio_task_count: number;
+      /** Background Task Count */
+      background_task_count: number;
       /** Disk Read Kib S */
       disk_read_kib_s?: number | null;
       /** Disk Write Kib S */

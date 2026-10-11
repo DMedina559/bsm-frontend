@@ -3,6 +3,7 @@ import { useResourceMutation, useResourceQuery } from "../app/resourceQueries";
 import { queryKeys } from "../app/queryKeys";
 import { usePreference } from "../app/usePreference";
 import "./Overview.css";
+import ApplicationHealth from "../components/metrics/ApplicationHealth";
 import ApplicationMetricsSummary from "../components/metrics/ApplicationMetricsSummary";
 import ServerCard from "../components/server/ServerCard";
 import OverviewFleetMetrics from "./OverviewFleetMetrics";
@@ -232,6 +233,7 @@ const Overview = () => {
           >
             {healthLabel}
           </div>
+          <ApplicationHealth />
           <ApplicationMetricsSummary />
         </section>
         <OverviewFleetMetrics servers={servers} unavailable={unavailable} />

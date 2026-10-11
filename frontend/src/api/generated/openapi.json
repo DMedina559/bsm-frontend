@@ -1311,6 +1311,11 @@
             "title": "Asyncio Task Count",
             "type": "integer"
           },
+          "background_task_count": {
+            "minimum": 0.0,
+            "title": "Background Task Count",
+            "type": "integer"
+          },
           "disk_read_kib_s": {
             "anyOf": [
               {
@@ -1473,7 +1478,12 @@
             "title": "Uptime Seconds"
           }
         },
-        "required": ["timestamp", "asyncio_task_count", "loop_lag_ms"],
+        "required": [
+          "timestamp",
+          "asyncio_task_count",
+          "background_task_count",
+          "loop_lag_ms"
+        ],
         "title": "MetricsSample",
         "type": "object"
       },

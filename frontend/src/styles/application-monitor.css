@@ -75,3 +75,90 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+.application-summary-groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--bsm-space-3);
+}
+.application-summary-groups h3 {
+  margin: 0 0 var(--bsm-space-2);
+  font-size: 0.8rem;
+  color: var(--text-color-secondary);
+}
+.application-summary-groups .application-metric-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.application-summary-groups .application-metric-grid > div {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+}
+.application-health {
+  position: relative;
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+}
+.application-health summary {
+  cursor: pointer;
+  list-style: none;
+  padding: var(--bsm-space-2);
+  border: 1px solid var(--border-color);
+  border-radius: var(--bsm-radius-md);
+}
+.application-health summary::-webkit-details-marker {
+  display: none;
+}
+.application-health summary:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+.health-healthy summary,
+.check-healthy {
+  color: var(--bsm-success);
+}
+.health-degraded summary,
+.check-degraded {
+  color: var(--bsm-warning);
+}
+.application-health-popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + var(--bsm-space-2));
+  z-index: 20;
+  width: min(320px, 75vw);
+  padding: var(--bsm-space-3);
+  background: var(--container-background-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--bsm-radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+.application-health-popover h3 {
+  margin: 0 0 var(--bsm-space-2);
+  font-size: 0.9rem;
+}
+.application-health-popover ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.application-health-popover li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--bsm-space-1);
+  padding: var(--bsm-space-2) 0;
+}
+.application-health-popover small {
+  grid-column: 1 / -1;
+  color: var(--text-color-secondary);
+}
+@media (max-width: 600px) {
+  .application-summary-groups {
+    grid-template-columns: 1fr;
+  }
+  .application-health summary {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+}

@@ -9,19 +9,48 @@ export default function ApplicationMetricsSummary() {
       className="application-summary"
       aria-label="Application performance"
     >
-      <dl className="application-metric-grid">
+      <div className="application-summary-groups">
         {[
-          ["App CPU", metric(sample?.app_cpu_percent, "%")],
-          ["App memory", metric(sample?.app_ram_mb, " MB")],
-          ["Host memory", metric(sample?.sys_ram_percent, "%")],
-          ["Loop delay", metric(sample?.loop_lag_ms, " ms")],
-        ].map(([label, value]) => (
-          <div key={label}>
-            <dt>{label}</dt>
-            <dd>{value}</dd>
-          </div>
+          [
+            "Application",
+            [
+              ["CPU", metric(sample?.app_cpu_percent, "%")],
+              ["Memory", metric(sample?.app_ram_mb, " MB")],
+              [
+                "Background tasks",
+                metric(sample?.background_task_count, "", 0),
+              ],
+            ],
+          ],
+          [
+            "System",
+            [
+              ["CPU", metric(sample?.sys_cpu_percent, "%")],
+              ["Memory", metric(sample?.sys_ram_percent, "%")],
+              ["Used memory", metric(sample?.sys_ram_mb, " MB")],
+            ],
+          ],
+        ].map(([title, metrics]) => (
+          <section key={title} aria-label={`${title} metrics`}>
+            <h3>{title}</h3>
+            <dl className="application-metric-grid">
+              {metrics.map(([label, value]) => (
+                <div
+                  key={label}
+                  title={
+                    label === "Background tasks"
+                      ? "Unfinished managed operations, including plugin tasks. Infrastructure async tasks are excluded."
+                      : undefined
+                  }
+                >
+                  <dt>{label}</dt>
+                  <dd>{value}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
         ))}
-      </dl>
+      </div>
       {query.error && (
         <p className="application-metrics-hint">
           Metrics unavailable{sample ? " · showing last sample" : ""}

@@ -5,6 +5,7 @@ export const metricsFields = [
   "app_ram_mb",
   "thread_count",
   "asyncio_task_count",
+  "background_task_count",
   "loop_lag_ms",
   "uptime_seconds",
   "sys_cpu_percent",
