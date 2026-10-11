@@ -55,3 +55,33 @@
   font-family: monospace;
   resize: vertical;
 }
+
+.plugin-server-checklist {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+.plugin-server-options {
+  display: grid;
+  gap: calc(8px * var(--bsm-spacing-scale));
+  max-height: calc(240px * var(--bsm-spacing-scale));
+  overflow-y: auto;
+}
+.plugin-server-option {
+  display: flex;
+  align-items: center;
+  gap: calc(10px * var(--bsm-spacing-scale));
+  padding: calc(8px * var(--bsm-spacing-scale));
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.plugin-server-option input {
+  width: auto;
+  flex-shrink: 0;
+  accent-color: var(--primary-color);
+}
+.plugin-server-option span {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}

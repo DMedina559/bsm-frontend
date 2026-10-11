@@ -79,42 +79,52 @@ export default function PluginSettingsFields({ values, schema, onChange }) {
       const items = resolve(field.items);
       if (field.type === "array" && items["x-bsm-server-name"] && items.enum)
         return (
-          <div className="setting-item" key={path}>
-            <label className="form-label" htmlFor={`plugin-${path}`}>
-              {label}
-            </label>
-            <select
-              multiple
-              id={`plugin-${path}`}
-              className="form-input"
-              value={Array.isArray(value) ? value : []}
-              onChange={(event) =>
-                onChange(
-                  path,
-                  Array.from(
-                    event.target.selectedOptions,
-                    (option) => option.value,
-                  ),
-                )
-              }
-            >
+          <fieldset
+            className="setting-item plugin-server-checklist"
+            key={path}
+            aria-describedby={`plugin-help-${path}`}
+          >
+            <legend className="form-label">{label}</legend>
+            <div className="plugin-server-options">
               {[
                 ...new Set([
                   ...items.enum,
                   ...(Array.isArray(value) ? value : []),
                 ]),
-              ].map((server) => (
-                <option
-                  key={server}
-                  value={server}
-                  disabled={!items.enum.includes(server)}
-                >
-                  {server}
-                  {items.enum.includes(server) ? "" : " (unavailable)"}
-                </option>
-              ))}
-            </select>
-            <small className="form-help-text">{field.description}</small>
+              ].map((server) => {
+                const selected = Array.isArray(value) ? value : [];
+                const available = items.enum.includes(server);
+                return (
+                  <label className="plugin-server-option" key={server}>
+                    <input
+                      type="checkbox"
+                      checked={selected.includes(server)}
+                      disabled={!available && !selected.includes(server)}
+                      onChange={(event) =>
+                        onChange(
+                          path,
+                          event.target.checked
+                            ? [...selected, server]
+                            : selected.filter((name) => name !== server),
+                        )
+                      }
+                    />
+                    <span>
+                      {server}
+                      {available ? "" : " (unavailable)"}
+                    </span>
+                  </label>
+                );
+              })}
+              {!items.enum.length && (
+                <small className="form-help-text">
+                  No valid servers available.
+                </small>
+              )}
+            </div>
+            <small id={`plugin-help-${path}`} className="form-help-text">
+              {field.description}
+            </small>
             <button
               type="button"
               className="action-button secondary"
@@ -122,7 +132,7 @@ export default function PluginSettingsFields({ values, schema, onChange }) {
             >
               Clear selection
             </button>
-          </div>
+          </fieldset>
         );
       if (
         nullable ||

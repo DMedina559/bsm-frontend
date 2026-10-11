@@ -101,10 +101,8 @@ it("hides plugins without settings", async () => {
 it("offers current server choices and lets users clear the selection", async () => {
   render(<PluginSettings />);
   fireEvent.click(await screen.findByRole("tab", { name: "typed" }));
-  const servers = await screen.findByLabelText("Servers");
-  expect(servers).toHaveAttribute("multiple");
-  servers.options[0].selected = true;
-  fireEvent.change(servers);
+  const server = await screen.findByRole("checkbox", { name: "alpha" });
+  fireEvent.click(server);
   fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
   await waitFor(() =>
     expect(api.put).toHaveBeenCalledWith(
@@ -115,5 +113,5 @@ it("offers current server choices and lets users clear the selection", async () 
     ),
   );
   fireEvent.click(screen.getByRole("button", { name: "Clear selection" }));
-  expect(servers.selectedOptions).toHaveLength(0);
+  expect(server).not.toBeChecked();
 });
