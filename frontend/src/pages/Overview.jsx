@@ -13,7 +13,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { getApiProxyBasePath } from "../utils/basePath";
 import { useWebSocket } from "../contexts/WebSocketContext";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { logger } from "../utils/logger";
 import { sortServers, SERVER_SORTS } from "../utils/serverSort";
@@ -212,10 +212,17 @@ const Overview = () => {
           className="workspace-hero overview-intro"
           aria-label="Application overview"
         >
-          <img
-            src={`${getApiProxyBasePath()}/app/image/icon/manager-logo.png`}
-            alt=""
-          />
+          <Link
+            to="/application-monitor"
+            className="overview-monitor-link"
+            aria-label="Open application monitor"
+            title="Application monitor"
+          >
+            <img
+              src={`${getApiProxyBasePath()}/app/image/icon/manager-logo.png`}
+              alt=""
+            />
+          </Link>
           <h2>Bedrock Server Manager</h2>
           <div
             className={`connection-pill ${!health.isPending && !health.error ? "connected" : "degraded"}`}
@@ -225,10 +232,10 @@ const Overview = () => {
           >
             {healthLabel}
           </div>
+          <ApplicationMetricsSummary />
         </section>
         <OverviewFleetMetrics servers={servers} unavailable={unavailable} />
       </div>
-      <ApplicationMetricsSummary />
       <div className="fleet-heading">
         <h2>Server fleet</h2>
         <div className="fleet-sort-controls">

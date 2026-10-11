@@ -718,7 +718,7 @@
   flex-wrap: wrap;
   align-items: center;
 }
-.workspace-overview .overview-dashboard-top .overview-intro > img {
+.workspace-overview .overview-monitor-link img {
   width: 40px;
   height: 40px;
 }
@@ -737,4 +737,21 @@
 .workspace-overview .overview-intro > .connection-pill {
   flex: 0 1 auto;
   min-width: 0;
+}
+
+.workspace-overview .overview-monitor-link {
+  display: inline-flex;
+  flex: 0 0 auto;
+  border-radius: var(--bsm-radius-md);
+}
+.workspace-overview .overview-monitor-link:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 3px;
+}
+.workspace-overview .overview-intro .application-summary {
+  flex: 1 0 100%;
+  min-width: 0;
+}
+.workspace-overview .overview-intro .application-metric-grid > div {
+  padding: var(--bsm-space-2);
 }

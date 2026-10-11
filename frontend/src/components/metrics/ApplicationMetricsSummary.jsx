@@ -1,5 +1,3 @@
-import { Link } from "react-router-dom";
-import { Activity } from "lucide-react";
 import { useApplicationMetrics } from "../../app/useApplicationMetrics";
 import { metric } from "./format";
 import "../../styles/application-monitor.css";
@@ -11,12 +9,6 @@ export default function ApplicationMetricsSummary() {
       className="application-summary"
       aria-label="Application performance"
     >
-      <div className="application-summary-heading">
-        <h2>
-          <Activity size={16} aria-hidden="true" /> Application
-        </h2>
-        <Link to="/application-monitor">View monitor</Link>
-      </div>
       <dl className="application-metric-grid">
         {[
           ["App CPU", metric(sample?.app_cpu_percent, "%")],
