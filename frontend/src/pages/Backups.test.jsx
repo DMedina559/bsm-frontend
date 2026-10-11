@@ -1,9 +1,12 @@
 import { render, screen, fireEvent, waitFor } from "../test/utils";
 import Backups from "./Backups";
 import { vi, describe, it, expect, beforeEach } from "vitest";
-import * as api from "../api";
+import * as api from "../test/httpFixtures";
 
-vi.mock("../api");
+vi.mock("../api/transport", async (importOriginal) => {
+  const { createHttpTransport } = await import("../test/httpFixtures");
+  return createHttpTransport(await importOriginal());
+});
 
 describe("Backups", () => {
   beforeEach(() => {
@@ -12,6 +15,8 @@ describe("Backups", () => {
 
     // Need to mock ServerContext requirements too
     api.request.mockImplementation((url) => {
+      if (url === "/api/account")
+        return Promise.resolve({ username: "testuser", role: "admin" });
       if (url === "/api/servers")
         return Promise.resolve({
           status: "success",
@@ -24,13 +29,11 @@ describe("Backups", () => {
       if (url.includes("/backup/list/all")) {
         return Promise.resolve({
           status: "success",
-          details: {
-            all_backups: {
-              world_backups: ["world_backup_1.zip"],
-              properties_backups: [],
-              allowlist_backups: [],
-              permissions_backups: [],
-            },
+          backups: {
+            world_backups: ["world_backup_1.zip"],
+            properties_backups: [],
+            allowlist_backups: [],
+            permissions_backups: [],
           },
         });
       }
@@ -57,13 +60,12 @@ describe("Backups", () => {
       expect(screen.getByText("World Backups")).toBeInTheDocument();
     });
 
-    vi.spyOn(window, "confirm").mockReturnValue(true);
-
     // Using getAllByText because "New World Backup" might appear or similar
     const createBtn = screen
       .getByRole("button", { name: /New World Backup/i })
       .closest("button");
     fireEvent.click(createBtn);
+    fireEvent.click(await screen.findByRole("button", { name: "Continue" }));
 
     await waitFor(() => {
       expect(api.post).toHaveBeenCalledWith(
@@ -78,10 +80,9 @@ describe("Backups", () => {
 
     expect(await screen.findByText("world_backup_1.zip")).toBeInTheDocument();
 
-    vi.spyOn(window, "confirm").mockReturnValue(true);
-
     const restoreBtn = screen.getAllByTitle("Restore")[0];
     fireEvent.click(restoreBtn);
+    fireEvent.click(await screen.findByRole("button", { name: "Continue" }));
 
     await waitFor(() => {
       expect(api.post).toHaveBeenCalledWith(

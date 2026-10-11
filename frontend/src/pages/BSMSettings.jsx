@@ -1,124 +1,108 @@
-import React, { useCallback, useEffect, useState } from "react";
+import DraftConflictNotice from "../components/DraftConflictNotice";
+import { callOperation } from "../api/operations";
+import { useEditableDraft } from "../app/useEditableDraft";
+import QueryStatus from "../components/QueryStatus";
+import { queryKeys } from "../app/queryKeys";
+import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
+import SettingsGroups from "../components/SettingsGroups";
+import {
+  flattenSettings,
+  updateSetting,
+  isSafeSettingPath,
+} from "../utils/settings";
+import React, { useEffect, useState } from "react";
 import { RefreshCw, Save } from "lucide-react";
-import { useToast } from "../ToastContext";
-import { get, post, put } from "../api";
-import { logger } from "../utils/logger";
+import { useToast } from "../contexts/ToastContext";
 
+import { logger } from "../utils/logger";
+const EMPTY_SETTINGS = {};
 const BSMSettings = () => {
-  const [settings, setSettings] = useState({});
-  const [loading, setLoading] = useState(true);
+  const resourceQuery = useResourceQuery("settings");
+  const draft = useEditableDraft(
+    "settings",
+    resourceQuery.data,
+    EMPTY_SETTINGS,
+  );
+  const {
+    value: settings,
+    setValue: setSettings,
+    savedSnapshot,
+    markSaved,
+  } = draft;
+  const loading = resourceQuery.isFetching;
+  const [loadError, setLoadError] = useState(null);
   const [newKey, setNewKey] = useState("");
   const [newValue, setNewValue] = useState("");
   const { addToast } = useToast();
-
-  const fetchSettings = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await get("/api/settings/get");
-      if (data && data.settings) {
-        setSettings(data.settings);
-      } else {
-        addToast("Failed to load settings", "error");
+  const write = useResourceMutation(
+    async ({ id, options, entries }, { session }) => {
+      if (entries) {
+        for (const [key, value] of entries)
+          await callOperation("set_setting", { body: { key, value }, session });
+        return;
       }
-    } catch (error) {
-      addToast(error.message || "Error fetching settings", "error");
-    } finally {
-      setLoading(false);
-    }
-  }, [addToast]);
+      return callOperation(id, { ...options, session });
+    },
+    [queryKeys.settings()],
+  );
+  /** @type {typeof callOperation} */
+  const writeOperation = (id, ...args) =>
+    write.mutateAsync({ id, options: args[0] });
+
+  const saving = write.isPending;
 
   useEffect(() => {
-    fetchSettings();
-  }, [fetchSettings]);
-
-  const flattenObject = (obj, prefix = "") => {
-    return Object.keys(obj).reduce((acc, k) => {
-      const pre = prefix.length ? prefix + "." : "";
-      if (
-        typeof obj[k] === "object" &&
-        obj[k] !== null &&
-        !Array.isArray(obj[k])
-      ) {
-        Object.assign(acc, flattenObject(obj[k], pre + k));
-      } else {
-        acc[pre + k] = obj[k];
-      }
-      return acc;
-    }, {});
-  };
-
+    setLoadError(resourceQuery.error?.message ?? null);
+  }, [resourceQuery.error]);
   const handleSave = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    if (saving) return;
 
     try {
-      const flattened = flattenObject(settings);
+      const flattened = flattenSettings(settings);
 
       // Iterate through keys and save each one individually as the API expects
-      // POST /api/settings/set with body { key: "...", value: ... }
-      for (const [key, value] of Object.entries(flattened)) {
-        try {
-          await post("/api/settings/set", { key: key, value: value });
-        } catch (err) {
-          logger.error(`[BSMSettings] Failed to save setting`, {
-            error: err,
-            key,
-            value,
-          });
-          throw err; // Re-throw to be caught by outer block
-        }
-      }
-
+      await write.mutateAsync({
+        entries: Object.entries(flattened).filter(
+          ([key]) => !key.startsWith("plugin_settings."),
+        ),
+      });
+      markSaved(settings);
       addToast("Settings saved successfully.", "success");
     } catch (error) {
-      logger.error("[BSMSettings] Save settings error", { error });
+      logger.error("[BSMSettings] Save settings error", {
+        error,
+      });
       addToast(error.message || "Failed to save settings.", "error");
-    } finally {
-      setLoading(false);
     }
   };
-
   const handleReload = async () => {
-    setLoading(true);
     try {
-      await put("/api/settings/reload");
-      addToast("Settings reloaded from disk.", "success");
-      fetchSettings();
+      const refreshed = await draft.refresh(async () => {
+        await writeOperation("reload_settings");
+        return resourceQuery.refetch();
+      });
+      if (refreshed) addToast("Settings reloaded from disk.", "success");
     } catch (error) {
       addToast(error.message || "Failed to reload settings.", "error");
-      setLoading(false);
     }
   };
-
-  const handleChange = (path, value) => {
-    const updatePath = (obj, keys, val) => {
-      const [first, ...rest] = keys;
-      if (
-        first === "__proto__" ||
-        first === "constructor" ||
-        first === "prototype"
-      ) {
-        return obj;
-      }
-      if (rest.length === 0) {
-        return { ...obj, [first]: val };
-      }
-      return {
-        ...obj,
-        [first]: updatePath(obj[first] || {}, rest, val),
-      };
-    };
-
-    setSettings((prev) => updatePath(prev, path.split("."), value));
-  };
-
+  const handleChange = (path, value) =>
+    setSettings((previous) => updateSetting(previous, path, value));
   const handleAddCustom = (e) => {
     e.preventDefault();
+    if (saving) return;
     if (!newKey.trim()) {
       addToast("Key cannot be empty", "error");
       return;
     }
-
+    if (!isSafeSettingPath(newKey.trim())) {
+      addToast(
+        "Use a valid setting key without reserved path segments.",
+        "error",
+      );
+      return;
+    }
     const fullKey = `custom.${newKey.trim()}`;
     // Check if key already exists (basic check)
     // We update local state, save will handle persistence
@@ -127,99 +111,10 @@ const BSMSettings = () => {
     setNewValue("");
     addToast(`Added ${fullKey} to pending changes.`, "info");
   };
-
-  const renderField = (key, value, fullPath) => {
-    const label = key.replace(/_/g, " ");
-
-    if (typeof value === "boolean") {
-      return (
-        <div key={fullPath} className="setting-item">
-          <label htmlFor={fullPath} className="form-label">
-            {label}
-          </label>
-          <select
-            id={fullPath}
-            className="form-input"
-            value={value.toString()}
-            onChange={(e) => handleChange(fullPath, e.target.value === "true")}
-          >
-            <option value="true">True</option>
-            <option value="false">False</option>
-          </select>
-        </div>
-      );
-    } else if (Array.isArray(value)) {
-      return (
-        <div key={fullPath} className="setting-item">
-          <label htmlFor={fullPath} className="form-label">
-            {label}
-          </label>
-          <input
-            type="text"
-            id={fullPath}
-            className="form-input"
-            value={value.join(", ")}
-            onChange={(e) =>
-              handleChange(
-                fullPath,
-                e.target.value.split(",").map((s) => s.trim()),
-              )
-            }
-          />
-          <small className="form-text text-muted">Comma-separated values</small>
-        </div>
-      );
-    } else {
-      return (
-        <div key={fullPath} className="setting-item">
-          <label htmlFor={fullPath} className="form-label">
-            {label}
-          </label>
-          <input
-            type="text"
-            id={fullPath}
-            className="form-input"
-            value={value || ""}
-            onChange={(e) => handleChange(fullPath, e.target.value)}
-          />
-        </div>
-      );
-    }
-  };
-
-  const renderGroup = (groupName, data, prefix = "") => {
-    return (
-      <div
-        key={prefix ? `${prefix}.${groupName}` : groupName}
-        className="settings-group"
-      >
-        <h3 className="settings-group-title">{groupName.replace(/_/g, " ")}</h3>
-        <div className="settings-grid">
-          {Object.entries(data).map(([key, value]) => {
-            const currentPath = prefix
-              ? `${prefix}.${groupName}.${key}`
-              : `${groupName}.${key}`;
-            // Check if value is nested object (and not array)
-            if (
-              typeof value === "object" &&
-              value !== null &&
-              !Array.isArray(value)
-            ) {
-              return renderGroup(
-                key,
-                value,
-                prefix ? `${prefix}.${groupName}` : groupName,
-              );
-            }
-            return renderField(key, value, currentPath);
-          })}
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="container">
+      <DraftConflictNotice draft={draft} />
+      <QueryStatus query={resourceQuery} />
       <div
         className="header"
         style={{
@@ -232,133 +127,150 @@ const BSMSettings = () => {
         <button
           className="action-button secondary"
           onClick={handleReload}
-          disabled={loading}
+          disabled={loading || saving}
+          type="button"
         >
           <RefreshCw
             size={16}
-            style={{ marginRight: "5px" }}
+            style={{
+              marginRight: "calc(5px * var(--bsm-spacing-scale))",
+            }}
             className={loading ? "spin" : ""}
           />{" "}
           Reload
         </button>
       </div>
 
+      {loadError && (
+        <div className="message message-error" role="alert">
+          {loadError}. Refresh before editing these settings.
+        </div>
+      )}
+      {savedSnapshot !== null && JSON.stringify(settings) !== savedSnapshot && (
+        <p className="save-state" role="status">
+          Unsaved changes
+        </p>
+      )}
       {loading && Object.keys(settings).length === 0 ? (
-        <div style={{ textAlign: "center", padding: "40px" }}>
+        <div
+          style={{
+            textAlign: "center",
+            padding: "calc(40px * var(--bsm-spacing-scale))",
+          }}
+        >
           <div className="spinner"></div> Loading settings...
         </div>
       ) : (
-        <form onSubmit={handleSave} className="settings-form">
-          <div className="settings-container">
-            {Object.entries(settings).map(([group, groupData]) => {
-              if (
-                typeof groupData === "object" &&
-                groupData !== null &&
-                !Array.isArray(groupData)
-              ) {
-                return renderGroup(group, groupData);
-              }
-              return null;
-            })}
-          </div>
+        <form
+          onSubmit={handleSave}
+          className="settings-form"
+          aria-busy={saving}
+        >
+          <fieldset
+            disabled={loading || saving || !!loadError}
+            className="form-fields"
+          >
+            <SettingsGroups
+              settings={Object.fromEntries(
+                Object.entries(settings).filter(
+                  ([group]) => group !== "plugin_settings",
+                ),
+              )}
+              onChange={handleChange}
+            />
 
-          {/* Custom Settings Entry */}
-          <div className="settings-group" style={{ marginTop: "20px" }}>
-            <h3 className="settings-group-title">Add Custom Setting</h3>
+            {/* Custom Settings Entry */}
             <div
+              className="settings-group"
               style={{
-                display: "flex",
-                gap: "10px",
-                alignItems: "flex-end",
-                flexWrap: "wrap",
+                marginTop: "calc(20px * var(--bsm-spacing-scale))",
               }}
             >
-              <div style={{ flex: 1, minWidth: "200px" }}>
-                <label className="form-label">
-                  Key Name (custom. prefix added automatically)
-                </label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="e.g., my_setting"
-                  value={newKey}
-                  onChange={(e) => setNewKey(e.target.value)}
-                />
-              </div>
-              <div style={{ flex: 1, minWidth: "200px" }}>
-                <label className="form-label">Value</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="Value"
-                  value={newValue}
-                  onChange={(e) => setNewValue(e.target.value)}
-                />
-              </div>
-              <button
-                className="action-button secondary"
-                onClick={handleAddCustom}
-                disabled={!newKey.trim()}
-                style={{ marginBottom: "2px" }}
+              <h3 className="settings-group-title">Add Custom Setting</h3>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "calc(10px * var(--bsm-spacing-scale))",
+                  alignItems: "flex-end",
+                  flexWrap: "wrap",
+                }}
               >
-                Add
+                <div
+                  style={{
+                    flex: 1,
+                    minWidth: "200px",
+                  }}
+                >
+                  <label className="form-label" htmlFor="bsmsettings-field-1">
+                    Key Name (custom. prefix added automatically)
+                  </label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g., my_setting"
+                    value={newKey}
+                    onChange={(e) => setNewKey(e.target.value)}
+                    id="bsmsettings-field-1"
+                  />
+                </div>
+                <div
+                  style={{
+                    flex: 1,
+                    minWidth: "200px",
+                  }}
+                >
+                  <label className="form-label" htmlFor="bsmsettings-field-2">
+                    Value
+                  </label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Value"
+                    value={newValue}
+                    onChange={(e) => setNewValue(e.target.value)}
+                    id="bsmsettings-field-2"
+                  />
+                </div>
+                <button
+                  className="action-button secondary"
+                  onClick={handleAddCustom}
+                  disabled={!newKey.trim()}
+                  style={{
+                    marginBottom: "calc(2px * var(--bsm-spacing-scale))",
+                  }}
+                  type="button"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+
+            <div
+              className="form-actions"
+              style={{
+                marginTop: "calc(20px * var(--bsm-spacing-scale))",
+                borderTop: "1px solid var(--border-color)",
+                paddingTop: "calc(20px * var(--bsm-spacing-scale))",
+              }}
+            >
+              <button
+                type="submit"
+                className="action-button"
+                disabled={loading || saving || !!loadError}
+              >
+                <Save
+                  size={16}
+                  style={{
+                    marginRight: "calc(5px * var(--bsm-spacing-scale))",
+                  }}
+                />{" "}
+                {saving ? "Saving…" : "Save Changes"}
               </button>
             </div>
-          </div>
-
-          <div
-            className="form-actions"
-            style={{
-              marginTop: "20px",
-              borderTop: "1px solid var(--border-color)",
-              paddingTop: "20px",
-            }}
-          >
-            <button type="submit" className="action-button" disabled={loading}>
-              <Save size={16} style={{ marginRight: "5px" }} /> Save Changes
-            </button>
-          </div>
+          </fieldset>
         </form>
       )}
-
-      <style>{`
-        .settings-container {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        .settings-group {
-            background: var(--input-background-color);
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-        }
-        .settings-group-title {
-            margin-top: 0;
-            margin-bottom: 15px;
-            text-transform: capitalize;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 10px;
-            font-size: 1.2rem;
-            color: var(--text-color);
-        }
-        .settings-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-        }
-        .setting-item {
-            display: flex;
-            flex-direction: column;
-        }
-        .setting-item label {
-            margin-bottom: 5px;
-            font-weight: 500;
-            text-transform: capitalize;
-        }
-      `}</style>
     </div>
   );
 };
-
 export default BSMSettings;

@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useState } from "react";
+import { callOperation } from "../api/operations";
+import { queryKeys } from "../app/queryKeys";
+import QueryStatus from "../components/QueryStatus";
+import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
+import Modal from "../components/Modal";
+import { useDialog } from "../contexts/DialogContext";
+import React, { useEffect, useState } from "react";
 import {
   ArrowRight,
   Plus,
@@ -10,81 +16,60 @@ import {
   X,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useServer } from "../ServerContext";
-import { useToast } from "../ToastContext";
-import { del, get, post } from "../api";
-import { logger } from "../utils/logger";
+import { useServer } from "../contexts/ServerContext";
+import { useToast } from "../contexts/ToastContext";
 
+import { logger } from "../utils/logger";
 const AccessControl = () => {
+  const { confirmAction } = useDialog();
   const { selectedServer } = useServer();
   const [activeTab, setActiveTab] = useState("allowlist");
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const resourceQuery = useResourceQuery(
+    "access",
+    [selectedServer, activeTab],
+    { enabled: Boolean(selectedServer) },
+  );
+  const items = resourceQuery.data ?? [];
+  const loading = resourceQuery.isFetching;
 
   // Add Form State
   const [playerName, setPlayerName] = useState("");
   const [playerXuid, setPlayerXuid] = useState(""); // New state for XUID
-  const [permissionLevel, setPermissionLevel] = useState("member");
+  const [permissionLevel, setPermissionLevel] = useState(
+    /** @type {"visitor" | "member" | "operator"} */ ("member"),
+  );
   const [ignoresPlayerLimit, setIgnoresPlayerLimit] = useState(false);
-  const [actionLoading, setActionLoading] = useState(false);
   const [banReason, setBanReason] = useState("");
 
   // Online Players Modal State
   const [showPlayersModal, setShowPlayersModal] = useState(false);
   const [kickReasons, setKickReasons] = useState({});
   const { servers } = useServer();
-
   const { addToast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
   const setupFlow = location.state?.setupFlow;
-
   useEffect(() => {
     if (location.state?.tab) {
       setActiveTab(location.state.tab);
     }
   }, [location.state]);
+  const write = useResourceMutation(
+    ({ id, options }, { session }) =>
+      callOperation(id, { ...options, session }),
+    [queryKeys.access([selectedServer, activeTab]), queryKeys.globalPlayers()],
+  );
+  /** @type {typeof callOperation} */
+  const writeOperation = (id, ...args) =>
+    write.mutateAsync({ id, options: args[0] });
 
-  const fetchItems = useCallback(async () => {
-    if (!selectedServer) return;
-    setLoading(true);
+  const actionLoading = write.isPending;
 
-    try {
-      let endpoint = "";
-      if (activeTab === "allowlist")
-        endpoint = `/api/server/${selectedServer}/allowlist/get`;
-      else if (activeTab === "permissions")
-        endpoint = `/api/server/${selectedServer}/permissions/get`;
-      else if (activeTab === "bans")
-        endpoint = `/api/server/${selectedServer}/bans/get`;
-
-      const data = await get(endpoint);
-      if (data) {
-        if (activeTab === "allowlist") setItems(data.players || []);
-        else if (activeTab === "permissions") setItems(data.permissions || []);
-        else if (activeTab === "bans") setItems(data.bans || []);
-      } else {
-        setItems([]);
-      }
-    } catch (error) {
-      logger.error(`[AccessControl] Error fetching ${activeTab}`, {
-        error,
-        activeTab,
-        selectedServer,
-      });
-      addToast(error.message || `Error fetching ${activeTab}`, "error");
-      setItems([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedServer, activeTab, addToast]);
-
-  useEffect(() => {
-    if (selectedServer) {
-      fetchItems();
-    }
-  }, [selectedServer, activeTab, fetchItems]);
-
+  const fetchItems = async () => {
+    const result = await resourceQuery.refetch();
+    if (result.error) addToast(result.error.message, "error");
+    return result.isSuccess;
+  };
   const handleNextStep = () => {
     // In setup flow, permissions usually follows allowlist, then bans, then config
     if (activeTab === "allowlist") {
@@ -92,79 +77,87 @@ const AccessControl = () => {
     } else if (activeTab === "permissions") {
       setActiveTab("bans");
     } else {
-      navigate("/server-config", { state: { setupFlow: true } });
+      navigate("/server-config", {
+        state: {
+          setupFlow: true,
+        },
+      });
     }
   };
-
   const handleAdd = async (e) => {
     e.preventDefault();
     if (!selectedServer || !playerName) return;
-
     if ((activeTab === "permissions" || activeTab === "bans") && !playerXuid) {
       addToast("XUID is required.", "error");
       return;
     }
 
-    setActionLoading(true);
     try {
       if (activeTab === "allowlist") {
-        await post(`/api/server/${selectedServer}/allowlist/add`, {
-          players: [playerName],
-          ignoresPlayerLimit: ignoresPlayerLimit,
+        await writeOperation("add_allowlist_players", {
+          path: { server_name: selectedServer },
+          body: {
+            players: [playerName],
+            ignoresPlayerLimit: ignoresPlayerLimit,
+          },
         });
       } else if (activeTab === "bans") {
-        await post(`/api/server/${selectedServer}/bans/add`, {
-          player_name: playerName,
-          xuid: playerXuid,
-          reason: banReason || null,
+        await writeOperation("add_server_ban", {
+          path: { server_name: selectedServer },
+          body: {
+            player_name: playerName,
+            xuid: playerXuid,
+            reason: banReason || null,
+          },
         });
       } else {
-        await post(`/api/server/${selectedServer}/permissions/set`, {
-          // Permission endpoint expects a list of objects
-          permissions: [
-            {
-              xuid: playerXuid,
-              name: playerName,
-              permission_level: permissionLevel,
-            },
-          ],
+        await writeOperation("set_permissions", {
+          path: { server_name: selectedServer },
+          body: {
+            // Permission endpoint expects a list of objects
+            permissions: [
+              {
+                xuid: playerXuid,
+                name: playerName,
+                permission_level: permissionLevel,
+              },
+            ],
+          },
         });
       }
-
       addToast(`${playerName} added/updated in ${activeTab}.`, "success");
       setPlayerName("");
       setPlayerXuid("");
       setBanReason("");
       setIgnoresPlayerLimit(false);
-
-      fetchItems();
     } catch (error) {
       addToast(error.message || "Failed to add item.", "error");
-    } finally {
-      setActionLoading(false);
     }
   };
-
   const handleKickPlayer = async (kickPlayerName) => {
     if (!selectedServer) return;
-
     const reason = kickReasons[kickPlayerName] || "";
     const commandToExecute = reason.trim()
       ? `kick "${kickPlayerName}" ${reason}`
       : `kick "${kickPlayerName}"`;
-
     logger.info(`[AccessControl] Kicking player`, {
       player: kickPlayerName,
       server: selectedServer,
       reason,
     });
-    setActionLoading(true);
+
     try {
-      await post(`/api/server/${selectedServer}/send_command`, {
-        command: commandToExecute,
+      await writeOperation("send_command", {
+        path: { server_name: selectedServer },
+        body: {
+          command: commandToExecute,
+        },
       });
       addToast(`Kick command sent for ${kickPlayerName}.`, "success");
-      setKickReasons((prev) => ({ ...prev, [kickPlayerName]: "" }));
+      setKickReasons((prev) => ({
+        ...prev,
+        [kickPlayerName]: "",
+      }));
     } catch (error) {
       logger.error(`[AccessControl] Failed to kick player`, {
         error,
@@ -172,31 +165,31 @@ const AccessControl = () => {
         server: selectedServer,
       });
       addToast(error.message || `Failed to kick ${kickPlayerName}.`, "error");
-    } finally {
-      setActionLoading(false);
     }
   };
-
   const handleRemove = async (item) => {
     if (!selectedServer) return;
     const name =
       item.name || item.player_name || item.xuid || item.uuid || "Unknown";
-    if (!confirm(`Remove ${name} from ${activeTab}?`)) return;
+    if (!(await confirmAction(`Remove ${name} from ${activeTab}?`))) return;
 
-    setActionLoading(true);
     try {
       if (activeTab === "allowlist") {
-        await del(`/api/server/${selectedServer}/allowlist/remove`, {
-          body: { players: [item.name || item.xuid] },
+        await writeOperation("remove_allowlist_players", {
+          path: { server_name: selectedServer },
+          body: {
+            players: [item.name || item.xuid],
+          },
         });
         addToast("Player removed from allowlist.", "success");
-        fetchItems();
       } else if (activeTab === "bans") {
-        await del(`/api/server/${selectedServer}/bans/remove`, {
-          body: { xuid: item.xuid || item.uuid },
+        await writeOperation("remove_server_ban", {
+          path: { server_name: selectedServer },
+          body: {
+            xuid: item.xuid || item.uuid,
+          },
         });
         addToast("Player removed from ban list.", "success");
-        fetchItems();
       } else {
         addToast(
           "To remove permission, please set level to 'Member' (Default).",
@@ -205,63 +198,46 @@ const AccessControl = () => {
       }
     } catch (error) {
       addToast(error.message || "Failed to remove item.", "error");
-    } finally {
-      setActionLoading(false);
     }
   };
-
   const handlePermissionChange = async (item, newLevel) => {
     if (!selectedServer) return;
 
-    setActionLoading(true);
     try {
-      await post(`/api/server/${selectedServer}/permissions/set`, {
-        permissions: [
-          {
-            xuid: item.xuid,
-            name: item.name,
-            permission_level: newLevel,
-          },
-        ],
+      await writeOperation("set_permissions", {
+        path: { server_name: selectedServer },
+        body: {
+          permissions: [
+            {
+              xuid: item.xuid,
+              name: item.name,
+              permission_level: newLevel,
+            },
+          ],
+        },
       });
       addToast(`Updated permission for ${item.name} to ${newLevel}`, "success");
-      // Optimistically update the list or refetch
-      setItems((prev) =>
-        prev.map((p) =>
-          p.xuid === item.xuid
-            ? { ...p, permission_level: newLevel, permission: newLevel }
-            : p,
-        ),
-      );
     } catch (error) {
       addToast(error.message || "Failed to update permission.", "error");
       fetchItems(); // Revert on error
-    } finally {
-      setActionLoading(false);
     }
   };
-
   const handleScanPlayers = async () => {
-    setActionLoading(true);
     try {
-      await post("/api/players/scan");
+      await writeOperation("scan_players");
       addToast("Player scan initiated. Logs are being processed.", "success");
       // Optionally refresh, though scan is async and updates global DB, might not affect local list immediately
     } catch (error) {
       addToast(error.message || "Failed to scan players.", "error");
-    } finally {
-      setActionLoading(false);
     }
   };
 
   // New helper to handle refresh with user feedback
   const handleRefresh = async () => {
-    setLoading(true);
     addToast(`Refreshing ${activeTab}...`, "info");
     await fetchItems();
     addToast(`${activeTab} refreshed.`, "success");
   };
-
   if (!selectedServer) {
     return (
       <div className="container">
@@ -269,8 +245,8 @@ const AccessControl = () => {
           className="message-box message-warning"
           style={{
             textAlign: "center",
-            marginTop: "50px",
-            padding: "20px",
+            marginTop: "calc(50px * var(--bsm-spacing-scale))",
+            padding: "calc(20px * var(--bsm-spacing-scale))",
             border: "1px solid orange",
             color: "orange",
           }}
@@ -280,9 +256,9 @@ const AccessControl = () => {
       </div>
     );
   }
-
   return (
     <div className="container">
+      <QueryStatus query={resourceQuery} />
       <div
         className="header"
         style={{
@@ -292,7 +268,12 @@ const AccessControl = () => {
         }}
       >
         <h1>Access Control: {selectedServer}</h1>
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "calc(10px * var(--bsm-spacing-scale))",
+          }}
+        >
           {!setupFlow && (
             <>
               <button
@@ -301,12 +282,14 @@ const AccessControl = () => {
                 disabled={actionLoading}
                 title="View and kick online players"
                 style={{
-                  padding: "4px 8px",
+                  padding:
+                    "calc(4px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
                   fontSize: "0.85em",
                   display: "flex",
                   alignItems: "center",
-                  gap: "5px",
+                  gap: "calc(5px * var(--bsm-spacing-scale))",
                 }}
+                type="button"
               >
                 <Users size={14} /> Online
               </button>
@@ -316,12 +299,14 @@ const AccessControl = () => {
                 disabled={actionLoading}
                 title="Scan server logs for player history"
                 style={{
-                  padding: "4px 8px",
+                  padding:
+                    "calc(4px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
                   fontSize: "0.85em",
                   display: "flex",
                   alignItems: "center",
-                  gap: "5px",
+                  gap: "calc(5px * var(--bsm-spacing-scale))",
                 }}
+                type="button"
               >
                 <Scan size={14} /> Scan
               </button>
@@ -331,12 +316,14 @@ const AccessControl = () => {
                 disabled={loading || actionLoading}
                 title="Reload current list"
                 style={{
-                  padding: "4px 8px",
+                  padding:
+                    "calc(4px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
                   fontSize: "0.85em",
                   display: "flex",
                   alignItems: "center",
-                  gap: "5px",
+                  gap: "calc(5px * var(--bsm-spacing-scale))",
                 }}
+                type="button"
               >
                 <RefreshCw size={14} className={loading ? "spin" : ""} />{" "}
                 Refresh
@@ -344,8 +331,18 @@ const AccessControl = () => {
             </>
           )}
           {setupFlow && (
-            <button className="action-button" onClick={handleNextStep}>
-              Next Step <ArrowRight size={16} style={{ marginLeft: "5px" }} />
+            <button
+              className="action-button"
+              onClick={handleNextStep}
+              type="button"
+            >
+              Next Step{" "}
+              <ArrowRight
+                size={16}
+                style={{
+                  marginLeft: "calc(5px * var(--bsm-spacing-scale))",
+                }}
+              />
             </button>
           )}
         </div>
@@ -354,7 +351,9 @@ const AccessControl = () => {
       {setupFlow && (
         <div
           className="message-box message-info"
-          style={{ marginBottom: "20px" }}
+          style={{
+            marginBottom: "calc(20px * var(--bsm-spacing-scale))",
+          }}
         >
           <strong>
             Setup Wizard (Step{" "}
@@ -373,18 +372,24 @@ const AccessControl = () => {
         <button
           className={`tab-button ${activeTab === "allowlist" ? "active" : ""}`}
           onClick={() => setActiveTab("allowlist")}
+          type="button"
+          aria-pressed={activeTab === "allowlist"}
         >
           Allowlist
         </button>
         <button
           className={`tab-button ${activeTab === "permissions" ? "active" : ""}`}
           onClick={() => setActiveTab("permissions")}
+          type="button"
+          aria-pressed={activeTab === "permissions"}
         >
           Permissions
         </button>
         <button
           className={`tab-button ${activeTab === "bans" ? "active" : ""}`}
           onClick={() => setActiveTab("bans")}
+          type="button"
+          aria-pressed={activeTab === "bans"}
         >
           Bans
         </button>
@@ -394,7 +399,7 @@ const AccessControl = () => {
         className="tab-content"
         style={{
           background: "var(--input-background-color)",
-          padding: "20px",
+          padding: "calc(20px * var(--bsm-spacing-scale))",
           borderRadius: "0 0 5px 5px",
           border: "1px solid var(--border-color)",
           borderTop: "none",
@@ -406,19 +411,28 @@ const AccessControl = () => {
           className="form-group"
           style={{
             display: "flex",
-            gap: "10px",
+            gap: "calc(10px * var(--bsm-spacing-scale))",
             alignItems: "flex-end",
-            marginBottom: "20px",
+            marginBottom: "calc(20px * var(--bsm-spacing-scale))",
             flexWrap: "wrap",
             background: "rgba(0,0,0,0.1)",
-            padding: "15px",
+            padding: "calc(15px * var(--bsm-spacing-scale))",
             borderRadius: "5px",
           }}
         >
-          <div style={{ flexGrow: 1, minWidth: "200px" }}>
+          <div
+            style={{
+              flexGrow: 1,
+              minWidth: "200px",
+            }}
+          >
             <label
               className="form-label"
-              style={{ display: "block", marginBottom: "5px" }}
+              style={{
+                display: "block",
+                marginBottom: "calc(5px * var(--bsm-spacing-scale))",
+              }}
+              htmlFor="accesscontrol-field-1"
             >
               Player Name (Gamertag)
             </label>
@@ -428,7 +442,9 @@ const AccessControl = () => {
               value={playerName}
               onChange={(e) => setPlayerName(e.target.value)}
               required
-              style={{ width: "100%" }}
+              style={{
+                width: "100%",
+              }}
               placeholder={
                 activeTab === "allowlist"
                   ? "Enter Gamertag to allow..."
@@ -436,14 +452,24 @@ const AccessControl = () => {
                     ? "Enter Gamertag to ban..."
                     : "Enter Gamertag..."
               }
+              id="accesscontrol-field-1"
             />
           </div>
 
           {(activeTab === "permissions" || activeTab === "bans") && (
-            <div style={{ flexGrow: 1, minWidth: "150px" }}>
+            <div
+              style={{
+                flexGrow: 1,
+                minWidth: "150px",
+              }}
+            >
               <label
                 className="form-label"
-                style={{ display: "block", marginBottom: "5px" }}
+                style={{
+                  display: "block",
+                  marginBottom: "calc(5px * var(--bsm-spacing-scale))",
+                }}
+                htmlFor="accesscontrol-field-2"
               >
                 XUID
               </label>
@@ -453,17 +479,29 @@ const AccessControl = () => {
                 value={playerXuid}
                 onChange={(e) => setPlayerXuid(e.target.value)}
                 required
-                style={{ width: "100%" }}
+                style={{
+                  width: "100%",
+                }}
                 placeholder="Enter XUID..."
+                id="accesscontrol-field-2"
               />
             </div>
           )}
 
           {activeTab === "bans" && (
-            <div style={{ flexGrow: 1, minWidth: "150px" }}>
+            <div
+              style={{
+                flexGrow: 1,
+                minWidth: "150px",
+              }}
+            >
               <label
                 className="form-label"
-                style={{ display: "block", marginBottom: "5px" }}
+                style={{
+                  display: "block",
+                  marginBottom: "calc(5px * var(--bsm-spacing-scale))",
+                }}
+                htmlFor="accesscontrol-field-3"
               >
                 Reason (Optional)
               </label>
@@ -472,16 +510,27 @@ const AccessControl = () => {
                 className="form-input"
                 value={banReason}
                 onChange={(e) => setBanReason(e.target.value)}
-                style={{ width: "100%" }}
+                style={{
+                  width: "100%",
+                }}
                 placeholder="Enter ban reason..."
+                id="accesscontrol-field-3"
               />
             </div>
           )}
           {activeTab === "permissions" && (
-            <div style={{ minWidth: "150px" }}>
+            <div
+              style={{
+                minWidth: "150px",
+              }}
+            >
               <label
                 className="form-label"
-                style={{ display: "block", marginBottom: "5px" }}
+                style={{
+                  display: "block",
+                  marginBottom: "calc(5px * var(--bsm-spacing-scale))",
+                }}
+                htmlFor="accesscontrol-field-4"
               >
                 Permission Level
               </label>
@@ -489,7 +538,10 @@ const AccessControl = () => {
                 className="form-input"
                 value={permissionLevel}
                 onChange={(e) => setPermissionLevel(e.target.value)}
-                style={{ width: "100%" }}
+                style={{
+                  width: "100%",
+                }}
+                id="accesscontrol-field-4"
               >
                 <option value="visitor">Visitor</option>
                 <option value="member">Member</option>
@@ -503,7 +555,7 @@ const AccessControl = () => {
               style={{
                 display: "flex",
                 alignItems: "center",
-                marginBottom: "10px",
+                marginBottom: "calc(10px * var(--bsm-spacing-scale))",
                 minWidth: "150px",
               }}
             >
@@ -519,9 +571,17 @@ const AccessControl = () => {
                   type="checkbox"
                   checked={ignoresPlayerLimit}
                   onChange={(e) => setIgnoresPlayerLimit(e.target.checked)}
-                  style={{ marginRight: "10px" }}
+                  style={{
+                    marginRight: "calc(10px * var(--bsm-spacing-scale))",
+                  }}
                 />
-                <span style={{ fontSize: "0.9em" }}>Ignore Player Limit</span>
+                <span
+                  style={{
+                    fontSize: "0.9em",
+                  }}
+                >
+                  Ignore Player Limit
+                </span>
               </label>
             </div>
           )}
@@ -530,9 +590,17 @@ const AccessControl = () => {
             type="submit"
             className="action-button"
             disabled={loading || actionLoading || !playerName}
-            style={{ height: "38px" }}
+            style={{
+              height: "38px",
+            }}
           >
-            <Plus size={16} style={{ marginRight: "5px" }} /> Add
+            <Plus
+              size={16}
+              style={{
+                marginRight: "calc(5px * var(--bsm-spacing-scale))",
+              }}
+            />{" "}
+            Add
           </button>
         </form>
 
@@ -540,7 +608,7 @@ const AccessControl = () => {
         {loading ? (
           <div
             style={{
-              padding: "40px",
+              padding: "calc(40px * var(--bsm-spacing-scale))",
               textAlign: "center",
               color: "var(--text-color-secondary)",
             }}
@@ -549,7 +617,12 @@ const AccessControl = () => {
           </div>
         ) : (
           <div className="table-responsive-wrapper">
-            <table className="server-table" style={{ width: "100%" }}>
+            <table
+              className="server-table"
+              style={{
+                width: "100%",
+              }}
+            >
               <thead>
                 <tr>
                   <th>Name</th>
@@ -560,7 +633,13 @@ const AccessControl = () => {
                   {activeTab === "permissions" && <th>Permission Level</th>}
                   {activeTab === "bans" && <th>Reason</th>}
                   {(activeTab === "allowlist" || activeTab === "bans") && (
-                    <th style={{ width: "100px" }}>Actions</th>
+                    <th
+                      style={{
+                        width: "100px",
+                      }}
+                    >
+                      Actions
+                    </th>
                   )}
                 </tr>
               </thead>
@@ -569,7 +648,11 @@ const AccessControl = () => {
                   items.map((item, idx) => (
                     <tr key={idx}>
                       <td>
-                        <span style={{ fontWeight: "bold" }}>
+                        <span
+                          style={{
+                            fontWeight: "bold",
+                          }}
+                        >
                           {item.name || item.player_name || "Unknown"}
                         </span>
                       </td>
@@ -593,7 +676,9 @@ const AccessControl = () => {
                           {item.ignoresPlayerLimit ? (
                             <span
                               className="badge badge-success"
-                              style={{ fontSize: "0.8em" }}
+                              style={{
+                                fontSize: "0.8em",
+                              }}
                             >
                               Bypasses Limit
                             </span>
@@ -623,7 +708,11 @@ const AccessControl = () => {
                               handlePermissionChange(item, e.target.value)
                             }
                             disabled={actionLoading}
-                            style={{ padding: "4px 8px", fontSize: "0.9em" }}
+                            style={{
+                              padding:
+                                "calc(4px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
+                              fontSize: "0.9em",
+                            }}
                           >
                             <option value="visitor">Visitor</option>
                             <option value="member">Member</option>
@@ -639,8 +728,13 @@ const AccessControl = () => {
                             className="action-button danger-button"
                             onClick={() => handleRemove(item)}
                             title={`Remove from ${activeTab}`}
-                            style={{ padding: "5px 10px" }}
+                            style={{
+                              padding:
+                                "calc(5px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
+                            }}
                             disabled={actionLoading}
+                            type="button"
+                            aria-label={`Remove from ${activeTab}`}
                           >
                             <Trash2 size={14} />
                           </button>
@@ -657,7 +751,7 @@ const AccessControl = () => {
                         textAlign: "center",
                         color: "var(--text-color-secondary)",
                         fontStyle: "italic",
-                        padding: "30px",
+                        padding: "calc(30px * var(--bsm-spacing-scale))",
                       }}
                     >
                       No entries found in {activeTab}. Use the form above to add
@@ -673,168 +767,132 @@ const AccessControl = () => {
 
       {/* Players Modal */}
       {showPlayersModal && (
-        <div
-          className="modal-backdrop"
-          onClick={() => setShowPlayersModal(false)}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.7)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 1000,
-          }}
+        <Modal
+          title={
+            <>
+              <Users size={20} /> Online Players
+            </>
+          }
+          onClose={() => setShowPlayersModal(false)}
+          closeDisabled={actionLoading}
         >
           <div
-            className="modal-content"
-            onClick={(e) => e.stopPropagation()}
             style={{
-              background: "var(--container-background-color, #333)",
-              border: "1px solid var(--border-color, #555)",
-              borderRadius: "8px",
-              padding: "20px",
-              width: "90%",
-              maxWidth: "500px",
-              maxHeight: "80vh",
               display: "flex",
-              flexDirection: "column",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "calc(15px * var(--bsm-spacing-scale))",
+              borderBottom: "1px solid var(--border-color, #555)",
+              paddingBottom: "calc(10px * var(--bsm-spacing-scale))",
+            }}
+          ></div>
+
+          <div
+            style={{
+              overflowY: "auto",
+              flexGrow: 1,
+              paddingRight: "calc(5px * var(--bsm-spacing-scale))",
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "15px",
-                borderBottom: "1px solid var(--border-color, #555)",
-                paddingBottom: "10px",
-              }}
-            >
-              <h3
-                style={{
-                  margin: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
-              >
-                <Users size={20} /> Online Players
-              </h3>
-              <button
-                onClick={() => setShowPlayersModal(false)}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "#aaa",
-                  cursor: "pointer",
-                  padding: "5px",
-                }}
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div
-              style={{ overflowY: "auto", flexGrow: 1, paddingRight: "5px" }}
-            >
-              {(() => {
-                const currentServerObj = servers.find(
-                  (s) => s.name === selectedServer,
-                );
-                const players = currentServerObj?.players || [];
-
-                if (!players || players.length === 0) {
-                  return (
-                    <div
-                      style={{
-                        color: "#aaa",
-                        fontStyle: "italic",
-                        textAlign: "center",
-                        padding: "20px",
-                      }}
-                    >
-                      No players online.
-                    </div>
-                  );
-                }
-
+            {(() => {
+              const currentServerObj = servers.find(
+                (s) => s.name === selectedServer,
+              );
+              const players = currentServerObj?.players || [];
+              if (!players || players.length === 0) {
                 return (
                   <div
                     style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "10px",
+                      color: "var(--text-color-secondary)",
+                      fontStyle: "italic",
+                      textAlign: "center",
+                      padding: "calc(20px * var(--bsm-spacing-scale))",
                     }}
                   >
-                    {players.map((player, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          background: "rgba(0,0,0,0.2)",
-                          padding: "10px",
-                          borderRadius: "4px",
-                          border: "1px solid rgba(255,255,255,0.05)",
-                        }}
-                      >
-                        <span style={{ fontWeight: "bold" }}>
-                          {player.name}
-                        </span>
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: "10px",
-                            alignItems: "center",
-                          }}
-                        >
-                          <input
-                            type="text"
-                            placeholder="Optional reason..."
-                            value={kickReasons[player.name] || ""}
-                            onChange={(e) =>
-                              setKickReasons((prev) => ({
-                                ...prev,
-                                [player.name]: e.target.value,
-                              }))
-                            }
-                            className="form-input"
-                            style={{
-                              padding: "4px 8px",
-                              fontSize: "0.85em",
-                              width: "150px",
-                            }}
-                          />
-                          <button
-                            className="action-button danger-button"
-                            onClick={() => handleKickPlayer(player.name)}
-                            disabled={actionLoading}
-                            style={{ padding: "4px 10px", fontSize: "0.85em" }}
-                          >
-                            Kick
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                    No players online.
                   </div>
                 );
-              })()}
-            </div>
+              }
+              return (
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "calc(10px * var(--bsm-spacing-scale))",
+                  }}
+                >
+                  {players.map((player, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        background: "rgba(0,0,0,0.2)",
+                        padding: "calc(10px * var(--bsm-spacing-scale))",
+                        borderRadius: "4px",
+                        border: "1px solid rgba(255,255,255,0.05)",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontWeight: "bold",
+                        }}
+                      >
+                        {player.name}
+                      </span>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "calc(10px * var(--bsm-spacing-scale))",
+                          alignItems: "center",
+                        }}
+                      >
+                        <input
+                          type="text"
+                          placeholder="Optional reason..."
+                          value={kickReasons[player.name] || ""}
+                          onChange={(e) =>
+                            setKickReasons((prev) => ({
+                              ...prev,
+                              [player.name]: e.target.value,
+                            }))
+                          }
+                          className="form-input"
+                          style={{
+                            padding:
+                              "calc(4px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
+                            fontSize: "0.85em",
+                            width: "150px",
+                          }}
+                        />
+                        <button
+                          className="action-button danger-button"
+                          onClick={() => handleKickPlayer(player.name)}
+                          disabled={actionLoading}
+                          style={{
+                            padding:
+                              "calc(4px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
+                            fontSize: "0.85em",
+                          }}
+                          type="button"
+                        >
+                          Kick
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
-        </div>
+        </Modal>
       )}
 
       <style>{`
-        .badge-success { background-color: rgba(76, 175, 80, 0.2); color: #4caf50; border: 1px solid rgba(76, 175, 80, 0.4); padding: 2px 6px; border-radius: 4px; }
+        .badge-success { background-color: rgba(76, 175, 80, 0.2); color: #4caf50; border: 1px solid rgba(76, 175, 80, 0.4); padding: calc(2px * var(--bsm-spacing-scale)) calc(6px * var(--bsm-spacing-scale)); border-radius: 4px; }
       `}</style>
     </div>
   );
 };
-
 export default AccessControl;

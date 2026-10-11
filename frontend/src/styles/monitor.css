@@ -1,0 +1,177 @@
+.monitor-page .monitor-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(16px * var(--bsm-spacing-scale));
+  flex-wrap: wrap;
+  margin-bottom: calc(16px * var(--bsm-spacing-scale));
+}
+.monitor-page .monitor-heading h1 {
+  font-size: clamp(1.2rem, 2vw, 1.6rem);
+  margin: 0 0 calc(8px * var(--bsm-spacing-scale));
+  overflow-wrap: anywhere;
+}
+.monitor-state,
+.monitor-actions {
+  display: flex;
+  align-items: center;
+  gap: calc(8px * var(--bsm-spacing-scale));
+  flex-wrap: wrap;
+}
+.monitor-connection {
+  font-size: 0.8rem;
+  color: var(--text-color-secondary);
+}
+.monitor-page .monitor-actions .action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(6px * var(--bsm-spacing-scale));
+  margin: 0;
+  min-height: var(--bsm-toolbar-height);
+  padding: calc(7px * var(--bsm-spacing-scale))
+    calc(12px * var(--bsm-spacing-scale));
+}
+.monitor-status {
+  margin-bottom: calc(16px * var(--bsm-spacing-scale));
+}
+.monitor-page h2 {
+  font-size: 0.9rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: calc(8px * var(--bsm-spacing-scale));
+}
+.monitor-status > h2 {
+  margin-bottom: calc(8px * var(--bsm-spacing-scale));
+  color: var(--text-color-secondary);
+}
+.monitor-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: calc(10px * var(--bsm-spacing-scale));
+  margin: 0;
+}
+.monitor-metrics > div,
+.monitor-panel {
+  border: 1px solid var(--border-color);
+  border-radius: var(--bsm-radius-md);
+  background: var(--bsm-surface-raised);
+  min-width: 0;
+}
+.monitor-metrics > div {
+  padding: calc(12px * var(--bsm-spacing-scale))
+    calc(14px * var(--bsm-spacing-scale));
+}
+.monitor-metrics dt {
+  display: flex;
+  align-items: center;
+  gap: calc(6px * var(--bsm-spacing-scale));
+  color: var(--text-color-secondary);
+  font-size: 0.75rem;
+}
+.monitor-metrics dd {
+  margin: calc(5px * var(--bsm-spacing-scale)) 0 0;
+  font-weight: 700;
+  font-size: 1.05rem;
+  overflow-wrap: anywhere;
+}
+.monitor-panels {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: calc(16px * var(--bsm-spacing-scale));
+  align-items: start;
+}
+.monitor-panel {
+  padding: calc(14px * var(--bsm-spacing-scale));
+}
+.monitor-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(10px * var(--bsm-spacing-scale));
+  flex-wrap: wrap;
+  margin-bottom: calc(12px * var(--bsm-spacing-scale));
+}
+.monitor-chart {
+  height: 260px;
+  width: 100%;
+  min-width: 0;
+  position: relative;
+}
+.monitor-chart-key {
+  display: flex;
+  gap: calc(12px * var(--bsm-spacing-scale));
+  font-size: 0.75rem;
+}
+.monitor-chart-key span:first-child {
+  color: var(--bsm-chart-1);
+}
+.monitor-chart-key span:last-child {
+  color: var(--bsm-chart-2);
+}
+.monitor-hint {
+  color: var(--text-color-secondary);
+  font-size: 0.75rem;
+  margin: calc(12px * var(--bsm-spacing-scale)) 0 0;
+}
+.monitor-console button:not(.action-button) {
+  background: var(--bsm-surface-raised);
+  border: 1px solid var(--border-color);
+  border-radius: var(--bsm-radius-md);
+  color: var(--text-color);
+  font: inherit;
+  font-size: 0.8rem;
+  padding: calc(6px * var(--bsm-spacing-scale))
+    calc(10px * var(--bsm-spacing-scale));
+  cursor: pointer;
+}
+.monitor-command {
+  display: flex;
+  gap: calc(8px * var(--bsm-spacing-scale));
+  margin-top: calc(12px * var(--bsm-spacing-scale));
+}
+.monitor-command-input {
+  flex: 1;
+  position: relative;
+  min-width: 0;
+}
+.monitor-command-input > svg {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-color-secondary);
+}
+.monitor-command-input .form-input {
+  width: 100%;
+  padding-left: calc(36px * var(--bsm-spacing-scale));
+  margin: 0;
+  box-sizing: border-box;
+}
+.monitor-page .monitor-command .action-button {
+  margin: 0;
+}
+@media (max-width: 1050px) {
+  .monitor-panels {
+    grid-template-columns: 1fr;
+  }
+  .monitor-chart {
+    height: 220px;
+  }
+}
+@media (max-width: 600px) {
+  .monitor-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .monitor-metrics > div:last-child {
+    grid-column: 1 / -1;
+  }
+  .monitor-page .monitor-actions .action-button,
+  .monitor-console button:not(.action-button) {
+    min-height: 44px;
+  }
+  .monitor-heading > div {
+    min-width: 0;
+  }
+}

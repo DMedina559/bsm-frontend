@@ -1,72 +1,79 @@
-import React, { useState, useEffect } from "react";
-import { useAuth } from "../AuthContext";
-import { useTheme } from "../ThemeContext";
-import { useToast } from "../ToastContext";
-import { get, post } from "../api";
-import { Save, User } from "lucide-react";
-import { logger } from "../utils/logger";
+import "../styles/appearance.css";
+import { usePreference } from "../app/usePreference";
+import { DEFAULT_METRIC_UNITS } from "../utils/metricUnits";
+import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
+import { callOperation } from "../api/operations";
+import React, { useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import { useTheme } from "../contexts/ThemeContext";
+import { useToast } from "../contexts/ToastContext";
 
-const Account = () => {
+import { Save, User, Palette, RotateCcw } from "lucide-react";
+import { BUILT_IN_THEMES, THEME_LABELS } from "../utils/theme";
+import themePreviews from "../utils/themePreviews.json";
+import MetricUnitSettings from "../components/metrics/MetricUnitSettings";
+import PaletteEditor from "../components/PaletteEditor";
+const Account = ({ appearanceOnly = false }) => {
   const { user } = useAuth();
-  const { theme, changeTheme } = useTheme();
+  const [, setMetricUnits] = usePreference("metricUnits", DEFAULT_METRIC_UNITS);
+  const {
+    theme,
+    activePalette,
+    changeTheme,
+    themeError,
+    themeSaving,
+    appearance,
+    updateAppearance,
+    resetAppearance,
+  } = useTheme();
   const { addToast } = useToast();
-
   const [passwords, setPasswords] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
-
-  const [availableThemes, setAvailableThemes] = useState([]);
-
-  useEffect(() => {
-    const fetchThemes = async () => {
-      try {
-        const response = await get("/api/info/themes");
-        if (
-          response &&
-          response.status === "success" &&
-          Array.isArray(response.themes)
-        ) {
-          setAvailableThemes(response.themes);
-        } else {
-          // Fallback if API fails or returns unexpected format
-          setAvailableThemes(["default"]);
-        }
-      } catch (error) {
-        logger.warn("[Account] Failed to fetch themes", { error });
-        setAvailableThemes(["default"]);
-      }
-    };
-    fetchThemes();
-  }, []);
-
-  const handleThemeChange = (newTheme) => {
-    changeTheme(newTheme);
+  const [passwordError, setPasswordError] = useState(null);
+  const themesQuery = useResourceQuery("themes");
+  const availableThemes = [
+    ...new Set([
+      ...BUILT_IN_THEMES,
+      ...(theme && !BUILT_IN_THEMES.includes(theme) ? [theme] : []),
+      ...(themesQuery.data ?? []),
+    ]),
+  ];
+  const themesNotice = themesQuery.error
+    ? "Custom themes could not be loaded. Built-in themes are available."
+    : null;
+  const passwordWrite = useResourceMutation(
+    (passwords, { session }) =>
+      callOperation("change_password", { body: passwords, session }),
+    [],
+  );
+  const passwordSaving = passwordWrite.isPending;
+  const handleThemeChange = async (newTheme) => {
     try {
-      post("/api/account/theme", { theme: newTheme });
+      if (await changeTheme(newTheme))
+        addToast(
+          `Theme changed to ${THEME_LABELS[newTheme] || newTheme}`,
+          "success",
+        );
     } catch (error) {
-      logger.error("[Account] Failed to save theme preference", {
-        error,
-        newTheme,
-      });
+      addToast(error.message || "Theme could not be saved", "error");
     }
-    addToast(`Theme changed to ${newTheme}`, "info");
   };
-
-  const handlePasswordChange = async (e) => {
-    e.preventDefault();
+  const handlePasswordChange = async (event) => {
+    event.preventDefault();
+    if (passwordSaving) return;
     if (passwords.newPassword !== passwords.confirmPassword) {
-      addToast("New passwords do not match", "error");
+      setPasswordError("New passwords do not match");
       return;
     }
-
+    setPasswordError(null);
     try {
-      await post("/api/account/change-password", {
+      await passwordWrite.mutateAsync({
         current_password: passwords.currentPassword,
         new_password: passwords.newPassword,
       });
-
       addToast("Password updated successfully.", "success");
       setPasswords({
         currentPassword: "",
@@ -74,171 +81,404 @@ const Account = () => {
         confirmPassword: "",
       });
     } catch (error) {
-      addToast(error.message || "Failed to update password.", "error");
+      setPasswordError(error.message || "Failed to update password.");
     }
   };
-
+  const fields = [
+    [
+      "currentPassword",
+      "current-password",
+      "Current Password",
+      "current-password",
+    ],
+    ["newPassword", "new-password", "New Password", "new-password"],
+    [
+      "confirmPassword",
+      "confirm-password",
+      "Confirm New Password",
+      "new-password",
+    ],
+  ];
   return (
-    <div className="container" style={{ padding: "20px", maxWidth: "800px" }}>
+    <div
+      className={`container account-page ${appearanceOnly ? "appearance-page" : ""}`}
+    >
       <div className="header">
-        <h1>My Account</h1>
+        <div>
+          {!appearanceOnly && (
+            <p className="workspace-eyebrow">YOUR WORKSPACE</p>
+          )}
+          <h1>{appearanceOnly ? "Appearance" : "My Account"}</h1>
+          {appearanceOnly && (
+            <p className="appearance-description">
+              Make your workspace feel right. Changes apply as you choose them.
+            </p>
+          )}
+        </div>
       </div>
-
-      <div
-        className="grid"
-        style={{ display: "grid", gap: "20px", gridTemplateColumns: "1fr" }}
-      >
-        {/* Profile Info */}
-        <div
-          style={{
-            background: "var(--container-background-color)",
-            padding: "20px",
-            border: "1px solid var(--border-color)",
-          }}
-        >
-          <h2
-            style={{
-              marginTop: 0,
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-            }}
+      {!appearanceOnly && (
+        <section className="settings-panel">
+          <div className="section-heading">
+            <User size={20} />
+            <div>
+              <h2>Profile</h2>
+              <p>Your account identity and access level.</p>
+            </div>
+          </div>
+          <dl className="profile-details">
+            <div>
+              <dt>Username</dt>
+              <dd>{user?.username}</dd>
+            </div>
+            <div>
+              <dt>Role</dt>
+              <dd>
+                <span className="badge">{user?.role}</span>
+              </dd>
+            </div>
+          </dl>
+        </section>
+      )}
+      {appearanceOnly && (
+        <div id="appearance" className="appearance-sections">
+          <section
+            className="settings-panel appearance-theme"
+            aria-labelledby="appearance-theme-title"
           >
-            <User /> Profile
-          </h2>
-          <div style={{ marginLeft: "10px" }}>
-            <p>
-              <strong>Username:</strong> {user?.username}
-            </p>
-            <p>
-              <strong>Role:</strong> {user?.role}
-            </p>
-          </div>
-        </div>
-
-        {/* Theme Selection */}
-        <div
-          style={{
-            background: "var(--container-background-color)",
-            padding: "20px",
-            border: "1px solid var(--border-color)",
-          }}
-        >
-          <h2 style={{ marginTop: 0 }}>Theme</h2>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-            {availableThemes.length > 0 ? (
-              availableThemes.map((t) => (
-                <button
-                  key={t}
-                  className={`action-button ${theme === t ? "" : "secondary"}`}
-                  onClick={() => handleThemeChange(t)}
-                  style={{ textTransform: "capitalize" }}
-                >
-                  {t.replace(/_/g, " ")}
-                </button>
-              ))
-            ) : (
-              <p>Loading themes...</p>
+            <div className="section-heading">
+              <Palette size={20} />
+              <div>
+                <h2 id="appearance-theme-title">Theme</h2>
+                <p>Choose your colors. Your theme follows your account.</p>
+              </div>
+            </div>
+            {themesNotice && <p className="form-help-text">{themesNotice}</p>}
+            {themeError && (
+              <div className="message message-error" role="alert">
+                {themeError}
+              </div>
             )}
+
+            {activePalette && (
+              <p className="form-help-text">
+                The personal palette “{activePalette}” currently overrides
+                account theme colors. Selecting a theme below turns the palette
+                off.
+              </p>
+            )}
+            <div className="theme-grid" role="group" aria-label="Account theme">
+              {availableThemes.map((item) => (
+                <button
+                  key={item}
+                  className={`theme-card ${theme === item && !activePalette ? "selected" : ""}`}
+                  aria-pressed={theme === item && !activePalette}
+                  disabled={themeSaving}
+                  onClick={() => handleThemeChange(item)}
+                  type="button"
+                >
+                  <span
+                    className={`theme-swatch theme-swatch-${BUILT_IN_THEMES.includes(item) ? item : "custom"}`}
+                    aria-hidden="true"
+                  >
+                    {[0, 1, 2].map((index) => (
+                      <i
+                        key={index}
+                        style={
+                          themePreviews[item]
+                            ? { background: themePreviews[item].colors[index] }
+                            : undefined
+                        }
+                      />
+                    ))}
+                  </span>
+                  <strong>
+                    {THEME_LABELS[item] || item.replace(/_/g, " ")}
+                  </strong>
+                  <small>
+                    {theme === item && !activePalette ? "Selected · " : ""}
+                    {BUILT_IN_THEMES.includes(item)
+                      ? themePreviews[item]?.description || "Built-in theme"
+                      : "Server CSS theme"}
+                  </small>
+                </button>
+              ))}
+            </div>
+            <details className="theme-install-help">
+              <summary>How to add a CSS theme</summary>
+              <p>
+                Server-installed themes appear below automatically. Ask your
+                administrator to install a CSS file in the backend’s themes
+                directory; it must be listed by the themes API and served at
+                /themes/NAME.css. Reload this page after installation.
+              </p>
+              <p>
+                Use the palette creator below to make a theme without writing
+                CSS, then export its CSS for installation. Personal palettes are
+                saved in this browser; server CSS themes are shared through the
+                backend and selected on your account.
+              </p>
+            </details>
+          </section>
+          <div className="appearance-preference-grid">
+            <section
+              className="settings-panel"
+              aria-labelledby="appearance-display-title"
+            >
+              <div className="section-heading">
+                <div>
+                  <h2 id="appearance-display-title">Display</h2>
+                  <p>Choose how the interface fits your screen.</p>
+                </div>
+              </div>
+              <div className="form-grid appearance-controls">
+                <div className="form-group">
+                  <label className="form-label" htmlFor="display-mode">
+                    Display mode
+                  </label>
+                  <select
+                    className="form-input"
+                    id="display-mode"
+                    value={appearance.mode}
+                    onChange={(event) =>
+                      updateAppearance({
+                        mode: event.target.value,
+                      })
+                    }
+                  >
+                    <option value="theme">Use theme default</option>
+                    <option value="system">Follow system</option>
+                    <option value="dark">Dark</option>
+                    <option value="light">Light</option>
+                  </select>
+                  <small className="form-help-text">
+                    Custom themes can use the same light and dark tokens.
+                  </small>
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="display-density">
+                    Interface density
+                  </label>
+                  <select
+                    className="form-input"
+                    id="display-density"
+                    value={appearance.density}
+                    onChange={(event) =>
+                      updateAppearance({
+                        density: event.target.value,
+                      })
+                    }
+                  >
+                    <option value="comfortable">Comfortable</option>
+                    <option value="compact">Compact</option>
+                  </select>
+                  <small className="form-help-text">
+                    Adjust text sizes, cards, padding, navigation, and table
+                    spacing.
+                  </small>
+                </div>
+              </div>
+            </section>
+            <MetricUnitSettings />
+          </div>
+          <section
+            className="settings-panel appearance-background"
+            aria-labelledby="appearance-background-title"
+          >
+            <div className="section-heading">
+              <div>
+                <h2 id="appearance-background-title">Background</h2>
+                <p>Add a panorama and adjust its visibility.</p>
+              </div>
+            </div>
+            <div className="appearance-background-grid">
+              <div className="form-group panorama-preference">
+                <label
+                  className="checkbox-wrapper"
+                  htmlFor="panorama-background"
+                >
+                  <input
+                    type="checkbox"
+                    role="switch"
+                    id="panorama-background"
+                    checked={appearance.panorama === true}
+                    onChange={(event) =>
+                      updateAppearance({ panorama: event.target.checked })
+                    }
+                    aria-describedby="panorama-help"
+                  />
+                  <span className="form-label-inline">Panorama background</span>
+                </label>
+                <p className="form-help-text" id="panorama-help">
+                  Use the server’s panorama behind the interface. Disabled by
+                  default and saved only in this browser. Theme colors remain in
+                  use if the image is unavailable.
+                </p>
+                <div className="panorama-visibility">
+                  <label className="form-label" htmlFor="panorama-visibility">
+                    Panorama visibility{" "}
+                    <output htmlFor="panorama-visibility">
+                      {appearance.panoramaVisibility ?? 18}%
+                    </output>
+                  </label>
+                  <input
+                    id="panorama-visibility"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={appearance.panoramaVisibility ?? 18}
+                    disabled={!appearance.panorama}
+                    aria-valuetext={`${appearance.panoramaVisibility ?? 18}% visible`}
+                    aria-describedby="panorama-visibility-help"
+                    onChange={(event) =>
+                      updateAppearance({
+                        panoramaVisibility: Number(event.target.value),
+                      })
+                    }
+                  />
+                  <small
+                    id="panorama-visibility-help"
+                    className="form-help-text"
+                  >
+                    Higher values make the image more prominent. Panel
+                    backgrounds keep their theme colors.
+                  </small>
+                </div>
+              </div>
+              <div className="form-group panorama-visibility">
+                <label className="form-label" htmlFor="sidebar-transparency">
+                  Sidebar transparency{" "}
+                  <output htmlFor="sidebar-transparency">
+                    {appearance.sidebarTransparency ?? 0}%
+                  </output>
+                </label>
+                <input
+                  id="sidebar-transparency"
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={appearance.sidebarTransparency ?? 0}
+                  aria-valuetext={`${appearance.sidebarTransparency ?? 0}% transparent`}
+                  aria-describedby="sidebar-transparency-help"
+                  onChange={(event) =>
+                    updateAppearance({
+                      sidebarTransparency: Number(event.target.value),
+                    })
+                  }
+                />
+                <small
+                  id="sidebar-transparency-help"
+                  className="form-help-text"
+                >
+                  Higher values reveal more of the background through the
+                  sidebar. Text and controls stay opaque.
+                </small>
+              </div>
+            </div>
+          </section>
+          <div className="appearance-reset">
+            <p>
+              Display, background, and metric preferences are saved for this
+              account in this browser.
+            </p>
+            <button
+              className="action-button secondary"
+              onClick={async () => {
+                try {
+                  if (await resetAppearance()) {
+                    setMetricUnits(DEFAULT_METRIC_UNITS);
+                    addToast("Appearance reset to defaults.", "success");
+                  }
+                } catch (error) {
+                  addToast(
+                    error.message || "Appearance could not be reset.",
+                    "error",
+                  );
+                }
+              }}
+              disabled={themeSaving}
+              type="button"
+            >
+              <RotateCcw size={16} />
+              Reset appearance
+            </button>
           </div>
         </div>
-
-        {/* Password Change */}
-        <div
-          style={{
-            background: "var(--container-background-color)",
-            padding: "20px",
-            border: "1px solid var(--border-color)",
-          }}
-        >
-          <h2 style={{ marginTop: 0 }}>Change Password</h2>
+      )}
+      {appearanceOnly && <PaletteEditor />}
+      {!appearanceOnly && (
+        <section className="settings-panel">
+          <div className="section-heading">
+            <Save size={20} />
+            <div>
+              <h2>Change Password</h2>
+              <p>Use a unique password for your account.</p>
+            </div>
+          </div>
           <form
             onSubmit={handlePasswordChange}
-            className="form-group"
-            style={{ maxWidth: "400px" }}
+            className="password-form"
+            aria-busy={passwordSaving}
           >
-            {/* Hidden username field for accessibility (a11y) */}
             <input
               type="text"
               name="username"
               value={user?.username || ""}
               autoComplete="username"
-              style={{ display: "none" }}
+              hidden
               readOnly
-              aria-hidden="true"
             />
-
-            <div>
-              <label htmlFor="current-password" className="form-label">
-                Current Password
-              </label>
-              <input
-                id="current-password"
-                type="password"
-                name="current-password"
-                className="form-input"
-                value={passwords.currentPassword}
-                onChange={(e) =>
-                  setPasswords({
-                    ...passwords,
-                    currentPassword: e.target.value,
-                  })
-                }
-                required
-                autoComplete="current-password"
-                style={{ width: "100%" }}
-              />
-            </div>
-            <div>
-              <label htmlFor="new-password" className="form-label">
-                New Password
-              </label>
-              <input
-                id="new-password"
-                type="password"
-                name="new-password"
-                className="form-input"
-                value={passwords.newPassword}
-                onChange={(e) =>
-                  setPasswords({ ...passwords, newPassword: e.target.value })
-                }
-                required
-                autoComplete="new-password"
-                style={{ width: "100%" }}
-              />
-            </div>
-            <div>
-              <label htmlFor="confirm-password" className="form-label">
-                Confirm New Password
-              </label>
-              <input
-                id="confirm-password"
-                type="password"
-                name="confirm-password"
-                className="form-input"
-                value={passwords.confirmPassword}
-                onChange={(e) =>
-                  setPasswords({
-                    ...passwords,
-                    confirmPassword: e.target.value,
-                  })
-                }
-                required
-                autoComplete="new-password"
-                style={{ width: "100%" }}
-              />
-            </div>
-            <div style={{ marginTop: "15px" }}>
-              <button type="submit" className="action-button">
-                <Save size={16} style={{ marginRight: "5px" }} /> Update
-                Password
+            {fields.map(([key, id, label, autoComplete]) => (
+              <div className="form-group" key={key}>
+                <label className="form-label" htmlFor={id}>
+                  {label}
+                </label>
+                <input
+                  className="form-input"
+                  id={id}
+                  name={id}
+                  type="password"
+                  value={passwords[key]}
+                  onChange={(event) =>
+                    setPasswords({
+                      ...passwords,
+                      [key]: event.target.value,
+                    })
+                  }
+                  required
+                  autoComplete={autoComplete}
+                  disabled={passwordSaving}
+                  aria-invalid={
+                    key === "confirmPassword" && passwordError
+                      ? true
+                      : undefined
+                  }
+                  aria-describedby={
+                    passwordError ? "password-error" : undefined
+                  }
+                />
+              </div>
+            ))}
+            {passwordError && (
+              <p className="validation-error" role="alert" id="password-error">
+                {passwordError}
+              </p>
+            )}
+            <div className="form-actions">
+              <button
+                type="submit"
+                className="action-button primary-button"
+                disabled={passwordSaving}
+              >
+                <Save size={16} />
+                {passwordSaving ? "Updating…" : "Update Password"}
               </button>
             </div>
           </form>
-        </div>
-      </div>
+        </section>
+      )}
     </div>
   );
 };
-
 export default Account;

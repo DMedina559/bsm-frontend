@@ -1,0 +1,109 @@
+.appearance-page > .header {
+  margin-bottom: var(--bsm-space-3);
+}
+.appearance-description {
+  margin: var(--bsm-space-2) 0 0;
+  color: var(--text-color-secondary);
+  font-size: 0.85rem;
+}
+.appearance-sections {
+  display: grid;
+  gap: var(--bsm-grid-gap);
+}
+.appearance-page .settings-panel {
+  margin-bottom: 0;
+  padding: var(--bsm-space-4);
+  min-width: 0;
+}
+.appearance-page .section-heading {
+  margin-bottom: var(--bsm-space-3);
+}
+.appearance-page .section-heading h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+.appearance-page .section-heading p {
+  font-size: 0.8rem;
+  margin: var(--bsm-space-1) 0 0;
+  color: var(--text-color-secondary);
+}
+.appearance-preference-grid,
+.appearance-background-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--bsm-grid-gap);
+  align-items: start;
+}
+.appearance-preference-grid > .settings-panel {
+  height: 100%;
+  box-sizing: border-box;
+}
+.appearance-page .form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--bsm-space-3);
+}
+.appearance-page .form-group {
+  margin-bottom: 0;
+}
+.appearance-page .form-help-text {
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+.appearance-page .theme-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  gap: var(--bsm-space-2);
+}
+.appearance-page .theme-card {
+  padding: var(--bsm-space-2);
+  gap: var(--bsm-space-2);
+}
+.appearance-page .theme-swatch {
+  height: calc(32px * var(--bsm-spacing-scale));
+}
+.appearance-page .theme-install-help {
+  margin-top: var(--bsm-space-3);
+  font-size: 0.8rem;
+}
+.appearance-page .theme-install-help summary {
+  cursor: pointer;
+  color: var(--text-color-secondary);
+}
+.appearance-page .theme-install-help p {
+  max-width: 80ch;
+  line-height: 1.5;
+}
+.appearance-page .panorama-visibility {
+  margin-top: var(--bsm-space-3);
+}
+.appearance-background-grid > .panorama-visibility {
+  margin-top: 0;
+}
+.appearance-reset {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bsm-space-3);
+}
+.appearance-reset p {
+  font-size: 0.75rem;
+  color: var(--text-color-secondary);
+  margin: 0;
+}
+.appearance-page .palette-editor {
+  margin-top: var(--bsm-grid-gap);
+}
+@media (max-width: 800px) {
+  .appearance-preference-grid,
+  .appearance-background-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 480px) {
+  .appearance-page .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .appearance-page .theme-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -1,14 +1,16 @@
+import { callOperation } from "../api/operations";
+import { useResourceMutation } from "../app/resourceQueries";
+import { queryKeys } from "../app/queryKeys";
+import Modal from "../components/Modal";
 import React, { useState } from "react";
-import { useServer } from "../ServerContext";
-import { useToast } from "../ToastContext";
-import { post } from "../api";
+import { useServer } from "../contexts/ServerContext";
+import { useToast } from "../contexts/ToastContext";
+
 import { logger } from "../utils/logger";
 import { Users, X } from "lucide-react";
-
 const OnlinePlayers = () => {
   const { selectedServer, servers } = useServer();
   const { addToast } = useToast();
-  const [loadingAction, setLoadingAction] = useState(false);
 
   // Modals state
   const [kickModalOpen, setKickModalOpen] = useState(false);
@@ -22,23 +24,30 @@ const OnlinePlayers = () => {
   const [kickReason, setKickReason] = useState("");
   const [transferHost, setTransferHost] = useState("");
   const [transferPort, setTransferPort] = useState("19132");
-
   const currentServerObj = servers.find((s) => s.name === selectedServer);
   const players = currentServerObj?.players || [];
+  const write = useResourceMutation(
+    ({ id, options }, { session }) =>
+      callOperation(id, { ...options, session }),
+    [queryKeys.servers(), queryKeys.access([selectedServer, "bans"])],
+  );
+  /** @type {typeof callOperation} */
+  const writeOperation = (id, ...args) =>
+    write.mutateAsync({ id, options: args[0] });
+
+  const loadingAction = write.isPending;
 
   const handleOpenKickModal = (playerName) => {
     setSelectedPlayer(playerName);
     setKickReason("");
     setKickModalOpen(true);
   };
-
   const handleOpenTransferModal = (playerName) => {
     setSelectedPlayer(playerName);
     setTransferHost("");
     setTransferPort("19132");
     setTransferModalOpen(true);
   };
-
   const closeModals = () => {
     setKickModalOpen(false);
     setTransferModalOpen(false);
@@ -47,7 +56,6 @@ const OnlinePlayers = () => {
     setSelectedPlayerXuid(null);
     setBanReason("");
   };
-
   const handleOpenBanModal = (playerName, playerXuid) => {
     if (!playerXuid) {
       addToast(
@@ -61,22 +69,23 @@ const OnlinePlayers = () => {
     setBanReason("");
     setBanModalOpen(true);
   };
-
   const handleBanPlayer = async () => {
     if (!selectedServer || !selectedPlayer || !selectedPlayerXuid) return;
-
     logger.info(`[OnlinePlayers] Banning player`, {
       player: selectedPlayer,
       xuid: selectedPlayerXuid,
       server: selectedServer,
       reason: banReason,
     });
-    setLoadingAction(true);
+
     try {
-      await post(`/api/server/${selectedServer}/bans/add`, {
-        player_name: selectedPlayer,
-        xuid: selectedPlayerXuid,
-        reason: banReason || null,
+      await writeOperation("add_server_ban", {
+        path: { server_name: selectedServer },
+        body: {
+          player_name: selectedPlayer,
+          xuid: selectedPlayerXuid,
+          reason: banReason || null,
+        },
       });
       addToast(`${selectedPlayer} has been banned.`, "success");
       closeModals();
@@ -87,27 +96,25 @@ const OnlinePlayers = () => {
         server: selectedServer,
       });
       addToast(error.message || `Failed to ban ${selectedPlayer}.`, "error");
-    } finally {
-      setLoadingAction(false);
     }
   };
-
   const handleKickPlayer = async () => {
     if (!selectedServer || !selectedPlayer) return;
-
     const commandToExecute = kickReason.trim()
       ? `kick "${selectedPlayer}" ${kickReason}`
       : `kick "${selectedPlayer}"`;
-
     logger.info(`[OnlinePlayers] Kicking player`, {
       player: selectedPlayer,
       server: selectedServer,
       reason: kickReason,
     });
-    setLoadingAction(true);
+
     try {
-      await post(`/api/server/${selectedServer}/send_command`, {
-        command: commandToExecute,
+      await writeOperation("send_command", {
+        path: { server_name: selectedServer },
+        body: {
+          command: commandToExecute,
+        },
       });
       addToast(`Kick command sent for ${selectedPlayer}.`, "success");
       closeModals();
@@ -118,29 +125,40 @@ const OnlinePlayers = () => {
         server: selectedServer,
       });
       addToast(error.message || `Failed to kick ${selectedPlayer}.`, "error");
-    } finally {
-      setLoadingAction(false);
     }
   };
-
   const handleTransferPlayer = async () => {
     if (!selectedServer || !selectedPlayer || !transferHost) {
       addToast("Hostname/IP is required for transfer.", "error");
       return;
     }
-
+    const port = Number(transferPort);
+    if (
+      !Number.isInteger(port) ||
+      port < 1 ||
+      port > 65535 ||
+      /[\s"\\]/.test(transferHost)
+    ) {
+      addToast(
+        "Enter a valid hostname or IP and a port from 1 to 65535.",
+        "error",
+      );
+      return;
+    }
     const commandToExecute = `transfer "${selectedPlayer}" ${transferHost} ${transferPort}`;
-
     logger.info(`[OnlinePlayers] Transferring player`, {
       player: selectedPlayer,
       host: transferHost,
       port: transferPort,
       server: selectedServer,
     });
-    setLoadingAction(true);
+
     try {
-      await post(`/api/server/${selectedServer}/send_command`, {
-        command: commandToExecute,
+      await writeOperation("send_command", {
+        path: { server_name: selectedServer },
+        body: {
+          command: commandToExecute,
+        },
       });
       addToast(`Transfer command sent for ${selectedPlayer}.`, "success");
       closeModals();
@@ -154,11 +172,8 @@ const OnlinePlayers = () => {
         error.message || `Failed to transfer ${selectedPlayer}.`,
         "error",
       );
-    } finally {
-      setLoadingAction(false);
     }
   };
-
   if (!selectedServer) {
     return (
       <div className="container">
@@ -166,8 +181,8 @@ const OnlinePlayers = () => {
           className="message-box message-warning"
           style={{
             textAlign: "center",
-            marginTop: "50px",
-            padding: "20px",
+            marginTop: "calc(50px * var(--bsm-spacing-scale))",
+            padding: "calc(20px * var(--bsm-spacing-scale))",
             border: "1px solid orange",
             color: "orange",
           }}
@@ -177,7 +192,6 @@ const OnlinePlayers = () => {
       </div>
     );
   }
-
   return (
     <div className="container">
       <div
@@ -189,10 +203,18 @@ const OnlinePlayers = () => {
         }}
       >
         <h1>Online Players: {selectedServer}</h1>
-        <div className="status-text" style={{ color: "#aaa" }}>
+        <div
+          className="status-text"
+          style={{
+            color: "var(--text-color-secondary)",
+          }}
+        >
           <Users
             size={16}
-            style={{ marginRight: "5px", verticalAlign: "middle" }}
+            style={{
+              marginRight: "calc(5px * var(--bsm-spacing-scale))",
+              verticalAlign: "middle",
+            }}
           />
           {players.length} Online
         </div>
@@ -201,7 +223,7 @@ const OnlinePlayers = () => {
       <div
         style={{
           background: "var(--container-background-color, #333)",
-          padding: "20px",
+          padding: "calc(20px * var(--bsm-spacing-scale))",
           borderRadius: "8px",
           border: "1px solid var(--border-color, #555)",
         }}
@@ -209,55 +231,74 @@ const OnlinePlayers = () => {
         {players.length === 0 ? (
           <div
             style={{
-              color: "#aaa",
+              color: "var(--text-color-secondary)",
               fontStyle: "italic",
               textAlign: "center",
-              padding: "20px",
+              padding: "calc(20px * var(--bsm-spacing-scale))",
             }}
           >
             No players currently online.
           </div>
         ) : (
           <div
-            style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "calc(10px * var(--bsm-spacing-scale))",
+            }}
           >
-            {players.map((player, idx) => (
+            {players.map((player) => (
               <div
-                key={idx}
+                key={player.xuid || player.uuid || player.name}
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
                   background: "rgba(0,0,0,0.2)",
-                  padding: "15px",
+                  padding: "calc(15px * var(--bsm-spacing-scale))",
                   borderRadius: "4px",
                   border: "1px solid rgba(255,255,255,0.05)",
                 }}
               >
                 <div
-                  style={{ display: "flex", alignItems: "center", gap: "15px" }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "calc(15px * var(--bsm-spacing-scale))",
+                  }}
                 >
-                  <span style={{ fontWeight: "bold", fontSize: "1.1em" }}>
+                  <span
+                    style={{
+                      fontWeight: "bold",
+                      fontSize: "1.1em",
+                    }}
+                  >
                     {player.name}
                   </span>
-                  {player.uuid && (
+                  {(player.xuid || player.uuid) && (
                     <span
                       style={{
                         fontSize: "0.8em",
-                        color: "#888",
+                        color: "var(--text-color-secondary)",
                         fontFamily: "monospace",
                       }}
                     >
-                      XUID: {player.uuid}
+                      XUID: {player.xuid || player.uuid}
                     </span>
                   )}
                 </div>
 
-                <div style={{ display: "flex", gap: "10px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "calc(10px * var(--bsm-spacing-scale))",
+                  }}
+                >
                   <button
                     className="action-button secondary"
                     onClick={() => handleOpenTransferModal(player.name)}
                     disabled={loadingAction}
+                    type="button"
                   >
                     Transfer
                   </button>
@@ -265,14 +306,25 @@ const OnlinePlayers = () => {
                     className="action-button danger-button"
                     onClick={() => handleOpenKickModal(player.name)}
                     disabled={loadingAction}
+                    type="button"
                   >
                     Kick
                   </button>
                   <button
                     className="action-button danger-button"
-                    onClick={() => handleOpenBanModal(player.name, player.uuid)}
-                    disabled={loadingAction || !player.uuid}
-                    title={!player.uuid ? "XUID required to ban" : "Ban Player"}
+                    onClick={() =>
+                      handleOpenBanModal(
+                        player.name,
+                        player.xuid || player.uuid,
+                      )
+                    }
+                    disabled={loadingAction || !(player.xuid || player.uuid)}
+                    title={
+                      !(player.xuid || player.uuid)
+                        ? "XUID required to ban"
+                        : "Ban Player"
+                    }
+                    type="button"
                   >
                     Ban
                   </button>
@@ -285,374 +337,274 @@ const OnlinePlayers = () => {
 
       {/* Ban Modal */}
       {banModalOpen && (
-        <div
-          className="modal-backdrop"
-          onClick={closeModals}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.7)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 1000,
-          }}
+        <Modal
+          title={<>Ban {selectedPlayer}</>}
+          onClose={closeModals}
+          closeDisabled={loadingAction}
         >
           <div
-            className="modal-content"
-            onClick={(e) => e.stopPropagation()}
             style={{
-              background: "var(--container-background-color, #333)",
-              border: "1px solid var(--border-color, #555)",
-              borderRadius: "8px",
-              padding: "20px",
-              width: "90%",
-              maxWidth: "400px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "calc(15px * var(--bsm-spacing-scale))",
+              borderBottom: "1px solid var(--border-color, #555)",
+              paddingBottom: "calc(10px * var(--bsm-spacing-scale))",
+            }}
+          ></div>
+          <div
+            style={{
               display: "flex",
               flexDirection: "column",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+              gap: "calc(15px * var(--bsm-spacing-scale))",
             }}
           >
             <div
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "15px",
-                borderBottom: "1px solid var(--border-color, #555)",
-                paddingBottom: "10px",
+                background: "rgba(244, 67, 54, 0.1)",
+                border: "1px solid rgba(244, 67, 54, 0.3)",
+                padding: "calc(10px * var(--bsm-spacing-scale))",
+                borderRadius: "4px",
+                color: "var(--bsm-danger)",
+                fontSize: "0.9em",
               }}
             >
-              <h3 style={{ margin: 0, color: "#f44336" }}>
-                Ban {selectedPlayer}
-              </h3>
-              <button
-                onClick={closeModals}
+              Warning: This will prevent the player from joining the server.
+            </div>
+            <div>
+              <label
                 style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "#aaa",
-                  cursor: "pointer",
-                  padding: "5px",
+                  display: "block",
+                  marginBottom: "calc(5px * var(--bsm-spacing-scale))",
+                  color: "var(--text-color)",
                 }}
+                htmlFor="onlineplayers-field-1"
               >
-                <X size={20} />
-              </button>
+                Reason (Optional)
+              </label>
+              <input
+                type="text"
+                value={banReason}
+                onChange={(e) => setBanReason(e.target.value)}
+                className="form-input"
+                placeholder="e.g. Breaking rules"
+                style={{
+                  width: "100%",
+                  padding: "calc(8px * var(--bsm-spacing-scale))",
+                  boxSizing: "border-box",
+                }}
+                autoFocus
+                id="onlineplayers-field-1"
+              />
             </div>
             <div
-              style={{ display: "flex", flexDirection: "column", gap: "15px" }}
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "calc(10px * var(--bsm-spacing-scale))",
+                marginTop: "calc(10px * var(--bsm-spacing-scale))",
+              }}
             >
-              <div
-                style={{
-                  background: "rgba(244, 67, 54, 0.1)",
-                  border: "1px solid rgba(244, 67, 54, 0.3)",
-                  padding: "10px",
-                  borderRadius: "4px",
-                  color: "#f44336",
-                  fontSize: "0.9em",
-                }}
+              <button
+                className="action-button secondary"
+                onClick={closeModals}
+                type="button"
               >
-                Warning: This will prevent the player from joining the server.
-              </div>
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "5px",
-                    color: "var(--text-color)",
-                  }}
-                >
-                  Reason (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={banReason}
-                  onChange={(e) => setBanReason(e.target.value)}
-                  className="form-input"
-                  placeholder="e.g. Breaking rules"
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    boxSizing: "border-box",
-                  }}
-                  autoFocus
-                />
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  gap: "10px",
-                  marginTop: "10px",
-                }}
+                Cancel
+              </button>
+              <button
+                className="action-button danger-button"
+                onClick={handleBanPlayer}
+                disabled={loadingAction}
+                type="button"
               >
-                <button
-                  className="action-button secondary"
-                  onClick={closeModals}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="action-button danger-button"
-                  onClick={handleBanPlayer}
-                  disabled={loadingAction}
-                >
-                  Confirm Ban
-                </button>
-              </div>
+                Confirm Ban
+              </button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* Kick Modal */}
       {kickModalOpen && (
-        <div
-          className="modal-backdrop"
-          onClick={closeModals}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.7)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 1000,
-          }}
+        <Modal
+          title={<>Kick {selectedPlayer}</>}
+          onClose={closeModals}
+          closeDisabled={loadingAction}
         >
           <div
-            className="modal-content"
-            onClick={(e) => e.stopPropagation()}
             style={{
-              background: "var(--container-background-color, #333)",
-              border: "1px solid var(--border-color, #555)",
-              borderRadius: "8px",
-              padding: "20px",
-              width: "90%",
-              maxWidth: "400px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "calc(15px * var(--bsm-spacing-scale))",
+              borderBottom: "1px solid var(--border-color, #555)",
+              paddingBottom: "calc(10px * var(--bsm-spacing-scale))",
+            }}
+          ></div>
+          <div
+            style={{
               display: "flex",
               flexDirection: "column",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+              gap: "calc(15px * var(--bsm-spacing-scale))",
             }}
           >
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: "calc(5px * var(--bsm-spacing-scale))",
+                  color: "var(--text-color-secondary)",
+                }}
+                htmlFor="onlineplayers-field-2"
+              >
+                Reason (Optional)
+              </label>
+              <input
+                type="text"
+                value={kickReason}
+                onChange={(e) => setKickReason(e.target.value)}
+                className="form-input"
+                placeholder="e.g. Breaking rules"
+                style={{
+                  width: "100%",
+                  padding: "calc(8px * var(--bsm-spacing-scale))",
+                  boxSizing: "border-box",
+                }}
+                autoFocus
+                id="onlineplayers-field-2"
+              />
+            </div>
             <div
               style={{
                 display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "15px",
-                borderBottom: "1px solid var(--border-color, #555)",
-                paddingBottom: "10px",
+                justifyContent: "flex-end",
+                gap: "calc(10px * var(--bsm-spacing-scale))",
+                marginTop: "calc(10px * var(--bsm-spacing-scale))",
               }}
             >
-              <h3 style={{ margin: 0 }}>Kick {selectedPlayer}</h3>
               <button
+                className="action-button secondary"
                 onClick={closeModals}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "#aaa",
-                  cursor: "pointer",
-                  padding: "5px",
-                }}
+                type="button"
               >
-                <X size={20} />
+                Cancel
+              </button>
+              <button
+                className="action-button danger-button"
+                onClick={handleKickPlayer}
+                disabled={loadingAction}
+                type="button"
+              >
+                Confirm Kick
               </button>
             </div>
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: "15px" }}
-            >
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "5px",
-                    color: "#ccc",
-                  }}
-                >
-                  Reason (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={kickReason}
-                  onChange={(e) => setKickReason(e.target.value)}
-                  className="form-input"
-                  placeholder="e.g. Breaking rules"
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    boxSizing: "border-box",
-                  }}
-                  autoFocus
-                />
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  gap: "10px",
-                  marginTop: "10px",
-                }}
-              >
-                <button
-                  className="action-button secondary"
-                  onClick={closeModals}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="action-button danger-button"
-                  onClick={handleKickPlayer}
-                  disabled={loadingAction}
-                >
-                  Confirm Kick
-                </button>
-              </div>
-            </div>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* Transfer Modal */}
       {transferModalOpen && (
-        <div
-          className="modal-backdrop"
-          onClick={closeModals}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.7)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 1000,
-          }}
+        <Modal
+          title={<>Transfer {selectedPlayer}</>}
+          onClose={closeModals}
+          closeDisabled={loadingAction}
         >
           <div
-            className="modal-content"
-            onClick={(e) => e.stopPropagation()}
             style={{
-              background: "var(--container-background-color, #333)",
-              border: "1px solid var(--border-color, #555)",
-              borderRadius: "8px",
-              padding: "20px",
-              width: "90%",
-              maxWidth: "400px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "calc(15px * var(--bsm-spacing-scale))",
+              borderBottom: "1px solid var(--border-color, #555)",
+              paddingBottom: "calc(10px * var(--bsm-spacing-scale))",
+            }}
+          ></div>
+          <div
+            style={{
               display: "flex",
               flexDirection: "column",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+              gap: "calc(15px * var(--bsm-spacing-scale))",
             }}
           >
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: "calc(5px * var(--bsm-spacing-scale))",
+                  color: "var(--text-color-secondary)",
+                }}
+                htmlFor="onlineplayers-field-3"
+              >
+                Hostname or IP *
+              </label>
+              <input
+                type="text"
+                value={transferHost}
+                onChange={(e) => setTransferHost(e.target.value)}
+                className="form-input"
+                placeholder="play.example.com"
+                style={{
+                  width: "100%",
+                  padding: "calc(8px * var(--bsm-spacing-scale))",
+                  boxSizing: "border-box",
+                }}
+                autoFocus
+                id="onlineplayers-field-3"
+              />
+            </div>
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: "calc(5px * var(--bsm-spacing-scale))",
+                  color: "var(--text-color-secondary)",
+                }}
+                htmlFor="onlineplayers-field-4"
+              >
+                Port *
+              </label>
+              <input
+                type="text"
+                value={transferPort}
+                onChange={(e) => setTransferPort(e.target.value)}
+                className="form-input"
+                style={{
+                  width: "100%",
+                  padding: "calc(8px * var(--bsm-spacing-scale))",
+                  boxSizing: "border-box",
+                }}
+                id="onlineplayers-field-4"
+              />
+            </div>
             <div
               style={{
                 display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "15px",
-                borderBottom: "1px solid var(--border-color, #555)",
-                paddingBottom: "10px",
+                justifyContent: "flex-end",
+                gap: "calc(10px * var(--bsm-spacing-scale))",
+                marginTop: "calc(10px * var(--bsm-spacing-scale))",
               }}
             >
-              <h3 style={{ margin: 0 }}>Transfer {selectedPlayer}</h3>
               <button
+                className="action-button secondary"
                 onClick={closeModals}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "#aaa",
-                  cursor: "pointer",
-                  padding: "5px",
-                }}
+                type="button"
               >
-                <X size={20} />
+                Cancel
+              </button>
+              <button
+                className="action-button start-button"
+                onClick={handleTransferPlayer}
+                disabled={loadingAction || !transferHost}
+                type="button"
+              >
+                Confirm Transfer
               </button>
             </div>
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: "15px" }}
-            >
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "5px",
-                    color: "#ccc",
-                  }}
-                >
-                  Hostname or IP *
-                </label>
-                <input
-                  type="text"
-                  value={transferHost}
-                  onChange={(e) => setTransferHost(e.target.value)}
-                  className="form-input"
-                  placeholder="play.example.com"
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    boxSizing: "border-box",
-                  }}
-                  autoFocus
-                />
-              </div>
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "5px",
-                    color: "#ccc",
-                  }}
-                >
-                  Port *
-                </label>
-                <input
-                  type="text"
-                  value={transferPort}
-                  onChange={(e) => setTransferPort(e.target.value)}
-                  className="form-input"
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    boxSizing: "border-box",
-                  }}
-                />
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  gap: "10px",
-                  marginTop: "10px",
-                }}
-              >
-                <button
-                  className="action-button secondary"
-                  onClick={closeModals}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="action-button start-button"
-                  onClick={handleTransferPlayer}
-                  disabled={loadingAction || !transferHost}
-                >
-                  Confirm Transfer
-                </button>
-              </div>
-            </div>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );
 };
-
 export default OnlinePlayers;

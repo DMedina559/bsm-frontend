@@ -14,7 +14,7 @@ export const getApiProxyBasePath = () => {
   }
 
   const path = window.location.pathname;
-  const appIndex = path.indexOf("/app");
+  const appIndex = path.search(/\/app(?:\/|$)/);
 
   if (appIndex > 0) {
     return path.substring(0, appIndex);

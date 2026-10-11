@@ -3,11 +3,13 @@
 name: Build Lint Test
 
 on:
+  workflow_dispatch:
   push:
     branches-ignore:
       - 'main'
     paths:
       - 'frontend/**'
+      - '.github/workflows/build-test.yml'
   #pull_request:
   #  paths:
   #    - 'frontend/**'
@@ -33,7 +35,9 @@ jobs:
     - name: Install dependencies and build
       run: |
         cd frontend
-        npm install
+        npm ci
+        npm run api:check
+        npm run typecheck
         npm run build
 
     - name: Run Frontend Lint
@@ -43,3 +47,11 @@ jobs:
     - name: Run Frontend Tests
       working-directory: ./frontend
       run: npm run test:run
+
+    - name: Install browser
+      working-directory: ./frontend
+      run: npx playwright install --with-deps chromium
+
+    - name: Run full app browser tests
+      working-directory: ./frontend
+      run: npm run test:e2e

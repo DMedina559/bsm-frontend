@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import JSON5 from "json5";
-import DynamicPage from "../components/DynamicPage";
-import { useToast } from "../ToastContext";
+import DynamicPage from "./DynamicPage";
+import { useToast } from "../contexts/ToastContext";
 import { Play } from "lucide-react";
-
 const DEFAULT_JSON = `{
   "type": "Container",
   "children": [
@@ -23,12 +22,10 @@ const DEFAULT_JSON = `{
     }
   ]
 }`;
-
 const Playground = () => {
   const [jsonInput, setJsonInput] = useState(DEFAULT_JSON);
   const [schemaJson, setSchemaJson] = useState(null);
   const { addToast } = useToast();
-
   const handleRender = () => {
     try {
       // First try standard JSON parsing
@@ -55,14 +52,13 @@ const Playground = () => {
       }
     }
   };
-
   return (
     <div
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: "20px",
-        padding: "20px",
+        gap: "calc(20px * var(--bsm-spacing-scale))",
+        padding: "calc(20px * var(--bsm-spacing-scale))",
       }}
     >
       <div className="header">
@@ -72,11 +68,13 @@ const Playground = () => {
       <div className="card">
         <h3>JSON Input</h3>
         <textarea
+          aria-label="JSON schema"
+          className="form-input"
           style={{
             width: "100%",
             height: "300px",
             fontFamily: "monospace",
-            padding: "10px",
+            padding: "calc(10px * var(--bsm-spacing-scale))",
             background: "var(--input-bg, #222)",
             color: "var(--text-color, #eee)",
             border: "1px solid var(--border-color, #444)",
@@ -89,13 +87,22 @@ const Playground = () => {
         />
         <div
           style={{
-            marginTop: "10px",
+            marginTop: "calc(10px * var(--bsm-spacing-scale))",
             display: "flex",
             justifyContent: "flex-end",
           }}
         >
-          <button className="action-button primary" onClick={handleRender}>
-            <Play size={16} style={{ marginRight: "5px" }} />
+          <button
+            className="action-button primary"
+            onClick={handleRender}
+            type="button"
+          >
+            <Play
+              size={16}
+              style={{
+                marginRight: "calc(5px * var(--bsm-spacing-scale))",
+              }}
+            />
             Render Page
           </button>
         </div>
@@ -105,7 +112,7 @@ const Playground = () => {
         <div
           style={{
             borderTop: "2px dashed var(--border-color, #444)",
-            paddingTop: "20px",
+            paddingTop: "calc(20px * var(--bsm-spacing-scale))",
           }}
         >
           <h3>Preview</h3>
@@ -123,5 +130,4 @@ const Playground = () => {
     </div>
   );
 };
-
 export default Playground;

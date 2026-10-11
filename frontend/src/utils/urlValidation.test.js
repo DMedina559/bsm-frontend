@@ -49,3 +49,8 @@ describe("isSafeUrl", () => {
     expect(isSafeUrl(123)).toBe(false);
   });
 });
+
+it("blocks backslash and control-character URL obfuscation", () => {
+  expect(isSafeUrl("/\\evil.example")).toBe(false);
+  expect(isSafeUrl("/path\nnext")).toBe(false);
+});
