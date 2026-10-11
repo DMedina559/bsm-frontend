@@ -60,11 +60,22 @@ export default function ApplicationHealth() {
           </ul>
         )}
         {query.data && !query.error && (
-          <p className="application-metrics-hint">
+          <span
+            className="application-health-checked"
+            title="Health checks refresh every 30 seconds"
+          >
             Checked{" "}
-            {new Date(query.data.checked_at * 1000).toLocaleTimeString()} ·
-            updates every 30 seconds
-          </p>
+            <time
+              dateTime={new Date(query.data.checked_at * 1000).toISOString()}
+              title={new Date(query.data.checked_at * 1000).toLocaleString()}
+            >
+              {new Date(query.data.checked_at * 1000).toLocaleTimeString(
+                undefined,
+                { hour: "numeric", minute: "2-digit" },
+              )}
+            </time>{" "}
+            · every 30s
+          </span>
         )}
         <button
           type="button"
