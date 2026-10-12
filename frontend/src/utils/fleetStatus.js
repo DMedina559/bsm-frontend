@@ -7,7 +7,9 @@ export function summarizeFleet(servers) {
   ).length;
   const playersKnown = servers.every(
     (server) =>
-      Number.isFinite(server.player_count) && server.player_count >= 0,
+      server.players_available !== false &&
+      Number.isFinite(server.player_count) &&
+      server.player_count >= 0,
   );
   const players = playersKnown
     ? servers.reduce((total, server) => total + server.player_count, 0)

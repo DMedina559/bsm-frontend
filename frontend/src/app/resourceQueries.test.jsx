@@ -255,3 +255,35 @@ it("accepts the stopped process response", async () => {
   await waitFor(() => expect(result.current.isSuccess).toBe(true));
   expect(result.current.data).toBeNull();
 });
+
+it.each(["operation_incomplete", "validation_error"])(
+  "refreshes resources only for errors that report applied work: %s",
+  async (code) => {
+    auth.user = { username: "admin" };
+    get.mockResolvedValue([{ username: "before" }]);
+    const mutate = vi.fn(async () => {
+      get.mockResolvedValue([{ username: "after" }]);
+      throw Object.assign(new Error("Operation failed"), { code });
+    });
+    const { result } = renderHook(
+      () => ({
+        query: useResourceQuery("users"),
+        write: useResourceMutation(mutate, [queryKeys.users()]),
+      }),
+      { wrapper },
+    );
+    await waitFor(() =>
+      expect(result.current.query.data?.[0].username).toBe("before"),
+    );
+    await act(async () => {
+      await expect(result.current.write.mutateAsync()).rejects.toThrow(
+        "Operation failed",
+      );
+    });
+    await waitFor(() =>
+      expect(result.current.query.data[0].username).toBe(
+        code === "operation_incomplete" ? "after" : "before",
+      ),
+    );
+  },
+);

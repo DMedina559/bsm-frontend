@@ -42,6 +42,16 @@ export default function TaskOutcome({
   if (!hasResult && !error) return null;
   return (
     <div className="task-outcome">
+      {result?.status === "partial" && (
+        <p className="task-outcome-warning" role="status">
+          Operation partially completed. Review the results before retrying.
+        </p>
+      )}
+      {result?.status === "skipped" && (
+        <p className="task-outcome-warning" role="status">
+          Operation skipped.
+        </p>
+      )}
       {error && (
         <div className="task-outcome-error">
           <strong>

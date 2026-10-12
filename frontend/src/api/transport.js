@@ -18,18 +18,27 @@ export class ApiError extends Error {
     this.data = data;
     this.code = data?.error?.code ?? null;
     this.details = data?.error?.details ?? null;
+    this.operationResult = this.details?.result ?? null;
+    this.committed = this.operationResult?.committed === true;
+    if (this.committed)
+      this.message +=
+        " The change was saved, but follow-up work failed. Refresh before trying again.";
     this.category =
-      status === 401
-        ? "unauthorized"
-        : status === 403
-          ? "forbidden"
-          : status === 409
-            ? "conflict"
-            : status === 422
-              ? "validation"
-              : status === 0
-                ? "network"
-                : "server";
+      this.code === "operation_incomplete"
+        ? "incomplete"
+        : status === 503
+          ? "unavailable"
+          : status === 401
+            ? "unauthorized"
+            : status === 403
+              ? "forbidden"
+              : status === 409
+                ? "conflict"
+                : status === 422
+                  ? "validation"
+                  : status === 0
+                    ? "network"
+                    : "server";
   }
 }
 

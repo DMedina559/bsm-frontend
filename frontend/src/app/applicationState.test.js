@@ -14,7 +14,12 @@ describe("server WebSocket query synchronization", () => {
     queryClient.setQueryData(key, {
       status: "success",
       servers: [
-        { name: "alpha", player_count: 0, players: [] },
+        {
+          name: "alpha",
+          player_count: 0,
+          players: [],
+          players_available: false,
+        },
         { name: "beta", player_count: 2, players: [] },
       ],
     });
@@ -34,6 +39,7 @@ describe("server WebSocket query synchronization", () => {
         name: "alpha",
         player_count: 1,
         players: [{ name: "Steve", xuid: "123" }],
+        players_available: true,
       },
       { name: "beta", player_count: 2, players: [] },
     ]);

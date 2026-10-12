@@ -61,7 +61,13 @@ export function reconcileServerSnapshot(data, ticket) {
       )
         stateReconciler.accept(
           ["players", server.name],
-          { players: server.players, player_count: server.player_count },
+          {
+            players: server.players,
+            player_count: server.player_count,
+            ...(typeof server.players_available === "boolean"
+              ? { players_available: server.players_available }
+              : {}),
+          },
           options,
         );
     }
@@ -216,7 +222,11 @@ export function synchronizeServerEvent(message, ticket) {
         typeof player?.name === "string" && typeof player?.xuid === "string",
     )
   ) {
-    const patch = { players: data.players, player_count: data.player_count };
+    const patch = {
+      players: data.players,
+      player_count: data.player_count,
+      players_available: true,
+    };
     if (
       !stateReconciler.accept(["players", data.server_name], patch, {
         ticket,

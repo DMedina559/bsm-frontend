@@ -19,4 +19,4 @@ print(f"Static files are located at: {static_files_path}")
 
 ## OpenAPI contract
 
-Install `bedrock-server-manager[contract]` from the target backend checkout. Export with `python -m bedrock_server_manager.web.contract --output frontend/src/api/generated/openapi.json`, then run `npm run api:generate` in `frontend`. CI compares the complete document with backend `dev` using the backend-owned exporter and pinned schema tooling.
+Install `bedrock-server-manager` from the target backend checkout. Export with `python -m bedrock_server_manager.web.contract --output frontend/src/api/generated/openapi.json`, then run `npm run api:generate` in `frontend`. CI compares the complete document with backend `dev` using the backend-owned exporter and its declared dependencies.

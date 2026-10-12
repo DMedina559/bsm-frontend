@@ -1667,7 +1667,7 @@ export interface components {
   schemas: {
     /**
      * APIErrorResponse
-     * @description Safe transport representation; Python API callers receive exceptions.
+     * @description Safe serialized failure; Python callers receive exceptions.
      */
     APIErrorResponse: {
       /**
@@ -1687,7 +1687,14 @@ export interface components {
         | "server_stop_failed"
         | "server_error"
         | "application_error"
-        | "internal_error";
+        | "internal_error"
+        | "unavailable"
+        | "operation_incomplete"
+        | "file_error"
+        | "storage_error"
+        | "configuration_error"
+        | "network_error"
+        | "system_error";
       /** Details */
       details?: {
         [key: string]: components["schemas"]["JsonValue"];
@@ -1704,7 +1711,7 @@ export interface components {
        * @default success
        * @enum {string}
        */
-      status?: "success" | "skipped";
+      status?: "success" | "skipped" | "partial";
     };
     /**
      * AddPlayersPayload
@@ -1719,32 +1726,53 @@ export interface components {
        */
       players: string[];
     };
-    /**
-     * AddPlayersResponse
-     * @description Response model for adding players, typically returns just inherited fields or single item data.
-     */
+    /** AddPlayersResponse */
     AddPlayersResponse: {
       /** Count */
       count?: number | null;
       details?: components["schemas"]["PlayerScanDetails"] | null;
       /** Message */
       message?: string | null;
+      /** Parsed Count */
+      parsed_count?: number | null;
       /**
        * Status
        * @enum {string}
        */
-      status: "success" | "skipped";
+      status: "success" | "skipped" | "partial";
+      /** Submitted Count */
+      submitted_count?: number | null;
+      /** Unique Count */
+      unique_count?: number | null;
     };
     /** AddServerBanResponse */
     AddServerBanResponse: {
       /** Message */
       message: string;
       /**
+       * Server Name
+       * @example example
+       */
+      server_name: string;
+      /**
        * Status
        * @default success
        * @enum {string}
        */
-      status?: "success" | "skipped";
+      status?: "success" | "skipped" | "partial";
+    };
+    /** AddToAllowlistResponse */
+    AddToAllowlistResponse: {
+      /** Added Count */
+      added_count: number;
+      /** Message */
+      message?: string | null;
+      /**
+       * Status
+       * @default success
+       * @constant
+       */
+      status?: "success";
     };
     /**
      * AddonActionPayload
@@ -1775,7 +1803,7 @@ export interface components {
        * Status
        * @enum {string}
        */
-      status: "success" | "skipped";
+      status: "success" | "skipped" | "partial";
     };
     /**
      * AddonReorderPayload
@@ -1845,6 +1873,13 @@ export interface components {
       /** Xuid */
       xuid?: string | null;
     };
+    /** AllowlistRemovalDetails */
+    AllowlistRemovalDetails: {
+      /** Not Found */
+      not_found: string[];
+      /** Removed */
+      removed: string[];
+    };
     /**
      * AllowlistRemovePayload
      * @description Request model for removing players from the allowlist.
@@ -1863,7 +1898,7 @@ export interface components {
     AppInfoResponse: {
       /** Info */
       info?: {
-        [key: string]: unknown;
+        [key: string]: components["schemas"]["JsonValue"];
       } | null;
       /** Message */
       message?: string | null;
@@ -1871,7 +1906,7 @@ export interface components {
        * Status
        * @enum {string}
        */
-      status: "success" | "skipped";
+      status: "success" | "skipped" | "partial";
     };
     /** AuditLogResponse */
     AuditLogResponse: {
@@ -1879,7 +1914,7 @@ export interface components {
       action: string;
       /** Details */
       details?: {
-        [key: string]: unknown;
+        [key: string]: components["schemas"]["JsonValue"];
       } | null;
       /** Id */
       id: number;
@@ -1957,7 +1992,7 @@ export interface components {
        * Status
        * @enum {string}
        */
-      status: "success" | "skipped";
+      status: "success" | "skipped" | "partial";
     };
     /** Body_login */
     Body_login: {
@@ -1997,9 +2032,15 @@ export interface components {
      *         new_password (str): The new password.
      */
     ChangePasswordPayload: {
-      /** Current Password */
+      /**
+       * Current Password
+       * Format: password
+       */
       current_password: string;
-      /** New Password */
+      /**
+       * New Password
+       * Format: password
+       */
       new_password: string;
     };
     /**
@@ -2012,6 +2053,20 @@ export interface components {
        * @description The command to send to the server.
        */
       command: string;
+    };
+    /** CompletedItem */
+    CompletedItem: {
+      /** Error */
+      error?: null;
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      outcome: "completed";
+      /** Path */
+      path?: string | null;
+      /** Reason */
+      reason?: null;
     };
     /**
      * ContentListResponse
@@ -2029,7 +2084,7 @@ export interface components {
        * Status
        * @enum {string}
        */
-      status: "success" | "skipped";
+      status: "success" | "skipped" | "partial";
     };
     /**
      * CustomZipsResponse
@@ -2044,11 +2099,58 @@ export interface components {
        * Status
        * @enum {string}
        */
-      status: "success" | "skipped";
+      status: "success" | "skipped" | "partial";
     };
     /** ErrorEnvelope */
     ErrorEnvelope: {
       error: components["schemas"]["APIErrorResponse"];
+    };
+    /** FailedItem */
+    FailedItem: {
+      error: components["schemas"]["FailureInfo"];
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      outcome: "failed";
+      /** Path */
+      path?: null;
+      /** Reason */
+      reason?: string | null;
+    };
+    /** FailureInfo */
+    FailureInfo: {
+      /**
+       * Code
+       * @enum {string}
+       */
+      code:
+        | "validation_error"
+        | "not_found"
+        | "conflict"
+        | "forbidden"
+        | "unauthorized"
+        | "http_error"
+        | "operation_canceled"
+        | "invalid_server_name"
+        | "server_start_failed"
+        | "server_stop_failed"
+        | "server_error"
+        | "application_error"
+        | "internal_error"
+        | "unavailable"
+        | "operation_incomplete"
+        | "file_error"
+        | "storage_error"
+        | "configuration_error"
+        | "network_error"
+        | "system_error";
+      /** Details */
+      details?: {
+        [key: string]: components["schemas"]["JsonValue"];
+      };
+      /** Message */
+      message: string;
     };
     /**
      * FileNamePayload
@@ -2391,10 +2493,7 @@ export interface components {
        */
       permissions: components["schemas"]["PlayerPermissionPayload"][];
     };
-    /**
-     * PermissionsUpdateResponse
-     * @description Response model for permissions update.
-     */
+    /** PermissionsUpdateResponse */
     PermissionsUpdateResponse: {
       /** Errors */
       errors?: {
@@ -2402,11 +2501,23 @@ export interface components {
       } | null;
       /** Message */
       message?: string | null;
+      /** Outcomes */
+      outcomes?: {
+        [key: string]:
+          | components["schemas"]["CompletedItem"]
+          | components["schemas"]["SkippedItem"]
+          | components["schemas"]["FailedItem"];
+      };
       /**
        * Status
        * @enum {string}
        */
-      status: "success" | "skipped";
+      status: "success" | "skipped" | "partial";
+      /**
+       * Updated
+       * @default 0
+       */
+      updated?: number;
     };
     /** PlayerInfo */
     PlayerInfo: {
@@ -2428,7 +2539,7 @@ export interface components {
        * Status
        * @enum {string}
        */
-      status: "success" | "skipped";
+      status: "success" | "skipped" | "partial";
     };
     /** PlayerPermission */
     PlayerPermission: {
@@ -2459,7 +2570,7 @@ export interface components {
       /** Actually Saved Or Updated In Db */
       actually_saved_or_updated_in_db: number;
       /** Scan Errors */
-      scan_errors: components["schemas"]["PlayerScanError"][];
+      scan_errors?: components["schemas"]["PlayerScanError"][];
       /** Total Entries In Logs */
       total_entries_in_logs: number;
       /** Unique Players Submitted For Saving */
@@ -2467,8 +2578,7 @@ export interface components {
     };
     /** PlayerScanError */
     PlayerScanError: {
-      /** Error */
-      error: string;
+      error: components["schemas"]["FailureInfo"];
       /** Server */
       server: string;
     };
@@ -2512,14 +2622,14 @@ export interface components {
       /** Pages */
       pages?:
         | {
-            [key: string]: unknown;
+            [key: string]: components["schemas"]["JsonValue"];
           }[]
         | null;
       /**
        * Status
        * @enum {string}
        */
-      status: "success" | "skipped";
+      status: "success" | "skipped" | "partial";
     };
     /** PluginSettingsPayload */
     PluginSettingsPayload: {
@@ -2554,7 +2664,7 @@ export interface components {
        * Status
        * @enum {string}
        */
-      status: "success" | "skipped";
+      status: "success" | "skipped" | "partial";
     };
     /** ProcessInfo */
     ProcessInfo: {
@@ -2615,6 +2725,10 @@ export interface components {
      * @description Response model for pruning downloads.
      */
     PruneDownloadsResponse: {
+      /** Failures */
+      failures?: {
+        [key: string]: components["schemas"]["FailureInfo"];
+      };
       /** Files Deleted */
       files_deleted?: number | null;
       /** Files Kept */
@@ -2625,7 +2739,7 @@ export interface components {
        * Status
        * @enum {string}
        */
-      status: "success" | "skipped";
+      status: "success" | "skipped" | "partial";
     };
     /** RegistrationResponse */
     RegistrationResponse: {
@@ -2640,16 +2754,39 @@ export interface components {
        */
       status?: "success";
     };
+    /** RemoveFromAllowlistResponse */
+    RemoveFromAllowlistResponse: {
+      details: components["schemas"]["AllowlistRemovalDetails"];
+      /** Message */
+      message?: string | null;
+      /**
+       * Status
+       * @default success
+       * @constant
+       */
+      status?: "success";
+    };
     /** RemoveServerBanResponse */
     RemoveServerBanResponse: {
       /** Message */
       message: string;
       /**
+       * Server Name
+       * @example example
+       */
+      server_name: string;
+      /**
        * Status
        * @default success
        * @enum {string}
        */
-      status?: "success" | "skipped";
+      status?: "success" | "skipped" | "partial";
+    };
+    /** ResourceFailure */
+    ResourceFailure: {
+      error: components["schemas"]["FailureInfo"];
+      /** Resource */
+      resource: string;
     };
     /** RestartServerResponse */
     RestartServerResponse: {
@@ -2688,6 +2825,22 @@ export interface components {
        */
       restore_type: string;
     };
+    /** SendCommandResponse */
+    SendCommandResponse: {
+      /** Message */
+      message: string;
+      /**
+       * Server Name
+       * @example example
+       */
+      server_name: string;
+      /**
+       * Status
+       * @default success
+       * @enum {string}
+       */
+      status?: "success" | "skipped" | "partial";
+    };
     /** ServerMetrics */
     ServerMetrics: {
       /** Cpu Percent */
@@ -2715,7 +2868,7 @@ export interface components {
        * Status
        * @enum {string}
        */
-      status: "success" | "skipped";
+      status: "success" | "skipped" | "partial";
     };
     /**
      * ServerRunningStatusResponse
@@ -2734,7 +2887,7 @@ export interface components {
        * Status
        * @enum {string}
        */
-      status: "success" | "skipped";
+      status: "success" | "skipped" | "partial";
     };
     /**
      * ServerSettingItemPayload
@@ -2759,13 +2912,13 @@ export interface components {
       setting?: components["schemas"]["ServerSettingItemPayload"] | null;
       /** Settings */
       settings?: {
-        [key: string]: unknown;
+        [key: string]: components["schemas"]["JsonValue"];
       } | null;
       /**
        * Status
        * @enum {string}
        */
-      status: "success" | "skipped";
+      status: "success" | "skipped" | "partial";
     };
     /** ServerSummary */
     ServerSummary: {
@@ -2780,6 +2933,11 @@ export interface components {
       player_count?: number;
       /** Players */
       players?: components["schemas"]["PlayerInfo"][];
+      /**
+       * Players Available
+       * @default true
+       */
+      players_available?: boolean;
       /** Revision */
       revision?: number | null;
       /** Status */
@@ -2787,13 +2945,12 @@ export interface components {
       /** Version */
       version: string;
     };
-    /**
-     * ServersListResponse
-     * @description Response model for lists of server data.
-     */
+    /** ServersListResponse */
     ServersListResponse: {
       /** Epoch */
       epoch?: string | null;
+      /** Errors */
+      errors?: components["schemas"]["ResourceFailure"][];
       /** Message */
       message?: string | null;
       /** Revision */
@@ -2804,7 +2961,7 @@ export interface components {
        * Status
        * @enum {string}
        */
-      status: "success" | "skipped";
+      status: "success" | "skipped" | "partial";
     };
     /** SetPluginSettingResponse */
     SetPluginSettingResponse: {
@@ -2815,7 +2972,23 @@ export interface components {
        * @default success
        * @enum {string}
        */
-      status?: "success" | "skipped";
+      status?: "success" | "skipped" | "partial";
+    };
+    /** SetPropertiesResponse */
+    SetPropertiesResponse: {
+      /** Message */
+      message: string;
+      /**
+       * Server Name
+       * @example example
+       */
+      server_name: string;
+      /**
+       * Status
+       * @default success
+       * @enum {string}
+       */
+      status?: "success" | "skipped" | "partial";
     };
     /**
      * SettingItemResponse
@@ -2840,13 +3013,13 @@ export interface components {
       setting?: components["schemas"]["SettingItemResponse"] | null;
       /** Settings */
       settings?: {
-        [key: string]: unknown;
+        [key: string]: components["schemas"]["JsonValue"];
       } | null;
       /**
        * Status
        * @enum {string}
        */
-      status: "success" | "skipped";
+      status: "success" | "skipped" | "partial";
     };
     /**
      * SetupAccountResponse
@@ -2863,8 +3036,12 @@ export interface components {
        * @constant
        */
       status?: "success";
-      /** Token Type */
-      token_type: string;
+      /**
+       * Token Type
+       * @default bearer
+       * @constant
+       */
+      token_type?: "bearer";
     };
     /**
      * SetupStatusResponse
@@ -2873,6 +3050,20 @@ export interface components {
     SetupStatusResponse: {
       /** Needs Setup */
       needs_setup: boolean;
+    };
+    /** SkippedItem */
+    SkippedItem: {
+      /** Error */
+      error?: null;
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      outcome: "skipped";
+      /** Path */
+      path?: null;
+      /** Reason */
+      reason: string;
     };
     /** StartServerResponse */
     StartServerResponse: {
@@ -2973,7 +3164,7 @@ export interface components {
        * Status
        * @enum {string}
        */
-      status: "success" | "skipped";
+      status: "success" | "skipped" | "partial";
       /** Themes */
       themes?: string[] | null;
     };
@@ -2997,8 +3188,12 @@ export interface components {
       access_token: string;
       /** Message */
       message?: string | null;
-      /** Token Type */
-      token_type: string;
+      /**
+       * Token Type
+       * @default bearer
+       * @constant
+       */
+      token_type?: "bearer";
     };
     /**
      * TriggerEventPayload
@@ -3025,7 +3220,7 @@ export interface components {
     TriggerEventResponse: {
       /** Details */
       details?: {
-        [key: string]: unknown;
+        [key: string]: components["schemas"]["JsonValue"];
       } | null;
       /** Message */
       message?: string | null;
@@ -3033,7 +3228,7 @@ export interface components {
        * Status
        * @enum {string}
        */
-      status: "success" | "skipped";
+      status: "success" | "skipped" | "partial";
     };
     /**
      * UpdateUserRolePayload
@@ -3054,7 +3249,10 @@ export interface components {
      * @description Request model for user login credentials.
      */
     UserLoginPayload: {
-      /** Password */
+      /**
+       * Password
+       * Format: password
+       */
       password: string;
       /**
        * Remember Me
@@ -3186,6 +3384,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   change_password: {
@@ -3266,6 +3473,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -3360,6 +3576,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   update_account_theme: {
@@ -3440,6 +3665,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -3530,6 +3764,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   list_available_worlds: {
@@ -3613,6 +3856,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   list_downloads: {
@@ -3689,6 +3941,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -3783,6 +4044,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   get_application_health: {
@@ -3859,6 +4129,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -3949,6 +4228,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   list_themes: {
@@ -4025,6 +4313,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -4119,6 +4416,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   get_application_metrics: {
@@ -4202,6 +4508,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   get_panorama: {
@@ -4276,6 +4591,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -4370,6 +4694,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   list_players: {
@@ -4446,6 +4779,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -4536,6 +4878,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   list_plugins: {
@@ -4612,6 +4963,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -4702,6 +5062,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   reload_plugins: {
@@ -4778,6 +5147,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -4865,6 +5243,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -4961,6 +5348,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   reload_plugin: {
@@ -5046,6 +5442,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   get_plugin_settings: {
@@ -5124,6 +5529,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -5220,6 +5634,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   generate_registration_token: {
@@ -5307,6 +5730,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   validate_registration_token: {
@@ -5385,6 +5817,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -5481,6 +5922,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   install_server: {
@@ -5563,6 +6013,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -5659,6 +6118,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   enable_addon: {
@@ -5748,6 +6216,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   get_server_addon_icon: {
@@ -5829,6 +6306,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -5925,6 +6411,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   reorder_addons: {
@@ -6007,6 +6502,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -6103,6 +6607,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   uninstall_addon: {
@@ -6185,6 +6698,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -6277,6 +6799,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   add_allowlist_players: {
@@ -6300,7 +6831,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["BaseApiResponse"];
+          "application/json": components["schemas"]["AddToAllowlistResponse"];
         };
       };
       /** @description Bad Request */
@@ -6359,6 +6890,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -6451,6 +6991,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   remove_allowlist_players: {
@@ -6474,7 +7023,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["BaseApiResponse"];
+          "application/json": components["schemas"]["RemoveFromAllowlistResponse"];
         };
       };
       /** @description Bad Request */
@@ -6533,6 +7082,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -6629,6 +7187,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   list_server_backups: {
@@ -6715,6 +7282,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   prune_backups: {
@@ -6793,6 +7369,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -6889,6 +7474,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   get_server_bans: {
@@ -6967,6 +7561,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -7063,6 +7666,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   delete_server: {
@@ -7148,6 +7760,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   get_permissions: {
@@ -7226,6 +7847,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -7322,6 +7952,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   get_server_process_info: {
@@ -7400,6 +8039,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -7492,6 +8140,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   get_raw_properties: {
@@ -7577,6 +8234,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   set_properties: {
@@ -7600,7 +8266,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["BaseApiResponse"];
+          "application/json": components["schemas"]["SetPropertiesResponse"];
         };
       };
       /** @description Bad Request */
@@ -7659,6 +8325,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -7744,6 +8419,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -7840,6 +8524,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   send_command: {
@@ -7863,7 +8556,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["ActionResponse"];
+          "application/json": components["schemas"]["SendCommandResponse"];
         };
       };
       /** @description Bad Request */
@@ -7922,6 +8615,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -8007,6 +8709,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -8103,6 +8814,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   start_server: {
@@ -8181,6 +8901,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -8273,6 +9002,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   stop_server: {
@@ -8351,6 +9089,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -8443,6 +9190,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   update_server: {
@@ -8521,6 +9277,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -8613,6 +9378,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   export_world: {
@@ -8698,6 +9472,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   get_world_icon: {
@@ -8774,6 +9557,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -8870,6 +9662,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   reset_world: {
@@ -8948,6 +9749,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -9038,6 +9848,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   get_settings: {
@@ -9121,6 +9940,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   reload_settings: {
@@ -9197,6 +10025,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -9291,6 +10128,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   create_first_user: {
@@ -9371,6 +10217,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -9461,6 +10316,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   list_tasks: {
@@ -9537,6 +10401,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -9629,6 +10502,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   list_users: {
@@ -9705,6 +10587,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -9797,6 +10688,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   disable_user: {
@@ -9882,6 +10782,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   enable_user: {
@@ -9960,6 +10869,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -10056,6 +10974,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   list_audit_logs: {
@@ -10139,6 +11066,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   logout: {
@@ -10215,6 +11151,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };
@@ -10307,6 +11252,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
     };
   };
   login: {
@@ -10387,6 +11341,15 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };

@@ -237,7 +237,9 @@ const OnlinePlayers = () => {
               padding: "calc(20px * var(--bsm-spacing-scale))",
             }}
           >
-            No players currently online.
+            {currentServerObj?.players_available === false
+              ? "Player data is currently unavailable."
+              : "No players currently online."}
           </div>
         ) : (
           <div
