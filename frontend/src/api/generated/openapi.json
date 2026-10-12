@@ -3,7 +3,7 @@
     "schemas": {
       "APIErrorResponse": {
         "additionalProperties": false,
-        "description": "Safe serialized failure; Python callers receive exceptions.",
+        "description": "Safe transport representation; Python API callers receive exceptions.",
         "properties": {
           "code": {
             "enum": [
@@ -19,14 +19,7 @@
               "server_stop_failed",
               "server_error",
               "application_error",
-              "internal_error",
-              "unavailable",
-              "operation_incomplete",
-              "file_error",
-              "storage_error",
-              "configuration_error",
-              "network_error",
-              "system_error"
+              "internal_error"
             ],
             "title": "Code",
             "type": "string"
@@ -56,7 +49,7 @@
           },
           "status": {
             "default": "success",
-            "enum": ["success", "skipped", "partial"],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
@@ -72,11 +65,8 @@
           "players": {
             "description": "List of player strings, e.g., [\"PlayerOne:123xuid\", \"PlayerTwo:456xuid\"]",
             "items": {
-              "minLength": 1,
-              "pattern": ".*\\S.*",
               "type": "string"
             },
-            "minItems": 1,
             "title": "Players",
             "type": "array"
           }
@@ -87,6 +77,7 @@
       },
       "AddPlayersResponse": {
         "additionalProperties": false,
+        "description": "Response model for adding players, typically returns just inherited fields or single item data.",
         "properties": {
           "count": {
             "anyOf": [
@@ -120,46 +111,10 @@
             ],
             "title": "Message"
           },
-          "parsed_count": {
-            "anyOf": [
-              {
-                "minimum": 0.0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parsed Count"
-          },
           "status": {
-            "enum": ["success", "skipped", "partial"],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
-          },
-          "submitted_count": {
-            "anyOf": [
-              {
-                "minimum": 0.0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Submitted Count"
-          },
-          "unique_count": {
-            "anyOf": [
-              {
-                "minimum": 0.0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Unique Count"
           }
         },
         "required": ["status"],
@@ -173,52 +128,15 @@
             "title": "Message",
             "type": "string"
           },
-          "server_name": {
-            "examples": ["example"],
-            "minLength": 1,
-            "pattern": "^[a-zA-Z0-9_-]+$",
-            "title": "Server Name",
-            "type": "string"
-          },
           "status": {
             "default": "success",
-            "enum": ["success", "skipped", "partial"],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": ["message", "server_name"],
+        "required": ["message"],
         "title": "AddServerBanResponse",
-        "type": "object"
-      },
-      "AddToAllowlistResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "added_count": {
-            "minimum": 0.0,
-            "title": "Added Count",
-            "type": "integer"
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          },
-          "status": {
-            "const": "success",
-            "default": "success",
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": ["added_count"],
-        "title": "AddToAllowlistResponse",
         "type": "object"
       },
       "AddonActionPayload": {
@@ -269,7 +187,7 @@
             "title": "Message"
           },
           "status": {
-            "enum": ["success", "skipped", "partial"],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
@@ -385,28 +303,6 @@
         "title": "AllowlistPlayer",
         "type": "object"
       },
-      "AllowlistRemovalDetails": {
-        "additionalProperties": false,
-        "properties": {
-          "not_found": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Not Found",
-            "type": "array"
-          },
-          "removed": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Removed",
-            "type": "array"
-          }
-        },
-        "required": ["removed", "not_found"],
-        "title": "AllowlistRemovalDetails",
-        "type": "object"
-      },
       "AllowlistRemovePayload": {
         "additionalProperties": false,
         "description": "Request model for removing players from the allowlist.",
@@ -431,9 +327,7 @@
           "info": {
             "anyOf": [
               {
-                "additionalProperties": {
-                  "$ref": "#/components/schemas/JsonValue"
-                },
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -454,7 +348,7 @@
             "title": "Message"
           },
           "status": {
-            "enum": ["success", "skipped", "partial"],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
@@ -464,7 +358,6 @@
         "type": "object"
       },
       "AuditLogResponse": {
-        "additionalProperties": false,
         "properties": {
           "action": {
             "title": "Action",
@@ -473,9 +366,7 @@
           "details": {
             "anyOf": [
               {
-                "additionalProperties": {
-                  "$ref": "#/components/schemas/JsonValue"
-                },
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -665,7 +556,7 @@
             "title": "Message"
           },
           "status": {
-            "enum": ["success", "skipped", "partial"],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
@@ -740,18 +631,12 @@
         "description": "Request payload for changing the user's password.\n\nAttributes:\n    current_password (str): The current password for verification.\n    new_password (str): The new password.",
         "properties": {
           "current_password": {
-            "format": "password",
-            "minLength": 1,
             "title": "Current Password",
-            "type": "string",
-            "writeOnly": true
+            "type": "string"
           },
           "new_password": {
-            "format": "password",
-            "minLength": 1,
             "title": "New Password",
-            "type": "string",
-            "writeOnly": true
+            "type": "string"
           }
         },
         "required": ["current_password", "new_password"],
@@ -771,38 +656,6 @@
         },
         "required": ["command"],
         "title": "CommandPayload",
-        "type": "object"
-      },
-      "CompletedItem": {
-        "additionalProperties": false,
-        "properties": {
-          "error": {
-            "title": "Error",
-            "type": "null"
-          },
-          "outcome": {
-            "const": "completed",
-            "default": "completed",
-            "title": "Outcome",
-            "type": "string"
-          },
-          "path": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Path"
-          },
-          "reason": {
-            "title": "Reason",
-            "type": "null"
-          }
-        },
-        "title": "CompletedItem",
         "type": "object"
       },
       "ContentListResponse": {
@@ -835,7 +688,7 @@
             "title": "Message"
           },
           "status": {
-            "enum": ["success", "skipped", "partial"],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
@@ -867,7 +720,7 @@
             "title": "Message"
           },
           "status": {
-            "enum": ["success", "skipped", "partial"],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
@@ -887,90 +740,11 @@
         "title": "ErrorEnvelope",
         "type": "object"
       },
-      "FailedItem": {
-        "additionalProperties": false,
-        "properties": {
-          "error": {
-            "$ref": "#/components/schemas/FailureInfo"
-          },
-          "outcome": {
-            "const": "failed",
-            "default": "failed",
-            "title": "Outcome",
-            "type": "string"
-          },
-          "path": {
-            "title": "Path",
-            "type": "null"
-          },
-          "reason": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reason"
-          }
-        },
-        "required": ["error"],
-        "title": "FailedItem",
-        "type": "object"
-      },
-      "FailureInfo": {
-        "additionalProperties": false,
-        "properties": {
-          "code": {
-            "enum": [
-              "validation_error",
-              "not_found",
-              "conflict",
-              "forbidden",
-              "unauthorized",
-              "http_error",
-              "operation_canceled",
-              "invalid_server_name",
-              "server_start_failed",
-              "server_stop_failed",
-              "server_error",
-              "application_error",
-              "internal_error",
-              "unavailable",
-              "operation_incomplete",
-              "file_error",
-              "storage_error",
-              "configuration_error",
-              "network_error",
-              "system_error"
-            ],
-            "title": "Code",
-            "type": "string"
-          },
-          "details": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/JsonValue"
-            },
-            "title": "Details",
-            "type": "object"
-          },
-          "message": {
-            "title": "Message",
-            "type": "string"
-          }
-        },
-        "required": ["code", "message"],
-        "title": "FailureInfo",
-        "type": "object"
-      },
       "FileNamePayload": {
         "additionalProperties": false,
         "description": "Payload for file-based operations.\n\nAttributes:\n    filename (str): The name of the file to operate on.",
         "properties": {
           "filename": {
-            "minLength": 1,
-            "pattern": ".*\\S.*",
             "title": "Filename",
             "type": "string"
           }
@@ -1815,6 +1589,7 @@
       },
       "PermissionsUpdateResponse": {
         "additionalProperties": false,
+        "description": "Response model for permissions update.",
         "properties": {
           "errors": {
             "anyOf": [
@@ -1841,41 +1616,10 @@
             ],
             "title": "Message"
           },
-          "outcomes": {
-            "additionalProperties": {
-              "discriminator": {
-                "mapping": {
-                  "completed": "#/components/schemas/CompletedItem",
-                  "failed": "#/components/schemas/FailedItem",
-                  "skipped": "#/components/schemas/SkippedItem"
-                },
-                "propertyName": "outcome"
-              },
-              "oneOf": [
-                {
-                  "$ref": "#/components/schemas/CompletedItem"
-                },
-                {
-                  "$ref": "#/components/schemas/SkippedItem"
-                },
-                {
-                  "$ref": "#/components/schemas/FailedItem"
-                }
-              ]
-            },
-            "title": "Outcomes",
-            "type": "object"
-          },
           "status": {
-            "enum": ["success", "skipped", "partial"],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
-          },
-          "updated": {
-            "default": 0,
-            "minimum": 0.0,
-            "title": "Updated",
-            "type": "integer"
           }
         },
         "required": ["status"],
@@ -1928,7 +1672,7 @@
             "title": "Players"
           },
           "status": {
-            "enum": ["success", "skipped", "partial"],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
@@ -2008,7 +1752,8 @@
         "required": [
           "total_entries_in_logs",
           "unique_players_submitted_for_saving",
-          "actually_saved_or_updated_in_db"
+          "actually_saved_or_updated_in_db",
+          "scan_errors"
         ],
         "title": "PlayerScanDetails",
         "type": "object"
@@ -2017,7 +1762,8 @@
         "additionalProperties": false,
         "properties": {
           "error": {
-            "$ref": "#/components/schemas/FailureInfo"
+            "title": "Error",
+            "type": "string"
           },
           "server": {
             "title": "Server",
@@ -2084,9 +1830,7 @@
             "anyOf": [
               {
                 "items": {
-                  "additionalProperties": {
-                    "$ref": "#/components/schemas/JsonValue"
-                  },
+                  "additionalProperties": true,
                   "type": "object"
                 },
                 "type": "array"
@@ -2098,7 +1842,7 @@
             "title": "Pages"
           },
           "status": {
-            "enum": ["success", "skipped", "partial"],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
@@ -2166,7 +1910,7 @@
             "title": "Plugins"
           },
           "status": {
-            "enum": ["success", "skipped", "partial"],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
@@ -2265,13 +2009,6 @@
         "additionalProperties": false,
         "description": "Response model for pruning downloads.",
         "properties": {
-          "failures": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/FailureInfo"
-            },
-            "title": "Failures",
-            "type": "object"
-          },
           "files_deleted": {
             "anyOf": [
               {
@@ -2306,7 +2043,7 @@
             "title": "Message"
           },
           "status": {
-            "enum": ["success", "skipped", "partial"],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
@@ -2344,34 +2081,6 @@
         "title": "RegistrationResponse",
         "type": "object"
       },
-      "RemoveFromAllowlistResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "details": {
-            "$ref": "#/components/schemas/AllowlistRemovalDetails"
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          },
-          "status": {
-            "const": "success",
-            "default": "success",
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": ["details"],
-        "title": "RemoveFromAllowlistResponse",
-        "type": "object"
-      },
       "RemoveServerBanResponse": {
         "additionalProperties": false,
         "properties": {
@@ -2379,37 +2088,15 @@
             "title": "Message",
             "type": "string"
           },
-          "server_name": {
-            "examples": ["example"],
-            "minLength": 1,
-            "pattern": "^[a-zA-Z0-9_-]+$",
-            "title": "Server Name",
-            "type": "string"
-          },
           "status": {
             "default": "success",
-            "enum": ["success", "skipped", "partial"],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": ["message", "server_name"],
+        "required": ["message"],
         "title": "RemoveServerBanResponse",
-        "type": "object"
-      },
-      "ResourceFailure": {
-        "additionalProperties": false,
-        "properties": {
-          "error": {
-            "$ref": "#/components/schemas/FailureInfo"
-          },
-          "resource": {
-            "title": "Resource",
-            "type": "string"
-          }
-        },
-        "required": ["resource", "error"],
-        "title": "ResourceFailure",
         "type": "object"
       },
       "RestartServerResponse": {
@@ -2466,31 +2153,6 @@
         },
         "required": ["restore_type"],
         "title": "RestoreActionPayload",
-        "type": "object"
-      },
-      "SendCommandResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "message": {
-            "title": "Message",
-            "type": "string"
-          },
-          "server_name": {
-            "examples": ["example"],
-            "minLength": 1,
-            "pattern": "^[a-zA-Z0-9_-]+$",
-            "title": "Server Name",
-            "type": "string"
-          },
-          "status": {
-            "default": "success",
-            "enum": ["success", "skipped", "partial"],
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": ["message", "server_name"],
-        "title": "SendCommandResponse",
         "type": "object"
       },
       "ServerMetrics": {
@@ -2591,7 +2253,7 @@
             "title": "Revision"
           },
           "status": {
-            "enum": ["success", "skipped", "partial"],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
@@ -2651,7 +2313,7 @@
             "title": "Running"
           },
           "status": {
-            "enum": ["success", "skipped", "partial"],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
@@ -2666,8 +2328,6 @@
         "properties": {
           "key": {
             "description": "The dot-notation key of the setting (e.g., 'settings.autoupdate').",
-            "minLength": 1,
-            "pattern": ".*\\S.*",
             "title": "Key",
             "type": "string"
           },
@@ -2708,9 +2368,7 @@
           "settings": {
             "anyOf": [
               {
-                "additionalProperties": {
-                  "$ref": "#/components/schemas/JsonValue"
-                },
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -2720,7 +2378,7 @@
             "title": "Settings"
           },
           "status": {
-            "enum": ["success", "skipped", "partial"],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
@@ -2760,11 +2418,6 @@
             "title": "Players",
             "type": "array"
           },
-          "players_available": {
-            "default": true,
-            "title": "Players Available",
-            "type": "boolean"
-          },
           "revision": {
             "anyOf": [
               {
@@ -2793,6 +2446,7 @@
       },
       "ServersListResponse": {
         "additionalProperties": false,
+        "description": "Response model for lists of server data.",
         "properties": {
           "epoch": {
             "anyOf": [
@@ -2804,13 +2458,6 @@
               }
             ],
             "title": "Epoch"
-          },
-          "errors": {
-            "items": {
-              "$ref": "#/components/schemas/ResourceFailure"
-            },
-            "title": "Errors",
-            "type": "array"
           },
           "message": {
             "anyOf": [
@@ -2851,7 +2498,7 @@
             "title": "Servers"
           },
           "status": {
-            "enum": ["success", "skipped", "partial"],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
@@ -2869,7 +2516,7 @@
           },
           "status": {
             "default": "success",
-            "enum": ["success", "skipped", "partial"],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
@@ -2878,39 +2525,12 @@
         "title": "SetPluginSettingResponse",
         "type": "object"
       },
-      "SetPropertiesResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "message": {
-            "title": "Message",
-            "type": "string"
-          },
-          "server_name": {
-            "examples": ["example"],
-            "minLength": 1,
-            "pattern": "^[a-zA-Z0-9_-]+$",
-            "title": "Server Name",
-            "type": "string"
-          },
-          "status": {
-            "default": "success",
-            "enum": ["success", "skipped", "partial"],
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": ["message", "server_name"],
-        "title": "SetPropertiesResponse",
-        "type": "object"
-      },
       "SettingItemResponse": {
         "additionalProperties": false,
         "description": "Request model for a single setting key-value pair.",
         "properties": {
           "key": {
             "description": "The dot-notation key of the setting (e.g., 'web.port').",
-            "minLength": 1,
-            "pattern": ".*\\S.*",
             "title": "Key",
             "type": "string"
           },
@@ -2951,9 +2571,7 @@
           "settings": {
             "anyOf": [
               {
-                "additionalProperties": {
-                  "$ref": "#/components/schemas/JsonValue"
-                },
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -2963,7 +2581,7 @@
             "title": "Settings"
           },
           "status": {
-            "enum": ["success", "skipped", "partial"],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
@@ -2973,7 +2591,6 @@
         "type": "object"
       },
       "SetupAccountResponse": {
-        "additionalProperties": false,
         "description": "First account creation returns the same session credentials as login.",
         "properties": {
           "access_token": {
@@ -2991,18 +2608,15 @@
             "type": "string"
           },
           "token_type": {
-            "const": "bearer",
-            "default": "bearer",
             "title": "Token Type",
             "type": "string"
           }
         },
-        "required": ["access_token", "message"],
+        "required": ["access_token", "token_type", "message"],
         "title": "SetupAccountResponse",
         "type": "object"
       },
       "SetupStatusResponse": {
-        "additionalProperties": false,
         "description": "Response model for setup status.",
         "properties": {
           "needs_setup": {
@@ -3012,32 +2626,6 @@
         },
         "required": ["needs_setup"],
         "title": "SetupStatusResponse",
-        "type": "object"
-      },
-      "SkippedItem": {
-        "additionalProperties": false,
-        "properties": {
-          "error": {
-            "title": "Error",
-            "type": "null"
-          },
-          "outcome": {
-            "const": "skipped",
-            "default": "skipped",
-            "title": "Outcome",
-            "type": "string"
-          },
-          "path": {
-            "title": "Path",
-            "type": "null"
-          },
-          "reason": {
-            "title": "Reason",
-            "type": "string"
-          }
-        },
-        "required": ["reason"],
-        "title": "SkippedItem",
         "type": "object"
       },
       "StartServerResponse": {
@@ -3217,7 +2805,7 @@
             "type": "string"
           }
         },
-        "required": ["status", "message", "id"],
+        "required": ["id", "status", "message"],
         "title": "TaskSnapshot",
         "type": "object"
       },
@@ -3237,7 +2825,7 @@
             "title": "Message"
           },
           "status": {
-            "enum": ["success", "skipped", "partial"],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           },
@@ -3274,7 +2862,6 @@
         "type": "object"
       },
       "TokenResponse": {
-        "additionalProperties": false,
         "description": "Response model for successful authentication, providing an access token.",
         "properties": {
           "access_token": {
@@ -3293,13 +2880,11 @@
             "title": "Message"
           },
           "token_type": {
-            "const": "bearer",
-            "default": "bearer",
             "title": "Token Type",
             "type": "string"
           }
         },
-        "required": ["access_token"],
+        "required": ["access_token", "token_type"],
         "title": "TokenResponse",
         "type": "object"
       },
@@ -3340,9 +2925,7 @@
           "details": {
             "anyOf": [
               {
-                "additionalProperties": {
-                  "$ref": "#/components/schemas/JsonValue"
-                },
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -3363,7 +2946,7 @@
             "title": "Message"
           },
           "status": {
-            "enum": ["success", "skipped", "partial"],
+            "enum": ["success", "skipped"],
             "title": "Status",
             "type": "string"
           }
@@ -3391,11 +2974,9 @@
         "description": "Request model for user login credentials.",
         "properties": {
           "password": {
-            "format": "password",
             "minLength": 1,
             "title": "Password",
-            "type": "string",
-            "writeOnly": true
+            "type": "string"
           },
           "remember_me": {
             "default": false,
@@ -3414,7 +2995,6 @@
         "type": "object"
       },
       "UserResponse": {
-        "additionalProperties": false,
         "description": "Pydantic model representing a user.\n\nAttributes:\n    id (int): The user's ID.\n    username (str): The user's username.\n    identity_type (str): The type of identity (e.g., \"local\").\n    role (str): The user's role.\n    is_active (bool): Whether the user is active.\n    theme (str): The user's preferred theme. Defaults to \"default\".",
         "properties": {
           "id": {
@@ -3552,7 +3132,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -3563,16 +3143,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -3670,7 +3240,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -3681,16 +3251,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -3788,7 +3348,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -3799,16 +3359,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -3906,7 +3456,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -3917,16 +3467,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -4014,7 +3554,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -4025,16 +3565,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -4122,7 +3652,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -4133,16 +3663,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -4229,7 +3749,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -4240,16 +3760,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -4347,7 +3857,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -4358,16 +3868,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -4455,7 +3955,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -4466,16 +3966,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -4563,7 +4053,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -4574,16 +4064,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "summary": "Get System Info",
@@ -4663,7 +4143,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -4674,16 +4154,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "summary": "Get Themes",
@@ -4809,7 +4279,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -4820,16 +4290,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -4917,7 +4377,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -4928,16 +4388,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -5018,7 +4468,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -5029,16 +4479,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "summary": "Serve Custom Panorama Api",
@@ -5128,7 +4568,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -5139,16 +4579,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -5236,7 +4666,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -5247,16 +4677,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -5344,7 +4764,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -5355,16 +4775,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -5452,7 +4862,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -5463,16 +4873,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -5560,7 +4960,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -5571,16 +4971,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -5668,7 +5058,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -5679,16 +5069,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -5786,7 +5166,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -5797,16 +5177,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -5915,7 +5285,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -5926,16 +5296,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -6034,7 +5394,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -6045,16 +5405,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -6152,7 +5502,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -6163,16 +5513,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -6278,7 +5618,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -6289,16 +5629,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -6396,7 +5726,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -6407,16 +5737,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -6513,7 +5833,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -6524,16 +5844,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "summary": "Validate Token",
@@ -6632,7 +5942,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -6643,16 +5953,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "summary": "Register User",
@@ -6749,7 +6049,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -6760,16 +6060,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -6879,7 +6169,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -6890,16 +6180,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -7009,7 +6289,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -7020,16 +6300,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -7145,7 +6415,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -7156,16 +6426,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "summary": "Get Server Addon Icon",
@@ -7267,7 +6527,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -7278,16 +6538,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -7397,7 +6647,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -7408,16 +6658,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -7527,7 +6767,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -7538,16 +6778,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -7657,7 +6887,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -7668,16 +6898,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -7777,7 +6997,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -7788,16 +7008,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -7842,7 +7052,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AddToAllowlistResponse"
+                  "$ref": "#/components/schemas/BaseApiResponse"
                 }
               }
             },
@@ -7906,7 +7116,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -7917,16 +7127,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -8025,7 +7225,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -8036,16 +7236,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -8090,7 +7280,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RemoveFromAllowlistResponse"
+                  "$ref": "#/components/schemas/BaseApiResponse"
                 }
               }
             },
@@ -8154,7 +7344,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -8165,16 +7355,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -8284,7 +7464,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -8295,16 +7475,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -8413,7 +7583,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -8424,16 +7594,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -8533,7 +7693,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -8544,16 +7704,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -8663,7 +7813,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -8674,16 +7824,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -8783,7 +7923,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -8794,16 +7934,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -8913,7 +8043,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -8924,16 +8054,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -9033,7 +8153,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -9044,16 +8164,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -9152,7 +8262,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -9163,16 +8273,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -9281,7 +8381,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -9292,16 +8392,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -9401,7 +8491,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -9412,16 +8502,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -9520,7 +8600,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -9531,16 +8611,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -9640,7 +8710,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -9651,16 +8721,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -9705,7 +8765,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SetPropertiesResponse"
+                  "$ref": "#/components/schemas/BaseApiResponse"
                 }
               }
             },
@@ -9769,7 +8829,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -9780,16 +8840,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -9889,7 +8939,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -9900,16 +8950,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -10019,7 +9059,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -10030,16 +9070,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -10085,7 +9115,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SendCommandResponse"
+                  "$ref": "#/components/schemas/ActionResponse"
                 }
               }
             },
@@ -10149,7 +9179,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -10160,16 +9190,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -10269,7 +9289,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -10280,16 +9300,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -10399,7 +9409,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -10410,16 +9420,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -10519,7 +9519,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -10530,16 +9530,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -10639,7 +9629,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -10650,16 +9640,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -10759,7 +9739,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -10770,16 +9750,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -10879,7 +9849,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -10890,16 +9860,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -10999,7 +9959,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -11010,16 +9970,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -11118,7 +10068,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -11129,16 +10079,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -11238,7 +10178,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -11249,16 +10189,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -11351,7 +10281,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -11362,16 +10292,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "summary": "Get World Icon",
@@ -11473,7 +10393,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -11484,16 +10404,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -11593,7 +10503,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -11604,16 +10514,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -11701,7 +10601,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -11712,16 +10612,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -11809,7 +10699,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -11820,16 +10710,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -11917,7 +10797,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -11928,16 +10808,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -12035,7 +10905,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -12046,16 +10916,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -12153,7 +11013,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -12164,16 +11024,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "summary": "Create First User",
@@ -12253,7 +11103,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -12264,16 +11114,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "summary": "Get Setup Status",
@@ -12357,7 +11197,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -12368,16 +11208,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -12476,7 +11306,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -12487,16 +11317,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -12588,7 +11408,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -12599,16 +11419,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -12707,7 +11517,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -12718,16 +11528,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -12825,7 +11625,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -12836,16 +11636,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -12943,7 +11733,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -12954,16 +11744,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -13071,7 +11851,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -13082,16 +11862,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -13183,7 +11953,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -13194,16 +11964,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -13289,7 +12049,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -13300,16 +12060,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -13415,7 +12165,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -13426,16 +12176,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "security": [
@@ -13533,7 +12273,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -13544,16 +12284,6 @@
               }
             },
             "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
           }
         },
         "summary": "Api Login For Access Token",
