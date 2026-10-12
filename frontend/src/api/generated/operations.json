@@ -606,6 +606,20 @@
     "bodyTypes": [],
     "responseType": "json"
   },
+  "get_raw_properties": {
+    "method": "GET",
+    "path": "/api/server/{server_name}/properties/raw",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
   "set_properties": {
     "method": "POST",
     "path": "/api/server/{server_name}/properties/set",

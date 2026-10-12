@@ -36,7 +36,10 @@
             "type": "string"
           }
         },
-        "required": ["code", "message"],
+        "required": [
+          "code",
+          "message"
+        ],
         "title": "APIErrorResponse",
         "type": "object"
       },
@@ -49,12 +52,17 @@
           },
           "status": {
             "default": "success",
-            "enum": ["success", "skipped"],
+            "enum": [
+              "success",
+              "skipped"
+            ],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": ["message"],
+        "required": [
+          "message"
+        ],
         "title": "ActionResponse",
         "type": "object"
       },
@@ -71,7 +79,9 @@
             "type": "array"
           }
         },
-        "required": ["players"],
+        "required": [
+          "players"
+        ],
         "title": "AddPlayersPayload",
         "type": "object"
       },
@@ -112,12 +122,17 @@
             "title": "Message"
           },
           "status": {
-            "enum": ["success", "skipped"],
+            "enum": [
+              "success",
+              "skipped"
+            ],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": ["status"],
+        "required": [
+          "status"
+        ],
         "title": "AddPlayersResponse",
         "type": "object"
       },
@@ -130,12 +145,17 @@
           },
           "status": {
             "default": "success",
-            "enum": ["success", "skipped"],
+            "enum": [
+              "success",
+              "skipped"
+            ],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": ["message"],
+        "required": [
+          "message"
+        ],
         "title": "AddServerBanResponse",
         "type": "object"
       },
@@ -145,7 +165,10 @@
         "properties": {
           "pack_type": {
             "description": "The type of the pack: 'behavior' or 'resource'.",
-            "enum": ["behavior", "resource"],
+            "enum": [
+              "behavior",
+              "resource"
+            ],
             "title": "Pack Type",
             "type": "string"
           },
@@ -157,7 +180,10 @@
             "type": "string"
           }
         },
-        "required": ["pack_uuid", "pack_type"],
+        "required": [
+          "pack_uuid",
+          "pack_type"
+        ],
         "title": "AddonActionPayload",
         "type": "object"
       },
@@ -187,12 +213,17 @@
             "title": "Message"
           },
           "status": {
-            "enum": ["success", "skipped"],
+            "enum": [
+              "success",
+              "skipped"
+            ],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": ["status"],
+        "required": [
+          "status"
+        ],
         "title": "AddonListResponse",
         "type": "object"
       },
@@ -202,7 +233,10 @@
         "properties": {
           "pack_type": {
             "description": "The type of the pack: 'behavior' or 'resource'.",
-            "enum": ["behavior", "resource"],
+            "enum": [
+              "behavior",
+              "resource"
+            ],
             "title": "Pack Type",
             "type": "string"
           },
@@ -217,7 +251,10 @@
             "type": "array"
           }
         },
-        "required": ["pack_type", "uuids"],
+        "required": [
+          "pack_type",
+          "uuids"
+        ],
         "title": "AddonReorderPayload",
         "type": "object"
       },
@@ -227,7 +264,10 @@
         "properties": {
           "pack_type": {
             "description": "The type of the pack: 'behavior' or 'resource'.",
-            "enum": ["behavior", "resource"],
+            "enum": [
+              "behavior",
+              "resource"
+            ],
             "title": "Pack Type",
             "type": "string"
           },
@@ -246,7 +286,11 @@
             "type": "string"
           }
         },
-        "required": ["pack_uuid", "pack_type", "subpack_name"],
+        "required": [
+          "pack_uuid",
+          "pack_type",
+          "subpack_name"
+        ],
         "title": "AddonSubpackPayload",
         "type": "object"
       },
@@ -269,7 +313,9 @@
             "type": "array"
           }
         },
-        "required": ["players"],
+        "required": [
+          "players"
+        ],
         "title": "AllowlistAddPayload",
         "type": "object"
       },
@@ -299,7 +345,9 @@
             "title": "Xuid"
           }
         },
-        "required": ["name"],
+        "required": [
+          "name"
+        ],
         "title": "AllowlistPlayer",
         "type": "object"
       },
@@ -316,7 +364,9 @@
             "type": "array"
           }
         },
-        "required": ["players"],
+        "required": [
+          "players"
+        ],
         "title": "AllowlistRemovePayload",
         "type": "object"
       },
@@ -348,12 +398,17 @@
             "title": "Message"
           },
           "status": {
-            "enum": ["success", "skipped"],
+            "enum": [
+              "success",
+              "skipped"
+            ],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": ["status"],
+        "required": [
+          "status"
+        ],
         "title": "AppInfoResponse",
         "type": "object"
       },
@@ -389,7 +444,12 @@
             "type": "integer"
           }
         },
-        "required": ["id", "user_id", "action", "timestamp"],
+        "required": [
+          "id",
+          "user_id",
+          "action",
+          "timestamp"
+        ],
         "title": "AuditLogResponse",
         "type": "object"
       },
@@ -415,7 +475,9 @@
             "title": "File To Backup"
           }
         },
-        "required": ["backup_type"],
+        "required": [
+          "backup_type"
+        ],
         "title": "BackupActionPayload",
         "type": "object"
       },
@@ -460,7 +522,9 @@
             "type": "string"
           }
         },
-        "required": ["backups"],
+        "required": [
+          "backups"
+        ],
         "title": "BackupFilesResponse",
         "type": "object"
       },
@@ -487,7 +551,10 @@
             "type": "string"
           }
         },
-        "required": ["player_name", "xuid"],
+        "required": [
+          "player_name",
+          "xuid"
+        ],
         "title": "BanAddRequest",
         "type": "object"
       },
@@ -525,7 +592,10 @@
             "type": "string"
           }
         },
-        "required": ["player_name", "xuid"],
+        "required": [
+          "player_name",
+          "xuid"
+        ],
         "title": "BanInfo",
         "type": "object"
       },
@@ -537,7 +607,9 @@
             "type": "string"
           }
         },
-        "required": ["xuid"],
+        "required": [
+          "xuid"
+        ],
         "title": "BanRemoveRequest",
         "type": "object"
       },
@@ -556,12 +628,17 @@
             "title": "Message"
           },
           "status": {
-            "enum": ["success", "skipped"],
+            "enum": [
+              "success",
+              "skipped"
+            ],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": ["status"],
+        "required": [
+          "status"
+        ],
         "title": "BaseApiResponse",
         "type": "object"
       },
@@ -622,7 +699,10 @@
             "type": "string"
           }
         },
-        "required": ["username", "password"],
+        "required": [
+          "username",
+          "password"
+        ],
         "title": "Body_login",
         "type": "object"
       },
@@ -639,7 +719,10 @@
             "type": "string"
           }
         },
-        "required": ["current_password", "new_password"],
+        "required": [
+          "current_password",
+          "new_password"
+        ],
         "title": "ChangePasswordPayload",
         "type": "object"
       },
@@ -654,7 +737,9 @@
             "type": "string"
           }
         },
-        "required": ["command"],
+        "required": [
+          "command"
+        ],
         "title": "CommandPayload",
         "type": "object"
       },
@@ -688,12 +773,17 @@
             "title": "Message"
           },
           "status": {
-            "enum": ["success", "skipped"],
+            "enum": [
+              "success",
+              "skipped"
+            ],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": ["status"],
+        "required": [
+          "status"
+        ],
         "title": "ContentListResponse",
         "type": "object"
       },
@@ -720,12 +810,18 @@
             "title": "Message"
           },
           "status": {
-            "enum": ["success", "skipped"],
+            "enum": [
+              "success",
+              "skipped"
+            ],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": ["status", "custom_zips"],
+        "required": [
+          "status",
+          "custom_zips"
+        ],
         "title": "CustomZipsResponse",
         "type": "object"
       },
@@ -736,7 +832,9 @@
             "$ref": "#/components/schemas/APIErrorResponse"
           }
         },
-        "required": ["error"],
+        "required": [
+          "error"
+        ],
         "title": "ErrorEnvelope",
         "type": "object"
       },
@@ -749,7 +847,9 @@
             "type": "string"
           }
         },
-        "required": ["filename"],
+        "required": [
+          "filename"
+        ],
         "title": "FileNamePayload",
         "type": "object"
       },
@@ -758,12 +858,18 @@
         "description": "Request payload for generating a registration token.\n\nAttributes:\n    role (str): The role to assign to the user registering with this token.",
         "properties": {
           "role": {
-            "enum": ["admin", "moderator", "user"],
+            "enum": [
+              "admin",
+              "moderator",
+              "user"
+            ],
             "title": "Role",
             "type": "string"
           }
         },
-        "required": ["role"],
+        "required": [
+          "role"
+        ],
         "title": "GenerateTokenPayload",
         "type": "object"
       },
@@ -795,7 +901,9 @@
             "type": "string"
           }
         },
-        "required": ["players"],
+        "required": [
+          "players"
+        ],
         "title": "GetAllowlistResponse",
         "type": "object"
       },
@@ -815,7 +923,10 @@
             "type": "object"
           },
           "health": {
-            "enum": ["healthy", "degraded"],
+            "enum": [
+              "healthy",
+              "degraded"
+            ],
             "title": "Health",
             "type": "string"
           },
@@ -840,7 +951,12 @@
             "type": "string"
           }
         },
-        "required": ["lifecycle", "health", "checks", "checked_at"],
+        "required": [
+          "lifecycle",
+          "health",
+          "checks",
+          "checked_at"
+        ],
         "title": "GetApplicationHealthResponse",
         "type": "object"
       },
@@ -910,7 +1026,12 @@
             "type": "string"
           }
         },
-        "required": ["latest", "history", "interval_seconds", "history_limit"],
+        "required": [
+          "latest",
+          "history",
+          "interval_seconds",
+          "history_limit"
+        ],
         "title": "GetApplicationMetricsResponse",
         "type": "object"
       },
@@ -942,7 +1063,9 @@
             "type": "string"
           }
         },
-        "required": ["permissions"],
+        "required": [
+          "permissions"
+        ],
         "title": "GetPermissionsResponse",
         "type": "object"
       },
@@ -988,7 +1111,9 @@
             "type": "string"
           }
         },
-        "required": ["settings"],
+        "required": [
+          "settings"
+        ],
         "title": "GetPluginSettingsResponse",
         "type": "object"
       },
@@ -1024,8 +1149,42 @@
             "type": "string"
           }
         },
-        "required": ["properties", "raw_content"],
+        "required": [
+          "properties",
+          "raw_content"
+        ],
         "title": "GetPropertiesResponse",
+        "type": "object"
+      },
+      "GetRawPropertiesResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "raw_content": {
+            "title": "Raw Content",
+            "type": "string"
+          },
+          "status": {
+            "const": "success",
+            "default": "success",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "raw_content"
+        ],
+        "title": "GetRawPropertiesResponse",
         "type": "object"
       },
       "GetServerBansResponse": {
@@ -1056,7 +1215,9 @@
             "type": "string"
           }
         },
-        "required": ["bans"],
+        "required": [
+          "bans"
+        ],
         "title": "GetServerBansResponse",
         "type": "object"
       },
@@ -1078,7 +1239,10 @@
             "type": "string"
           }
         },
-        "required": ["message", "healthy"],
+        "required": [
+          "message",
+          "healthy"
+        ],
         "title": "HealthCheck",
         "type": "object"
       },
@@ -1100,7 +1264,10 @@
             "type": "string"
           }
         },
-        "required": ["message", "server_name"],
+        "required": [
+          "message",
+          "server_name"
+        ],
         "title": "InstallConfirmationResponse",
         "type": "object"
       },
@@ -1123,7 +1290,9 @@
           },
           "server_name": {
             "description": "Name for the new server.",
-            "examples": ["example"],
+            "examples": [
+              "example"
+            ],
             "maxLength": 50,
             "minLength": 1,
             "pattern": "^[a-zA-Z0-9_-]+$",
@@ -1149,7 +1318,9 @@
             "title": "Server Zip Path"
           }
         },
-        "required": ["server_name"],
+        "required": [
+          "server_name"
+        ],
         "title": "InstallServerPayload",
         "type": "object"
       },
@@ -1175,7 +1346,11 @@
             "type": "string"
           }
         },
-        "required": ["message", "task_id", "server_name"],
+        "required": [
+          "message",
+          "task_id",
+          "server_name"
+        ],
         "title": "InstallationAcceptedResponse",
         "type": "object"
       },
@@ -1220,7 +1395,11 @@
             "title": "Path"
           },
           "status": {
-            "enum": ["ACTIVE", "INACTIVE", "ORPHANED"],
+            "enum": [
+              "ACTIVE",
+              "INACTIVE",
+              "ORPHANED"
+            ],
             "title": "Status",
             "type": "string"
           },
@@ -1243,7 +1422,12 @@
             "type": "array"
           }
         },
-        "required": ["name", "uuid", "version", "status"],
+        "required": [
+          "name",
+          "uuid",
+          "version",
+          "status"
+        ],
         "title": "InstalledAddon",
         "type": "object"
       },
@@ -1270,7 +1454,13 @@
       },
       "JsonValue": {},
       "LifecyclePhase": {
-        "enum": ["starting", "ready", "stopping", "stopped", "failed"],
+        "enum": [
+          "starting",
+          "ready",
+          "stopping",
+          "stopped",
+          "failed"
+        ],
         "title": "LifecyclePhase",
         "type": "string"
       },
@@ -1302,7 +1492,9 @@
             "type": "string"
           }
         },
-        "required": ["files"],
+        "required": [
+          "files"
+        ],
         "title": "ListAvailableAddonsResponse",
         "type": "object"
       },
@@ -1329,7 +1521,13 @@
             "type": "integer"
           }
         },
-        "required": ["data", "start", "end", "file_id", "has_more"],
+        "required": [
+          "data",
+          "start",
+          "end",
+          "file_id",
+          "has_more"
+        ],
         "title": "LogHistoryPage",
         "type": "object"
       },
@@ -1554,7 +1752,9 @@
             "type": "array"
           }
         },
-        "required": ["permissions"],
+        "required": [
+          "permissions"
+        ],
         "title": "PermissionsSetPayload",
         "type": "object"
       },
@@ -1588,12 +1788,17 @@
             "title": "Message"
           },
           "status": {
-            "enum": ["success", "skipped"],
+            "enum": [
+              "success",
+              "skipped"
+            ],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": ["status"],
+        "required": [
+          "status"
+        ],
         "title": "PermissionsUpdateResponse",
         "type": "object"
       },
@@ -1609,7 +1814,10 @@
             "type": "string"
           }
         },
-        "required": ["name", "xuid"],
+        "required": [
+          "name",
+          "xuid"
+        ],
         "title": "PlayerInfo",
         "type": "object"
       },
@@ -1643,12 +1851,17 @@
             "title": "Players"
           },
           "status": {
-            "enum": ["success", "skipped"],
+            "enum": [
+              "success",
+              "skipped"
+            ],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": ["status"],
+        "required": [
+          "status"
+        ],
         "title": "PlayerListResponse",
         "type": "object"
       },
@@ -1668,7 +1881,11 @@
             "type": "string"
           }
         },
-        "required": ["xuid", "name", "permission_level"],
+        "required": [
+          "xuid",
+          "name",
+          "permission_level"
+        ],
         "title": "PlayerPermission",
         "type": "object"
       },
@@ -1681,7 +1898,11 @@
             "type": "string"
           },
           "permission_level": {
-            "enum": ["visitor", "member", "operator"],
+            "enum": [
+              "visitor",
+              "member",
+              "operator"
+            ],
             "title": "Permission Level",
             "type": "string"
           },
@@ -1690,7 +1911,11 @@
             "type": "string"
           }
         },
-        "required": ["xuid", "name", "permission_level"],
+        "required": [
+          "xuid",
+          "name",
+          "permission_level"
+        ],
         "title": "PlayerPermissionPayload",
         "type": "object"
       },
@@ -1741,7 +1966,10 @@
             "type": "string"
           }
         },
-        "required": ["server", "error"],
+        "required": [
+          "server",
+          "error"
+        ],
         "title": "PlayerScanError",
         "type": "object"
       },
@@ -1778,7 +2006,9 @@
             "type": "string"
           }
         },
-        "required": ["enabled"],
+        "required": [
+          "enabled"
+        ],
         "title": "PluginInfo",
         "type": "object"
       },
@@ -1813,12 +2043,17 @@
             "title": "Pages"
           },
           "status": {
-            "enum": ["success", "skipped"],
+            "enum": [
+              "success",
+              "skipped"
+            ],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": ["status"],
+        "required": [
+          "status"
+        ],
         "title": "PluginPagesResponse",
         "type": "object"
       },
@@ -1833,7 +2068,9 @@
             "type": "object"
           }
         },
-        "required": ["settings"],
+        "required": [
+          "settings"
+        ],
         "title": "PluginSettingsPayload",
         "type": "object"
       },
@@ -1847,7 +2084,9 @@
             "type": "boolean"
           }
         },
-        "required": ["enabled"],
+        "required": [
+          "enabled"
+        ],
         "title": "PluginStatusSetPayload",
         "type": "object"
       },
@@ -1881,12 +2120,17 @@
             "title": "Plugins"
           },
           "status": {
-            "enum": ["success", "skipped"],
+            "enum": [
+              "success",
+              "skipped"
+            ],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": ["status"],
+        "required": [
+          "status"
+        ],
         "title": "PluginStatusesResponse",
         "type": "object"
       },
@@ -1910,7 +2154,12 @@
             "type": "string"
           }
         },
-        "required": ["pid", "cpu_percent", "memory_mb", "uptime"],
+        "required": [
+          "pid",
+          "cpu_percent",
+          "memory_mb",
+          "uptime"
+        ],
         "title": "ProcessInfo",
         "type": "object"
       },
@@ -1927,7 +2176,10 @@
             "type": "string"
           }
         },
-        "required": ["full_name", "email"],
+        "required": [
+          "full_name",
+          "email"
+        ],
         "title": "ProfileUpdatePayload",
         "type": "object"
       },
@@ -1944,7 +2196,9 @@
             "type": "object"
           }
         },
-        "required": ["properties"],
+        "required": [
+          "properties"
+        ],
         "title": "PropertiesPayload",
         "type": "object"
       },
@@ -1972,7 +2226,9 @@
             "title": "Keep"
           }
         },
-        "required": ["directory"],
+        "required": [
+          "directory"
+        ],
         "title": "PruneDownloadsPayload",
         "type": "object"
       },
@@ -2014,12 +2270,17 @@
             "title": "Message"
           },
           "status": {
-            "enum": ["success", "skipped"],
+            "enum": [
+              "success",
+              "skipped"
+            ],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": ["status"],
+        "required": [
+          "status"
+        ],
         "title": "PruneDownloadsResponse",
         "type": "object"
       },
@@ -2048,7 +2309,9 @@
             "type": "string"
           }
         },
-        "required": ["registration_url"],
+        "required": [
+          "registration_url"
+        ],
         "title": "RegistrationResponse",
         "type": "object"
       },
@@ -2061,12 +2324,17 @@
           },
           "status": {
             "default": "success",
-            "enum": ["success", "skipped"],
+            "enum": [
+              "success",
+              "skipped"
+            ],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": ["message"],
+        "required": [
+          "message"
+        ],
         "title": "RemoveServerBanResponse",
         "type": "object"
       },
@@ -2078,12 +2346,17 @@
             "type": "string"
           },
           "outcome": {
-            "enum": ["restarted", "started"],
+            "enum": [
+              "restarted",
+              "started"
+            ],
             "title": "Outcome",
             "type": "string"
           },
           "server_name": {
-            "examples": ["example"],
+            "examples": [
+              "example"
+            ],
             "minLength": 1,
             "pattern": "^[a-zA-Z0-9_-]+$",
             "title": "Server Name",
@@ -2096,7 +2369,11 @@
             "type": "string"
           }
         },
-        "required": ["server_name", "outcome", "message"],
+        "required": [
+          "server_name",
+          "outcome",
+          "message"
+        ],
         "title": "RestartServerResponse",
         "type": "object"
       },
@@ -2122,7 +2399,9 @@
             "type": "string"
           }
         },
-        "required": ["restore_type"],
+        "required": [
+          "restore_type"
+        ],
         "title": "RestoreActionPayload",
         "type": "object"
       },
@@ -2170,7 +2449,9 @@
             "type": "string"
           }
         },
-        "required": ["server_name"],
+        "required": [
+          "server_name"
+        ],
         "title": "ServerMetrics",
         "type": "object"
       },
@@ -2224,12 +2505,17 @@
             "title": "Revision"
           },
           "status": {
-            "enum": ["success", "skipped"],
+            "enum": [
+              "success",
+              "skipped"
+            ],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": ["status"],
+        "required": [
+          "status"
+        ],
         "title": "ServerProcessInfoResponse",
         "type": "object"
       },
@@ -2284,12 +2570,17 @@
             "title": "Running"
           },
           "status": {
-            "enum": ["success", "skipped"],
+            "enum": [
+              "success",
+              "skipped"
+            ],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": ["status"],
+        "required": [
+          "status"
+        ],
         "title": "ServerRunningStatusResponse",
         "type": "object"
       },
@@ -2307,7 +2598,10 @@
             "description": "The new value for the setting."
           }
         },
-        "required": ["key", "value"],
+        "required": [
+          "key",
+          "value"
+        ],
         "title": "ServerSettingItemPayload",
         "type": "object"
       },
@@ -2349,12 +2643,17 @@
             "title": "Settings"
           },
           "status": {
-            "enum": ["success", "skipped"],
+            "enum": [
+              "success",
+              "skipped"
+            ],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": ["status"],
+        "required": [
+          "status"
+        ],
         "title": "ServerSettingsResponse",
         "type": "object"
       },
@@ -2411,7 +2710,11 @@
             "type": "string"
           }
         },
-        "required": ["name", "status", "version"],
+        "required": [
+          "name",
+          "status",
+          "version"
+        ],
         "title": "ServerSummary",
         "type": "object"
       },
@@ -2469,12 +2772,17 @@
             "title": "Servers"
           },
           "status": {
-            "enum": ["success", "skipped"],
+            "enum": [
+              "success",
+              "skipped"
+            ],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": ["status"],
+        "required": [
+          "status"
+        ],
         "title": "ServersListResponse",
         "type": "object"
       },
@@ -2487,12 +2795,17 @@
           },
           "status": {
             "default": "success",
-            "enum": ["success", "skipped"],
+            "enum": [
+              "success",
+              "skipped"
+            ],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": ["message"],
+        "required": [
+          "message"
+        ],
         "title": "SetPluginSettingResponse",
         "type": "object"
       },
@@ -2510,7 +2823,10 @@
             "description": "The new value for the setting."
           }
         },
-        "required": ["key", "value"],
+        "required": [
+          "key",
+          "value"
+        ],
         "title": "SettingItemResponse",
         "type": "object"
       },
@@ -2552,12 +2868,17 @@
             "title": "Settings"
           },
           "status": {
-            "enum": ["success", "skipped"],
+            "enum": [
+              "success",
+              "skipped"
+            ],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": ["status"],
+        "required": [
+          "status"
+        ],
         "title": "SettingsResponse",
         "type": "object"
       },
@@ -2583,7 +2904,11 @@
             "type": "string"
           }
         },
-        "required": ["access_token", "token_type", "message"],
+        "required": [
+          "access_token",
+          "token_type",
+          "message"
+        ],
         "title": "SetupAccountResponse",
         "type": "object"
       },
@@ -2595,7 +2920,9 @@
             "type": "boolean"
           }
         },
-        "required": ["needs_setup"],
+        "required": [
+          "needs_setup"
+        ],
         "title": "SetupStatusResponse",
         "type": "object"
       },
@@ -2607,12 +2934,17 @@
             "type": "string"
           },
           "outcome": {
-            "enum": ["started", "already_running"],
+            "enum": [
+              "started",
+              "already_running"
+            ],
             "title": "Outcome",
             "type": "string"
           },
           "server_name": {
-            "examples": ["example"],
+            "examples": [
+              "example"
+            ],
             "minLength": 1,
             "pattern": "^[a-zA-Z0-9_-]+$",
             "title": "Server Name",
@@ -2625,7 +2957,11 @@
             "type": "string"
           }
         },
-        "required": ["server_name", "outcome", "message"],
+        "required": [
+          "server_name",
+          "outcome",
+          "message"
+        ],
         "title": "StartServerResponse",
         "type": "object"
       },
@@ -2637,12 +2973,17 @@
             "type": "string"
           },
           "outcome": {
-            "enum": ["stopped", "already_stopped"],
+            "enum": [
+              "stopped",
+              "already_stopped"
+            ],
             "title": "Outcome",
             "type": "string"
           },
           "server_name": {
-            "examples": ["example"],
+            "examples": [
+              "example"
+            ],
             "minLength": 1,
             "pattern": "^[a-zA-Z0-9_-]+$",
             "title": "Server Name",
@@ -2655,7 +2996,11 @@
             "type": "string"
           }
         },
-        "required": ["server_name", "outcome", "message"],
+        "required": [
+          "server_name",
+          "outcome",
+          "message"
+        ],
         "title": "StopServerResponse",
         "type": "object"
       },
@@ -2689,7 +3034,9 @@
             "title": "Name"
           }
         },
-        "required": ["folder_name"],
+        "required": [
+          "folder_name"
+        ],
         "title": "Subpack",
         "type": "object"
       },
@@ -2711,7 +3058,10 @@
             "type": "string"
           }
         },
-        "required": ["message", "task_id"],
+        "required": [
+          "message",
+          "task_id"
+        ],
         "title": "TaskAcceptedResponse",
         "type": "object"
       },
@@ -2776,7 +3126,11 @@
             "type": "string"
           }
         },
-        "required": ["id", "status", "message"],
+        "required": [
+          "id",
+          "status",
+          "message"
+        ],
         "title": "TaskSnapshot",
         "type": "object"
       },
@@ -2796,7 +3150,10 @@
             "title": "Message"
           },
           "status": {
-            "enum": ["success", "skipped"],
+            "enum": [
+              "success",
+              "skipped"
+            ],
             "title": "Status",
             "type": "string"
           },
@@ -2815,7 +3172,9 @@
             "title": "Themes"
           }
         },
-        "required": ["status"],
+        "required": [
+          "status"
+        ],
         "title": "ThemeListResponse",
         "type": "object"
       },
@@ -2828,7 +3187,9 @@
             "type": "string"
           }
         },
-        "required": ["theme"],
+        "required": [
+          "theme"
+        ],
         "title": "ThemeUpdatePayload",
         "type": "object"
       },
@@ -2855,7 +3216,10 @@
             "type": "string"
           }
         },
-        "required": ["access_token", "token_type"],
+        "required": [
+          "access_token",
+          "token_type"
+        ],
         "title": "TokenResponse",
         "type": "object"
       },
@@ -2885,7 +3249,9 @@
             "title": "Payload"
           }
         },
-        "required": ["event_name"],
+        "required": [
+          "event_name"
+        ],
         "title": "TriggerEventPayload",
         "type": "object"
       },
@@ -2917,12 +3283,17 @@
             "title": "Message"
           },
           "status": {
-            "enum": ["success", "skipped"],
+            "enum": [
+              "success",
+              "skipped"
+            ],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": ["status"],
+        "required": [
+          "status"
+        ],
         "title": "TriggerEventResponse",
         "type": "object"
       },
@@ -2931,12 +3302,18 @@
         "description": "Request payload for updating a user's role.\n\nAttributes:\n    role (str): The new role.",
         "properties": {
           "role": {
-            "enum": ["admin", "moderator", "user"],
+            "enum": [
+              "admin",
+              "moderator",
+              "user"
+            ],
             "title": "Role",
             "type": "string"
           }
         },
-        "required": ["role"],
+        "required": [
+          "role"
+        ],
         "title": "UpdateUserRolePayload",
         "type": "object"
       },
@@ -2961,7 +3338,10 @@
             "type": "string"
           }
         },
-        "required": ["username", "password"],
+        "required": [
+          "username",
+          "password"
+        ],
         "title": "UserLoginPayload",
         "type": "object"
       },
@@ -2988,7 +3368,11 @@
             "type": "boolean"
           },
           "role": {
-            "enum": ["admin", "moderator", "user"],
+            "enum": [
+              "admin",
+              "moderator",
+              "user"
+            ],
             "title": "Role",
             "type": "string"
           },
@@ -3002,7 +3386,12 @@
             "type": "string"
           }
         },
-        "required": ["id", "username", "role", "is_active"],
+        "required": [
+          "id",
+          "username",
+          "role",
+          "is_active"
+        ],
         "title": "UserResponse",
         "type": "object"
       }
@@ -3103,7 +3492,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -3125,7 +3514,9 @@
           }
         ],
         "summary": "Get Account Api",
-        "tags": ["Account Management"]
+        "tags": [
+          "Account Management"
+        ]
       }
     },
     "/api/account/change-password": {
@@ -3211,7 +3602,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -3233,7 +3624,9 @@
           }
         ],
         "summary": "Post Change Password",
-        "tags": ["Account Management"]
+        "tags": [
+          "Account Management"
+        ]
       }
     },
     "/api/account/profile": {
@@ -3319,7 +3712,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -3341,7 +3734,9 @@
           }
         ],
         "summary": "Post Update Profile",
-        "tags": ["Account Management"]
+        "tags": [
+          "Account Management"
+        ]
       }
     },
     "/api/account/theme": {
@@ -3427,7 +3822,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -3449,7 +3844,9 @@
           }
         ],
         "summary": "Post Update Theme",
-        "tags": ["Account Management"]
+        "tags": [
+          "Account Management"
+        ]
       }
     },
     "/api/content/addons": {
@@ -3525,7 +3922,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -3547,7 +3944,9 @@
           }
         ],
         "summary": "Get Addons",
-        "tags": ["Addon Management"]
+        "tags": [
+          "Addon Management"
+        ]
       }
     },
     "/api/content/worlds": {
@@ -3623,7 +4022,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -3645,7 +4044,9 @@
           }
         ],
         "summary": "Get Worlds List",
-        "tags": ["World Management"]
+        "tags": [
+          "World Management"
+        ]
       }
     },
     "/api/downloads/list": {
@@ -3720,7 +4121,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -3742,7 +4143,9 @@
           }
         ],
         "summary": "Get Custom Zips",
-        "tags": ["Downloads"]
+        "tags": [
+          "Downloads"
+        ]
       }
     },
     "/api/downloads/prune": {
@@ -3828,7 +4231,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -3850,7 +4253,9 @@
           }
         ],
         "summary": "Put Prune Downloads",
-        "tags": ["Downloads"]
+        "tags": [
+          "Downloads"
+        ]
       }
     },
     "/api/health": {
@@ -3926,7 +4331,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -3948,7 +4353,9 @@
           }
         ],
         "summary": "Get Application Health",
-        "tags": ["Application"]
+        "tags": [
+          "Application"
+        ]
       }
     },
     "/api/info": {
@@ -4024,7 +4431,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -4038,7 +4445,9 @@
           }
         },
         "summary": "Get System Info",
-        "tags": ["Application"]
+        "tags": [
+          "Application"
+        ]
       }
     },
     "/api/info/themes": {
@@ -4114,7 +4523,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -4128,7 +4537,9 @@
           }
         },
         "summary": "Get Themes",
-        "tags": ["Appearance"]
+        "tags": [
+          "Appearance"
+        ]
       }
     },
     "/api/logs/history": {
@@ -4250,7 +4661,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -4272,7 +4683,9 @@
           }
         ],
         "summary": "Get Log History",
-        "tags": ["Logs"]
+        "tags": [
+          "Logs"
+        ]
       }
     },
     "/api/metrics": {
@@ -4348,7 +4761,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -4370,12 +4783,14 @@
           }
         ],
         "summary": "Get Application Metrics",
-        "tags": ["Application"]
+        "tags": [
+          "Application"
+        ]
       }
     },
     "/api/panorama": {
       "get": {
-        "description": "Serves a custom `panorama.jpeg` background image if available, otherwise a default.\n\nThis endpoint attempts to locate a `panorama.jpeg` file in the application's\nconfiguration directory. If found, it's served. If not, or if the config\ndirectory isn't set, it falls back to serving a default panorama image\nfrom the static assets.",
+        "description": "Serves a custom panorama background image if available, otherwise a default.\n\nThis endpoint attempts to locate a `panorama.(jpeg|jpg|png|webp)` file in the application's\nconfiguration directory. If found, it's served. If not, or if the config\ndirectory isn't set, it falls back to serving a default panorama image\nfrom the static assets.",
         "operationId": "get_panorama",
         "responses": {
           "200": {
@@ -4439,7 +4854,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -4453,7 +4868,9 @@
           }
         },
         "summary": "Serve Custom Panorama Api",
-        "tags": ["Appearance"]
+        "tags": [
+          "Appearance"
+        ]
       }
     },
     "/api/players/add": {
@@ -4539,7 +4956,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -4561,7 +4978,9 @@
           }
         ],
         "summary": "Post Add Players",
-        "tags": ["Player Management"]
+        "tags": [
+          "Player Management"
+        ]
       }
     },
     "/api/players/get": {
@@ -4637,7 +5056,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -4659,7 +5078,9 @@
           }
         ],
         "summary": "Get All Players",
-        "tags": ["Player Management"]
+        "tags": [
+          "Player Management"
+        ]
       }
     },
     "/api/players/scan": {
@@ -4735,7 +5156,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -4757,7 +5178,9 @@
           }
         ],
         "summary": "Put Scan Players",
-        "tags": ["Player Management"]
+        "tags": [
+          "Player Management"
+        ]
       }
     },
     "/api/plugins": {
@@ -4833,7 +5256,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -4855,7 +5278,9 @@
           }
         ],
         "summary": "Get Plugins Status",
-        "tags": ["Plugin Management"]
+        "tags": [
+          "Plugin Management"
+        ]
       }
     },
     "/api/plugins/pages": {
@@ -4931,7 +5356,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -4953,7 +5378,9 @@
           }
         ],
         "summary": "Get Plugin Pages",
-        "tags": ["Plugin Management"]
+        "tags": [
+          "Plugin Management"
+        ]
       }
     },
     "/api/plugins/reload": {
@@ -5029,7 +5456,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -5051,7 +5478,9 @@
           }
         ],
         "summary": "Put Reload Plugins",
-        "tags": ["Plugin Management"]
+        "tags": [
+          "Plugin Management"
+        ]
       }
     },
     "/api/plugins/trigger_event": {
@@ -5137,7 +5566,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -5159,7 +5588,9 @@
           }
         ],
         "summary": "Post Trigger Event",
-        "tags": ["Plugin Management"]
+        "tags": [
+          "Plugin Management"
+        ]
       }
     },
     "/api/plugins/{plugin_name}": {
@@ -5256,7 +5687,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -5278,7 +5709,9 @@
           }
         ],
         "summary": "Post Set Plugin Status",
-        "tags": ["Plugin Management"]
+        "tags": [
+          "Plugin Management"
+        ]
       }
     },
     "/api/plugins/{plugin_name}/reload": {
@@ -5365,7 +5798,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -5387,7 +5820,9 @@
           }
         ],
         "summary": "Post Reload Single Plugin",
-        "tags": ["Plugin Management"]
+        "tags": [
+          "Plugin Management"
+        ]
       }
     },
     "/api/plugins/{plugin_name}/settings": {
@@ -5473,7 +5908,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -5495,7 +5930,9 @@
           }
         ],
         "summary": "Get Plugin Settings",
-        "tags": ["Plugin Management"]
+        "tags": [
+          "Plugin Management"
+        ]
       },
       "put": {
         "operationId": "update_plugin_settings",
@@ -5589,7 +6026,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -5611,7 +6048,9 @@
           }
         ],
         "summary": "Update Plugin Settings",
-        "tags": ["Plugin Management"]
+        "tags": [
+          "Plugin Management"
+        ]
       }
     },
     "/api/register/generate-token": {
@@ -5697,7 +6136,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -5719,7 +6158,9 @@
           }
         ],
         "summary": "Generate Token",
-        "tags": ["Registration"]
+        "tags": [
+          "Registration"
+        ]
       }
     },
     "/api/register/validate/{token}": {
@@ -5804,7 +6245,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -5818,7 +6259,9 @@
           }
         },
         "summary": "Validate Token",
-        "tags": ["Registration"]
+        "tags": [
+          "Registration"
+        ]
       }
     },
     "/api/register/{token}": {
@@ -5913,7 +6356,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -5927,7 +6370,9 @@
           }
         },
         "summary": "Register User",
-        "tags": ["Registration"]
+        "tags": [
+          "Registration"
+        ]
       }
     },
     "/api/server/install": {
@@ -6020,7 +6465,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -6042,7 +6487,9 @@
           }
         ],
         "summary": "Post Install Server",
-        "tags": ["Server Management"]
+        "tags": [
+          "Server Management"
+        ]
       }
     },
     "/api/server/{server_name}/addon/disable": {
@@ -6140,7 +6587,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -6162,7 +6609,9 @@
           }
         ],
         "summary": "Post Disable Addon",
-        "tags": ["Addon Management"]
+        "tags": [
+          "Addon Management"
+        ]
       }
     },
     "/api/server/{server_name}/addon/enable": {
@@ -6260,7 +6709,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -6282,7 +6731,9 @@
           }
         ],
         "summary": "Post Enable Addon",
-        "tags": ["Addon Management"]
+        "tags": [
+          "Addon Management"
+        ]
       }
     },
     "/api/server/{server_name}/addon/icon": {
@@ -6386,7 +6837,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -6400,7 +6851,9 @@
           }
         },
         "summary": "Get Server Addon Icon",
-        "tags": ["Addon Management"]
+        "tags": [
+          "Addon Management"
+        ]
       }
     },
     "/api/server/{server_name}/addon/install": {
@@ -6498,7 +6951,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -6520,7 +6973,9 @@
           }
         ],
         "summary": "Post Install Addon",
-        "tags": ["Addon Management"]
+        "tags": [
+          "Addon Management"
+        ]
       }
     },
     "/api/server/{server_name}/addon/reorder": {
@@ -6618,7 +7073,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -6640,7 +7095,9 @@
           }
         ],
         "summary": "Post Reorder Addons",
-        "tags": ["Addon Management"]
+        "tags": [
+          "Addon Management"
+        ]
       }
     },
     "/api/server/{server_name}/addon/subpack": {
@@ -6738,7 +7195,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -6760,7 +7217,9 @@
           }
         ],
         "summary": "Post Update Subpack",
-        "tags": ["Addon Management"]
+        "tags": [
+          "Addon Management"
+        ]
       }
     },
     "/api/server/{server_name}/addon/uninstall": {
@@ -6858,7 +7317,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -6880,7 +7339,9 @@
           }
         ],
         "summary": "Delete Uninstall Addon",
-        "tags": ["Addon Management"]
+        "tags": [
+          "Addon Management"
+        ]
       }
     },
     "/api/server/{server_name}/addons": {
@@ -6968,7 +7429,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -6990,7 +7451,9 @@
           }
         ],
         "summary": "Get Server Addons",
-        "tags": ["Addon Management"]
+        "tags": [
+          "Addon Management"
+        ]
       }
     },
     "/api/server/{server_name}/allowlist/add": {
@@ -7087,7 +7550,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -7109,7 +7572,9 @@
           }
         ],
         "summary": "Post Allowlist",
-        "tags": ["Server Access"]
+        "tags": [
+          "Server Access"
+        ]
       }
     },
     "/api/server/{server_name}/allowlist/get": {
@@ -7196,7 +7661,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -7218,7 +7683,9 @@
           }
         ],
         "summary": "Get Allowlist",
-        "tags": ["Server Access"]
+        "tags": [
+          "Server Access"
+        ]
       }
     },
     "/api/server/{server_name}/allowlist/remove": {
@@ -7315,7 +7782,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -7337,7 +7804,9 @@
           }
         ],
         "summary": "Delete Allowlist",
-        "tags": ["Server Access"]
+        "tags": [
+          "Server Access"
+        ]
       }
     },
     "/api/server/{server_name}/backup/action": {
@@ -7435,7 +7904,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -7457,7 +7926,9 @@
           }
         ],
         "summary": "Post Backup Action",
-        "tags": ["Backup & Restore"]
+        "tags": [
+          "Backup & Restore"
+        ]
       }
     },
     "/api/server/{server_name}/backup/list/{backup_type}": {
@@ -7554,7 +8025,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -7576,7 +8047,9 @@
           }
         ],
         "summary": "Get List Server Backups",
-        "tags": ["Backup & Restore"]
+        "tags": [
+          "Backup & Restore"
+        ]
       }
     },
     "/api/server/{server_name}/backups/prune": {
@@ -7664,7 +8137,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -7686,7 +8159,9 @@
           }
         ],
         "summary": "Put Prune Backups",
-        "tags": ["Backup & Restore"]
+        "tags": [
+          "Backup & Restore"
+        ]
       }
     },
     "/api/server/{server_name}/bans/add": {
@@ -7784,7 +8259,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -7806,7 +8281,9 @@
           }
         ],
         "summary": "Post Add Server Ban",
-        "tags": ["Server Access"]
+        "tags": [
+          "Server Access"
+        ]
       }
     },
     "/api/server/{server_name}/bans/get": {
@@ -7894,7 +8371,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -7916,7 +8393,9 @@
           }
         ],
         "summary": "Get Server Bans",
-        "tags": ["Server Access"]
+        "tags": [
+          "Server Access"
+        ]
       }
     },
     "/api/server/{server_name}/bans/remove": {
@@ -8014,7 +8493,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -8036,7 +8515,9 @@
           }
         ],
         "summary": "Delete Remove Server Ban",
-        "tags": ["Server Access"]
+        "tags": [
+          "Server Access"
+        ]
       }
     },
     "/api/server/{server_name}/delete": {
@@ -8124,7 +8605,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -8146,7 +8627,9 @@
           }
         ],
         "summary": "Delete Server",
-        "tags": ["Server Management"]
+        "tags": [
+          "Server Management"
+        ]
       }
     },
     "/api/server/{server_name}/permissions/get": {
@@ -8233,7 +8716,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -8255,7 +8738,9 @@
           }
         ],
         "summary": "Get Permissions",
-        "tags": ["Server Access"]
+        "tags": [
+          "Server Access"
+        ]
       }
     },
     "/api/server/{server_name}/permissions/set": {
@@ -8352,7 +8837,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -8374,7 +8859,9 @@
           }
         ],
         "summary": "Post Permissions Set",
-        "tags": ["Server Access"]
+        "tags": [
+          "Server Access"
+        ]
       }
     },
     "/api/server/{server_name}/process_info": {
@@ -8462,7 +8949,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -8484,7 +8971,9 @@
           }
         ],
         "summary": "Get Server Process Info",
-        "tags": ["Server Processes"]
+        "tags": [
+          "Server Processes"
+        ]
       }
     },
     "/api/server/{server_name}/properties/get": {
@@ -8571,7 +9060,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -8593,7 +9082,121 @@
           }
         ],
         "summary": "Get Properties",
-        "tags": ["Server Properties"]
+        "tags": [
+          "Server Properties"
+        ]
+      }
+    },
+    "/api/server/{server_name}/properties/raw": {
+      "get": {
+        "description": "Return the raw document using the same access policy as structured properties.",
+        "operationId": "get_raw_properties",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "server_name",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "The name of the server",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetRawPropertiesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Get Raw Properties",
+        "tags": [
+          "Server Raw Properties"
+        ]
       }
     },
     "/api/server/{server_name}/properties/set": {
@@ -8690,7 +9293,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -8712,7 +9315,9 @@
           }
         ],
         "summary": "Post Properties Set",
-        "tags": ["Server Properties"]
+        "tags": [
+          "Server Properties"
+        ]
       }
     },
     "/api/server/{server_name}/restart": {
@@ -8800,7 +9405,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -8822,7 +9427,9 @@
           }
         ],
         "summary": "Post Restart Server",
-        "tags": ["Server Processes"]
+        "tags": [
+          "Server Processes"
+        ]
       }
     },
     "/api/server/{server_name}/restore/action": {
@@ -8920,7 +9527,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -8942,7 +9549,9 @@
           }
         ],
         "summary": "Post Restore Action",
-        "tags": ["Backup & Restore"]
+        "tags": [
+          "Backup & Restore"
+        ]
       }
     },
     "/api/server/{server_name}/send_command": {
@@ -9040,7 +9649,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -9062,7 +9671,9 @@
           }
         ],
         "summary": "Post Send Command",
-        "tags": ["Server Processes"]
+        "tags": [
+          "Server Processes"
+        ]
       }
     },
     "/api/server/{server_name}/settings/get": {
@@ -9150,7 +9761,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -9172,7 +9783,9 @@
           }
         ],
         "summary": "Get Server Settings",
-        "tags": ["Server Settings"]
+        "tags": [
+          "Server Settings"
+        ]
       }
     },
     "/api/server/{server_name}/settings/set": {
@@ -9270,7 +9883,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -9292,7 +9905,9 @@
           }
         ],
         "summary": "Post Set Server Setting",
-        "tags": ["Server Settings"]
+        "tags": [
+          "Server Settings"
+        ]
       }
     },
     "/api/server/{server_name}/start": {
@@ -9380,7 +9995,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -9402,7 +10017,9 @@
           }
         ],
         "summary": "Post Start Server",
-        "tags": ["Server Processes"]
+        "tags": [
+          "Server Processes"
+        ]
       }
     },
     "/api/server/{server_name}/status": {
@@ -9490,7 +10107,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -9512,7 +10129,9 @@
           }
         ],
         "summary": "Get Server Running Status",
-        "tags": ["Server Processes"]
+        "tags": [
+          "Server Processes"
+        ]
       }
     },
     "/api/server/{server_name}/stop": {
@@ -9600,7 +10219,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -9622,7 +10241,9 @@
           }
         ],
         "summary": "Post Stop Server",
-        "tags": ["Server Processes"]
+        "tags": [
+          "Server Processes"
+        ]
       }
     },
     "/api/server/{server_name}/summary": {
@@ -9710,7 +10331,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -9732,7 +10353,9 @@
           }
         ],
         "summary": "Get Server Summary",
-        "tags": ["Server Management"]
+        "tags": [
+          "Server Management"
+        ]
       }
     },
     "/api/server/{server_name}/update": {
@@ -9820,7 +10443,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -9842,7 +10465,9 @@
           }
         ],
         "summary": "Post Update Server",
-        "tags": ["Server Management"]
+        "tags": [
+          "Server Management"
+        ]
       }
     },
     "/api/server/{server_name}/validate": {
@@ -9929,7 +10554,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -9951,7 +10576,9 @@
           }
         ],
         "summary": "Get Validate Server",
-        "tags": ["Server Management"]
+        "tags": [
+          "Server Management"
+        ]
       }
     },
     "/api/server/{server_name}/world/export": {
@@ -10039,7 +10666,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -10061,7 +10688,9 @@
           }
         ],
         "summary": "Post World Export",
-        "tags": ["World Management"]
+        "tags": [
+          "World Management"
+        ]
       }
     },
     "/api/server/{server_name}/world/icon": {
@@ -10142,7 +10771,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -10156,7 +10785,9 @@
           }
         },
         "summary": "Get World Icon",
-        "tags": ["World Management"]
+        "tags": [
+          "World Management"
+        ]
       }
     },
     "/api/server/{server_name}/world/install": {
@@ -10254,7 +10885,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -10276,7 +10907,9 @@
           }
         ],
         "summary": "Post World Install",
-        "tags": ["World Management"]
+        "tags": [
+          "World Management"
+        ]
       }
     },
     "/api/server/{server_name}/world/reset": {
@@ -10364,7 +10997,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -10386,7 +11019,9 @@
           }
         ],
         "summary": "Delete World Reset",
-        "tags": ["World Management"]
+        "tags": [
+          "World Management"
+        ]
       }
     },
     "/api/servers": {
@@ -10462,7 +11097,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -10484,7 +11119,9 @@
           }
         ],
         "summary": "Get Servers List",
-        "tags": ["Server Management"]
+        "tags": [
+          "Server Management"
+        ]
       }
     },
     "/api/settings/get": {
@@ -10560,7 +11197,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -10582,7 +11219,9 @@
           }
         ],
         "summary": "Get All Settings",
-        "tags": ["Application Settings"]
+        "tags": [
+          "Application Settings"
+        ]
       }
     },
     "/api/settings/reload": {
@@ -10658,7 +11297,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -10680,7 +11319,9 @@
           }
         ],
         "summary": "Put Reload Settings",
-        "tags": ["Application Settings"]
+        "tags": [
+          "Application Settings"
+        ]
       }
     },
     "/api/settings/set": {
@@ -10766,7 +11407,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -10788,7 +11429,9 @@
           }
         ],
         "summary": "Post Set Setting",
-        "tags": ["Application Settings"]
+        "tags": [
+          "Application Settings"
+        ]
       }
     },
     "/api/setup/create-first-user": {
@@ -10874,7 +11517,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -10888,7 +11531,9 @@
           }
         },
         "summary": "Create First User",
-        "tags": ["Application Setup"]
+        "tags": [
+          "Application Setup"
+        ]
       }
     },
     "/api/setup/status": {
@@ -10964,7 +11609,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -10978,7 +11623,9 @@
           }
         },
         "summary": "Get Setup Status",
-        "tags": ["Application Setup"]
+        "tags": [
+          "Application Setup"
+        ]
       }
     },
     "/api/tasks/list": {
@@ -11058,7 +11705,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -11080,7 +11727,9 @@
           }
         ],
         "summary": "List Tasks",
-        "tags": ["Background Tasks"]
+        "tags": [
+          "Background Tasks"
+        ]
       }
     },
     "/api/tasks/status/{task_id}": {
@@ -11167,7 +11816,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -11189,7 +11838,9 @@
           }
         ],
         "summary": "Get Task Status",
-        "tags": ["Background Tasks"]
+        "tags": [
+          "Background Tasks"
+        ]
       }
     },
     "/api/users/list": {
@@ -11269,7 +11920,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -11291,7 +11942,9 @@
           }
         ],
         "summary": "List Users Api",
-        "tags": ["User Management"]
+        "tags": [
+          "User Management"
+        ]
       }
     },
     "/api/users/{user_id}/delete": {
@@ -11378,7 +12031,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -11400,7 +12053,9 @@
           }
         ],
         "summary": "Delete User",
-        "tags": ["User Management"]
+        "tags": [
+          "User Management"
+        ]
       }
     },
     "/api/users/{user_id}/disable": {
@@ -11486,7 +12141,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -11508,7 +12163,9 @@
           }
         ],
         "summary": "Disable User",
-        "tags": ["User Management"]
+        "tags": [
+          "User Management"
+        ]
       }
     },
     "/api/users/{user_id}/enable": {
@@ -11594,7 +12251,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -11616,7 +12273,9 @@
           }
         ],
         "summary": "Enable User",
-        "tags": ["User Management"]
+        "tags": [
+          "User Management"
+        ]
       }
     },
     "/api/users/{user_id}/role": {
@@ -11712,7 +12371,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -11734,7 +12393,9 @@
           }
         ],
         "summary": "Update User Role",
-        "tags": ["User Management"]
+        "tags": [
+          "User Management"
+        ]
       }
     },
     "/audit-log/list": {
@@ -11814,7 +12475,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -11836,7 +12497,9 @@
           }
         ],
         "summary": "List Audit Logs Api",
-        "tags": ["Audit Logs"]
+        "tags": [
+          "Audit Logs"
+        ]
       }
     },
     "/auth/logout": {
@@ -11910,7 +12573,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -11932,7 +12595,9 @@
           }
         ],
         "summary": "Logout",
-        "tags": ["Authentication"]
+        "tags": [
+          "Authentication"
+        ]
       }
     },
     "/auth/reauth": {
@@ -12026,7 +12691,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -12048,7 +12713,9 @@
           }
         ],
         "summary": "Reauth",
-        "tags": ["Authentication"]
+        "tags": [
+          "Authentication"
+        ]
       }
     },
     "/auth/token": {
@@ -12134,7 +12801,7 @@
                 }
               }
             },
-            "description": "Unprocessable Entity"
+            "description": "Unprocessable Content"
           },
           "500": {
             "content": {
@@ -12148,7 +12815,9 @@
           }
         },
         "summary": "Api Login For Access Token",
-        "tags": ["Authentication"]
+        "tags": [
+          "Authentication"
+        ]
       }
     }
   },

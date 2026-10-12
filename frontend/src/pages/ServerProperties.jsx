@@ -5,7 +5,7 @@ import QueryStatus from "../components/QueryStatus";
 import { queryKeys } from "../app/queryKeys";
 import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
 import Modal from "../components/Modal";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useServer } from "../contexts/ServerContext";
 import { useToast } from "../contexts/ToastContext";
 
@@ -82,7 +82,6 @@ const PROPERTY_GROUPS = {
 const EMPTY_PROPERTIES = [];
 const ServerProperties = () => {
   const { selectedServer } = useServer();
-  const [rawContent, setRawContent] = useState("");
   const resourceQuery = useResourceQuery("properties", selectedServer);
   const draftData = useMemo(
     () =>
@@ -103,6 +102,10 @@ const ServerProperties = () => {
   const loading = resourceQuery.isFetching;
   const [searchTerm, setSearchTerm] = useState("");
   const [showRawModal, setShowRawModal] = useState(false);
+  const rawQuery = useResourceQuery("rawProperties", selectedServer, {
+    enabled: showRawModal,
+  });
+  const rawContent = rawQuery.data?.raw_content ?? "";
   const { addToast } = useToast();
   const write = useResourceMutation(
     ({ id, options }, { session }) =>
@@ -125,9 +128,7 @@ const ServerProperties = () => {
 
   // Collapsible state for sections
   const [collapsedSections, setCollapsedSections] = useState({});
-  useEffect(() => {
-    setRawContent(resourceQuery.data?.raw_content ?? "");
-  }, [resourceQuery.data, selectedServer]);
+
   const handleRefresh = async () => {
     const success = await draft.refresh(async () => {
       const result = await resourceQuery.refetch();
@@ -884,7 +885,10 @@ const ServerProperties = () => {
               textAlign: "left",
             }}
           >
-            {rawContent ? (
+            <QueryStatus query={rawQuery} />
+            {rawQuery.isPending ? (
+              <p role="status">Loading raw properties…</p>
+            ) : rawContent ? (
               <SyntaxHighlighter
                 language="properties"
                 style={atomOneDark}

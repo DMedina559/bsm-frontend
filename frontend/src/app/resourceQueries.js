@@ -204,6 +204,19 @@ const resources = {
     load: (_target, options) => callOperation("get_settings", { ...options }),
     select: (data) => object(data?.settings, "settings"),
   },
+  rawProperties: {
+    key: queryKeys.serverRawProperties,
+    load: (name, options) =>
+      callOperation("get_raw_properties", {
+        path: { server_name: name },
+        ...options,
+      }),
+    select: (data) => {
+      if (typeof data?.raw_content !== "string")
+        throw new Error("Invalid raw properties response");
+      return data;
+    },
+  },
   properties: {
     key: queryKeys.serverProperties,
     load: (name, options) =>
@@ -249,6 +262,7 @@ export function useResourceQuery(resource, target, options = {}) {
       (!(
         resource === "backups" ||
         resource === "properties" ||
+        resource === "rawProperties" ||
         resource === "monitor" ||
         resource === "serverSettings" ||
         resource === "installedAddons" ||

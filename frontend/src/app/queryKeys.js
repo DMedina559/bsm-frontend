@@ -11,6 +11,7 @@ export const queryKeys = Object.freeze({
   server: (name) => ["servers", name],
   serverPlayers: (name) => ["servers", name, "players"],
   serverBackups: (name) => ["servers", name, "backups"],
+  serverRawProperties: (name) => ["servers", name, "properties", "raw"],
   serverProperties: (name) => ["servers", name, "properties"],
   serverMonitor: (name) => ["monitor", name],
   content: (kind) => (kind === undefined ? ["content"] : ["content", kind]),

@@ -80,6 +80,34 @@ describe("ServerProperties", () => {
     queryClient.clear();
   });
 
+  it("loads raw properties only when the read-only viewer opens", async () => {
+    const user = userEvent.setup();
+    api.get.mockImplementation((url) => {
+      if (url.endsWith("/properties/raw"))
+        return Promise.resolve({
+          raw_content: "# Raw document\nserver-name=Raw server\n",
+        });
+      return Promise.resolve({
+        properties: { "server-name": "My Server" },
+        raw_content: "Do not use the structured response",
+      });
+    });
+    renderWithProviders(<ServerProperties />);
+    await screen.findByDisplayValue("My Server");
+    expect(
+      api.get.mock.calls.some(([url]) => url.endsWith("/properties/raw")),
+    ).toBe(false);
+    await user.click(screen.getAllByTitle("View Properties File")[0]);
+    await screen.findByText("# Raw document");
+    expect(api.get).toHaveBeenCalledWith(
+      "/api/server/TestServer/properties/raw",
+      expect.anything(),
+    );
+    expect(
+      screen.queryByText("Do not use the structured response"),
+    ).not.toBeInTheDocument();
+  });
+
   it("renders properties form and saves changes", async () => {
     const user = userEvent.setup();
     renderWithProviders(<ServerProperties />);

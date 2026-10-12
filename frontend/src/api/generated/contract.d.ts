@@ -262,9 +262,9 @@ export interface paths {
     };
     /**
      * Serve Custom Panorama Api
-     * @description Serves a custom `panorama.jpeg` background image if available, otherwise a default.
+     * @description Serves a custom panorama background image if available, otherwise a default.
      *
-     *     This endpoint attempts to locate a `panorama.jpeg` file in the application's
+     *     This endpoint attempts to locate a `panorama.(jpeg|jpg|png|webp)` file in the application's
      *     configuration directory. If found, it's served. If not, or if the config
      *     directory isn't set, it falls back to serving a default panorama image
      *     from the static assets.
@@ -975,6 +975,26 @@ export interface paths {
     };
     /** Get Properties */
     get: operations["get_properties"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/server/{server_name}/properties/raw": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Raw Properties
+     * @description Return the raw document using the same access policy as structured properties.
+     */
+    get: operations["get_raw_properties"];
     put?: never;
     post?: never;
     delete?: never;
@@ -2162,6 +2182,19 @@ export interface components {
        */
       status?: "success";
     };
+    /** GetRawPropertiesResponse */
+    GetRawPropertiesResponse: {
+      /** Message */
+      message?: string | null;
+      /** Raw Content */
+      raw_content: string;
+      /**
+       * Status
+       * @default success
+       * @constant
+       */
+      status?: "success";
+    };
     /** GetServerBansResponse */
     GetServerBansResponse: {
       /** Bans */
@@ -3135,7 +3168,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -3222,7 +3255,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -3309,7 +3342,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -3396,7 +3429,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -3479,7 +3512,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -3562,7 +3595,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -3645,7 +3678,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -3732,7 +3765,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -3815,7 +3848,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -3898,7 +3931,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -3981,7 +4014,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -4068,7 +4101,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -4151,7 +4184,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -4232,7 +4265,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -4319,7 +4352,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -4402,7 +4435,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -4485,7 +4518,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -4568,7 +4601,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -4651,7 +4684,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -4734,7 +4767,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -4821,7 +4854,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -4910,7 +4943,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -4995,7 +5028,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -5080,7 +5113,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -5169,7 +5202,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -5256,7 +5289,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -5341,7 +5374,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -5430,7 +5463,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -5519,7 +5552,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -5608,7 +5641,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -5697,7 +5730,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -5785,7 +5818,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -5874,7 +5907,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -5963,7 +5996,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -6052,7 +6085,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -6141,7 +6174,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -6226,7 +6259,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -6315,7 +6348,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -6400,7 +6433,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -6489,7 +6522,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -6578,7 +6611,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -6664,7 +6697,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -6749,7 +6782,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -6838,7 +6871,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -6923,7 +6956,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -7012,7 +7045,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -7097,7 +7130,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -7182,7 +7215,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -7271,7 +7304,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -7356,7 +7389,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -7441,7 +7474,92 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  get_raw_properties: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        server_name: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GetRawPropertiesResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -7530,7 +7648,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -7615,7 +7733,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -7704,7 +7822,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -7793,7 +7911,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -7878,7 +7996,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -7967,7 +8085,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -8052,7 +8170,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -8137,7 +8255,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -8222,7 +8340,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -8307,7 +8425,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -8392,7 +8510,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -8477,7 +8595,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -8562,7 +8680,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -8645,7 +8763,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -8734,7 +8852,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -8819,7 +8937,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -8902,7 +9020,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -8985,7 +9103,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -9068,7 +9186,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -9155,7 +9273,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -9242,7 +9360,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -9325,7 +9443,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -9408,7 +9526,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -9493,7 +9611,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -9576,7 +9694,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -9661,7 +9779,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -9746,7 +9864,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -9831,7 +9949,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -9920,7 +10038,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -10003,7 +10121,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -10086,7 +10204,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -10171,7 +10289,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
@@ -10258,7 +10376,7 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
-      /** @description Unprocessable Entity */
+      /** @description Unprocessable Content */
       422: {
         headers: {
           [name: string]: unknown;
