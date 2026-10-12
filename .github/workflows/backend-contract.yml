@@ -43,6 +43,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install backend-owned contract tooling
-        run: python -m pip install './backend-contract[contract]'
+        run: python -m pip install './backend-contract'
       - name: Compare client contract with backend dev
         run: python -m bedrock_server_manager.web.contract --output /tmp/backend-openapi.json --check frontend/src/api/generated/openapi.json
