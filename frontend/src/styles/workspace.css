@@ -674,3 +674,9 @@ pre.monitor-output {
 .theme-card small {
   overflow-wrap: anywhere;
 }
+
+.auth-page .auth-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
