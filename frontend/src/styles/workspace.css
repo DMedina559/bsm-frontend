@@ -323,13 +323,22 @@ pre.monitor-output {
 }
 .auth-brand {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: calc(12px * var(--bsm-spacing-scale));
-  margin-bottom: calc(24px * var(--bsm-spacing-scale));
+  justify-content: center;
+  text-align: center;
+  gap: calc(14px * var(--bsm-spacing-scale));
+  margin-bottom: calc(28px * var(--bsm-spacing-scale));
 }
 .auth-brand img {
-  width: 56px;
-  height: 56px;
+  width: 192px;
+  height: 192px;
+  object-fit: contain;
+}
+.auth-brand h1 {
+  margin: 0;
+  font-size: calc(20px * var(--bsm-type-scale));
+  letter-spacing: -0.02em;
 }
 .auth-brand strong {
   display: block;
