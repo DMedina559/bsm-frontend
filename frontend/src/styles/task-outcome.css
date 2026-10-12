@@ -35,6 +35,10 @@
   padding-left: calc(10px * var(--bsm-spacing-scale));
   margin-bottom: calc(10px * var(--bsm-spacing-scale));
 }
+.task-outcome-warning {
+  border-left: 3px solid var(--bsm-warning, #e5a000);
+  padding-left: calc(10px * var(--bsm-spacing-scale));
+}
 .task-outcome-raw {
   margin-top: calc(12px * var(--bsm-spacing-scale));
 }

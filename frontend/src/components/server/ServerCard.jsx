@@ -150,8 +150,16 @@ export default function ServerCard({
           <span className="overview-player-label">
             <Users size={15} aria-hidden="true" /> Players
           </span>
-          <strong title={playerNames || "No players online"}>
-            {server.player_count ?? "—"}
+          <strong
+            title={
+              server.players_available === false
+                ? "Player data unavailable"
+                : playerNames || "No players online"
+            }
+          >
+            {server.players_available === false
+              ? "Unavailable"
+              : (server.player_count ?? "—")}
           </strong>
         </div>
       </div>

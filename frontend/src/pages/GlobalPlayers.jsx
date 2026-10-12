@@ -1,6 +1,7 @@
 import { callOperation } from "../api/operations";
 import { queryKeys } from "../app/queryKeys";
 import QueryStatus from "../components/QueryStatus";
+import TaskOutcome from "../components/TaskOutcome";
 import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
 import React, { useState } from "react";
 
@@ -46,11 +47,13 @@ const GlobalPlayers = () => {
       const response = await writeOperation("scan_players");
       if (response && response.status === "success") {
         addToast(response.message || "Scan started.", "success");
+      } else if (["partial", "skipped"].includes(response?.status)) {
+        addToast(response.message || "Scan incomplete.", "warning");
       } else {
         addToast(response?.message || "Scan failed.", "error");
       }
-    } catch {
-      addToast("Error triggering scan.", "error");
+    } catch (error) {
+      addToast(error.message || "Error triggering scan.", "error");
     }
   };
   const handleAdd = async (e) => {
@@ -73,6 +76,8 @@ const GlobalPlayers = () => {
       if (response && response.status === "success") {
         addToast(response.message || "Players added/updated.", "success");
         setNewPlayerString("");
+      } else if (["partial", "skipped"].includes(response?.status)) {
+        addToast(response.message || "Adding players incomplete.", "warning");
       } else {
         addToast(response?.message || "Failed to add players.", "error");
       }
@@ -83,6 +88,7 @@ const GlobalPlayers = () => {
   return (
     <div className="container">
       <QueryStatus query={resourceQuery} />
+      <TaskOutcome result={write.data} error={write.error?.data?.error} />
       <div
         className="header"
         style={{

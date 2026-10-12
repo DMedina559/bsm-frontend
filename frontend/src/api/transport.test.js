@@ -398,3 +398,26 @@ it("does not register an old mutation task after the backend restarts", async ()
   expect(operationCoordinator.get("old-task")).toBeNull();
   stateReconciler.clear();
 });
+
+it("retains committed operation details and warns before retrying", () => {
+  const result = {
+    committed: true,
+    action: "change_password",
+    resource: "account",
+  };
+  const error = new ApiError("Operation incomplete.", 500, {
+    error: { code: "operation_incomplete", details: { result } },
+  });
+  expect(error.category).toBe("incomplete");
+  expect(error.committed).toBe(true);
+  expect(error.operationResult).toEqual(result);
+  expect(error.message).toContain("change was saved");
+});
+
+it("classifies service outages separately from network failures", () => {
+  const error = new ApiError("Service unavailable.", 503, {
+    error: { code: "unavailable", details: {} },
+  });
+  expect(error.category).toBe("unavailable");
+  expect(error.code).toBe("unavailable");
+});

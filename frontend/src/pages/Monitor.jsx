@@ -231,7 +231,12 @@ const Monitor = () => {
       "Memory",
       processInfo?.memory_mb != null ? memory(processInfo.memory_mb) : "—",
     ],
-    ["Players", server?.player_count ?? "—"],
+    [
+      "Players",
+      server?.players_available === false
+        ? "Unavailable"
+        : (server?.player_count ?? "—"),
+    ],
   ];
   return (
     <div className="container monitor-page">

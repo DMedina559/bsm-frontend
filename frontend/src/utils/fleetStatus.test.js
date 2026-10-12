@@ -26,3 +26,12 @@ test("empty fleet has zero counts", () => {
     players: 0,
   });
 });
+
+test("keeps fleet player totals unknown when a server reports unavailable data", () => {
+  assert.deepEqual(
+    summarizeFleet([
+      { status: "running", player_count: 0, players_available: false },
+    ]),
+    { running: 1, stopped: 0, playersKnown: false, players: null },
+  );
+});

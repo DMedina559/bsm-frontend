@@ -305,7 +305,8 @@ export function useResourceMutation(mutationFn, affectedKeys) {
       assertCurrent();
       return result;
     },
-    onSuccess: async (_result, job) => {
+    onSettled: async (_result, error, job) => {
+      if (error && error.code !== "operation_incomplete") return;
       if (
         !sessionRuntime.isCurrent(job.session) ||
         job.session.backend !== getBackendIdentity()
