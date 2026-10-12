@@ -1,5 +1,11 @@
-import ts from "typescript";
+import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
 import path from "node:path";
+const require = createRequire(
+  new URL("../frontend/package.json", import.meta.url),
+);
+const ts = require("typescript");
+process.chdir(fileURLToPath(new URL("../frontend", import.meta.url)));
 
 // Validate generated-client call signatures in the JS/JSX application.
 const roots = ts.sys.readDirectory(

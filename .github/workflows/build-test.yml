@@ -9,6 +9,7 @@ on:
       - 'main'
     paths:
       - 'frontend/**'
+      - 'scripts/**'
       - '.github/workflows/build-test.yml'
   #pull_request:
   #  paths:

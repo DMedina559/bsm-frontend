@@ -1,8 +1,15 @@
-import { buildOperationRegistry } from "../src/api/operationRegistry.js";
+import { buildOperationRegistry } from "../frontend/src/api/operationRegistry.js";
 import fs from "node:fs/promises";
-import { format, resolveConfig } from "prettier";
-import openapiTS, { astToString } from "openapi-typescript";
-const source = new URL("../src/api/generated/openapi.json", import.meta.url);
+import { createRequire } from "node:module";
+const require = createRequire(
+  new URL("../frontend/package.json", import.meta.url),
+);
+const { format, resolveConfig } = require("prettier");
+const { default: openapiTS, astToString } = require("openapi-typescript");
+const source = new URL(
+  "../frontend/src/api/generated/openapi.json",
+  import.meta.url,
+);
 const schema = JSON.parse(await fs.readFile(source, "utf8"));
 const operations = buildOperationRegistry(schema);
 const files = {
@@ -13,7 +20,10 @@ const files = {
 };
 const formatting = await resolveConfig(source.pathname);
 for (const [name, raw] of Object.entries(files)) {
-  const target = new URL(`../src/api/generated/${name}`, import.meta.url);
+  const target = new URL(
+    `../frontend/src/api/generated/${name}`,
+    import.meta.url,
+  );
   const content = await format(raw, {
     ...formatting,
     filepath: target.pathname,
