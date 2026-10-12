@@ -112,7 +112,7 @@ export default function ServerCard({
           alt=""
           onError={(event) => {
             event.currentTarget.onerror = null;
-            event.currentTarget.src = `${getApiProxyBasePath()}/app/image/icon/favicon-96x96.png`;
+            event.currentTarget.src = `${getApiProxyBasePath()}/app/image/icon/favicon-192x192.png`;
           }}
         />
         <div className="overview-server-identity">

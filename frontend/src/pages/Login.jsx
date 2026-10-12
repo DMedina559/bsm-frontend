@@ -65,7 +65,7 @@ const Login = () => {
           gap: "calc(10px * var(--bsm-spacing-scale))",
         }}
       >
-        <h1>Login</h1>
+        <h1 className="auth-title">Login</h1>
       </div>
 
       <form

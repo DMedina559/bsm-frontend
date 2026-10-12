@@ -12,6 +12,7 @@ import { Save, User, Palette, RotateCcw } from "lucide-react";
 import { BUILT_IN_THEMES, THEME_LABELS } from "../utils/theme";
 import themePreviews from "../utils/themePreviews.json";
 import MetricUnitSettings from "../components/metrics/MetricUnitSettings";
+import PanoramaSettings from "../components/appearance/PanoramaSettings";
 import PaletteEditor from "../components/PaletteEditor";
 const Account = ({ appearanceOnly = false }) => {
   const { user } = useAuth();
@@ -287,7 +288,9 @@ const Account = ({ appearanceOnly = false }) => {
             <div className="section-heading">
               <div>
                 <h2 id="appearance-background-title">Background</h2>
-                <p>Add a panorama and adjust its visibility.</p>
+                <p>
+                  Customize the panorama’s layout, visibility, and movement.
+                </p>
               </div>
             </div>
             <div className="appearance-background-grid">
@@ -310,8 +313,8 @@ const Account = ({ appearanceOnly = false }) => {
                 </label>
                 <p className="form-help-text" id="panorama-help">
                   Use the server’s panorama behind the interface. Disabled by
-                  default and saved only in this browser. Theme colors remain in
-                  use if the image is unavailable.
+                  default and saved for this account in this browser. Theme
+                  colors remain in use if the image is unavailable.
                 </p>
                 <div className="panorama-visibility">
                   <label className="form-label" htmlFor="panorama-visibility">
@@ -376,6 +379,7 @@ const Account = ({ appearanceOnly = false }) => {
                 </small>
               </div>
             </div>
+            <PanoramaSettings />
           </section>
           <div className="appearance-reset">
             <p>

@@ -233,7 +233,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
       <header className="sidebar-header">
         <img
           className="sidebar-brand-icon"
-          src={`${getApiProxyBasePath()}/app/image/icon/favicon-96x96.png`}
+          src={`${getApiProxyBasePath()}/app/image/icon/web-app-manifest-512x512.png`}
           alt="Bedrock Server Manager"
         />
         {!effectiveCollapsed && (

@@ -168,12 +168,9 @@
   background: var(--container-background-color);
   border: 1px solid var(--border-color);
   border-radius: var(--bsm-radius-lg, 12px);
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
+  transition: box-shadow 0.2s;
 }
 .workspace-overview .overview-server-card:hover {
-  transform: translateY(-2px);
   box-shadow: 0 5px 18px rgba(0, 0, 0, 0.13);
 }
 .workspace-overview .overview-card-header {
@@ -254,6 +251,8 @@
   margin-top: auto;
   border-top: 1px solid var(--border-color);
   background: var(--bsm-surface-raised, transparent);
+  border-bottom-left-radius: inherit;
+  border-bottom-right-radius: inherit;
 }
 .workspace-overview .overview-card-actions .action-button {
   display: inline-flex;
@@ -305,6 +304,8 @@
   margin: 0;
   border-top: 0;
   border-left: 1px solid var(--border-color);
+  border-top-right-radius: inherit;
+  border-bottom-left-radius: 0;
 }
 .workspace-overview .overview-empty {
   text-align: center;
@@ -333,6 +334,8 @@
     grid-column: 1 / -1;
     border-left: 0;
     border-top: 1px solid var(--border-color);
+    border-top-right-radius: 0;
+    border-bottom-left-radius: inherit;
   }
 }
 @media (max-width: 620px) {
@@ -361,10 +364,14 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .workspace-overview .overview-server-card {
+  :root:not([data-reduced-motion="false"])
+    .workspace-overview
+    .overview-server-card {
     transition: none;
   }
-  .workspace-overview .overview-server-card:hover {
+  :root:not([data-reduced-motion="false"])
+    .workspace-overview
+    .overview-server-card:hover {
     transform: none;
   }
 }
@@ -754,4 +761,10 @@
 }
 .workspace-overview .overview-intro .application-metric-grid > div {
   padding: var(--bsm-space-2);
+}
+
+:root[data-reduced-motion="true"]
+  .workspace-overview
+  .overview-server-card:hover {
+  transform: none;
 }

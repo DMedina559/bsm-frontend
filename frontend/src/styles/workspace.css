@@ -196,9 +196,9 @@ pre.monitor-output {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  :root:not([data-reduced-motion="false"]) *,
+  :root:not([data-reduced-motion="false"]) *::before,
+  :root:not([data-reduced-motion="false"]) *::after {
     animation: none !important;
     transition: none !important;
   }
@@ -323,13 +323,22 @@ pre.monitor-output {
 }
 .auth-brand {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: calc(12px * var(--bsm-spacing-scale));
-  margin-bottom: calc(24px * var(--bsm-spacing-scale));
+  justify-content: center;
+  text-align: center;
+  gap: calc(14px * var(--bsm-spacing-scale));
+  margin-bottom: calc(28px * var(--bsm-spacing-scale));
 }
 .auth-brand img {
-  width: 56px;
-  height: 56px;
+  width: 192px;
+  height: 192px;
+  object-fit: contain;
+}
+.auth-brand h1 {
+  margin: 0;
+  font-size: calc(20px * var(--bsm-type-scale));
+  letter-spacing: -0.02em;
 }
 .auth-brand strong {
   display: block;
@@ -483,10 +492,49 @@ pre.monitor-output {
       )
     ),
     var(--bsm-panorama-image);
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
+  background-size: auto, var(--bsm-panorama-size, cover);
+  background-position: center, var(--bsm-panorama-position, center);
+  background-repeat: no-repeat, var(--bsm-panorama-repeat, no-repeat);
+  background-attachment: var(--bsm-panorama-attachment, fixed);
+}
+:root[data-panorama="true"][data-panorama-motion="horizontal"] body {
+  animation: panorama-horizontal var(--bsm-panorama-duration, 60s) ease-in-out
+    infinite alternate;
+}
+:root[data-panorama="true"][data-panorama-motion="diagonal"] body {
+  animation: panorama-diagonal var(--bsm-panorama-duration, 60s) ease-in-out
+    infinite alternate;
+}
+@keyframes panorama-horizontal {
+  from {
+    background-position:
+      center,
+      0% 50%;
+  }
+  to {
+    background-position:
+      center,
+      100% 50%;
+  }
+}
+@keyframes panorama-diagonal {
+  from {
+    background-position:
+      center,
+      0% 0%;
+  }
+  to {
+    background-position:
+      center,
+      100% 100%;
+  }
+}
+:root[data-reduced-motion="true"] *,
+:root[data-reduced-motion="true"] *::before,
+:root[data-reduced-motion="true"] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
 }
 .panorama-preference {
   margin-top: calc(20px * var(--bsm-spacing-scale));
@@ -625,4 +673,10 @@ pre.monitor-output {
 }
 .theme-card small {
   overflow-wrap: anywhere;
+}
+
+.auth-page .auth-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
 }
