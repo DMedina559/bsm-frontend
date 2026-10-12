@@ -4,7 +4,7 @@ export default function AuthBrand() {
   return (
     <div className="auth-brand">
       <img
-        src={`${getApiProxyBasePath()}/app/image/icon/favicon-96x96.png`}
+        src={`${getApiProxyBasePath()}/app/image/icon/web-app-manifest-512x512.png`}
         alt="Bedrock Server Manager"
       />
       <div>
