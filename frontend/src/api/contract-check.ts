@@ -1,5 +1,17 @@
 import { callOperation } from "./operations";
 async function contracts() {
+  const diagnostic = await callOperation("get_application_diagnostics");
+  diagnostic.summary.status.toUpperCase();
+  await callOperation("get_diagnostic_history", {
+    query: { outcome: "failed", limit: 50 },
+  });
+  await callOperation("get_diagnostic_trace", {
+    path: { correlation_id: "trace" },
+  });
+  await callOperation("compare_diagnostic_snapshots", {
+    body: { before: diagnostic, after: diagnostic },
+  });
+
   const runtime = await callOperation("get_web_runtime");
   runtime.phase.toUpperCase();
   const catalog = await callOperation("list_application_events");

@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 // Drive the shipped app and real browser transports against controlled backend snapshots.
-async function backend(context) {
+async function backend(context, role = "admin") {
   const state = {
     sockets: [],
     installed: false,
@@ -42,7 +42,7 @@ async function backend(context) {
           data = {
             id: identity,
             username: identity,
-            role: "admin",
+            role,
             theme: "default",
           };
           state.accounts.push(identity);
@@ -227,4 +227,255 @@ test("server cards open Monitor and offer settings shortcuts", async ({
   await page.getByRole("button", { name: "Properties", exact: true }).click();
   await expect(page).toHaveURL(/\/server-properties$/);
   await expect(page.locator("#server-select")).toHaveValue("alice-server");
+});
+
+function diagnosticsSnapshot() {
+  const now = Date.now() / 1000;
+  const data = {
+    runtime: {
+      kind: "runtime",
+      ready: true,
+      phase: "ready",
+      stage: null,
+      pid: 1234,
+      uptime_seconds: 450,
+      version: "4.0",
+      python_version: "3.14",
+    },
+    events: {
+      kind: "events",
+      truncated: false,
+      activity: {
+        emitted: 125,
+        pending_workers: 0,
+        pending_waits: 0,
+        active: [],
+        recent: [],
+      },
+      capacity: { max_active: 256 },
+    },
+    state: {
+      kind: "state",
+      counts: { servers: 2, plugins: 8, users: 1 },
+      pending_changes: { servers: 0, plugins: 0, users: 0, settings: 0 },
+    },
+    storage: {
+      kind: "storage",
+      attempts: 24,
+      successes: 24,
+      failures: 0,
+      active: 0,
+      last_error_type: null,
+      lock_waiters: 0,
+    },
+    tasks: {
+      kind: "tasks",
+      active: 0,
+      tasks: [],
+      accepting: true,
+      capacity: 100,
+    },
+    plugins: {
+      kind: "plugins",
+      plugins: [
+        {
+          name: "backup_on_start",
+          status: "LOADED",
+          generation: 1,
+          draining: false,
+        },
+      ],
+      total: 1,
+      truncated: false,
+    },
+    transport: {
+      kind: "transport",
+      connected_clients: 1,
+      successful_sends: 52,
+      failed_sends: 0,
+      pending_sends: 0,
+      queue_limit_per_client: 64,
+    },
+    metrics: {
+      kind: "metrics",
+      attempts: 151,
+      successes: 151,
+      failures: 0,
+      warming_up: false,
+    },
+    processes: {
+      kind: "processes",
+      registered: 2,
+      observed_running: 0,
+      processes: [],
+      truncated: false,
+    },
+  };
+  return {
+    schema_version: 1,
+    snapshot_id: "snapshot",
+    instance_id: "instance",
+    collected_at: now,
+    counter_scope: "current_instance",
+    summary: {
+      status: "ok",
+      ready: true,
+      counts_by_status: { ok: 9 },
+      findings: [],
+      truncated: false,
+    },
+    sections: Object.entries(data).map(([name, value]) => ({
+      name,
+      owner: "application",
+      status: "ok",
+      collected_at: now,
+      observed_at: now,
+      last_success_at: now,
+      age_seconds: 0,
+      stale: false,
+      issues: [],
+      data: value,
+    })),
+    collection: {
+      status: "ok",
+      requests: 2,
+      collections: 2,
+      failures: 0,
+      periodic_status: "disabled",
+    },
+    persistence: {
+      queued: 0,
+      queue_limit: 256,
+      dropped: 0,
+      writer_status: "running",
+      history_limit: 1000,
+      retention_days: 7,
+    },
+    registry: {
+      registered: 9,
+      pending: 0,
+      max_providers: 128,
+      max_providers_per_owner: 8,
+    },
+    environment: {
+      backend_version: "4.0",
+      frontend_version: "4.0",
+      python_version: "3.14",
+      operating_system: "Linux",
+    },
+    recent: {
+      failures: 0,
+      timeouts: 0,
+      cancelled: 0,
+      window_seconds: 300,
+      bucket_seconds: 10,
+    },
+  };
+}
+test("administrators inspect diagnostics, compare snapshots and download a report", async ({
+  page,
+  context,
+}, testInfo) => {
+  await backend(context);
+  let calls = 0;
+  await context.route("**/api/diagnostics**", async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    calls++;
+    const snapshot = diagnosticsSnapshot();
+    let data = snapshot;
+    if (path.endsWith("/history"))
+      data = {
+        available: true,
+        records: [
+          {
+            id: "record",
+            timestamp: snapshot.collected_at,
+            subsystem: "events",
+            operation: "listener",
+            outcome: "failed",
+            correlation_id: "trace",
+          },
+        ],
+        truncated: false,
+        next_cursor: null,
+      };
+    if (path.endsWith("/runs"))
+      data = { available: true, runs: [], truncated: false };
+    if (path.includes("/trace/"))
+      data = {
+        events: null,
+        events_available: false,
+        tasks: [],
+        tasks_available: true,
+        history: { available: true, records: [] },
+        issues: [],
+        truncated: true,
+      };
+    if (path.endsWith("/report"))
+      data = {
+        report_id: "browser-report",
+        snapshot,
+        history: { records: [], available: true },
+      };
+    if (path.endsWith("/compare"))
+      data = { same_instance: true, changes: [], truncated: false };
+    await route.fulfill({ json: data });
+  });
+  await login(page, "alice");
+  await page.goto("application-monitor");
+  expect(calls).toBe(0);
+  await page.getByRole("tab", { name: "Diagnostics" }).click();
+  await expect(page.getByText("Ready", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Save comparison baseline" }).click();
+  await page.getByRole("button", { name: "Compare with baseline" }).click();
+  await expect(page.getByText("No changes in compared fields.")).toBeVisible();
+  const downloadEvent = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download support report" }).click();
+  const download = await downloadEvent;
+  expect(download.suggestedFilename()).toBe(
+    "bsm-diagnostics-browser-report.json",
+  );
+  await page
+    .getByRole("row")
+    .filter({ hasText: "listener" })
+    .getByRole("button", { name: "Inspect trace" })
+    .click();
+  await expect(page.getByText(/Events: unavailable/)).toBeVisible();
+  await page.screenshot({
+    path: testInfo.outputPath("diagnostics-desktop.png"),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    )
+    .toBe(true);
+  await page.screenshot({
+    path: testInfo.outputPath("diagnostics-mobile.png"),
+    fullPage: true,
+  });
+});
+test("non-administrators cannot open diagnostics or fetch its endpoints", async ({
+  context,
+  page,
+}) => {
+  await backend(context, "user");
+  let calls = 0;
+  await context.route("**/api/diagnostics**", async (route) => {
+    calls++;
+    await route.fulfill({
+      status: 403,
+      json: { error: { code: "forbidden", message: "Admin required" } },
+    });
+  });
+  await login(page, "viewer");
+  await page.goto("application-monitor");
+  await expect(
+    page.getByRole("heading", { name: "Metrics", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Diagnostics" })).toHaveCount(0);
+  expect(calls).toBe(0);
 });

@@ -47,6 +47,136 @@
     "bodyTypes": [],
     "responseType": "json"
   },
+  "get_application_diagnostics": {
+    "method": "GET",
+    "path": "/api/diagnostics",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "compare_diagnostic_snapshots": {
+    "method": "POST",
+    "path": "/api/diagnostics/compare",
+    "parameters": [],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
+  },
+  "get_diagnostic_history": {
+    "method": "GET",
+    "path": "/api/diagnostics/history",
+    "parameters": [
+      {
+        "name": "limit",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "subsystem",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "instance_id",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "correlation_id",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "cursor",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "owner",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "code",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "outcome",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "operation_id",
+        "in": "query",
+        "required": false
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "get_diagnostic_report": {
+    "method": "GET",
+    "path": "/api/diagnostics/report",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "get_diagnostic_runs": {
+    "method": "GET",
+    "path": "/api/diagnostics/runs",
+    "parameters": [
+      {
+        "name": "limit",
+        "in": "query",
+        "required": false
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "get_diagnostic_trace": {
+    "method": "GET",
+    "path": "/api/diagnostics/trace/{correlation_id}",
+    "parameters": [
+      {
+        "name": "correlation_id",
+        "in": "path",
+        "required": true
+      },
+      {
+        "name": "limit",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "cursor",
+        "in": "query",
+        "required": false
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "get_subsystem_diagnostics": {
+    "method": "GET",
+    "path": "/api/diagnostics/{subsystem}",
+    "parameters": [
+      {
+        "name": "subsystem",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
   "list_downloads": {
     "method": "GET",
     "path": "/api/downloads/list",
