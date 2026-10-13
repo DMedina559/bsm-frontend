@@ -8,7 +8,7 @@ export interface paths {
     };
     /**
      * Get Account Api
-     * @description Retrieves the current user's account details.
+     * @description Return the current user's account details.
      */
     get: operations["get_account"];
     put?: never;
@@ -88,7 +88,7 @@ export interface paths {
     };
     /**
      * Get Addons
-     * @description Retrieves a list of available .mcaddon or .mcpack template files.
+     * @description Return a list of available .mcaddon or .mcpack template files.
      */
     get: operations["list_available_addons"];
     put?: never;
@@ -108,7 +108,7 @@ export interface paths {
     };
     /**
      * Get Worlds List
-     * @description Retrieves a list of available .mcworld template files.
+     * @description Return a list of available .mcworld template files.
      */
     get: operations["list_available_worlds"];
     put?: never;
@@ -156,6 +156,40 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/events": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Application Events */
+    get: operations["list_application_events"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/events/activity": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Event Activity */
+    get: operations["get_event_activity"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/health": {
     parameters: {
       query?: never;
@@ -185,7 +219,7 @@ export interface paths {
     };
     /**
      * Get System Info
-     * @description Retrieves general system and application information.
+     * @description Return general system and application information.
      */
     get: operations["get_system_info"];
     put?: never;
@@ -205,7 +239,7 @@ export interface paths {
     };
     /**
      * Get Themes
-     * @description Retrieves a list of available themes (standard and custom).
+     * @description Return a list of available themes (standard and custom).
      */
     get: operations["list_themes"];
     put?: never;
@@ -264,10 +298,10 @@ export interface paths {
      * Serve Custom Panorama Api
      * @description Serves a custom panorama background image if available, otherwise a default.
      *
-     *     This endpoint attempts to locate a `panorama.(jpeg|jpg|png|webp)` file in the application's
-     *     configuration directory. If found, it's served. If not, or if the config
-     *     directory isn't set, it falls back to serving a default panorama image
-     *     from the static assets.
+     *     This endpoint attempts to locate a ``panorama.(jpeg|jpg|png|webp)`` file in the
+     *     application's configuration directory. If found, it's served. If not, or if the
+     *     config directory isn't set, it falls back to serving a default panorama image from
+     *     the static assets.
      */
     get: operations["get_panorama"];
     put?: never;
@@ -307,7 +341,7 @@ export interface paths {
     };
     /**
      * Get All Players
-     * @description Retrieves the list of all known players from the central player database.
+     * @description Return the list of all known players from the central player database.
      */
     get: operations["list_players"];
     put?: never;
@@ -347,7 +381,7 @@ export interface paths {
     };
     /**
      * Get Plugins Status
-     * @description Retrieves the statuses and metadata of all discovered plugins.
+     * @description Return the statuses and metadata of all discovered plugins.
      */
     get: operations["list_plugins"];
     put?: never;
@@ -367,7 +401,7 @@ export interface paths {
     };
     /**
      * Get Plugin Pages
-     * @description Retrieves a list of custom native UI pages registered by plugins.
+     * @description Return a list of custom native UI pages registered by plugins.
      */
     get: operations["get_plugin_pages"];
     put?: never;
@@ -429,7 +463,7 @@ export interface paths {
     put?: never;
     /**
      * Post Set Plugin Status
-     * @description Sets the enabled or disabled status for a specific plugin.
+     * @description Set the enabled or disabled status for a specific plugin.
      */
     post: operations["set_plugin_status"];
     delete?: never;
@@ -505,7 +539,7 @@ export interface paths {
     };
     /**
      * Validate Token
-     * @description Checks if a registration token is valid.
+     * @description Check if a registration token is valid.
      */
     get: operations["validate_registration_token"];
     put?: never;
@@ -527,9 +561,43 @@ export interface paths {
     put?: never;
     /**
      * Register User
-     * @description Creates a new user from a registration token.
+     * @description Create a new user from a registration token.
      */
     post: operations["register_user"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/runtime": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Runtime Status */
+    get: operations["get_web_runtime"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/runtime/shutdown": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Shutdown Runtime */
+    post: operations["shutdown_web_runtime"];
     delete?: never;
     options?: never;
     head?: never;
@@ -702,7 +770,7 @@ export interface paths {
     };
     /**
      * Get Server Addons
-     * @description Retrieves a list of addons installed on a server's active world.
+     * @description Return a list of addons installed on a server's active world.
      */
     get: operations["list_server_addons"];
     put?: never;
@@ -777,7 +845,7 @@ export interface paths {
      * Post Backup Action
      * @description Initiates a background task to perform a backup action for a specific server.
      *
-     *     Valid backup types are "world", "config" (requires `file_to_backup` in payload),
+     *     Valid backup types are "world", "config" (requires ``file_to_backup`` in payload),
      *     and "all".
      */
     post: operations["create_backup"];
@@ -955,7 +1023,7 @@ export interface paths {
     };
     /**
      * Get Server Process Info
-     * @description Retrieves resource usage information for a running server process.
+     * @description Return resource usage information for a running server process.
      */
     get: operations["get_server_process_info"];
     put?: never;
@@ -1053,9 +1121,9 @@ export interface paths {
      * Post Restore Action
      * @description Initiates a background task to perform a restore action for a specific server.
      *
-     *     Valid restore types include "all", "world", "properties", "allowlist",
-     *     and "permissions". If not restoring "all", a `backup_file` (basename)
-     *     must be provided in the payload.
+     *     Valid restore types include "all", "world", "properties", "allowlist", and
+     *     "permissions". If not restoring "all", a ``backup_file`` (basename) must be
+     *     provided in the payload.
      */
     post: operations["restore_backup"];
     delete?: never;
@@ -1093,7 +1161,7 @@ export interface paths {
     };
     /**
      * Get Server Settings
-     * @description Retrieves all settings for a specific server.
+     * @description Return all settings for a specific server.
      */
     get: operations["get_server_settings"];
     put?: never;
@@ -1115,7 +1183,7 @@ export interface paths {
     put?: never;
     /**
      * Post Set Server Setting
-     * @description Sets a specific setting for a server.
+     * @description Set a specific setting for a server.
      */
     post: operations["set_server_setting"];
     delete?: never;
@@ -1153,7 +1221,7 @@ export interface paths {
     };
     /**
      * Get Server Running Status
-     * @description Checks if a specific server's process is currently running.
+     * @description Check if a specific server's process is currently running.
      */
     get: operations["get_server_status"];
     put?: never;
@@ -1193,7 +1261,7 @@ export interface paths {
     };
     /**
      * Get Server Summary
-     * @description Retrieves the basic summary information for a specific server instance.
+     * @description Return the basic summary information for a specific server instance.
      */
     get: operations["get_server_summary"];
     put?: never;
@@ -1276,7 +1344,7 @@ export interface paths {
     };
     /**
      * Get World Icon
-     * @description Serves the `world_icon.jpeg` for a server, or a default icon if not found.
+     * @description Serves the ``world_icon.jpeg`` for a server, or a default icon if not found.
      */
     get: operations["get_world_icon"];
     put?: never;
@@ -1336,7 +1404,7 @@ export interface paths {
     };
     /**
      * Get Servers List
-     * @description Retrieves a list of all detected server instances with their status and version.
+     * @description Return a list of all detected server instances with their status and version.
      */
     get: operations["list_servers"];
     put?: never;
@@ -1356,7 +1424,7 @@ export interface paths {
     };
     /**
      * Get All Settings
-     * @description Retrieves all global application settings.
+     * @description Return all global application settings.
      */
     get: operations["get_settings"];
     put?: never;
@@ -1398,7 +1466,7 @@ export interface paths {
     put?: never;
     /**
      * Post Set Setting
-     * @description Sets a specific global application setting.
+     * @description Set a specific global application setting.
      */
     post: operations["set_setting"];
     delete?: never;
@@ -1418,7 +1486,7 @@ export interface paths {
     put?: never;
     /**
      * Create First User
-     * @description Creates the first user (admin) in the database.
+     * @description Create the first user (admin) in the database.
      */
     post: operations["create_first_user"];
     delete?: never;
@@ -1436,7 +1504,7 @@ export interface paths {
     };
     /**
      * Get Setup Status
-     * @description Returns whether the application needs initial setup.
+     * @description Return whether the application needs initial setup.
      */
     get: operations["get_setup_status"];
     put?: never;
@@ -1456,7 +1524,7 @@ export interface paths {
     };
     /**
      * List Tasks
-     * @description Retrieves all background tasks.
+     * @description Return all background tasks.
      */
     get: operations["list_tasks"];
     put?: never;
@@ -1476,7 +1544,7 @@ export interface paths {
     };
     /**
      * Get Task Status
-     * @description Retrieves the status of a background task.
+     * @description Return the status of a background task.
      */
     get: operations["get_task_status"];
     put?: never;
@@ -1496,7 +1564,7 @@ export interface paths {
     };
     /**
      * List Users Api
-     * @description Retrieves the list of users as JSON.
+     * @description Return the list of users as JSON.
      */
     get: operations["list_users"];
     put?: never;
@@ -1518,7 +1586,7 @@ export interface paths {
     put?: never;
     /**
      * Delete User
-     * @description Deletes a user.
+     * @description Delete a user.
      */
     post: operations["delete_user"];
     delete?: never;
@@ -1587,7 +1655,7 @@ export interface paths {
     };
     /**
      * List Audit Logs Api
-     * @description Retrieves audit logs as JSON.
+     * @description Return audit logs as JSON.
      */
     get: operations["list_audit_logs"];
     put?: never;
@@ -1652,7 +1720,7 @@ export interface paths {
     put?: never;
     /**
      * Api Login For Access Token
-     * @description Handles API user login and returns a JWT access token.
+     * @description Handle API user login and return a JWT access token.
      */
     post: operations["login"];
     delete?: never;
@@ -2027,9 +2095,9 @@ export interface components {
      * ChangePasswordPayload
      * @description Request payload for changing the user's password.
      *
-     *     Attributes:
-     *         current_password (str): The current password for verification.
-     *         new_password (str): The new password.
+     *     :ivar current_password: The current password for verification.
+     *
+     *     :ivar new_password: The new password.
      */
     ChangePasswordPayload: {
       /**
@@ -2072,8 +2140,7 @@ export interface components {
      * ContentListResponse
      * @description Response model for content listing endpoints.
      *
-     *     Attributes:
-     *         files (Optional[List[str]]): A list of filenames found.
+     *     :ivar files: A list of filenames found.
      */
     ContentListResponse: {
       /** Files */
@@ -2104,6 +2171,152 @@ export interface components {
     /** ErrorEnvelope */
     ErrorEnvelope: {
       error: components["schemas"]["APIErrorResponse"];
+    };
+    /** EventCatalog */
+    EventCatalog: {
+      /** Events */
+      events: components["schemas"]["EventDefinition"][];
+    };
+    /** EventDefinition */
+    EventDefinition: {
+      /**
+       * Description
+       * @default
+       */
+      description?: string;
+      /**
+       * Identity Keys
+       * @default []
+       */
+      identity_keys?: string[];
+      /** Name */
+      name: string;
+      /**
+       * Owner
+       * @default application
+       */
+      owner?: string;
+      /** Payload Schema */
+      payload_schema?: {
+        [key: string]: components["schemas"]["JsonValue"];
+      };
+      /**
+       * Phase
+       * @default custom
+       * @enum {string}
+       */
+      phase?: "before" | "after" | "custom" | "lifecycle";
+      /**
+       * Public
+       * @default true
+       */
+      public?: boolean;
+    };
+    /** EventDelivery */
+    EventDelivery: {
+      /**
+       * Failed
+       * @default 0
+       */
+      failed?: number;
+      /** Owner */
+      owner: string;
+      /**
+       * Sent
+       * @default 0
+       */
+      sent?: number;
+      /**
+       * Targeted
+       * @default 0
+       */
+      targeted?: number;
+      /**
+       * Unavailable
+       * @default 0
+       */
+      unavailable?: number;
+    };
+    /** EventDiagnostics */
+    EventDiagnostics: {
+      /** Accepting */
+      accepting: boolean;
+      /** Active */
+      active: components["schemas"]["EventRecord"][];
+      /** Emitted */
+      emitted: number;
+      /** Failed Listeners */
+      failed_listeners: number;
+      /**
+       * Pending Waits
+       * @default 0
+       */
+      pending_waits?: number;
+      /**
+       * Pending Workers
+       * @default 0
+       */
+      pending_workers?: number;
+      /** Recent */
+      recent: components["schemas"]["EventRecord"][];
+      /** Rejections By Reason */
+      rejections_by_reason?: {
+        [key: string]: number;
+      };
+      /** Subscriptions */
+      subscriptions: number;
+      /** Suppressed */
+      suppressed: number;
+      /** Timeouts By Owner */
+      timeouts_by_owner?: {
+        [key: string]: number;
+      };
+      /** Workers By Owner */
+      workers_by_owner?: {
+        [key: string]: number;
+      };
+    };
+    /** EventRecord */
+    EventRecord: {
+      /** Cancellation Reason */
+      cancellation_reason?: string | null;
+      /** Correlation Id */
+      correlation_id: string;
+      /** Deliveries */
+      deliveries?: components["schemas"]["EventDelivery"][];
+      /**
+       * Duration Ms
+       * @default 0
+       */
+      duration_ms?: number;
+      /** Event Id */
+      event_id: string;
+      /** Failures */
+      failures?: components["schemas"]["ListenerFailure"][];
+      /** Listeners */
+      listeners?: components["schemas"]["ListenerRecord"][];
+      /**
+       * Listeners Called
+       * @default 0
+       */
+      listeners_called?: number;
+      /** Name */
+      name: string;
+      /** Parent Event Id */
+      parent_event_id?: string | null;
+      /** Rejection Reason */
+      rejection_reason?:
+        ("recursion" | "depth_limit" | "capacity" | "shutdown") | null;
+      /** Source */
+      source: string;
+      /**
+       * Status
+       * @enum {string}
+       */
+      status:
+        "dispatching" | "completed" | "partial" | "cancelled" | "suppressed";
+      /** Timestamp */
+      timestamp: number;
     };
     /** FailedItem */
     FailedItem: {
@@ -2156,8 +2369,7 @@ export interface components {
      * FileNamePayload
      * @description Payload for file-based operations.
      *
-     *     Attributes:
-     *         filename (str): The name of the file to operate on.
+     *     :ivar filename: The name of the file to operate on.
      */
     FileNamePayload: {
       /** Filename */
@@ -2167,8 +2379,7 @@ export interface components {
      * GenerateTokenPayload
      * @description Request payload for generating a registration token.
      *
-     *     Attributes:
-     *         role (str): The role to assign to the user registering with this token.
+     *     :ivar role: The role to assign to the user registering with this token.
      */
     GenerateTokenPayload: {
       /**
@@ -2428,6 +2639,45 @@ export interface components {
        */
       status?: "success";
     };
+    /** ListenerFailure */
+    ListenerFailure: {
+      /**
+       * Code
+       * @enum {string}
+       */
+      code:
+        | "event_listener_failed"
+        | "event_listener_timeout"
+        | "event_depth_limit"
+        | "event_capacity";
+      /** Error Type */
+      error_type: string;
+      /** Owner */
+      owner: string;
+    };
+    /** ListenerRecord */
+    ListenerRecord: {
+      /**
+       * Duration Ms
+       * @default 0
+       */
+      duration_ms?: number;
+      failure?: components["schemas"]["ListenerFailure"] | null;
+      /** Listener Name */
+      listener_name: string;
+      /** Observer */
+      observer: boolean;
+      /** Owner */
+      owner: string;
+      /**
+       * Status
+       * @default running
+       * @enum {string}
+       */
+      status?: "running" | "completed" | "failed" | "timed_out" | "cancelled";
+      /** Subscription Id */
+      subscription_id: string;
+    };
     /** LogHistoryPage */
     LogHistoryPage: {
       /** Data */
@@ -2552,7 +2802,7 @@ export interface components {
     };
     /**
      * PlayerPermissionPayload
-     * @description Represents a single player's permission data sent from the client.
+     * @description Represent a single player's permission data sent from the client.
      */
     PlayerPermissionPayload: {
       /** Name */
@@ -2681,9 +2931,9 @@ export interface components {
      * ProfileUpdatePayload
      * @description Request payload for updating user profile details.
      *
-     *     Attributes:
-     *         full_name (str): The user's full name.
-     *         email (str): The user's email address.
+     *     :ivar full_name: The user's full name.
+     *
+     *     :ivar email: The user's email address.
      */
     ProfileUpdatePayload: {
       /** Email */
@@ -2824,6 +3074,19 @@ export interface components {
        * @description Type of restore: 'world', 'properties', 'allowlist', 'permissions', or 'all'.
        */
       restore_type: string;
+    };
+    /** RuntimeStatus */
+    RuntimeStatus: {
+      /** Instance Id */
+      instance_id: string;
+      phase: components["schemas"]["LifecyclePhase"];
+      /** Pid */
+      pid: number;
+      /** Shutdown Reason */
+      shutdown_reason?:
+        ("administrator" | "local_cli" | "service" | "signal") | null;
+      /** Shutdown Requested */
+      shutdown_requested: boolean;
     };
     /** SendCommandResponse */
     SendCommandResponse: {
@@ -3051,6 +3314,27 @@ export interface components {
       /** Needs Setup */
       needs_setup: boolean;
     };
+    /** ShutdownRequest */
+    ShutdownRequest: Record<string, never>;
+    /** ShutdownResponse */
+    ShutdownResponse: {
+      /** Instance Id */
+      instance_id: string;
+      phase: components["schemas"]["LifecyclePhase"];
+      /** Pid */
+      pid: number;
+      /** Shutdown Reason */
+      shutdown_reason?:
+        ("administrator" | "local_cli" | "service" | "signal") | null;
+      /** Shutdown Requested */
+      shutdown_requested: boolean;
+      /**
+       * Status
+       * @default accepted
+       * @constant
+       */
+      status?: "accepted";
+    };
     /** SkippedItem */
     SkippedItem: {
       /** Error */
@@ -3172,8 +3456,7 @@ export interface components {
      * ThemeUpdatePayload
      * @description Request payload for updating the user's theme.
      *
-     *     Attributes:
-     *         theme (str): The new theme name.
+     *     :ivar theme: The new theme name.
      */
     ThemeUpdatePayload: {
       /** Theme */
@@ -3234,8 +3517,7 @@ export interface components {
      * UpdateUserRolePayload
      * @description Request payload for updating a user's role.
      *
-     *     Attributes:
-     *         role (str): The new role.
+     *     :ivar role: The new role.
      */
     UpdateUserRolePayload: {
       /**
@@ -3265,14 +3547,6 @@ export interface components {
     /**
      * UserResponse
      * @description Pydantic model representing a user.
-     *
-     *     Attributes:
-     *         id (int): The user's ID.
-     *         username (str): The user's username.
-     *         identity_type (str): The type of identity (e.g., "local").
-     *         role (str): The user's role.
-     *         is_active (bool): Whether the user is active.
-     *         theme (str): The user's preferred theme. Defaults to "default".
      */
     UserResponse: {
       /** Id */
@@ -3979,6 +4253,204 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["PruneDownloadsResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  list_application_events: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EventCatalog"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  get_event_activity: {
+    parameters: {
+      query?: {
+        name?: string | null;
+        owner?: string | null;
+        correlation_id?: string | null;
+        status?:
+          | (
+              | "dispatching"
+              | "completed"
+              | "partial"
+              | "cancelled"
+              | "suppressed"
+            )
+          | null;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EventDiagnostics"];
         };
       };
       /** @description Bad Request */
@@ -5857,6 +6329,194 @@ export interface operations {
         };
         content: {
           "application/json": unknown;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  get_web_runtime: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RuntimeStatus"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  shutdown_web_runtime: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ShutdownRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ShutdownResponse"];
         };
       };
       /** @description Bad Request */

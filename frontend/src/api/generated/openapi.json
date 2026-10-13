@@ -737,7 +737,7 @@
       },
       "ChangePasswordPayload": {
         "additionalProperties": false,
-        "description": "Request payload for changing the user's password.\n\nAttributes:\n    current_password (str): The current password for verification.\n    new_password (str): The new password.",
+        "description": "Request payload for changing the user's password.\n\n:ivar current_password: The current password for verification.\n\n:ivar new_password: The new password.",
         "properties": {
           "current_password": {
             "format": "password",
@@ -807,7 +807,7 @@
       },
       "ContentListResponse": {
         "additionalProperties": false,
-        "description": "Response model for content listing endpoints.\n\nAttributes:\n    files (Optional[List[str]]): A list of filenames found.",
+        "description": "Response model for content listing endpoints.\n\n:ivar files: A list of filenames found.",
         "properties": {
           "files": {
             "anyOf": [
@@ -885,6 +885,300 @@
         },
         "required": ["error"],
         "title": "ErrorEnvelope",
+        "type": "object"
+      },
+      "EventCatalog": {
+        "additionalProperties": false,
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/EventDefinition"
+            },
+            "title": "Events",
+            "type": "array"
+          }
+        },
+        "required": ["events"],
+        "title": "EventCatalog",
+        "type": "object"
+      },
+      "EventDefinition": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "identity_keys": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Identity Keys",
+            "type": "array"
+          },
+          "name": {
+            "maxLength": 160,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_][a-zA-Z0-9_.:-]*$",
+            "title": "Name",
+            "type": "string"
+          },
+          "owner": {
+            "default": "application",
+            "title": "Owner",
+            "type": "string"
+          },
+          "payload_schema": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "title": "Payload Schema",
+            "type": "object"
+          },
+          "phase": {
+            "default": "custom",
+            "enum": ["before", "after", "custom", "lifecycle"],
+            "title": "Phase",
+            "type": "string"
+          },
+          "public": {
+            "default": true,
+            "title": "Public",
+            "type": "boolean"
+          }
+        },
+        "required": ["name"],
+        "title": "EventDefinition",
+        "type": "object"
+      },
+      "EventDelivery": {
+        "additionalProperties": false,
+        "properties": {
+          "failed": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Failed",
+            "type": "integer"
+          },
+          "owner": {
+            "title": "Owner",
+            "type": "string"
+          },
+          "sent": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Sent",
+            "type": "integer"
+          },
+          "targeted": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Targeted",
+            "type": "integer"
+          },
+          "unavailable": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Unavailable",
+            "type": "integer"
+          }
+        },
+        "required": ["owner"],
+        "title": "EventDelivery",
+        "type": "object"
+      },
+      "EventDiagnostics": {
+        "additionalProperties": false,
+        "properties": {
+          "accepting": {
+            "title": "Accepting",
+            "type": "boolean"
+          },
+          "active": {
+            "items": {
+              "$ref": "#/components/schemas/EventRecord"
+            },
+            "title": "Active",
+            "type": "array"
+          },
+          "emitted": {
+            "title": "Emitted",
+            "type": "integer"
+          },
+          "failed_listeners": {
+            "title": "Failed Listeners",
+            "type": "integer"
+          },
+          "pending_waits": {
+            "default": 0,
+            "title": "Pending Waits",
+            "type": "integer"
+          },
+          "pending_workers": {
+            "default": 0,
+            "title": "Pending Workers",
+            "type": "integer"
+          },
+          "recent": {
+            "items": {
+              "$ref": "#/components/schemas/EventRecord"
+            },
+            "title": "Recent",
+            "type": "array"
+          },
+          "rejections_by_reason": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Rejections By Reason",
+            "type": "object"
+          },
+          "subscriptions": {
+            "title": "Subscriptions",
+            "type": "integer"
+          },
+          "suppressed": {
+            "title": "Suppressed",
+            "type": "integer"
+          },
+          "timeouts_by_owner": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Timeouts By Owner",
+            "type": "object"
+          },
+          "workers_by_owner": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Workers By Owner",
+            "type": "object"
+          }
+        },
+        "required": [
+          "accepting",
+          "emitted",
+          "suppressed",
+          "failed_listeners",
+          "subscriptions",
+          "active",
+          "recent"
+        ],
+        "title": "EventDiagnostics",
+        "type": "object"
+      },
+      "EventRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "cancellation_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancellation Reason"
+          },
+          "correlation_id": {
+            "title": "Correlation Id",
+            "type": "string"
+          },
+          "deliveries": {
+            "items": {
+              "$ref": "#/components/schemas/EventDelivery"
+            },
+            "title": "Deliveries",
+            "type": "array"
+          },
+          "duration_ms": {
+            "default": 0,
+            "title": "Duration Ms",
+            "type": "number"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "failures": {
+            "items": {
+              "$ref": "#/components/schemas/ListenerFailure"
+            },
+            "title": "Failures",
+            "type": "array"
+          },
+          "listeners": {
+            "items": {
+              "$ref": "#/components/schemas/ListenerRecord"
+            },
+            "title": "Listeners",
+            "type": "array"
+          },
+          "listeners_called": {
+            "default": 0,
+            "title": "Listeners Called",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "parent_event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Event Id"
+          },
+          "rejection_reason": {
+            "anyOf": [
+              {
+                "enum": ["recursion", "depth_limit", "capacity", "shutdown"],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rejection Reason"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "dispatching",
+              "completed",
+              "partial",
+              "cancelled",
+              "suppressed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "timestamp": {
+            "title": "Timestamp",
+            "type": "number"
+          }
+        },
+        "required": [
+          "event_id",
+          "correlation_id",
+          "name",
+          "source",
+          "timestamp",
+          "status"
+        ],
+        "title": "EventRecord",
         "type": "object"
       },
       "FailedItem": {
@@ -966,7 +1260,7 @@
       },
       "FileNamePayload": {
         "additionalProperties": false,
-        "description": "Payload for file-based operations.\n\nAttributes:\n    filename (str): The name of the file to operate on.",
+        "description": "Payload for file-based operations.\n\n:ivar filename: The name of the file to operate on.",
         "properties": {
           "filename": {
             "minLength": 1,
@@ -981,7 +1275,7 @@
       },
       "GenerateTokenPayload": {
         "additionalProperties": false,
-        "description": "Request payload for generating a registration token.\n\nAttributes:\n    role (str): The role to assign to the user registering with this token.",
+        "description": "Request payload for generating a registration token.\n\n:ivar role: The role to assign to the user registering with this token.",
         "properties": {
           "role": {
             "enum": ["admin", "moderator", "user"],
@@ -1561,6 +1855,84 @@
         "title": "ListAvailableAddonsResponse",
         "type": "object"
       },
+      "ListenerFailure": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "enum": [
+              "event_listener_failed",
+              "event_listener_timeout",
+              "event_depth_limit",
+              "event_capacity"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "error_type": {
+            "title": "Error Type",
+            "type": "string"
+          },
+          "owner": {
+            "title": "Owner",
+            "type": "string"
+          }
+        },
+        "required": ["owner", "error_type", "code"],
+        "title": "ListenerFailure",
+        "type": "object"
+      },
+      "ListenerRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "duration_ms": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Duration Ms",
+            "type": "number"
+          },
+          "failure": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ListenerFailure"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "listener_name": {
+            "title": "Listener Name",
+            "type": "string"
+          },
+          "observer": {
+            "title": "Observer",
+            "type": "boolean"
+          },
+          "owner": {
+            "title": "Owner",
+            "type": "string"
+          },
+          "status": {
+            "default": "running",
+            "enum": [
+              "running",
+              "completed",
+              "failed",
+              "timed_out",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "subscription_id": {
+            "title": "Subscription Id",
+            "type": "string"
+          }
+        },
+        "required": ["subscription_id", "owner", "observer", "listener_name"],
+        "title": "ListenerRecord",
+        "type": "object"
+      },
       "LogHistoryPage": {
         "properties": {
           "data": {
@@ -1959,7 +2331,7 @@
       },
       "PlayerPermissionPayload": {
         "additionalProperties": false,
-        "description": "Represents a single player's permission data sent from the client.",
+        "description": "Represent a single player's permission data sent from the client.",
         "properties": {
           "name": {
             "title": "Name",
@@ -2201,7 +2573,7 @@
       },
       "ProfileUpdatePayload": {
         "additionalProperties": false,
-        "description": "Request payload for updating user profile details.\n\nAttributes:\n    full_name (str): The user's full name.\n    email (str): The user's email address.",
+        "description": "Request payload for updating user profile details.\n\n:ivar full_name: The user's full name.\n\n:ivar email: The user's email address.",
         "properties": {
           "email": {
             "title": "Email",
@@ -2466,6 +2838,41 @@
         },
         "required": ["restore_type"],
         "title": "RestoreActionPayload",
+        "type": "object"
+      },
+      "RuntimeStatus": {
+        "additionalProperties": false,
+        "properties": {
+          "instance_id": {
+            "title": "Instance Id",
+            "type": "string"
+          },
+          "phase": {
+            "$ref": "#/components/schemas/LifecyclePhase"
+          },
+          "pid": {
+            "title": "Pid",
+            "type": "integer"
+          },
+          "shutdown_reason": {
+            "anyOf": [
+              {
+                "enum": ["administrator", "local_cli", "service", "signal"],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shutdown Reason"
+          },
+          "shutdown_requested": {
+            "title": "Shutdown Requested",
+            "type": "boolean"
+          }
+        },
+        "required": ["instance_id", "pid", "phase", "shutdown_requested"],
+        "title": "RuntimeStatus",
         "type": "object"
       },
       "SendCommandResponse": {
@@ -3014,6 +3421,53 @@
         "title": "SetupStatusResponse",
         "type": "object"
       },
+      "ShutdownRequest": {
+        "additionalProperties": false,
+        "properties": {},
+        "title": "ShutdownRequest",
+        "type": "object"
+      },
+      "ShutdownResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "instance_id": {
+            "title": "Instance Id",
+            "type": "string"
+          },
+          "phase": {
+            "$ref": "#/components/schemas/LifecyclePhase"
+          },
+          "pid": {
+            "title": "Pid",
+            "type": "integer"
+          },
+          "shutdown_reason": {
+            "anyOf": [
+              {
+                "enum": ["administrator", "local_cli", "service", "signal"],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shutdown Reason"
+          },
+          "shutdown_requested": {
+            "title": "Shutdown Requested",
+            "type": "boolean"
+          },
+          "status": {
+            "const": "accepted",
+            "default": "accepted",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["instance_id", "pid", "phase", "shutdown_requested"],
+        "title": "ShutdownResponse",
+        "type": "object"
+      },
       "SkippedItem": {
         "additionalProperties": false,
         "properties": {
@@ -3262,7 +3716,7 @@
       },
       "ThemeUpdatePayload": {
         "additionalProperties": false,
-        "description": "Request payload for updating the user's theme.\n\nAttributes:\n    theme (str): The new theme name.",
+        "description": "Request payload for updating the user's theme.\n\n:ivar theme: The new theme name.",
         "properties": {
           "theme": {
             "title": "Theme",
@@ -3374,7 +3828,7 @@
       },
       "UpdateUserRolePayload": {
         "additionalProperties": false,
-        "description": "Request payload for updating a user's role.\n\nAttributes:\n    role (str): The new role.",
+        "description": "Request payload for updating a user's role.\n\n:ivar role: The new role.",
         "properties": {
           "role": {
             "enum": ["admin", "moderator", "user"],
@@ -3415,7 +3869,7 @@
       },
       "UserResponse": {
         "additionalProperties": false,
-        "description": "Pydantic model representing a user.\n\nAttributes:\n    id (int): The user's ID.\n    username (str): The user's username.\n    identity_type (str): The type of identity (e.g., \"local\").\n    role (str): The user's role.\n    is_active (bool): Whether the user is active.\n    theme (str): The user's preferred theme. Defaults to \"default\".",
+        "description": "Pydantic model representing a user.",
         "properties": {
           "id": {
             "title": "Id",
@@ -3462,6 +3916,11 @@
         "name": "access_token_cookie",
         "type": "apiKey"
       },
+      "APIKeyHeader": {
+        "in": "header",
+        "name": "X-BSM-Shutdown-Token",
+        "type": "apiKey"
+      },
       "OAuth2PasswordBearer": {
         "flows": {
           "password": {
@@ -3481,7 +3940,7 @@
   "paths": {
     "/api/account": {
       "get": {
-        "description": "Retrieves the current user's account details.",
+        "description": "Return the current user's account details.",
         "operationId": "get_account",
         "responses": {
           "200": {
@@ -3943,7 +4402,7 @@
     },
     "/api/content/addons": {
       "get": {
-        "description": "Retrieves a list of available .mcaddon or .mcpack template files.",
+        "description": "Return a list of available .mcaddon or .mcpack template files.",
         "operationId": "list_available_addons",
         "responses": {
           "200": {
@@ -4051,7 +4510,7 @@
     },
     "/api/content/worlds": {
       "get": {
-        "description": "Retrieves a list of available .mcworld template files.",
+        "description": "Return a list of available .mcworld template files.",
         "operationId": "list_available_worlds",
         "responses": {
           "200": {
@@ -4382,6 +4841,305 @@
         "tags": ["Downloads"]
       }
     },
+    "/api/events": {
+      "get": {
+        "operationId": "list_application_events",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventCatalog"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "List Application Events",
+        "tags": ["Application Events"]
+      }
+    },
+    "/api/events/activity": {
+      "get": {
+        "operationId": "get_event_activity",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "name",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Name"
+            }
+          },
+          {
+            "in": "query",
+            "name": "owner",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Owner"
+            }
+          },
+          {
+            "in": "query",
+            "name": "correlation_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Correlation Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "dispatching",
+                    "completed",
+                    "partial",
+                    "cancelled",
+                    "suppressed"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 200,
+              "maximum": 10000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventDiagnostics"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Get Event Activity",
+        "tags": ["Application Events"]
+      }
+    },
     "/api/health": {
       "get": {
         "description": "Dependency readiness. A degraded response remains HTTP 200 for UI clients.",
@@ -4492,7 +5250,7 @@
     },
     "/api/info": {
       "get": {
-        "description": "Retrieves general system and application information.",
+        "description": "Return general system and application information.",
         "operationId": "get_system_info",
         "responses": {
           "200": {
@@ -4592,7 +5350,7 @@
     },
     "/api/info/themes": {
       "get": {
-        "description": "Retrieves a list of available themes (standard and custom).",
+        "description": "Return a list of available themes (standard and custom).",
         "operationId": "list_themes",
         "responses": {
           "200": {
@@ -4954,7 +5712,7 @@
     },
     "/api/panorama": {
       "get": {
-        "description": "Serves a custom panorama background image if available, otherwise a default.\n\nThis endpoint attempts to locate a `panorama.(jpeg|jpg|png|webp)` file in the application's\nconfiguration directory. If found, it's served. If not, or if the config\ndirectory isn't set, it falls back to serving a default panorama image\nfrom the static assets.",
+        "description": "Serves a custom panorama background image if available, otherwise a default.\n\nThis endpoint attempts to locate a ``panorama.(jpeg|jpg|png|webp)`` file in the\napplication's configuration directory. If found, it's served. If not, or if the\nconfig directory isn't set, it falls back to serving a default panorama image from\nthe static assets.",
         "operationId": "get_panorama",
         "responses": {
           "200": {
@@ -5165,7 +5923,7 @@
     },
     "/api/players/get": {
       "get": {
-        "description": "Retrieves the list of all known players from the central player database.",
+        "description": "Return the list of all known players from the central player database.",
         "operationId": "list_players",
         "responses": {
           "200": {
@@ -5381,7 +6139,7 @@
     },
     "/api/plugins": {
       "get": {
-        "description": "Retrieves the statuses and metadata of all discovered plugins.",
+        "description": "Return the statuses and metadata of all discovered plugins.",
         "operationId": "list_plugins",
         "responses": {
           "200": {
@@ -5489,7 +6247,7 @@
     },
     "/api/plugins/pages": {
       "get": {
-        "description": "Retrieves a list of custom native UI pages registered by plugins.",
+        "description": "Return a list of custom native UI pages registered by plugins.",
         "operationId": "get_plugin_pages",
         "responses": {
           "200": {
@@ -5823,7 +6581,7 @@
     },
     "/api/plugins/{plugin_name}": {
       "post": {
-        "description": "Sets the enabled or disabled status for a specific plugin.",
+        "description": "Set the enabled or disabled status for a specific plugin.",
         "operationId": "set_plugin_status",
         "parameters": [
           {
@@ -6433,7 +7191,7 @@
     },
     "/api/register/validate/{token}": {
       "get": {
-        "description": "Checks if a registration token is valid.",
+        "description": "Check if a registration token is valid.",
         "operationId": "validate_registration_token",
         "parameters": [
           {
@@ -6542,7 +7300,7 @@
     },
     "/api/register/{token}": {
       "post": {
-        "description": "Creates a new user from a registration token.",
+        "description": "Create a new user from a registration token.",
         "operationId": "register_user",
         "parameters": [
           {
@@ -6657,6 +7415,233 @@
         },
         "summary": "Register User",
         "tags": ["Registration"]
+      }
+    },
+    "/api/runtime": {
+      "get": {
+        "operationId": "get_web_runtime",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuntimeStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Runtime Status",
+        "tags": ["Runtime"]
+      }
+    },
+    "/api/runtime/shutdown": {
+      "post": {
+        "operationId": "shutdown_web_runtime",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShutdownRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShutdownResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "OAuth2PasswordBearer": []
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Shutdown Runtime",
+        "tags": ["Runtime"]
       }
     },
     "/api/server/install": {
@@ -7694,7 +8679,7 @@
     },
     "/api/server/{server_name}/addons": {
       "get": {
-        "description": "Retrieves a list of addons installed on a server's active world.",
+        "description": "Return a list of addons installed on a server's active world.",
         "operationId": "list_server_addons",
         "parameters": [
           {
@@ -8191,7 +9176,7 @@
     },
     "/api/server/{server_name}/backup/action": {
       "post": {
-        "description": "Initiates a background task to perform a backup action for a specific server.\n\nValid backup types are \"world\", \"config\" (requires `file_to_backup` in payload),\nand \"all\".",
+        "description": "Initiates a background task to perform a backup action for a specific server.\n\nValid backup types are \"world\", \"config\" (requires ``file_to_backup`` in payload),\nand \"all\".",
         "operationId": "create_backup",
         "parameters": [
           {
@@ -9318,7 +10303,7 @@
     },
     "/api/server/{server_name}/process_info": {
       "get": {
-        "description": "Retrieves resource usage information for a running server process.",
+        "description": "Return resource usage information for a running server process.",
         "operationId": "get_server_process_info",
         "parameters": [
           {
@@ -9926,7 +10911,7 @@
     },
     "/api/server/{server_name}/restore/action": {
       "post": {
-        "description": "Initiates a background task to perform a restore action for a specific server.\n\nValid restore types include \"all\", \"world\", \"properties\", \"allowlist\",\nand \"permissions\". If not restoring \"all\", a `backup_file` (basename)\nmust be provided in the payload.",
+        "description": "Initiates a background task to perform a restore action for a specific server.\n\nValid restore types include \"all\", \"world\", \"properties\", \"allowlist\", and\n\"permissions\". If not restoring \"all\", a ``backup_file`` (basename) must be\nprovided in the payload.",
         "operationId": "restore_backup",
         "parameters": [
           {
@@ -10186,7 +11171,7 @@
     },
     "/api/server/{server_name}/settings/get": {
       "get": {
-        "description": "Retrieves all settings for a specific server.",
+        "description": "Return all settings for a specific server.",
         "operationId": "get_server_settings",
         "parameters": [
           {
@@ -10306,7 +11291,7 @@
     },
     "/api/server/{server_name}/settings/set": {
       "post": {
-        "description": "Sets a specific setting for a server.",
+        "description": "Set a specific setting for a server.",
         "operationId": "set_server_setting",
         "parameters": [
           {
@@ -10556,7 +11541,7 @@
     },
     "/api/server/{server_name}/status": {
       "get": {
-        "description": "Checks if a specific server's process is currently running.",
+        "description": "Check if a specific server's process is currently running.",
         "operationId": "get_server_status",
         "parameters": [
           {
@@ -10796,7 +11781,7 @@
     },
     "/api/server/{server_name}/summary": {
       "get": {
-        "description": "Retrieves the basic summary information for a specific server instance.",
+        "description": "Return the basic summary information for a specific server instance.",
         "operationId": "get_server_summary",
         "parameters": [
           {
@@ -11275,7 +12260,7 @@
     },
     "/api/server/{server_name}/world/icon": {
       "get": {
-        "description": "Serves the `world_icon.jpeg` for a server, or a default icon if not found.",
+        "description": "Serves the ``world_icon.jpeg`` for a server, or a default icon if not found.",
         "operationId": "get_world_icon",
         "parameters": [
           {
@@ -11630,7 +12615,7 @@
     },
     "/api/servers": {
       "get": {
-        "description": "Retrieves a list of all detected server instances with their status and version.",
+        "description": "Return a list of all detected server instances with their status and version.",
         "operationId": "list_servers",
         "responses": {
           "200": {
@@ -11738,7 +12723,7 @@
     },
     "/api/settings/get": {
       "get": {
-        "description": "Retrieves all global application settings.",
+        "description": "Return all global application settings.",
         "operationId": "get_settings",
         "responses": {
           "200": {
@@ -11954,7 +12939,7 @@
     },
     "/api/settings/set": {
       "post": {
-        "description": "Sets a specific global application setting.",
+        "description": "Set a specific global application setting.",
         "operationId": "set_setting",
         "requestBody": {
           "content": {
@@ -12072,7 +13057,7 @@
     },
     "/api/setup/create-first-user": {
       "post": {
-        "description": "Creates the first user (admin) in the database.",
+        "description": "Create the first user (admin) in the database.",
         "operationId": "create_first_user",
         "requestBody": {
           "content": {
@@ -12182,7 +13167,7 @@
     },
     "/api/setup/status": {
       "get": {
-        "description": "Returns whether the application needs initial setup.",
+        "description": "Return whether the application needs initial setup.",
         "operationId": "get_setup_status",
         "responses": {
           "200": {
@@ -12282,7 +13267,7 @@
     },
     "/api/tasks/list": {
       "get": {
-        "description": "Retrieves all background tasks.",
+        "description": "Return all background tasks.",
         "operationId": "list_tasks",
         "responses": {
           "200": {
@@ -12394,7 +13379,7 @@
     },
     "/api/tasks/status/{task_id}": {
       "get": {
-        "description": "Retrieves the status of a background task.",
+        "description": "Return the status of a background task.",
         "operationId": "get_task_status",
         "parameters": [
           {
@@ -12513,7 +13498,7 @@
     },
     "/api/users/list": {
       "get": {
-        "description": "Retrieves the list of users as JSON.",
+        "description": "Return the list of users as JSON.",
         "operationId": "list_users",
         "responses": {
           "200": {
@@ -12625,7 +13610,7 @@
     },
     "/api/users/{user_id}/delete": {
       "post": {
-        "description": "Deletes a user.",
+        "description": "Delete a user.",
         "operationId": "delete_user",
         "parameters": [
           {
@@ -13108,7 +14093,7 @@
     },
     "/audit-log/list": {
       "get": {
-        "description": "Retrieves audit logs as JSON.",
+        "description": "Return audit logs as JSON.",
         "operationId": "list_audit_logs",
         "responses": {
           "200": {
@@ -13452,7 +14437,7 @@
     },
     "/auth/token": {
       "post": {
-        "description": "Handles API user login and returns a JWT access token.",
+        "description": "Handle API user login and return a JWT access token.",
         "operationId": "login",
         "requestBody": {
           "content": {
@@ -13633,6 +14618,10 @@
     {
       "description": "Plugin discovery, configuration, events, and reloads.",
       "name": "Plugin Management"
+    },
+    {
+      "description": "Hosting runtime status and graceful shutdown.",
+      "name": "Runtime"
     },
     {
       "description": "Managed operations and their outcomes.",

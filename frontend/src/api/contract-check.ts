@@ -1,5 +1,19 @@
 import { callOperation } from "./operations";
 async function contracts() {
+  const runtime = await callOperation("get_web_runtime");
+  runtime.phase.toUpperCase();
+  const catalog = await callOperation("list_application_events");
+  catalog.events.forEach((event) => event.name.toUpperCase());
+  const activity = await callOperation("get_event_activity", {
+    query: { limit: 5, status: "partial", correlation_id: "operation-1" },
+  });
+  activity.recent.forEach((event) => event.event_id.toUpperCase());
+  const receipt = await callOperation("shutdown_web_runtime", { body: {} });
+  receipt.instance_id.toUpperCase();
+  // @ts-expect-error Shutdown still requires its empty request body.
+  await callOperation("shutdown_web_runtime");
+  // @ts-expect-error Activity filters must use a declared status.
+  await callOperation("get_event_activity", { query: { status: "unknown" } });
   const servers = await callOperation("list_servers");
   servers.servers?.forEach((server) => server.name.toUpperCase());
   await callOperation("get_properties", { path: { server_name: "server" } });

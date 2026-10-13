@@ -63,6 +63,48 @@
     "bodyTypes": ["application/json"],
     "responseType": "json"
   },
+  "list_application_events": {
+    "method": "GET",
+    "path": "/api/events",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "get_event_activity": {
+    "method": "GET",
+    "path": "/api/events/activity",
+    "parameters": [
+      {
+        "name": "name",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "owner",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "correlation_id",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "status",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "limit",
+        "in": "query",
+        "required": false
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
   "get_application_health": {
     "method": "GET",
     "path": "/api/health",
@@ -271,6 +313,22 @@
         "required": true
       }
     ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
+  },
+  "get_web_runtime": {
+    "method": "GET",
+    "path": "/api/runtime",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "shutdown_web_runtime": {
+    "method": "POST",
+    "path": "/api/runtime/shutdown",
+    "parameters": [],
     "bodyRequired": true,
     "bodyTypes": ["application/json"],
     "responseType": "json"
