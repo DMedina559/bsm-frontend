@@ -425,7 +425,9 @@ test("administrators inspect diagnostics, compare snapshots and download a repor
   await page.goto("application-monitor");
   expect(calls).toBe(0);
   await page.getByRole("tab", { name: "Diagnostics" }).click();
-  await expect(page.getByText("Ready", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("definition").filter({ hasText: /^Ready$/ }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Save comparison baseline" }).click();
   await page.getByRole("button", { name: "Compare with baseline" }).click();
   await expect(page.getByText("No changes in compared fields.")).toBeVisible();
