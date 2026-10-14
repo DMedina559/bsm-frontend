@@ -54,5 +54,19 @@ export function resolveAppAssetUrl(path) {
   ) {
     throw new Error("Asset URLs must target the frontend origin.");
   }
-  return `${target.pathname}${target.search}${target.hash}`;
+  return serializeHttpUrl(target, true);
+}
+
+/** Serialize validated URLs with a fixed, non-executable scheme or root prefix. */
+export function serializeHttpUrl(target, relative = false) {
+  if (target.protocol !== "http:" && target.protocol !== "https:") {
+    throw new Error("Only HTTP and HTTPS URLs are supported.");
+  }
+  const suffix = `${target.host}${target.pathname}${target.search}${target.hash}`;
+  if (relative && !target.pathname.startsWith("//")) {
+    return `/${target.pathname.slice(1)}${target.search}${target.hash}`;
+  }
+  return target.protocol === "https:"
+    ? `https://${suffix}`
+    : `http://${suffix}`;
 }

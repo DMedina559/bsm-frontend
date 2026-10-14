@@ -6,7 +6,7 @@ import { operationCoordinator } from "../app/operationCoordinator";
  * Handles fetch logic, headers, authentication, and response parsing.
  */
 import { sessionRuntime } from "../app/sessionRuntime";
-import { getApiProxyBasePath } from "../utils/basePath";
+import { getApiProxyBasePath, serializeHttpUrl } from "../utils/basePath";
 
 import { logger } from "../utils/logger";
 
@@ -89,7 +89,10 @@ export function resolveApiUrl(url) {
       null,
     );
   }
-  return finalUrl;
+  return serializeHttpUrl(
+    target,
+    finalUrl.startsWith("/") && !finalUrl.startsWith("//"),
+  );
 }
 
 /**

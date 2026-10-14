@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { getApiProxyBasePath, resolveAppAssetUrl } from "./basePath";
+import {
+  getApiProxyBasePath,
+  resolveAppAssetUrl,
+  serializeHttpUrl,
+} from "./basePath";
 
 const originalWindow = globalThis.window;
 const originalLocation = Object.getOwnPropertyDescriptor(
@@ -71,4 +75,27 @@ it("rejects executable and foreign asset URLs", () => {
   expect(resolveAppAssetUrl("/app/assets/theme.css?v=revision")).toBe(
     "/app/assets/theme.css?v=revision",
   );
+});
+
+it("serializes HTTP URLs with fixed prefixes and preserves encoded paths", () => {
+  const url = new URL(
+    "https://backend.example:11325/%2Ftoken/icon.png?a=1&b=2#image",
+  );
+  expect(serializeHttpUrl(url)).toBe(
+    "https://backend.example:11325/%2Ftoken/icon.png?a=1&b=2#image",
+  );
+  expect(serializeHttpUrl(url, true)).toBe("/%2Ftoken/icon.png?a=1&b=2#image");
+  expect(serializeHttpUrl(new URL("http://backend.example/icon.png"))).toBe(
+    "http://backend.example/icon.png",
+  );
+  expect(() => serializeHttpUrl(new URL("javascript:alert(1)"))).toThrow();
+});
+
+it("keeps double-slash paths on their validated origin", () => {
+  expect(
+    serializeHttpUrl(
+      new URL("https://frontend.example//attacker.example/icon.png"),
+      true,
+    ),
+  ).toBe("https://frontend.example//attacker.example/icon.png");
 });
