@@ -28,6 +28,10 @@ globalThis.WebSocket = MockWebSocket;
 const localStorageMock = (function () {
   let store = {};
   return {
+    get length() {
+      return Object.keys(store).length;
+    },
+    key: vi.fn((index) => Object.keys(store)[index] ?? null),
     getItem: vi.fn((key) => store[key] || null),
     setItem: vi.fn((key, value) => {
       store[key] = value.toString();
@@ -47,6 +51,10 @@ Object.defineProperty(globalThis, "localStorage", {
 const sessionStorageMock = (function () {
   let store = {};
   return {
+    get length() {
+      return Object.keys(store).length;
+    },
+    key: vi.fn((index) => Object.keys(store)[index] ?? null),
     getItem: vi.fn((key) => store[key] || null),
     setItem: vi.fn((key, value) => {
       store[key] = value.toString();

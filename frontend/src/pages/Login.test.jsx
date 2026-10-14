@@ -81,7 +81,12 @@ describe("Login", () => {
         });
       if (url === "/api/account") return Promise.reject({ status: 401 });
       if (url === "/auth/token")
-        return Promise.resolve({ ok: false, status: 401 });
+        return Promise.resolve({
+          ok: false,
+          status: 401,
+          headers: new Headers({ "content-type": "application/json" }),
+          json: async () => ({ detail: "Invalid username or password" }),
+        });
       return Promise.resolve({ ok: true });
     });
 

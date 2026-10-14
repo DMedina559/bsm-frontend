@@ -16,6 +16,7 @@ export default [
         ...globals.browser,
         ...globals.jest, // For tests if we use Jest/Vitest globals
         __APP_VERSION__: "readonly",
+        __THEME_REVISION__: "readonly",
       },
       parserOptions: {
         ecmaVersion: "latest",
@@ -53,6 +54,33 @@ export default [
     files: ["**/*Context.jsx", "**/test/utils.jsx"],
     rules: {
       "react-refresh/only-export-components": "off",
+    },
+  },
+  {
+    files: ["src/**/*.{js,jsx}"],
+    ignores: [
+      "src/**/*.test.*",
+      "src/test/**",
+      "src/api/**",
+      "src/pages/Content.jsx",
+      "src/features/plugins/**",
+    ],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            "./api/transport",
+            "../api/transport",
+            "../../api/transport",
+          ].map((name) => ({
+            name,
+            importNames: ["request", "get", "post", "put", "del"],
+            message:
+              "Use callOperation for core API requests; the generic transport is reserved for plugin routes and file transfers.",
+          })),
+        },
+      ],
     },
   },
   prettierConfig,

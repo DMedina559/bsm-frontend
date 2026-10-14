@@ -1,9 +1,13 @@
 import { render, screen, waitFor, fireEvent, act } from "../test/utils";
 import Sidebar from "./Sidebar";
 import { vi, describe, it, expect, beforeEach } from "vitest";
-import * as api from "../api";
+import * as api from "../test/httpFixtures";
+import { within } from "@testing-library/react";
 
-vi.mock("../api");
+vi.mock("../api/transport", async (importOriginal) => {
+  const { createHttpTransport } = await import("../test/httpFixtures");
+  return createHttpTransport(await importOriginal());
+});
 
 describe("Sidebar", () => {
   beforeEach(() => {
@@ -48,7 +52,7 @@ describe("Sidebar", () => {
       if (url === "/api/info")
         return Promise.resolve({
           status: "success",
-          info: { splash_text: "Splash!" },
+          info: { splash_text: "Splash!", app_version: "4.0.0b2.dev4" },
         });
       // Fallback for context calls if they use get
       if (url === "/api/account")
@@ -73,11 +77,54 @@ describe("Sidebar", () => {
     });
 
     expect(screen.getByText("Monitor")).toBeInTheDocument();
-    expect(screen.getByText("Settings")).toBeInTheDocument();
+    const group = (name) =>
+      within(screen.getByRole("heading", { name }).closest(".nav-group"));
+    expect(
+      group("Selected server").getByRole("link", { name: "Settings" }),
+    ).toBeInTheDocument();
+    expect(
+      group("Global").getByRole("link", { name: "Settings" }),
+    ).toHaveAttribute("href", "/bsm-settings");
+    expect(
+      group("Global").getByRole("link", { name: "Players" }),
+    ).toHaveAttribute("href", "/global-players");
+    expect(
+      group("Plugins").getByRole("link", { name: "Settings" }),
+    ).toHaveAttribute("href", "/plugin-settings");
+    expect(
+      group("Plugins").getByRole("link", { name: "Manage" }),
+    ).toHaveAttribute("href", "/plugins");
     // Admin item
     expect(screen.getByText("Install Server")).toBeInTheDocument();
   });
 
+  it("keeps Appearance and Account navigation states separate", async () => {
+    window.history.replaceState({}, "", "/appearance");
+    await act(async () => {
+      render(<Sidebar />);
+    });
+    const appearance = screen.getByRole("link", { name: "Appearance" });
+    const account = screen.getByRole("link", { name: "Account" });
+    expect(appearance).toHaveAttribute("href", "/appearance");
+    expect(appearance).toHaveAttribute("aria-current", "page");
+    expect(account).not.toHaveAttribute("aria-current");
+    fireEvent.click(account);
+    await waitFor(() =>
+      expect(account).toHaveAttribute("aria-current", "page"),
+    );
+    expect(appearance).not.toHaveAttribute("aria-current");
+    window.history.replaceState({}, "", "/");
+  });
+
+  it("shows the API backend version in the heading without duplicating it in the footer", async () => {
+    render(<Sidebar />);
+    await waitFor(() =>
+      expect(screen.getByText("Version 4.0.0b2.dev4")).toBeInTheDocument(),
+    );
+    expect(screen.queryByText("Version 4.0")).not.toBeInTheDocument();
+    expect(screen.queryByText("Backend 4.0.0b2.dev4")).not.toBeInTheDocument();
+    expect(screen.getByText(/Frontend/)).toBeInTheDocument();
+  });
   it("displays splash text", async () => {
     await act(async () => {
       render(<Sidebar />);
@@ -127,7 +174,7 @@ describe("Sidebar", () => {
     });
 
     await waitFor(() => {
-      expect(screen.queryByText("Overview")).not.toBeInTheDocument();
+      expect(screen.getByLabelText("Main navigation")).toHaveClass("collapsed");
     });
 
     const expandBtn = screen.getByRole("button", { name: "Expand Sidebar" });
@@ -152,8 +199,11 @@ describe("Sidebar", () => {
       fireEvent.click(logoutBtn);
     });
 
-    const api = await import("../api");
-    expect(api.request).toHaveBeenCalledWith("/auth/logout");
+    const api = await import("../api/transport");
+    expect(api.request).toHaveBeenCalledWith(
+      "/auth/logout",
+      expect.objectContaining({ method: "GET" }),
+    );
   });
 
   it("highlights the active plugin page based on URL", async () => {
@@ -171,7 +221,7 @@ describe("Sidebar", () => {
       if (url === "/api/info")
         return Promise.resolve({
           status: "success",
-          info: { splash_text: "Splash!" },
+          info: { splash_text: "Splash!", app_version: "4.0.0b2.dev4" },
         });
       if (url === "/api/account")
         return Promise.resolve({ username: "testuser", role: "admin" });

@@ -1,0 +1,45 @@
+name: Backend OpenAPI Contract
+
+on:
+  workflow_dispatch:
+  #schedule:
+  #  - cron: '23 8 * * *'
+  push:
+    branches-ignore:
+      - 'main'
+    paths:
+      - 'frontend/**'
+      - 'scripts/**'
+      - '.github/workflows/backend-contract.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-contract:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.14']
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v7
+        with:
+          repository: DMedina559/bedrock-server-manager
+          ref: dev
+          path: backend-contract
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install backend-owned contract tooling
+        run: python -m pip install './backend-contract'
+      - name: Compare client contract with backend dev
+        run: python -m bedrock_server_manager.web.contract --output /tmp/backend-openapi.json --check frontend/src/api/generated/openapi.json

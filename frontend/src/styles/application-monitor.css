@@ -1,0 +1,385 @@
+.application-monitor-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bsm-space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--bsm-space-2);
+}
+.application-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--bsm-space-2);
+  margin: 0;
+}
+.application-metric-grid > div,
+.application-chart {
+  background: var(--bsm-surface-raised);
+  border: 1px solid var(--border-color);
+  border-radius: var(--bsm-radius-md);
+  padding: var(--bsm-space-3);
+  min-width: 0;
+}
+.application-metric-grid dt {
+  font-size: 0.75rem;
+  color: var(--text-color-secondary);
+}
+.application-metric-grid dd {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: var(--bsm-space-1) 0 0;
+  overflow-wrap: anywhere;
+}
+.application-monitor .application-monitor-heading h1 {
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: var(--bsm-space-2);
+  margin: 0;
+}
+.application-monitor-heading p,
+.application-metrics-hint {
+  color: var(--text-color-secondary);
+  font-size: 0.8rem;
+  margin: var(--bsm-space-2) 0;
+}
+.application-charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--bsm-grid-gap);
+  margin: var(--bsm-grid-gap) 0;
+}
+.application-monitor .application-chart h2,
+.application-monitor .application-server-metrics h2 {
+  font-size: 1rem;
+  margin: 0 0 var(--bsm-space-2);
+}
+.application-chart-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bsm-space-3);
+  font-size: 0.75rem;
+  margin-bottom: var(--bsm-space-2);
+}
+.application-chart-canvas {
+  height: 220px;
+  min-width: 0;
+}
+@media (max-width: 900px) {
+  .application-charts {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 600px) {
+  .application-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.application-summary-groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--bsm-space-3);
+}
+.application-summary-groups h3 {
+  margin: 0 0 var(--bsm-space-2);
+  font-size: 0.8rem;
+  color: var(--text-color-secondary);
+}
+.application-summary-groups .application-metric-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.application-summary-groups .application-metric-grid > div {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+}
+.application-health {
+  position: relative;
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+}
+.application-health summary {
+  cursor: pointer;
+  list-style: none;
+  padding: var(--bsm-space-2);
+  border: 1px solid var(--border-color);
+  border-radius: var(--bsm-radius-md);
+}
+.application-health summary::-webkit-details-marker {
+  display: none;
+}
+.application-health summary:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+.health-healthy summary,
+.check-healthy {
+  color: var(--bsm-success);
+}
+.health-degraded summary,
+.check-degraded {
+  color: var(--bsm-warning);
+}
+.application-health-popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + var(--bsm-space-2));
+  z-index: 20;
+  width: min(320px, 75vw);
+  padding: var(--bsm-space-3);
+  background: var(--container-background-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--bsm-radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+.application-health-popover h3 {
+  margin: 0 0 var(--bsm-space-2);
+  font-size: 0.9rem;
+}
+.application-health-popover ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.application-health-popover li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--bsm-space-1);
+  padding: var(--bsm-space-2) 0;
+}
+.application-health-popover small {
+  grid-column: 1 / -1;
+  color: var(--text-color-secondary);
+}
+@media (max-width: 600px) {
+  .application-summary-groups {
+    grid-template-columns: 1fr;
+  }
+  .application-health summary {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+}
+
+.application-health summary {
+  display: flex;
+  align-items: center;
+  gap: var(--bsm-space-2);
+}
+.application-health-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+.health-unavailable summary {
+  color: var(--bsm-warning);
+}
+
+.application-health-checked {
+  display: block;
+  font-size: 0.7rem;
+  line-height: 1.3;
+  color: var(--text-color-secondary);
+  margin: var(--bsm-space-1) 0 var(--bsm-space-2);
+}
+
+/* Application monitor uses the active theme and readable sizes in both densities. */
+.application-monitor {
+  min-width: 0;
+}
+.monitor-page-heading {
+  margin-bottom: 0.85rem;
+}
+.application-monitor .monitor-page-heading h1 {
+  margin: 0;
+  font-size: clamp(1.6rem, 3vw, 2rem);
+  line-height: 1.25;
+}
+.monitor-page-heading p {
+  color: var(--text-color-secondary);
+  margin: 0.4rem 0 0;
+  font-size: 1rem;
+}
+.monitor-live-strip,
+.monitor-panel {
+  border: 1px solid var(--border-color);
+  background: var(--bsm-surface-raised);
+  border-radius: var(--bsm-radius-md);
+  padding: 0.85rem;
+  margin-bottom: 0.85rem;
+  min-width: 0;
+}
+.monitor-live-strip,
+.monitor-live-strip > div:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+.monitor-live-strip {
+  justify-content: space-between;
+  padding-block: 0.5rem;
+}
+.monitor-live-strip .diagnostic-actions {
+  margin: 0;
+}
+.application-monitor .monitor-view-title {
+  font-size: 1.2rem;
+  margin: 0;
+}
+.monitor-live-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.monitor-live-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--bsm-success);
+}
+.monitor-live-dot.is-paused {
+  background: var(--bsm-warning);
+}
+.application-monitor .monitor-muted,
+.application-monitor .application-metrics-hint,
+.application-monitor-heading p {
+  color: var(--text-color-secondary);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+.monitor-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1.25rem 0;
+}
+.monitor-navigation button {
+  color: var(--text-color);
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 0.65rem 1rem;
+  border-radius: var(--bsm-radius-md);
+  min-height: 44px;
+  font: inherit;
+  cursor: pointer;
+}
+.monitor-navigation button[aria-current="page"] {
+  border-color: var(--border-color);
+  background: var(--bsm-surface-raised);
+  font-weight: 700;
+}
+.monitor-navigation button:focus-visible,
+.monitor-tabs button:focus-visible {
+  outline: 2px solid var(--bsm-focus);
+  outline-offset: 2px;
+}
+.monitor-resource-summary {
+  gap: 0.75rem;
+}
+.application-monitor .monitor-resource-summary > div {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem;
+}
+.monitor-resource-summary svg {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  color: var(--primary-color);
+}
+.application-monitor .monitor-resource-summary dt {
+  font-size: 1rem;
+}
+.application-monitor .monitor-resource-summary dd {
+  font-size: clamp(1.2rem, 1.8vw, 1.5rem);
+  line-height: 1.25;
+}
+.monitor-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+}
+.monitor-detail-grid > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem;
+  border-bottom: 1px solid var(--border-color);
+  min-width: 0;
+}
+.monitor-detail-grid dt {
+  color: var(--text-color-secondary);
+}
+.monitor-detail-grid dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.application-monitor .application-chart {
+  padding: 0.85rem;
+}
+.application-monitor .application-chart h2,
+.application-monitor .monitor-panel h2 {
+  font-size: 1.2rem;
+  margin: 0 0 0.75rem;
+}
+.application-chart-canvas {
+  height: 280px;
+}
+.application-chart-key {
+  font-size: 0.95rem;
+}
+.application-chart-empty {
+  display: grid;
+  place-content: center;
+  text-align: center;
+  height: 100%;
+  color: var(--text-color-secondary);
+}
+.application-monitor .monitor-tabs button {
+  min-height: 44px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+@media (max-width: 1100px) {
+  .monitor-resource-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .monitor-detail-grid {
+    grid-template-columns: 1fr;
+  }
+  .application-monitor .monitor-resource-summary > div {
+    padding: 0.75rem;
+    flex-direction: column;
+    align-items: start;
+    gap: 0.4rem;
+  }
+  .monitor-resource-summary dd {
+    overflow-wrap: anywhere;
+  }
+  .application-chart-canvas {
+    height: 240px;
+  }
+  .monitor-live-strip {
+    padding: 1rem;
+  }
+}
+.application-monitor .action-button,
+.application-monitor .server-table {
+  font-size: 0.95rem;
+}
+.application-monitor .server-table th {
+  font-size: 0.95rem;
+}
+.application-monitor .action-button {
+  min-height: 44px;
+}

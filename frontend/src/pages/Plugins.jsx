@@ -1,67 +1,55 @@
-import React, { useCallback, useEffect, useState } from "react";
+import { callOperation } from "../api/operations";
+import QueryStatus from "../components/QueryStatus";
+import { queryKeys } from "../app/queryKeys";
+import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { Plug, RefreshCw, ToggleLeft, ToggleRight } from "lucide-react";
-import { useToast } from "../ToastContext";
-import { get, post, put } from "../api";
+import { useToast } from "../contexts/ToastContext";
 
 const Plugins = () => {
-  const [plugins, setPlugins] = useState([]);
-  const [loading, setLoading] = useState(true);
   const { addToast } = useToast();
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("all");
+  const write = useResourceMutation(
+    ({ id, options }, { session }) =>
+      callOperation(id, { ...options, session }),
+    [queryKeys.plugins()],
+  );
+  /** @type {typeof callOperation} */
+  const writeOperation = (id, ...args) =>
+    write.mutateAsync({ id, options: args[0] });
 
-  const fetchPlugins = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await get("/api/plugins");
-      if (data && data.status === "success" && data.plugins) {
-        const pluginsArray = Object.entries(data.plugins).map(
-          ([name, details]) => ({
-            name,
-            ...details,
-          }),
-        );
-        pluginsArray.sort((a, b) => a.name.localeCompare(b.name));
-        setPlugins(pluginsArray);
-      } else {
-        addToast("Failed to fetch plugins", "error");
-        setPlugins([]);
-      }
-    } catch (error) {
-      addToast(error.message || "Error fetching plugins", "error");
-    } finally {
-      setLoading(false);
-    }
-  }, [addToast]);
-
-  useEffect(() => {
-    fetchPlugins();
-  }, [fetchPlugins]);
-
+  const resourceQuery = useResourceQuery("plugins", undefined);
+  const plugins = resourceQuery.data ?? [];
+  const loading = resourceQuery.isFetching || write.isPending;
+  const fetchPlugins = async () => {
+    const result = await resourceQuery.refetch();
+    if (result.error) addToast(result.error.message, "error");
+    return result.isSuccess;
+  };
   const handleReload = async () => {
     addToast("Reloading plugins...", "info");
     try {
-      await put("/api/plugins/reload");
+      await writeOperation("reload_plugins");
       addToast("Plugins reloaded successfully", "success");
-      fetchPlugins();
     } catch (error) {
       addToast(error.message || "Failed to reload plugins", "error");
     }
   };
-
   const handleToggle = async (pluginName, currentEnabled) => {
     const newEnabled = !currentEnabled;
     try {
       // API expects POST for setting status
-      await post(`/api/plugins/${pluginName}`, { enabled: newEnabled });
+      await writeOperation("set_plugin_status", {
+        path: { plugin_name: pluginName },
+        body: {
+          enabled: newEnabled,
+        },
+      });
       addToast(
         `Plugin ${pluginName} ${newEnabled ? "enabled" : "disabled"}.`,
         "success",
-      );
-
-      // Optimistic update
-      setPlugins((prev) =>
-        prev.map((p) =>
-          p.name === pluginName ? { ...p, enabled: newEnabled } : p,
-        ),
       );
     } catch (error) {
       addToast(
@@ -71,9 +59,9 @@ const Plugins = () => {
       fetchPlugins(); // Fetch fresh state to be sure.
     }
   };
-
   return (
     <div className="container">
+      <QueryStatus query={resourceQuery} />
       <div
         className="header"
         style={{
@@ -88,120 +76,105 @@ const Plugins = () => {
           onClick={handleReload}
           disabled={loading}
           title="Reload all plugins"
+          type="button"
         >
           <RefreshCw
             size={16}
-            style={{ marginRight: "5px" }}
+            style={{
+              marginRight: "calc(5px * var(--bsm-spacing-scale))",
+            }}
             className={loading ? "spin" : ""}
           />{" "}
           Reload Plugins
         </button>
       </div>
 
-      {loading ? (
-        <div style={{ textAlign: "center", padding: "20px" }}>
-          <RefreshCw
-            className="spin"
-            style={{ display: "inline-block", marginRight: "10px" }}
-          />{" "}
-          Loading plugins...
-        </div>
-      ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-            gap: "20px",
-            marginTop: "20px",
-          }}
+      <div className="plugin-toolbar">
+        <input
+          className="form-input"
+          aria-label="Search plugins"
+          type="search"
+          placeholder="Search plugins…"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+        />
+        <select
+          className="form-input"
+          aria-label="Plugin status"
+          value={filter}
+          onChange={(event) => setFilter(event.target.value)}
         >
-          {plugins.length === 0 ? (
-            <p style={{ color: "#aaa" }}>No plugins installed.</p>
-          ) : (
-            plugins.map((plugin) => (
-              <div
-                key={plugin.name}
-                style={{
-                  background: "var(--container-background-color, #333)",
-                  border: "1px solid var(--border-color, #555)",
-                  padding: "15px",
-                  display: "flex",
-                  flexDirection: "column",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    marginBottom: "10px",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                    }}
-                  >
-                    <Plug size={20} />
-                    <h3 style={{ margin: 0, fontSize: "1.1em" }}>
-                      {plugin.name}
-                    </h3>
-                  </div>
-
-                  <button
-                    onClick={() => handleToggle(plugin.name, plugin.enabled)}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      color: plugin.enabled
-                        ? "var(--primary-button-background-color)"
-                        : "#777",
-                    }}
-                    title={plugin.enabled ? "Disable" : "Enable"}
-                  >
-                    {plugin.enabled ? (
-                      <ToggleRight size={32} />
-                    ) : (
-                      <ToggleLeft size={32} />
-                    )}
-                  </button>
-                </div>
-
-                <p
-                  style={{
-                    margin: "5px 0",
-                    color: "#ccc",
-                    fontSize: "0.9em",
-                    flexGrow: 1,
-                  }}
-                >
-                  {plugin.description || "No description provided."}
-                </p>
-
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: "15px",
-                    fontSize: "0.85em",
-                    color: "#888",
-                    borderTop: "1px solid var(--border-color, #555)",
-                    paddingTop: "10px",
-                  }}
-                >
-                  <span>v{plugin.version || "N/A"}</span>
-                  <span>{plugin.author || "Unknown Author"}</span>
-                </div>
+          <option value="all">All plugins ({plugins.length})</option>
+          <option value="enabled">Enabled</option>
+          <option value="disabled">Disabled</option>
+          <option value="error">Errors</option>
+        </select>
+        <Link className="action-button secondary" to="/plugin-settings">
+          Plugin Settings
+        </Link>
+      </div>
+      {resourceQuery.isPending && <p>Loading plugins…</p>}
+      <div className="plugin-grid">
+        {plugins
+          .filter(
+            (plugin) =>
+              `${plugin.name} ${plugin.description} ${plugin.author}`
+                .toLowerCase()
+                .includes(search.toLowerCase()) &&
+              (filter === "all" ||
+                (filter === "enabled" && plugin.enabled) ||
+                (filter === "disabled" && !plugin.enabled) ||
+                (filter === "error" && plugin.status === "ERROR")),
+          )
+          .map((plugin) => (
+            <article className="plugin-card" key={plugin.name}>
+              <div className="plugin-card-heading">
+                <Plug size={20} />
+                <h3>{plugin.name}</h3>
+                <span className="status-badge">
+                  {plugin.status === "UNKNOWN" || !plugin.status
+                    ? plugin.enabled
+                      ? "Enabled"
+                      : "Disabled"
+                    : plugin.status}
+                </span>
               </div>
-            ))
-          )}
-        </div>
+              <p>{plugin.description || "No description provided."}</p>
+              <div className="plugin-card-footer">
+                <span>v{plugin.version || "N/A"}</span>
+                <span>{plugin.author || "Unknown Author"}</span>
+              </div>
+              <div className="plugin-card-heading">
+                {plugin.has_settings && (
+                  <Link
+                    className="action-button secondary"
+                    to={`/plugin-settings?plugin=${encodeURIComponent(plugin.name)}`}
+                  >
+                    Settings
+                  </Link>
+                )}
+                <button
+                  className="action-button secondary"
+                  disabled={loading}
+                  onClick={() => handleToggle(plugin.name, plugin.enabled)}
+                  title={plugin.enabled ? "Disable" : "Enable"}
+                  type="button"
+                >
+                  {plugin.enabled ? (
+                    <ToggleRight size={18} />
+                  ) : (
+                    <ToggleLeft size={18} />
+                  )}{" "}
+                  {plugin.enabled ? "Disable" : "Enable"}
+                </button>
+              </div>
+            </article>
+          ))}
+      </div>
+      {!resourceQuery.isPending && plugins.length === 0 && (
+        <p>No plugins installed.</p>
       )}
     </div>
   );
 };
-
 export default Plugins;

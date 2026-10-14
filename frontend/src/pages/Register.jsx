@@ -1,113 +1,125 @@
-import React, { useState, useEffect } from "react";
+import { usePublicQuery, useScopedMutation } from "../app/publicRequests";
+import { callOperation } from "../api/operations";
+import AuthBrand from "../components/AuthBrand";
+import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useToast } from "../ToastContext";
-import { get, post } from "../api";
+import { useToast } from "../contexts/ToastContext";
 
 const Register = () => {
-  const { token } = useParams();
-
+  const { token = "" } = useParams();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [tokenValid, setTokenValid] = useState(null);
+  const tokenQuery = usePublicQuery(
+    ["registration", token],
+    ({ signal }) =>
+      callOperation("validate_registration_token", { path: { token }, signal }),
+    { enabled: Boolean(token), staleTime: 0 },
+  );
+  const tokenValid = tokenQuery.isSuccess
+    ? true
+    : tokenQuery.isError
+      ? false
+      : null;
+  const write = useScopedMutation(`register:${token}`, (body, { signal }) =>
+    callOperation("register_user", { path: { token }, body, signal }),
+  );
+  const loading = write.isPending;
   const { addToast } = useToast();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const validateToken = async () => {
-      if (!token) return;
-      try {
-        await get(`/api/register/validate/${token}`);
-        setTokenValid(true);
-      } catch {
-        setTokenValid(false);
-      }
-    };
-    validateToken();
-  }, [token]);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return;
     if (!username || !password || !confirmPassword) {
       addToast("All fields are required", "error");
       return;
     }
-
     if (password !== confirmPassword) {
       addToast("Passwords do not match", "error");
       return;
     }
-
-    if (!tokenValid) {
+    if (!token || !tokenValid) {
       addToast("Invalid registration link.", "error");
       return;
     }
-
-    setLoading(true);
     try {
-      await post(`/api/register/${token}`, { username, password });
+      await write.mutateAsync({ username, password });
       addToast("Registration successful! Please login.", "success");
       navigate("/login");
     } catch (error) {
+      if (error.name === "AbortError") return;
       addToast(error.message || "Registration failed.", "error");
-    } finally {
-      setLoading(false);
     }
   };
-
   if (!token) {
     return (
       <div
-        className="container"
-        style={{ marginTop: "100px", textAlign: "center" }}
+        className="container auth-page"
+        style={{
+          marginTop: "calc(100px * var(--bsm-spacing-scale))",
+          textAlign: "center",
+        }}
       >
-        <div className="message-box message-error">
+        <div className="message-box message-error" role="alert">
           Invalid registration link. Token is missing.
         </div>
       </div>
     );
   }
-
   if (tokenValid === false) {
     return (
       <div
-        className="container"
-        style={{ marginTop: "100px", textAlign: "center" }}
+        className="container auth-page"
+        style={{
+          marginTop: "calc(100px * var(--bsm-spacing-scale))",
+          textAlign: "center",
+        }}
       >
-        <div className="message-box message-error">
+        <div className="message-box message-error" role="alert">
           Invalid or expired registration link.
         </div>
       </div>
     );
   }
-
   if (tokenValid === null) {
     return (
       <div
-        className="container"
-        style={{ marginTop: "100px", textAlign: "center" }}
+        className="container auth-page"
+        style={{
+          marginTop: "calc(100px * var(--bsm-spacing-scale))",
+          textAlign: "center",
+        }}
       >
         <div
           className="spinner"
-          style={{ display: "inline-block", marginRight: "10px" }}
+          style={{
+            display: "inline-block",
+            marginRight: "calc(10px * var(--bsm-spacing-scale))",
+          }}
         ></div>{" "}
         Checking registration link...
       </div>
     );
   }
-
   return (
     <div
-      className="container"
-      style={{ maxWidth: "400px", marginTop: "100px" }}
+      className="container auth-page"
+      style={{
+        maxWidth: "400px",
+        marginTop: "calc(100px * var(--bsm-spacing-scale))",
+      }}
     >
+      <AuthBrand />
       <div className="header">
         <h1>Register</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="form-group">
-        <div style={{ marginBottom: "15px" }}>
+        <div
+          style={{
+            marginBottom: "calc(15px * var(--bsm-spacing-scale))",
+          }}
+        >
           <label className="form-label" htmlFor="username">
             Username
           </label>
@@ -119,10 +131,15 @@ const Register = () => {
             onChange={(e) => setUsername(e.target.value)}
             required
             autoComplete="username"
+            disabled={loading}
           />
         </div>
 
-        <div style={{ marginBottom: "15px" }}>
+        <div
+          style={{
+            marginBottom: "calc(15px * var(--bsm-spacing-scale))",
+          }}
+        >
           <label className="form-label" htmlFor="password">
             Password
           </label>
@@ -134,10 +151,15 @@ const Register = () => {
             onChange={(e) => setPassword(e.target.value)}
             required
             autoComplete="new-password"
+            disabled={loading}
           />
         </div>
 
-        <div style={{ marginBottom: "20px" }}>
+        <div
+          style={{
+            marginBottom: "calc(20px * var(--bsm-spacing-scale))",
+          }}
+        >
           <label className="form-label" htmlFor="confirmPassword">
             Confirm Password
           </label>
@@ -149,6 +171,7 @@ const Register = () => {
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
             autoComplete="new-password"
+            disabled={loading}
           />
         </div>
 
@@ -156,7 +179,10 @@ const Register = () => {
           type="submit"
           className="action-button"
           disabled={loading}
-          style={{ width: "100%", justifyContent: "center" }}
+          style={{
+            width: "100%",
+            justifyContent: "center",
+          }}
         >
           {loading ? "Registering..." : "Register"}
         </button>
@@ -164,5 +190,4 @@ const Register = () => {
     </div>
   );
 };
-
 export default Register;

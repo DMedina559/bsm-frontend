@@ -1,9 +1,12 @@
 import { render, screen, fireEvent, waitFor } from "../test/utils";
 import BSMSettings from "./BSMSettings";
 import { vi, describe, it, expect, beforeEach } from "vitest";
-import * as api from "../api";
+import * as api from "../test/httpFixtures";
 
-vi.mock("../api");
+vi.mock("../api/transport", async (importOriginal) => {
+  const { createHttpTransport } = await import("../test/httpFixtures");
+  return createHttpTransport(await importOriginal());
+});
 
 describe("BSMSettings", () => {
   beforeEach(() => {
@@ -37,7 +40,7 @@ describe("BSMSettings", () => {
       expect(screen.getByText("Global Settings")).toBeInTheDocument();
     });
     // Section headers
-    expect(screen.getByText("server")).toBeInTheDocument();
+    expect(await screen.findByText("server")).toBeInTheDocument();
     // Inputs
     expect(screen.getByDisplayValue("Bedrock Server")).toBeInTheDocument();
     expect(screen.getByDisplayValue("19132")).toBeInTheDocument();
@@ -57,9 +60,15 @@ describe("BSMSettings", () => {
     fireEvent.click(saveBtn);
 
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith(
+      expect(api.request).toHaveBeenCalledWith(
         "/api/settings/set",
-        expect.objectContaining({ key: "server.name", value: "New Name" }),
+        expect.objectContaining({
+          method: "POST",
+          body: expect.objectContaining({
+            key: "server.name",
+            value: "New Name",
+          }),
+        }),
       );
     });
   });

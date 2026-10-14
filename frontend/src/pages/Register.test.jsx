@@ -3,7 +3,10 @@ import Register from "./Register";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { Routes, Route } from "react-router-dom";
 
-vi.mock("../api");
+vi.mock("../api/transport", async (importOriginal) => {
+  const { createHttpTransport } = await import("../test/httpFixtures");
+  return createHttpTransport(await importOriginal());
+});
 
 describe("Register", () => {
   beforeEach(() => {
@@ -12,7 +15,7 @@ describe("Register", () => {
 
   it("validates token on mount and renders form", async () => {
     // Mock validation via api.get
-    const api = await import("../api");
+    const api = await import("../test/httpFixtures");
     api.get.mockImplementation(async (url) => {
       if (url.includes("/api/setup/status")) {
         return { needs_setup: false };
@@ -40,7 +43,7 @@ describe("Register", () => {
   });
 
   it("shows error for invalid token", async () => {
-    const api = await import("../api");
+    const api = await import("../test/httpFixtures");
     api.get.mockImplementation(async (url) => {
       if (url.includes("/api/setup/status")) {
         return { needs_setup: false };

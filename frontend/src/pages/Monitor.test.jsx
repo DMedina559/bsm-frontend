@@ -1,9 +1,13 @@
 import { render, screen, waitFor } from "../test/utils";
+import { fireEvent } from "@testing-library/react";
 import Monitor from "./Monitor";
 import { vi, describe, it, expect, beforeEach } from "vitest";
-import * as api from "../api";
+import * as api from "../test/httpFixtures";
 
-vi.mock("../api");
+vi.mock("../api/transport", async (importOriginal) => {
+  const { createHttpTransport } = await import("../test/httpFixtures");
+  return createHttpTransport(await importOriginal());
+});
 
 // Mock Recharts to avoid complex SVG rendering issues
 vi.mock("recharts", async () => {
@@ -43,16 +47,22 @@ describe("Monitor", () => {
       if (url.includes("/process_info")) {
         return Promise.resolve({
           status: "success",
-          data: {
-            process_info: {
-              pid: 12345,
-              uptime: "1h 30m",
-              cpu_percent: 10.5,
-              memory_mb: 2048,
-            },
+          process_info: {
+            pid: 12345,
+            uptime: "1h 30m",
+            cpu_percent: 10.5,
+            memory_mb: 2048,
           },
         });
       }
+      if (url.startsWith("/api/logs/history"))
+        return Promise.resolve({
+          data: "",
+          start: 0,
+          end: 0,
+          file_id: "test-log",
+          has_more: false,
+        });
       return Promise.resolve({});
     });
   });
@@ -75,6 +85,35 @@ describe("Monitor", () => {
     await waitFor(() => {
       expect(screen.getByText("Process Status")).toBeInTheDocument();
     });
+
+    expect(await screen.findByText("1h 30m")).toBeInTheDocument();
+
+    expect(
+      screen.getByRole("button", { name: "Start", exact: true }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Stop", exact: true }),
+    ).toBeEnabled();
+    expect(
+      screen.getByRole("textbox", { name: "Console command" }),
+    ).toBeEnabled();
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Refresh server status" }),
+      ).toBeEnabled(),
+    );
+    const before = api.get.mock.calls.filter(([url]) =>
+      url.includes("/process_info"),
+    ).length;
+    fireEvent.click(
+      screen.getByRole("button", { name: "Refresh server status" }),
+    );
+    await waitFor(() =>
+      expect(
+        api.get.mock.calls.filter(([url]) => url.includes("/process_info"))
+          .length,
+      ).toBeGreaterThan(before),
+    );
 
     // Check console
     await waitFor(() => {

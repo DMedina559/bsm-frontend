@@ -74,3 +74,20 @@ describe("logger", () => {
     consoleSpy.mockRestore();
   });
 });
+
+describe("credential redaction", () => {
+  it("redacts secrets recursively without mutating the input", async () => {
+    const { redactLogValue } = await import("./logger");
+    const value = {
+      headers: { Authorization: "Bearer secret" },
+      password: "hidden",
+      data: { access_token: "token", count: 2 },
+    };
+    expect(redactLogValue(value)).toEqual({
+      headers: { Authorization: "[REDACTED]" },
+      password: "[REDACTED]",
+      data: { access_token: "[REDACTED]", count: 2 },
+    });
+    expect(value.password).toBe("hidden");
+  });
+});

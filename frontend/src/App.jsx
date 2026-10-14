@@ -1,33 +1,38 @@
-import React from "react";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./app/queryClient";
+import DraftNavigationGuard from "./components/DraftNavigationGuard";
+import { DialogProvider } from "./contexts/DialogContext";
+import React, { Suspense, lazy } from "react";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { useAuth, AuthProvider } from "./AuthContext";
-import { ToastProvider } from "./ToastContext";
-import { getApiBaseUrl } from "./api";
-import { getApiProxyBasePath } from "./utils/basePath";
-import { ServerProvider } from "./ServerContext";
-import { WebSocketProvider } from "./WebSocketContext";
-import { ThemeProvider } from "./ThemeContext";
+import { useAuth, AuthProvider } from "./contexts/AuthContext";
+import { ToastProvider } from "./contexts/ToastContext";
+import { ServerProvider } from "./contexts/ServerContext";
+import { WebSocketProvider } from "./contexts/WebSocketContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import Layout from "./layouts/Layout";
 import Login from "./pages/Login";
 import Setup from "./pages/Setup";
 import Register from "./pages/Register";
-import Monitor from "./pages/Monitor";
-import Overview from "./pages/Overview";
-import Backups from "./pages/Backups";
-import ServerProperties from "./pages/ServerProperties";
-import BSMSettings from "./pages/BSMSettings";
-import Content from "./pages/Content";
-import Users from "./pages/Users";
-import AuditLog from "./pages/AuditLog";
-import Account from "./pages/Account";
-import Plugins from "./pages/Plugins";
-import ServerConfig from "./pages/ServerConfig";
-import AccessControl from "./pages/AccessControl";
-import ServerInstall from "./pages/ServerInstall";
-import GlobalPlayers from "./pages/GlobalPlayers";
-import OnlinePlayers from "./pages/OnlinePlayers";
-import DynamicPage from "./components/DynamicPage";
-import Playground from "./pages/Playground";
+const ApplicationMonitor = lazy(() => import("./pages/ApplicationMonitor"));
+const Monitor = lazy(() => import("./pages/Monitor"));
+const Overview = lazy(() => import("./pages/Overview"));
+const Backups = lazy(() => import("./pages/Backups"));
+const ServerProperties = lazy(() => import("./pages/ServerProperties"));
+const BSMSettings = lazy(() => import("./pages/BSMSettings"));
+const Content = lazy(() => import("./pages/Content"));
+const Users = lazy(() => import("./pages/Users"));
+const AuditLog = lazy(() => import("./pages/AuditLog"));
+const Account = lazy(() => import("./pages/Account"));
+const PluginSettings = lazy(() => import("./pages/PluginSettings"));
+const Plugins = lazy(() => import("./pages/Plugins"));
+const ServerConfig = lazy(() => import("./pages/ServerConfig"));
+const AccessControl = lazy(() => import("./pages/AccessControl"));
+const ServerInstall = lazy(() => import("./pages/ServerInstall"));
+const GlobalPlayers = lazy(() => import("./pages/GlobalPlayers"));
+const OnlinePlayers = lazy(() => import("./pages/OnlinePlayers"));
+const DynamicPage = lazy(() => import("./pages/DynamicPage"));
+const Playground = lazy(() => import("./pages/Playground"));
 
 const PrivateRoute = ({ children }) => {
   const { user, loading, needsSetup } = useAuth();
@@ -76,6 +81,7 @@ const AppRoutes = () => {
         }
       >
         <Route index element={<Overview />} />
+        <Route path="application-monitor" element={<ApplicationMonitor />} />
         <Route path="monitor" element={<Monitor />} />
         <Route path="backups" element={<Backups />} />
         <Route path="server-properties" element={<ServerProperties />} />
@@ -85,10 +91,12 @@ const AppRoutes = () => {
         <Route path="bsm-settings" element={<BSMSettings />} />
         <Route path="content" element={<Content />} />
         <Route path="plugins" element={<Plugins />} />
+        <Route path="plugin-settings" element={<PluginSettings />} />
         <Route path="users" element={<Users />} />
         <Route path="global-players" element={<GlobalPlayers />} />
         <Route path="audit-log" element={<AuditLog />} />
         <Route path="account" element={<Account />} />
+        <Route path="appearance" element={<Account appearanceOnly />} />
         <Route path="server-install" element={<ServerInstall />} />
         <Route path="plugin-native-view" element={<DynamicPage />} />
         <Route path="playground" element={<Playground />} />
@@ -127,31 +135,33 @@ const App = () => {
     return () => window.removeEventListener("popstate", checkHiddenFlag);
   }, []);
 
-  // Set custom CSS variable for panorama if remote URL is set
-  React.useEffect(() => {
-    let baseUrl = getApiBaseUrl();
-    if (!baseUrl && typeof window !== "undefined") {
-      baseUrl = getApiProxyBasePath();
-    }
-
-    document.documentElement.style.setProperty(
-      "--background-image",
-      `url("${baseUrl || ""}/api/panorama")`,
-    );
-  }, []);
-
   return (
-    <AuthProvider>
-      <ThemeProvider>
-        <ToastProvider>
-          <WebSocketProvider>
-            <ServerProvider>
-              <AppRoutes />
-            </ServerProvider>
-          </WebSocketProvider>
-        </ToastProvider>
-      </ThemeProvider>
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <ThemeProvider>
+          <ToastProvider>
+            <DialogProvider>
+              <DraftNavigationGuard />
+              <WebSocketProvider>
+                <ServerProvider>
+                  <ErrorBoundary>
+                    <Suspense
+                      fallback={
+                        <div className="app-loading" role="status">
+                          Loading workspace…
+                        </div>
+                      }
+                    >
+                      <AppRoutes />
+                    </Suspense>
+                  </ErrorBoundary>
+                </ServerProvider>
+              </WebSocketProvider>
+            </DialogProvider>
+          </ToastProvider>
+        </ThemeProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 };
 

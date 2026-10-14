@@ -1,9 +1,12 @@
-import { render, screen, waitFor } from "../test/utils";
+import { render, screen, waitFor, fireEvent } from "../test/utils";
 import GlobalPlayers from "./GlobalPlayers";
 import { vi, describe, it, expect, beforeEach } from "vitest";
-import * as api from "../api";
+import * as api from "../test/httpFixtures";
 
-vi.mock("../api");
+vi.mock("../api/transport", async (importOriginal) => {
+  const { createHttpTransport } = await import("../test/httpFixtures");
+  return createHttpTransport(await importOriginal());
+});
 
 describe("GlobalPlayers", () => {
   beforeEach(() => {
@@ -55,4 +58,36 @@ describe("GlobalPlayers", () => {
       expect(noPlayers || failedFetch || success).toBeInTheDocument();
     });
   });
+});
+
+it("shows partial scan results and per-server failures", async () => {
+  api.get.mockResolvedValue({ status: "success", players: [] });
+  api.put.mockResolvedValue({
+    status: "partial",
+    message: "One server could not be scanned.",
+    details: {
+      scan_errors: [
+        {
+          server: "Survival",
+          error: { code: "file_error", message: "Log unavailable" },
+        },
+      ],
+    },
+  });
+  render(<GlobalPlayers />);
+  await waitFor(() =>
+    expect(api.get.mock.calls.some(([url]) => url === "/api/players/get")).toBe(
+      true,
+    ),
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Scan server logs for players" }),
+  );
+  await waitFor(() =>
+    expect(
+      screen.getByText(/Operation partially completed/),
+    ).toBeInTheDocument(),
+  );
+  expect(screen.getByText("Log unavailable")).toBeInTheDocument();
+  expect(screen.getByText("Survival")).toBeInTheDocument();
 });
