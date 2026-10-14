@@ -107,3 +107,14 @@ it("percent-encodes quotes without double-encoding paths or query delimiters", (
     ),
   ).toBe("https://backend.example/player%27s/%2Ficon?q=%27value%27&page=2");
 });
+
+it("resolves production theme assets beneath the app mount", () => {
+  expect(resolveAppAssetUrl("./assets/css/themes/default.css?v=revision")).toBe(
+    "/app/assets/css/themes/default.css?v=revision",
+  );
+  window.location.pathname =
+    "/api/hassio_ingress/%2Ftoken/app/settings/account";
+  expect(resolveAppAssetUrl("./assets/css/themes/light.css")).toBe(
+    "/api/hassio_ingress/%2Ftoken/app/assets/css/themes/light.css",
+  );
+});
