@@ -2,12 +2,6 @@ name: Backend OpenAPI Contract
 
 on:
   workflow_dispatch:
-    inputs:
-      backend_ref:
-        description: Backend commit or branch to check
-        default: dev
-        required: true
-        type: string
   #schedule:
   #  - cron: '23 8 * * *'
   push:
@@ -34,11 +28,14 @@ jobs:
         python-version: ['3.14']
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/checkout@v7
         with:
           repository: DMedina559/bedrock-server-manager
-          ref: ${{ inputs.backend_ref || 'dev' }}
+          ref: dev
           path: backend-contract
+          persist-credentials: false
       - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}

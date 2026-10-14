@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { resolveApiUrl } from "../../api/transport";
 import { resolveOperationUrl } from "../../api/operations";
-import { getApiProxyBasePath } from "../../utils/basePath";
+import { getApiProxyBasePath, resolveAppAssetUrl } from "../../utils/basePath";
 
 const actionDefinitions = {
   start: {
@@ -112,7 +112,9 @@ export default function ServerCard({
           alt=""
           onError={(event) => {
             event.currentTarget.onerror = null;
-            event.currentTarget.src = `${getApiProxyBasePath()}/app/image/icon/favicon-192x192.png`;
+            event.currentTarget.src = resolveAppAssetUrl(
+              `${getApiProxyBasePath()}/app/image/icon/favicon-192x192.png`,
+            );
           }}
         />
         <div className="overview-server-identity">
