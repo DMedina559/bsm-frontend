@@ -63,10 +63,15 @@ export function serializeHttpUrl(target, relative = false) {
     throw new Error("Only HTTP and HTTPS URLs are supported.");
   }
   const suffix = `${target.host}${target.pathname}${target.search}${target.hash}`;
-  if (relative && !target.pathname.startsWith("//")) {
-    return `/${target.pathname.slice(1)}${target.search}${target.hash}`;
-  }
-  return target.protocol === "https:"
-    ? `https://${suffix}`
-    : `http://${suffix}`;
+  const serialized =
+    relative && !target.pathname.startsWith("//")
+      ? `/${target.pathname.slice(1)}${target.search}${target.hash}`
+      : target.protocol === "https:"
+        ? `https://${suffix}`
+        : `http://${suffix}`;
+  // Percent-encode HTML metacharacters without changing URL delimiters or escapes.
+  return serialized.replace(
+    /[<>"']/g,
+    (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
 }

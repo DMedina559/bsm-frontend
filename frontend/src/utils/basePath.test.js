@@ -99,3 +99,11 @@ it("keeps double-slash paths on their validated origin", () => {
     ),
   ).toBe("https://frontend.example//attacker.example/icon.png");
 });
+
+it("percent-encodes quotes without double-encoding paths or query delimiters", () => {
+  expect(
+    serializeHttpUrl(
+      new URL("https://backend.example/player's/%2Ficon?q='value'&page=2"),
+    ),
+  ).toBe("https://backend.example/player%27s/%2Ficon?q=%27value%27&page=2");
+});
