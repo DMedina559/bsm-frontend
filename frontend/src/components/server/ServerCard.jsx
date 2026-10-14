@@ -113,7 +113,7 @@ export default function ServerCard({
           onError={(event) => {
             event.currentTarget.onerror = null;
             event.currentTarget.src = resolveAppAssetUrl(
-              `${getApiProxyBasePath()}/app/image/icon/favicon-192x192.png`,
+              `${getApiProxyBasePath()}/app/image/icon/web-app-manifest-192x192.png`,
             );
           }}
         />

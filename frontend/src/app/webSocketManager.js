@@ -1,6 +1,5 @@
 import { stateReconciler } from "./stateReconciler";
-import { getApiBaseUrl } from "../api/transport";
-import { getApiProxyBasePath } from "../utils/basePath";
+import { resolveWebSocketUrl } from "../api/transport";
 import { logger } from "../utils/logger";
 import { sessionRuntime } from "./sessionRuntime";
 
@@ -56,10 +55,6 @@ export function createWebSocketManager({ onMessage, onState }) {
     const currentGeneration = generation.current;
     const session = stateReconciler.capture();
     connectionTicket = session;
-    const base = getApiBaseUrl();
-    const url = base
-      ? base.replace(/^http(s?):/, "ws$1:") + "/ws"
-      : `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}${getApiProxyBasePath()}/ws`;
     const retry = () => {
       if (generation.current !== currentGeneration) return;
       reconnectAttempts.current += 1;
@@ -77,7 +72,7 @@ export function createWebSocketManager({ onMessage, onState }) {
     };
     try {
       let rejected = false;
-      const socket = new WebSocket(url);
+      const socket = new WebSocket(resolveWebSocketUrl());
       socketRef.current = socket;
       const current = () =>
         generation.current === currentGeneration &&

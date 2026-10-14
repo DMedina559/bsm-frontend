@@ -4,7 +4,8 @@
 
 /**
  * Gets the base path for API requests when running behind a dynamic proxy (e.g. Home Assistant Ingress)
- * It calculates the path prefix by removing /app/ and everything after it from the current path.
+ * Reads the backend-provided runtime prefix, falling back to pathname detection
+ * for standalone hosting.
  *
  * @returns {string} The base path prefix (e.g. '/api/hassio_ingress/xyz') or empty string
  */
@@ -12,6 +13,10 @@ export const getApiProxyBasePath = () => {
   if (typeof window === "undefined" || !window.location) {
     return "";
   }
+
+  const runtimePrefix =
+    document.getElementById("app-asset-base")?.dataset.apiBase;
+  if (runtimePrefix !== undefined) return runtimePrefix;
 
   const path = window.location.pathname;
   if (
@@ -22,7 +27,8 @@ export const getApiProxyBasePath = () => {
   ) {
     return "";
   }
-  const appIndex = path.search(/\/app(?:\/|$)/);
+  const appMatches = [...path.matchAll(/\/app(?=\/|$)/g)];
+  const appIndex = appMatches.at(-1)?.index ?? -1;
 
   if (appIndex > 0) {
     return path
