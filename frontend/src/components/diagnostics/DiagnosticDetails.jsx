@@ -1,4 +1,4 @@
-import { labelFor, displayValue, dateValue } from "./format";
+import { labelFor, displayValue, fieldValue } from "./format";
 
 export default function DiagnosticDetails({
   value,
@@ -6,7 +6,7 @@ export default function DiagnosticDetails({
   depth = 0,
 }) {
   if (value === null || value === undefined)
-    return <p>Observations unavailable.</p>;
+    return <p>The provider did not return observations.</p>;
   if (Array.isArray(value)) {
     if (!value.length) return <p>No entries.</p>;
     return (
@@ -47,11 +47,7 @@ export default function DiagnosticDetails({
           {scalars.map(([key, item]) => (
             <div key={key}>
               <dt>{labelFor(key)}</dt>
-              <dd>
-                {key.endsWith("_at") || key === "timestamp"
-                  ? dateValue(item)
-                  : displayValue(item)}
-              </dd>
+              <dd>{fieldValue(key, item)}</dd>
             </div>
           ))}
         </dl>

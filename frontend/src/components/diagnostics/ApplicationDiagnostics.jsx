@@ -10,6 +10,9 @@ import DiagnosticDetails from "./DiagnosticDetails";
 import { dateValue, displayValue, labelFor } from "./format";
 import Status from "./Status";
 import DiagnosticHistory from "./DiagnosticHistory";
+import DiagnosticSubsystem from "./DiagnosticSubsystem";
+import { subsystemDescriptions } from "./subsystems";
+import MonitorNavigation from "../metrics/MonitorNavigation";
 import "../../styles/diagnostics.css";
 
 const actions = {
@@ -21,6 +24,8 @@ const actions = {
   check_configuration: "Review the application configuration.",
 };
 export default function ApplicationDiagnostics() {
+  const [view, setView] = useState("overview");
+  const [historyVisited, setHistoryVisited] = useState(false);
   const [automatic, setAutomatic] = useState(false);
   const [section, setSection] = useState("all");
   const [baseline, setBaseline] = useState(
@@ -42,7 +47,7 @@ export default function ApplicationDiagnostics() {
     refetchIntervalInBackground: false,
   });
   const trace = useResourceQuery("diagnosticTrace", correlation, {
-    enabled: !!correlation,
+    enabled: view === "history" && !!correlation,
     retry: false,
   });
   const snapshot = query.data;
@@ -108,10 +113,8 @@ export default function ApplicationDiagnostics() {
     <div className="diagnostics-view">
       <div className="application-monitor-heading">
         <div>
-          <h1>Diagnostics</h1>
-          <p>
-            Runtime observations and retained history · administrator access
-          </p>
+          <h2 className="monitor-view-title">Diagnostics</h2>
+          <p>Runtime observations and retained history</p>
         </div>
         <div className="diagnostic-actions">
           <button
@@ -133,17 +136,27 @@ export default function ApplicationDiagnostics() {
           </button>
         </div>
       </div>
-      <p className="application-metrics-hint">
-        Metadata only; event payloads and task arguments are excluded. Review
-        reports before sharing. Observations are collected independently.
-      </p>
+      <MonitorNavigation
+        label="Diagnostic categories"
+        active={view}
+        onChange={(next) => {
+          setView(next);
+          if (next === "history") setHistoryVisited(true);
+        }}
+        items={[
+          ["overview", "Overview"],
+          ["subsystems", "Subsystems"],
+          ["history", "History"],
+          ["advanced", "Advanced"],
+        ]}
+      />
       <label className="diagnostic-refresh">
         <input
           type="checkbox"
           checked={automatic}
           onChange={(e) => setAutomatic(e.target.checked)}
         />{" "}
-        Refresh observations every 15 seconds while this tab is visible
+        Auto-refresh every 15 seconds
       </label>
       <QueryStatus query={query} />
       {query.error?.status === 404 && (
@@ -185,210 +198,258 @@ export default function ApplicationDiagnostics() {
               </dd>
             </div>
           </dl>
-          <p className="application-metrics-hint">
-            Instance {snapshot.instance_id} · live counters reset on restart.
-            Recent counts use ten-second buckets over five minutes.
+          <p className="monitor-muted">
+            Live counters reset on restart. Recent failures cover the last five
+            minutes.
           </p>
-          {!!snapshot.summary.findings?.length && (
-            <section
-              className="diagnostic-findings"
-              aria-label="Diagnostic findings"
-            >
-              <h2>Needs attention</h2>
-              {snapshot.summary.findings.map((finding, index) => (
-                <article
-                  key={`${finding.subsystem}:${finding.issue.code}:${index}`}
+          {view === "overview" && (
+            <>
+              {!!snapshot.summary.findings?.length && (
+                <section
+                  className="diagnostic-findings"
+                  aria-label="Diagnostic findings"
                 >
-                  <strong>{labelFor(finding.subsystem)}</strong>
-                  <p>{finding.issue.message}</p>
-                  <small>
-                    {actions[finding.issue.action] ??
-                      "Inspect this subsystem's observations."}
-                  </small>
-                </article>
-              ))}
-            </section>
-          )}
-          {snapshot.summary.truncated && (
-            <p>Some findings were omitted from this bounded observation.</p>
-          )}
-          <div className="diagnostic-actions">
-            <button
-              type="button"
-              className="action-button secondary"
-              onClick={() => {
-                setBaseline(structuredClone(snapshot));
-                compare.reset();
-              }}
-            >
-              Save comparison baseline
-            </button>
-            <button
-              type="button"
-              className="action-button secondary"
-              disabled={!baseline || compare.isPending}
-              onClick={() => compare.mutate()}
-            >
-              Compare with baseline
-            </button>
-            {baseline && (
-              <span>Baseline: {dateValue(baseline.collected_at)}</span>
-            )}
-          </div>
-          {compare.error && <p role="alert">{compare.error.message}</p>}
-          {compare.data && (
-            <section aria-label="Snapshot comparison">
-              <h2>Changes since baseline</h2>
-              <p>
-                {compare.data.same_instance
-                  ? "Same application instance."
-                  : "Application instance changed; counter deltas are unavailable."}
-              </p>
-              <DiagnosticDetails value={compare.data.changes} />
-              {!compare.data.changes?.length && (
-                <p>No changes in compared fields.</p>
+                  <h2>Needs attention</h2>
+                  {snapshot.summary.findings.map((finding, index) => (
+                    <article
+                      key={`${finding.subsystem}:${finding.issue.code}:${index}`}
+                    >
+                      <strong>{labelFor(finding.subsystem)}</strong>
+                      <p>{finding.issue.message}</p>
+                      <small>
+                        {actions[finding.issue.action] ??
+                          "Inspect this subsystem's observations."}
+                      </small>
+                    </article>
+                  ))}
+                </section>
               )}
-              {compare.data.truncated && (
-                <p>The comparison was limited to 200 changes.</p>
+              {snapshot.summary.truncated && (
+                <p>Some findings were omitted from this bounded observation.</p>
               )}
-            </section>
-          )}
-          <label className="diagnostic-section-picker">
-            Subsystem
-            <select
-              value={section}
-              onChange={(e) => setSection(e.target.value)}
-            >
-              <option value="all">All subsystems</option>
-              {snapshot.sections.map((item) => (
-                <option key={item.name} value={item.name}>
-                  {labelFor(item.name)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="diagnostic-sections">
-            {snapshot.sections
-              .filter((item) => section === "all" || item.name === section)
-              .map((item) => (
+              {!snapshot.summary.findings?.length && (
                 <section
                   className="diagnostic-card"
-                  key={item.name}
-                  aria-label={`${labelFor(item.name)} diagnostics`}
+                  aria-label="Diagnostic findings"
                 >
-                  <h2>
-                    {labelFor(item.name)} <Status value={item.status} />
-                  </h2>
-                  <p className="application-metrics-hint">
-                    Owner: {item.owner} ·{" "}
-                    {item.stale ? "Stale reading" : "Reading age at collection"}
-                    :{" "}
-                    {Number.isFinite(item.age_seconds)
-                      ? `${item.age_seconds.toFixed(1)} seconds old`
-                      : "Not observed"}{" "}
-                    · Last successful collection:{" "}
-                    {dateValue(item.last_success_at)}
+                  <h2>Needs attention</h2>
+                  <p>No findings reported in this snapshot.</p>
+                  <p className="monitor-muted">
+                    Unassessed or unavailable subsystems may still need
+                    inspection.
                   </p>
-                  {item.issues?.map((issue) => (
-                    <p key={issue.code}>{issue.message}</p>
-                  ))}
-                  {item.data?.truncated && (
-                    <p>
-                      Details were limited; totals may exceed the displayed
-                      entries.
-                    </p>
-                  )}
-                  <DiagnosticDetails value={item.data} />
                 </section>
-              ))}
-          </div>
-          <section
-            className="diagnostic-card"
-            aria-label="Diagnostic collection and environment"
-          >
-            <h2>Diagnostics and installation</h2>
-            <DiagnosticDetails
-              value={{
-                collection: snapshot.collection,
-                persistence: snapshot.persistence,
-                providers: snapshot.registry,
-                environment: snapshot.environment,
-                recent: snapshot.recent,
-              }}
-            />
-          </section>
-        </>
-      )}
-      <section
-        className="diagnostic-trace"
-        aria-labelledby="diagnostic-trace-heading"
-      >
-        <h2 id="diagnostic-trace-heading" ref={traceHeading} tabIndex={-1}>
-          Correlated trace
-        </h2>
-        <form
-          className="diagnostic-filters"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (correlation === traceDraft.trim()) void trace.refetch();
-            else setCorrelation(traceDraft.trim());
-          }}
-        >
-          <label>
-            Trace correlation ID
-            <input
-              value={traceDraft}
-              maxLength={160}
-              onChange={(e) => setTraceDraft(e.target.value)}
-            />
-          </label>
-          <button
-            className="action-button secondary"
-            type="submit"
-            disabled={!traceDraft.trim()}
-          >
-            Inspect trace
-          </button>
-        </form>
-        {correlation && (
-          <>
-            <QueryStatus query={trace} />
-            {trace.isPending && <p role="status">Loading trace…</p>}
-            {trace.data && (
-              <>
+              )}
+              <section aria-label="Subsystem overview">
+                <h2>Subsystems at a glance</h2>
+                <div className="diagnostic-overview-grid">
+                  {snapshot.sections.map((item) => (
+                    <button
+                      type="button"
+                      key={item.name}
+                      className="diagnostic-overview-item"
+                      onClick={() => {
+                        setSection(item.name);
+                        setView("subsystems");
+                      }}
+                    >
+                      <span>
+                        <strong>{labelFor(item.name)}</strong>
+                        <small>
+                          {subsystemDescriptions[
+                            item.data?.kind ?? item.name
+                          ] ?? "Provider observations"}
+                        </small>
+                      </span>
+                      <Status value={item.status} />
+                      {item.stale && <small>Stale reading</small>}
+                    </button>
+                  ))}
+                </div>
+              </section>
+            </>
+          )}
+          {view === "advanced" && (
+            <>
+              <h2>Snapshot comparison</h2>
+              <p className="monitor-muted">
+                Save a baseline in this view, collect fresh observations, then
+                compare. The baseline is discarded when you leave Diagnostics or
+                change account.
+              </p>
+              <div className="diagnostic-actions">
+                <button
+                  type="button"
+                  className="action-button secondary"
+                  onClick={() => {
+                    setBaseline(structuredClone(snapshot));
+                    compare.reset();
+                  }}
+                >
+                  Save comparison baseline
+                </button>
+                <button
+                  type="button"
+                  className="action-button secondary"
+                  disabled={!baseline || compare.isPending}
+                  onClick={() => compare.mutate()}
+                >
+                  Compare with baseline
+                </button>
+                {baseline && (
+                  <span>Baseline: {dateValue(baseline.collected_at)}</span>
+                )}
+              </div>
+              {compare.error && <p role="alert">{compare.error.message}</p>}
+              {compare.data && (
+                <section aria-label="Snapshot comparison">
+                  <h2>Changes since baseline</h2>
+                  <p>
+                    {compare.data.same_instance
+                      ? "Same application instance."
+                      : "Application instance changed; counter deltas are unavailable."}
+                  </p>
+                  <DiagnosticDetails value={compare.data.changes} />
+                  {!compare.data.changes?.length && (
+                    <p>No changes in compared fields.</p>
+                  )}
+                  {compare.data.truncated && (
+                    <p>The comparison was limited to 200 changes.</p>
+                  )}
+                </section>
+              )}
+            </>
+          )}
+          {view === "subsystems" && (
+            <>
+              <label className="diagnostic-section-picker">
+                Subsystem
+                <select
+                  value={section}
+                  onChange={(e) => setSection(e.target.value)}
+                >
+                  <option value="all">All subsystems</option>
+                  {snapshot.sections.map((item) => (
+                    <option key={item.name} value={item.name}>
+                      {labelFor(item.name)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="diagnostic-sections">
+                {snapshot.sections
+                  .filter((item) => section === "all" || item.name === section)
+                  .map((item) => (
+                    <DiagnosticSubsystem key={item.name} item={item} />
+                  ))}
+              </div>
+            </>
+          )}
+          {view === "advanced" && (
+            <>
+              <section
+                className="diagnostic-card"
+                aria-label="Diagnostic collection and environment"
+              >
+                <h2>Diagnostics and installation</h2>
+                <p className="monitor-muted">Instance {snapshot.instance_id}</p>
                 <p>
-                  Events:{" "}
-                  {trace.data.events_available ? "available" : "unavailable"} ·
-                  Tasks:{" "}
-                  {trace.data.tasks_available ? "available" : "unavailable"} ·
-                  History:{" "}
-                  {trace.data.history?.available ? "available" : "unavailable"}
+                  Metadata only; event payloads and task arguments are excluded.
+                  Review support reports before sharing.
                 </p>
-                {trace.data.issues?.map((issue) => (
-                  <p key={issue.code}>{issue.message}</p>
-                ))}
                 <DiagnosticDetails
                   value={{
-                    events: trace.data.events,
-                    tasks: trace.data.tasks,
-                    history: trace.data.history,
+                    collection: snapshot.collection,
+                    persistence: snapshot.persistence,
+                    providers: snapshot.registry,
+                    environment: snapshot.environment,
+                    recent: snapshot.recent,
                   }}
                 />
-                {trace.data.truncated && (
-                  <p>
-                    This trace is partial; use history filters to inspect
-                    additional retained records.
-                  </p>
+              </section>
+            </>
+          )}
+        </>
+      )}
+      {historyVisited && (
+        <div hidden={view !== "history"}>
+          <section
+            className="diagnostic-trace"
+            aria-labelledby="diagnostic-trace-heading"
+          >
+            <h2 id="diagnostic-trace-heading" ref={traceHeading} tabIndex={-1}>
+              Correlated trace
+            </h2>
+            <form
+              className="diagnostic-filters"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (correlation === traceDraft.trim()) void trace.refetch();
+                else setCorrelation(traceDraft.trim());
+              }}
+            >
+              <label>
+                Trace correlation ID
+                <input
+                  value={traceDraft}
+                  maxLength={160}
+                  onChange={(e) => setTraceDraft(e.target.value)}
+                />
+              </label>
+              <button
+                className="action-button secondary"
+                type="submit"
+                disabled={!traceDraft.trim()}
+              >
+                Inspect trace
+              </button>
+            </form>
+            {correlation && (
+              <>
+                <QueryStatus query={trace} />
+                {trace.isPending && <p role="status">Loading trace…</p>}
+                {trace.data && (
+                  <>
+                    <p>
+                      Events:{" "}
+                      {trace.data.events_available
+                        ? "available"
+                        : "unavailable"}{" "}
+                      · Tasks:{" "}
+                      {trace.data.tasks_available ? "available" : "unavailable"}{" "}
+                      · History:{" "}
+                      {trace.data.history?.available
+                        ? "available"
+                        : "unavailable"}
+                    </p>
+                    {trace.data.issues?.map((issue) => (
+                      <p key={issue.code}>{issue.message}</p>
+                    ))}
+                    <DiagnosticDetails
+                      value={{
+                        events: trace.data.events,
+                        tasks: trace.data.tasks,
+                        history: trace.data.history,
+                      }}
+                    />
+                    {trace.data.truncated && (
+                      <p>
+                        This trace is partial; use history filters to inspect
+                        additional retained records.
+                      </p>
+                    )}
+                  </>
                 )}
               </>
             )}
-          </>
-        )}
-      </section>
-      <DiagnosticHistory
-        onTrace={inspectTrace}
-        instance={snapshot?.instance_id}
-      />
+          </section>
+          <DiagnosticHistory
+            onTrace={inspectTrace}
+            instance={snapshot?.instance_id}
+            active={view === "history"}
+          />
+        </div>
+      )}
     </div>
   );
 }

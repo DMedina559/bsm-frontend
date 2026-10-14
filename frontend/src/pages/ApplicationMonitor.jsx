@@ -3,6 +3,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { getPreferenceIdentity } from "../app/backendIdentity";
 import ApplicationMetrics from "../components/metrics/ApplicationMetrics";
 import ApplicationDiagnostics from "../components/diagnostics/ApplicationDiagnostics";
+import "../styles/application-monitor.css";
 
 export default function ApplicationMonitor() {
   const { user, sessionGeneration } = useAuth() || {};
@@ -12,6 +13,10 @@ export default function ApplicationMonitor() {
   const tabs = ["metrics", "diagnostics"];
   return (
     <div className="container application-monitor">
+      <header className="monitor-page-heading">
+        <h1>Application monitor</h1>
+        <p>Performance and system health</p>
+      </header>
       {admin && (
         <div className="monitor-tabs" role="tablist" aria-label="Metrics views">
           {tabs.map((tab, index) => (
@@ -59,7 +64,9 @@ export default function ApplicationMonitor() {
             key={`${getPreferenceIdentity(user)}:${sessionGeneration ?? 0}`}
           />
         ) : (
-          <ApplicationMetrics />
+          <ApplicationMetrics
+            key={`${getPreferenceIdentity(user)}:${sessionGeneration ?? 0}`}
+          />
         )}
       </section>
     </div>

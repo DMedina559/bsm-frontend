@@ -1,6 +1,6 @@
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   Tooltip,
@@ -54,9 +54,11 @@ export default function MetricsChart({
         ))}
       </div>
       <div className="application-chart-canvas">
-        {samples.length ? (
+        {samples.some((sample) =>
+          series.some(([key]) => Number.isFinite(sample[key])),
+        ) ? (
           <ResponsiveContainer width="100%" height="100%" minWidth={1}>
-            <LineChart
+            <AreaChart
               data={samples}
               margin={{ top: 8, right: 12, left: 4, bottom: 4 }}
             >
@@ -70,11 +72,11 @@ export default function MetricsChart({
                   new Date(value * 1000).toLocaleTimeString()
                 }
                 minTickGap={40}
-                tick={{ fontSize: 11 }}
+                tick={{ fontSize: 13, fill: "var(--text-color-secondary)" }}
               />
               <YAxis
                 domain={percent ? [0, 100] : [0, "auto"]}
-                tick={{ fontSize: 11 }}
+                tick={{ fontSize: 13, fill: "var(--text-color-secondary)" }}
                 tickFormatter={(value) =>
                   number(displayValue(value), "", digits)
                 }
@@ -95,20 +97,34 @@ export default function MetricsChart({
                 }}
               />
               {series.map(([key, label], index) => (
-                <Line
+                <Area
                   key={key}
                   dataKey={key}
                   name={label}
                   stroke={`var(--bsm-chart-${index + 1})`}
+                  fill={`var(--bsm-chart-${index + 1})`}
+                  fillOpacity={0.12}
+                  strokeWidth={2}
                   dot={false}
                   isAnimationActive={false}
                   connectNulls={false}
                 />
               ))}
-            </LineChart>
+            </AreaChart>
           </ResponsiveContainer>
         ) : (
-          <p>Waiting for samples…</p>
+          <div className="application-chart-empty">
+            <p>
+              {samples.length
+                ? "No measurements reported for this chart."
+                : "Waiting for samples…"}
+            </p>
+            {!!samples.length && (
+              <small>
+                Availability can depend on the host and process permissions.
+              </small>
+            )}
+          </div>
         )}
       </div>
     </section>

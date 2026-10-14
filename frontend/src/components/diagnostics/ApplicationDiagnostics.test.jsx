@@ -120,6 +120,9 @@ it("mounts diagnostics only for admins and supports keyboard tab navigation", as
   fireEvent.keyDown(metricTab, { key: "ArrowRight" });
   await screen.findByText("Ready");
   expect(screen.getByRole("tab", { name: "Diagnostics" })).toHaveFocus();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Subsystems", exact: true }),
+  );
   expect(
     screen.getByRole("region", { name: "Events diagnostics" }),
   ).toHaveTextContent("Stale reading");
@@ -136,7 +139,11 @@ it("mounts diagnostics only for admins and supports keyboard tab navigation", as
 it("retains observations on fetch failures, pages history and inspects partial traces", async () => {
   mount();
   await open();
-  await screen.findByRole("button", { name: "Next page" });
+  expect(fixtures.calls.some(([id]) => id === "get_diagnostic_history")).toBe(
+    false,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "History", exact: true }));
+  await screen.findByRole("row", { name: /listener/ });
   fireEvent.click(
     screen
       .getAllByRole("button", { name: "Inspect trace", exact: true })
@@ -169,6 +176,9 @@ it("compares saved observations and downloads a report without persisting it", a
   );
   mount();
   await open();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Advanced", exact: true }),
+  );
   fireEvent.click(
     screen.getByRole("button", { name: "Save comparison baseline" }),
   );

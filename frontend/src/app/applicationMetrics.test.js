@@ -55,14 +55,22 @@ it("rebases delayed HTTP metrics on newer socket samples", () => {
   expect(reconcileMetricsEvent(sample(2)).accepted).toBe(false);
 });
 it("bounds streaming history and resets it on a new backend epoch", () => {
-  for (let revision = 1; revision <= 200; revision++)
+  reconcileMetricsSnapshot({
+    latest: sample(1),
+    history: [sample(1)],
+    interval_seconds: 10,
+    history_limit: 180,
+  });
+  for (let revision = 2; revision <= 200; revision++)
     reconcileMetricsEvent(sample(revision));
   let value = stateReconciler.read(["application-metrics"]).value;
   expect(value.history).toHaveLength(180);
   expect(value.history[0].revision).toBe(21);
+  expect(value.interval_seconds).toBe(10);
   reconcileMetricsEvent(sample(1, "restart"));
   value = stateReconciler.read(["application-metrics"]).value;
   expect(value.history).toEqual([sample(1, "restart")]);
+  expect(value.interval_seconds).toBeUndefined();
 });
 it("rejects malformed metrics without poisoning the revision watermark", () => {
   expect(

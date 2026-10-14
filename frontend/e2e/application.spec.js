@@ -280,8 +280,8 @@ function diagnosticsSnapshot() {
       plugins: [
         {
           name: "backup_on_start",
-          status: "LOADED",
-          generation: 1,
+          status: "UNKNOWN",
+          generation: 0,
           draining: false,
         },
       ],
@@ -377,6 +377,36 @@ test("administrators inspect diagnostics, compare snapshots and download a repor
   context,
 }, testInfo) => {
   await backend(context);
+  let revision = 0;
+  await context.route("**/api/metrics", async (route) => {
+    const sample = {
+      timestamp: Date.now() / 1000,
+      epoch: "browser-metrics",
+      revision: (revision += 8),
+      app_cpu_percent: 12.4,
+      app_ram_mb: 248,
+      uptime_seconds: 8100,
+      thread_count: 6,
+      background_task_count: 0,
+      asyncio_task_count: 10,
+      loop_lag_ms: 0,
+      servers: [],
+    };
+    await route.fulfill({
+      json: {
+        latest: sample,
+        history: Array.from({ length: 8 }, (_, index) => ({
+          ...sample,
+          timestamp: sample.timestamp - (7 - index) * 3,
+          revision: sample.revision - 7 + index,
+          app_cpu_percent: index === 7 ? 12.4 : 8 + index,
+          app_ram_mb: 240 + index,
+        })),
+        interval_seconds: 3,
+        history_limit: 180,
+      },
+    });
+  });
   let calls = 0;
   await context.route("**/api/diagnostics**", async (route) => {
     const path = new URL(route.request().url()).pathname;
@@ -424,10 +454,32 @@ test("administrators inspect diagnostics, compare snapshots and download a repor
   await login(page, "alice");
   await page.goto("application-monitor");
   expect(calls).toBe(0);
+  await expect(page.getByText("12.4%", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Pause updates" }).click();
+  await expect(page.getByText("View paused", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Resume updates" }).click();
+  await page.screenshot({
+    path: testInfo.outputPath("metrics-desktop.png"),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    )
+    .toBe(true);
+  await page.screenshot({
+    path: testInfo.outputPath("metrics-mobile.png"),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 1280, height: 720 });
   await page.getByRole("tab", { name: "Diagnostics" }).click();
   await expect(
     page.getByRole("definition").filter({ hasText: /^Ready$/ }),
   ).toBeVisible();
+  await page.getByRole("button", { name: "Advanced", exact: true }).click();
   await page.getByRole("button", { name: "Save comparison baseline" }).click();
   await page.getByRole("button", { name: "Compare with baseline" }).click();
   await expect(page.getByText("No changes in compared fields.")).toBeVisible();
@@ -437,12 +489,18 @@ test("administrators inspect diagnostics, compare snapshots and download a repor
   expect(download.suggestedFilename()).toBe(
     "bsm-diagnostics-browser-report.json",
   );
+  await page.getByRole("button", { name: "History", exact: true }).click();
   await page
     .getByRole("row")
     .filter({ hasText: "listener" })
     .getByRole("button", { name: "Inspect trace" })
     .click();
   await expect(page.getByText(/Events: unavailable/)).toBeVisible();
+  await page.getByRole("button", { name: "Subsystems", exact: true }).click();
+  await page.getByRole("searchbox", { name: "Search plugins" }).fill("backup");
+  await expect(
+    page.getByText("Status not reported", { exact: true }),
+  ).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath("diagnostics-desktop.png"),
     fullPage: true,

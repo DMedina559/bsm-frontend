@@ -4,16 +4,23 @@ import QueryStatus from "../QueryStatus";
 import DiagnosticDetails from "./DiagnosticDetails";
 import { dateValue } from "./format";
 
-export default function DiagnosticHistory({ onTrace, instance }) {
+export default function DiagnosticHistory({
+  onTrace,
+  instance,
+  active = true,
+}) {
   const [filters, setFilters] = useState({});
   const [draft, setDraft] = useState({});
   const [cursors, setCursors] = useState([null]);
   const query = useResourceQuery(
     "diagnosticHistory",
     { ...filters, limit: 50, cursor: cursors.at(-1) },
-    { retry: false },
+    { retry: false, enabled: active },
   );
-  const runs = useResourceQuery("diagnosticRuns", undefined, { retry: false });
+  const runs = useResourceQuery("diagnosticRuns", undefined, {
+    retry: false,
+    enabled: active,
+  });
   return (
     <section
       className="diagnostic-history"
@@ -152,7 +159,7 @@ export default function DiagnosticHistory({ onTrace, instance }) {
                         Inspect trace
                       </button>
                     ) : (
-                      "Unavailable"
+                      "No correlation ID"
                     )}
                   </td>
                 </tr>

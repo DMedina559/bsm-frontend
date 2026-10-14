@@ -186,3 +186,194 @@
   color: var(--text-color-secondary);
   margin: var(--bsm-space-1) 0 var(--bsm-space-2);
 }
+
+/* Application monitor uses the active theme and readable sizes in both densities. */
+.application-monitor {
+  min-width: 0;
+}
+.monitor-page-heading {
+  margin-bottom: 1.25rem;
+}
+.application-monitor .monitor-page-heading h1 {
+  margin: 0;
+  font-size: clamp(1.6rem, 3vw, 2rem);
+  line-height: 1.25;
+}
+.monitor-page-heading p {
+  color: var(--text-color-secondary);
+  margin: 0.4rem 0 0;
+  font-size: 1rem;
+}
+.monitor-live-strip,
+.monitor-panel {
+  border: 1px solid var(--border-color);
+  background: var(--bsm-surface-raised);
+  border-radius: var(--bsm-radius-md);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  min-width: 0;
+}
+.monitor-live-strip,
+.monitor-live-strip > div:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+.monitor-live-strip {
+  justify-content: space-between;
+}
+.application-monitor .monitor-view-title {
+  font-size: 1.2rem;
+  margin: 0;
+}
+.monitor-live-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.monitor-live-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--bsm-success);
+}
+.monitor-live-dot.is-paused {
+  background: var(--bsm-warning);
+}
+.application-monitor .monitor-muted,
+.application-monitor .application-metrics-hint,
+.application-monitor-heading p {
+  color: var(--text-color-secondary);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+.monitor-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1.25rem 0;
+}
+.monitor-navigation button {
+  color: var(--text-color);
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 0.65rem 1rem;
+  border-radius: var(--bsm-radius-md);
+  min-height: 44px;
+  font: inherit;
+  cursor: pointer;
+}
+.monitor-navigation button[aria-current="page"] {
+  border-color: var(--border-color);
+  background: var(--bsm-surface-raised);
+  font-weight: 700;
+}
+.monitor-navigation button:focus-visible,
+.monitor-tabs button:focus-visible {
+  outline: 2px solid var(--bsm-focus);
+  outline-offset: 2px;
+}
+.monitor-resource-summary {
+  gap: 1rem;
+}
+.application-monitor .monitor-resource-summary > div {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+}
+.monitor-resource-summary svg {
+  flex-shrink: 0;
+  color: var(--primary-color);
+}
+.application-monitor .monitor-resource-summary dt {
+  font-size: 1rem;
+}
+.application-monitor .monitor-resource-summary dd {
+  font-size: clamp(1.35rem, 2.2vw, 2rem);
+  line-height: 1.35;
+}
+.monitor-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+}
+.monitor-detail-grid > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem;
+  border-bottom: 1px solid var(--border-color);
+  min-width: 0;
+}
+.monitor-detail-grid dt {
+  color: var(--text-color-secondary);
+}
+.monitor-detail-grid dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.application-monitor .application-chart {
+  padding: 1.25rem;
+}
+.application-monitor .application-chart h2,
+.application-monitor .monitor-panel h2 {
+  font-size: 1.2rem;
+  margin: 0 0 0.75rem;
+}
+.application-chart-canvas {
+  height: 280px;
+}
+.application-chart-key {
+  font-size: 0.95rem;
+}
+.application-chart-empty {
+  display: grid;
+  place-content: center;
+  text-align: center;
+  height: 100%;
+  color: var(--text-color-secondary);
+}
+.application-monitor .monitor-tabs button {
+  min-height: 44px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+@media (max-width: 1100px) {
+  .monitor-resource-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .monitor-detail-grid {
+    grid-template-columns: 1fr;
+  }
+  .application-monitor .monitor-resource-summary > div {
+    padding: 1rem;
+    flex-direction: column;
+    align-items: start;
+    gap: 0.65rem;
+  }
+  .monitor-resource-summary dd {
+    overflow-wrap: anywhere;
+  }
+  .application-chart-canvas {
+    height: 240px;
+  }
+  .monitor-live-strip {
+    padding: 1rem;
+  }
+}
+.application-monitor .action-button,
+.application-monitor .server-table {
+  font-size: 0.95rem;
+}
+.application-monitor .server-table th {
+  font-size: 0.95rem;
+}
+.application-monitor .action-button {
+  min-height: 44px;
+}
