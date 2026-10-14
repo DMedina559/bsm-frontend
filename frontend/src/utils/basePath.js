@@ -45,7 +45,7 @@ export const getApiProxyBasePath = () => {
 /** Resolve bundled assets on the frontend origin, preserving ingress prefixes. */
 export function resolveAppAssetUrl(path) {
   const origin = window.location.origin;
-  const target = new URL(path, origin);
+  const target = new URL(path, `${origin}${getApiProxyBasePath()}/app/`);
   if (
     !["http:", "https:"].includes(target.protocol) ||
     target.origin !== origin ||
