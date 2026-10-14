@@ -1,3 +1,9 @@
+import {
+  validateDiagnosticSnapshot,
+  validateDiagnosticHistory,
+  validateDiagnosticRuns,
+  validateDiagnosticTrace,
+} from "./diagnostics";
 import { getPreferenceIdentity, getBackendIdentity } from "./backendIdentity";
 import { sessionRuntime } from "./sessionRuntime";
 import { callOperation } from "../api/operations";
@@ -24,7 +30,39 @@ const object = (value, resource) => {
     throw new Error(`Invalid ${resource} response: expected an object`);
   return value;
 };
+const diagnosticResources = new Set([
+  "diagnostics",
+  "diagnosticHistory",
+  "diagnosticRuns",
+  "diagnosticTrace",
+]);
 const resources = {
+  diagnostics: {
+    key: queryKeys.diagnostics,
+    load: (_target, options) =>
+      callOperation("get_application_diagnostics", options),
+    select: validateDiagnosticSnapshot,
+  },
+  diagnosticHistory: {
+    key: queryKeys.diagnosticHistory,
+    load: (filters, options) =>
+      callOperation("get_diagnostic_history", { query: filters, ...options }),
+    select: validateDiagnosticHistory,
+  },
+  diagnosticRuns: {
+    key: queryKeys.diagnosticRuns,
+    load: (_target, options) => callOperation("get_diagnostic_runs", options),
+    select: validateDiagnosticRuns,
+  },
+  diagnosticTrace: {
+    key: queryKeys.diagnosticTrace,
+    load: (correlation, options) =>
+      callOperation("get_diagnostic_trace", {
+        path: { correlation_id: correlation },
+        ...options,
+      }),
+    select: validateDiagnosticTrace,
+  },
   applicationHealth: {
     key: queryKeys.applicationHealth,
     load: (_target, options) =>
@@ -244,6 +282,7 @@ export function useResourceQuery(resource, target, options = {}) {
     queryFn: async ({ signal }) => {
       const startedAt = captureStateRequest(signal);
       const data = await definition.load(target, { signal });
+      if (diagnosticResources.has(resource)) definition.select(data);
       return reconcileResourceSnapshot(
         resource,
         target,
@@ -258,6 +297,7 @@ export function useResourceQuery(resource, target, options = {}) {
     select: definition.select,
     enabled:
       enabled &&
+      (!diagnosticResources.has(resource) || user?.role === "admin") &&
       identity !== null &&
       (!(
         resource === "backups" ||

@@ -287,3 +287,13 @@ it.each(["operation_incomplete", "validation_error"])(
     );
   },
 );
+
+it("does not request administrator diagnostics for a regular account", async () => {
+  auth.user = { username: "viewer", role: "user" };
+  renderHook(
+    () => useResourceQuery("diagnostics", undefined, { enabled: true }),
+    { wrapper },
+  );
+  await act(async () => {});
+  expect(get).not.toHaveBeenCalled();
+});

@@ -1,159 +1,73 @@
-import { useMetricFormat } from "../app/useMetricFormat";
-import { RefreshCw, Activity } from "lucide-react";
-import { useApplicationMetrics } from "../app/useApplicationMetrics";
-import QueryStatus from "../components/QueryStatus";
-import MetricsChart from "../components/metrics/MetricsChart";
-import { uptime } from "../components/metrics/format";
+import { useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import { getPreferenceIdentity } from "../app/backendIdentity";
+import ApplicationMetrics from "../components/metrics/ApplicationMetrics";
+import ApplicationDiagnostics from "../components/diagnostics/ApplicationDiagnostics";
 import "../styles/application-monitor.css";
+
 export default function ApplicationMonitor() {
-  const query = useApplicationMetrics();
-  const { memory, duration, number: metric } = useMetricFormat();
-  const sample = query.data?.latest;
-  const samples = query.data?.history ?? [];
-  const metrics = [
-    ["App CPU", metric(sample?.app_cpu_percent, "%")],
-    ["App memory", memory(sample?.app_ram_mb)],
-    ["Threads", metric(sample?.thread_count, "", 0)],
-    ["Background tasks", metric(sample?.background_task_count, "", 0)],
-    ["Async tasks", metric(sample?.asyncio_task_count, "", 0)],
-    ["Loop delay", duration(sample?.loop_lag_ms)],
-    ["App uptime", uptime(sample?.uptime_seconds)],
-    ["Host CPU", metric(sample?.sys_cpu_percent, "%")],
-    [
-      "Host memory",
-      `${memory(sample?.sys_ram_mb)} / ${memory(sample?.sys_ram_total_mb)}`,
-    ],
-  ];
+  const { user, sessionGeneration } = useAuth() || {};
+  const [selected, setSelected] = useState("metrics");
+  const admin = user?.role === "admin";
+  const active = admin ? selected : "metrics";
+  const tabs = ["metrics", "diagnostics"];
   return (
     <div className="container application-monitor">
-      <div className="application-monitor-heading">
-        <div>
-          <h1>
-            <Activity size={24} aria-hidden="true" /> Metrics
-          </h1>
-          <p>
-            {query.isLive ? "Live" : "Polling"} ·{" "}
-            {sample
-              ? `Sampled ${new Date(sample.timestamp * 1000).toLocaleTimeString()}`
-              : "Waiting for metrics"}
-          </p>
+      <header className="monitor-page-heading">
+        <h1>Application monitor</h1>
+        <p>Performance and system health</p>
+      </header>
+      {admin && (
+        <div className="monitor-tabs" role="tablist" aria-label="Metrics views">
+          {tabs.map((tab, index) => (
+            <button
+              type="button"
+              key={tab}
+              role="tab"
+              id={`monitor-${tab}-tab`}
+              aria-controls={`monitor-${tab}-panel`}
+              aria-selected={active === tab}
+              tabIndex={active === tab ? 0 : -1}
+              onClick={() => setSelected(tab)}
+              onKeyDown={(event) => {
+                const next =
+                  event.key === "Home"
+                    ? 0
+                    : event.key === "End"
+                      ? 1
+                      : event.key === "ArrowRight"
+                        ? (index + 1) % 2
+                        : event.key === "ArrowLeft"
+                          ? (index + 1) % 2
+                          : null;
+                if (next !== null) {
+                  event.preventDefault();
+                  setSelected(tabs[next]);
+                  event.currentTarget.parentElement
+                    .querySelectorAll('[role="tab"]')
+                    [next].focus();
+                }
+              }}
+            >
+              {tab === "metrics" ? "Metrics" : "Diagnostics"}
+            </button>
+          ))}
         </div>
-        <button
-          type="button"
-          className="action-button secondary"
-          disabled={query.isFetching}
-          onClick={() => query.refetch()}
-        >
-          <RefreshCw size={16} aria-hidden="true" /> Refresh
-        </button>
-      </div>
-      <QueryStatus query={query} />
-      <dl className="application-metric-grid application-detail-metrics">
-        {metrics.map(([label, value]) => (
-          <div key={label}>
-            <dt>{label}</dt>
-            <dd>{value}</dd>
-          </div>
-        ))}
-      </dl>
-      <p className="application-metrics-hint">
-        Recent {query.data?.history_limit ?? 180} samples, approximately every{" "}
-        {query.data?.interval_seconds ?? 3} seconds. History is held in memory
-        and resets when the application restarts. Process CPU can exceed 100%
-        across multiple cores; host I/O covers the whole machine. Unavailable
-        readings appear as —.
-      </p>
-      <div className="application-charts">
-        <MetricsChart
-          title="Application CPU"
-          samples={samples}
-          series={[["app_cpu_percent", "CPU"]]}
-          unit="%"
-        />
-        <MetricsChart
-          title="Application memory"
-          samples={samples}
-          series={[["app_ram_mb", "Memory"]]}
-          unit="MB"
-        />
-        <MetricsChart
-          title="Host utilization"
-          samples={samples}
-          series={[
-            ["sys_cpu_percent", "CPU"],
-            ["sys_ram_percent", "Memory"],
-          ]}
-          unit="%"
-          percent
-        />
-        <MetricsChart
-          title="Event loop delay"
-          samples={samples}
-          series={[["loop_lag_ms", "Delay"]]}
-          unit="ms"
-        />
-        <MetricsChart
-          title="Network throughput"
-          samples={samples}
-          series={[
-            ["net_tx_kib_s", "Sent"],
-            ["net_rx_kib_s", "Received"],
-          ]}
-          unit="KiB/s"
-        />
-        <MetricsChart
-          title="Disk throughput"
-          samples={samples}
-          series={[
-            ["disk_read_kib_s", "Read"],
-            ["disk_write_kib_s", "Written"],
-          ]}
-          unit="KiB/s"
-        />
-        <MetricsChart
-          title="Background tasks"
-          samples={samples}
-          series={[["background_task_count", "Tasks"]]}
-          unit="tasks"
-        />
-        <MetricsChart
-          title="Async tasks"
-          samples={samples}
-          series={[["asyncio_task_count", "Tasks"]]}
-          unit="tasks"
-        />
-        <MetricsChart
-          title="Threads"
-          samples={samples}
-          series={[["thread_count", "Threads"]]}
-          unit="threads"
-        />
-      </div>
-      <section className="application-server-metrics">
-        <h2>Bedrock processes</h2>
-        <div className="table-responsive-wrapper">
-          <table className="server-table">
-            <thead>
-              <tr>
-                <th>Server</th>
-                <th>PID</th>
-                <th>CPU</th>
-                <th>Memory</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sample?.servers.map((server) => (
-                <tr key={server.server_name}>
-                  <td>{server.server_name}</td>
-                  <td>{server.pid ?? "—"}</td>
-                  <td>{metric(server.cpu_percent, "%")}</td>
-                  <td>{memory(server.memory_mb)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {!sample?.servers.length && <p>No server process metrics available.</p>}
+      )}
+      <section
+        id={`monitor-${active}-panel`}
+        role={admin ? "tabpanel" : undefined}
+        aria-labelledby={admin ? `monitor-${active}-tab` : undefined}
+      >
+        {active === "diagnostics" ? (
+          <ApplicationDiagnostics
+            key={`${getPreferenceIdentity(user)}:${sessionGeneration ?? 0}`}
+          />
+        ) : (
+          <ApplicationMetrics
+            key={`${getPreferenceIdentity(user)}:${sessionGeneration ?? 0}`}
+          />
+        )}
       </section>
     </div>
   );

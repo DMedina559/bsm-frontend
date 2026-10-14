@@ -79,7 +79,12 @@ export function reconcileMetricsSnapshot(data, options) {
     const merged = [...history.values()]
       .sort((a, b) => a.revision - b.revision)
       .slice(-180);
-    const value = { ...result.value, history: merged };
+    const value = {
+      ...result.value,
+      interval_seconds: data.interval_seconds,
+      history_limit: data.history_limit,
+      history: merged,
+    };
     stateReconciler.read(["application-metrics"]).value = value;
     return { ...result, value };
   }
@@ -95,7 +100,15 @@ export function reconcileMetricsEvent(sample, options) {
     sample,
   ].slice(-180);
   return reconcileMetricsSnapshot(
-    { latest: sample, history, interval_seconds: 3, history_limit: 180 },
+    {
+      latest: sample,
+      history,
+      interval_seconds:
+        previous?.latest.epoch === sample.epoch
+          ? previous.interval_seconds
+          : undefined,
+      history_limit: 180,
+    },
     options,
   );
 }

@@ -114,3 +114,28 @@ it("discovers plugin operations over the session transport and rejects malformed
     expect.objectContaining({ method: "GET" }),
   );
 });
+
+it("serializes runtime shutdown and event diagnostics with the current contract", async () => {
+  request.mockResolvedValue({
+    status: "accepted",
+    instance_id: "instance",
+    phase: "stopping",
+  });
+  const receipt = await callOperation("shutdown_web_runtime", { body: {} });
+  expect(receipt.status).toBe("accepted");
+  expect(receipt.task_id).toBeUndefined();
+  expect(request.mock.calls[0][0]).toBe("/api/runtime/shutdown");
+  expect(request.mock.calls[0][1].body).toEqual({});
+  expect(
+    resolveOperationUrl("get_event_activity", {
+      query: {
+        owner: "plugin:example",
+        correlation_id: "operation-1",
+        limit: 5,
+      },
+    }),
+  ).toBe(
+    "/api/events/activity?owner=plugin%3Aexample&correlation_id=operation-1&limit=5",
+  );
+  expect(resolveOperationUrl("list_application_events")).toBe("/api/events");
+});
