@@ -19,9 +19,12 @@ export default defineConfig(({ mode }) => {
 
   let appVersion = packageJson.version || "unknown";
   try {
-    const gitVersion = execSync("git describe --tags --always", {
-      stdio: "pipe",
-    })
+    const gitVersion = execSync(
+      'git describe --tags --always --match "[0-9]*" --match "v[0-9]*"',
+      {
+        stdio: "pipe",
+      },
+    )
       .toString()
       .trim();
     if (gitVersion) {

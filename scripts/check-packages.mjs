@@ -16,7 +16,10 @@ const require = createRequire(new URL("../package.json", import.meta.url));
 const npm = process.env.npm_execpath;
 if (!npm) throw new Error("Run this check with npm run packages:check");
 const temporary = mkdtempSync(join(tmpdir(), "bsm-packages-"));
-const names = ["api-client", "runtime", "storage"];
+const available = ["api-client", "runtime", "storage"];
+const names = process.argv.slice(2).length ? process.argv.slice(2) : available;
+if (names.some((name) => !available.includes(name)))
+  throw new Error("Unknown package");
 const runNpm = (args) =>
   execFileSync(process.execPath, [npm, ...args], {
     cwd: root,
@@ -33,6 +36,15 @@ try {
         temporary,
       ]),
     );
+    const invalid = result[0].files.filter(
+      (file) =>
+        !/^(dist\/|README\.md$|LICENSE$|package\.json$)/.test(file.path) ||
+        file.path.endsWith("openapi.json"),
+    );
+    if (invalid.length)
+      throw new Error(
+        `Unexpected package files: ${invalid.map((file) => file.path).join(", ")}`,
+      );
     return join(temporary, result[0].filename);
   });
   writeFileSync(
@@ -67,24 +79,24 @@ try {
   execFileSync(process.execPath, [join(temporary, "check.mjs")], {
     stdio: "inherit",
   });
-  cpSync(
-    join(root, "packages/api-client/test/consumer.mts"),
-    join(temporary, "consumer.mts"),
-  );
-  execFileSync(
-    process.execPath,
-    [
-      require.resolve("typescript/bin/tsc"),
-      "--noEmit",
-      "--strict",
-      "--module",
-      "NodeNext",
-      "--moduleResolution",
-      "NodeNext",
-      join(temporary, "consumer.mts"),
-    ],
-    { stdio: "inherit" },
-  );
+  for (const name of names.filter((name) => name !== "runtime")) {
+    const target = join(temporary, `${name}.mts`);
+    cpSync(join(root, `packages/${name}/test/consumer.mts`), target);
+    execFileSync(
+      process.execPath,
+      [
+        require.resolve("typescript/bin/tsc"),
+        "--noEmit",
+        "--strict",
+        "--module",
+        "NodeNext",
+        "--moduleResolution",
+        "NodeNext",
+        target,
+      ],
+      { stdio: "inherit" },
+    );
+  }
   console.log(
     `Verified ${names.length} packed packages, ${imports.length} executable exports, and consumer types.`,
   );

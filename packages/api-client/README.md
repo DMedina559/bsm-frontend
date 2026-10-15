@@ -39,3 +39,21 @@ Downloads return blobs; presentation and saving belong to the application.
 
 Generate and check the pinned contract using the repository root
 `api:generate` and `api:check` scripts. Pack with `npm pack --workspace=@bedrock-server-manager/api-client`.
+
+## Build and release
+
+Run `npm run build --workspace=@bedrock-server-manager/api-client` from the root.
+The SDK ships dependency-free ESM JavaScript, JSON operation metadata, and type
+declarations from `dist/`; source, test fixtures, and the full backend schema are
+not included. `npm pack` rebuilds this output before creating the archive.
+
+The workspace owns `api:generate`, `api:check`, `lint`, `test`, `typecheck`, and
+`check`. Generation scripts live in `scripts/` within this package. The root
+provides convenient aliases. Runtime-discovered plugin schemas retain dynamic
+operation IDs; the generated core client remains pinned.
+
+SDK versions use SemVer independently of frontend releases. Publish a GitHub
+release named `api-client-v<version>` after committing the matching package
+version and lockfile. The dedicated npm workflow validates the package and
+consumer types before publishing. See the repository release guide for registry
+credentials and prerelease tags.

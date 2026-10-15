@@ -4,26 +4,26 @@
   "type": "module",
   "private": false,
   "files": [
-    "src",
+    "dist",
     "README.md"
   ],
   "exports": {
     ".": {
-      "types": "./src/operations.d.ts",
-      "default": "./src/operations.js"
+      "types": "./dist/operations.d.ts",
+      "default": "./dist/operations.js"
     },
     "./operationRegistry": {
-      "types": "./src/operationRegistry.d.ts",
-      "default": "./src/operationRegistry.js"
+      "types": "./dist/operationRegistry.d.ts",
+      "default": "./dist/operationRegistry.js"
     },
-    "./contract": "./src/generated/contract.d.ts",
+    "./contract": "./dist/generated/contract.d.ts",
     "./transport": {
-      "types": "./src/transport.d.ts",
-      "default": "./src/transport.js"
+      "types": "./dist/transport.d.ts",
+      "default": "./dist/transport.js"
     },
     "./urls": {
-      "types": "./src/urls.d.ts",
-      "default": "./src/urls.js"
+      "types": "./dist/urls.d.ts",
+      "default": "./dist/urls.js"
     }
   },
   "license": "MIT",
@@ -34,5 +34,19 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "scripts": {
+    "build": "node ../../scripts/build-package.mjs",
+    "test": "node ../../scripts/test-packages.mjs api-client",
+    "lint": "eslint src test scripts",
+    "prepack": "npm run build",
+    "typecheck": "tsc --noEmit --strict --module NodeNext --moduleResolution NodeNext test/consumer.mts",
+    "api:generate": "node scripts/generate-contract.mjs && npm run build",
+    "api:check": "node scripts/generate-contract.mjs --check",
+    "check": "npm run build && npm run api:check && npm run lint && npm run typecheck && npm test",
+    "prepublishOnly": "npm run check"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

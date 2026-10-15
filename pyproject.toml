@@ -39,6 +39,9 @@ bsm_frontend = ["static/**/*"]
 [tool.setuptools_scm]
 local_scheme = "no-local-version"
 
+[tool.setuptools_scm.scm.git]
+describe_command = "git describe --dirty --tags --long --match [0-9]* --match v[0-9]*"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 

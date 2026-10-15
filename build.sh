@@ -1,11 +1,5 @@
 #!/bin/bash
 set -e
-
-echo "Building frontend..."
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
 npm ci
-npm run build
-
-echo "Building Python package..."
-python3 -m build
-
-echo "Build complete. Artifacts are in dist/"
+npm run build:python

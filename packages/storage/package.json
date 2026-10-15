@@ -2,23 +2,23 @@
   "name": "@bedrock-server-manager/storage",
   "version": "0.1.0",
   "type": "module",
-  "private": false,
+  "private": true,
   "files": [
-    "src",
+    "dist",
     "README.md"
   ],
   "exports": {
     "./preferenceStore": {
-      "types": "./src/preferenceStore.d.ts",
-      "default": "./src/preferenceStore.js"
+      "types": "./dist/preferenceStore.d.ts",
+      "default": "./dist/preferenceStore.js"
     },
     "./sessionBoundary": {
-      "types": "./src/sessionBoundary.d.ts",
-      "default": "./src/sessionBoundary.js"
+      "types": "./dist/sessionBoundary.d.ts",
+      "default": "./dist/sessionBoundary.js"
     },
     ".": {
-      "types": "./src/index.d.ts",
-      "default": "./src/index.js"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     }
   },
   "license": "MIT",
@@ -26,5 +26,13 @@
     "type": "git",
     "url": "https://github.com/DMedina559/bsm-frontend.git",
     "directory": "packages/storage"
+  },
+  "scripts": {
+    "build": "node ../../scripts/build-package.mjs",
+    "test": "node ../../scripts/test-packages.mjs storage",
+    "lint": "eslint src test",
+    "prepack": "npm run build",
+    "typecheck": "tsc --noEmit --strict --module NodeNext --moduleResolution NodeNext test/consumer.mts",
+    "check": "npm run build && npm run lint && npm run typecheck && npm test"
   }
 }

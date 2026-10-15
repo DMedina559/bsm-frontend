@@ -16,9 +16,5 @@ await client.callOperation("missing_operation");
 await client.callOperation("get_properties");
 
 import { buildOperationRegistry } from "@bedrock-server-manager/api-client/operationRegistry";
-import { createPreferenceStore } from "@bedrock-server-manager/storage";
 const registry = buildOperationRegistry({ openapi: "3.1.0", paths: {} });
 Object.values(registry).forEach((operation) => operation.method.toUpperCase());
-const store = createPreferenceStore();
-const density = store.read("account", "density", "compact");
-density.toUpperCase();

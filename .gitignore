@@ -190,3 +190,6 @@ test.db-journal
 frontend/dist/
 frontend/build/
 src/bsm_frontend/static
+
+# Built workspace packages
+packages/*/dist/

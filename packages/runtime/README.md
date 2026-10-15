@@ -29,3 +29,12 @@ cleanup functions. Reset the session before changing accounts/backends or cleari
 application caches. The application owns clearing its query cache and operation
 list at that boundary. Cleanup stops timers and subscriptions; session generations
 reject stale work. Each runtime requires its own query cache for full isolation.
+
+## Workspace commands
+
+This package remains private. Its `build` command copies executable modules and
+available declarations to `dist/`, which the frontend imports through the package
+exports. Installation prepares this output; rebuild after editing package source.
+`test`, `lint`, and `check` run this package's own checks from the repository's
+shared development tools. `npm pack` builds the package first for isolated
+consumer verification; it does not publish it.

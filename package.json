@@ -7,14 +7,20 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspace=bsm-frontend",
-    "test": "npm run test:run --workspace=bsm-frontend && npm run test:packages",
-    "lint": "eslint frontend packages scripts eslint.config.js prettier.config.js",
-    "typecheck": "npm run typecheck --workspace=bsm-frontend",
-    "api:check": "npm run api:check --workspace=bsm-frontend",
-    "api:generate": "npm run api:generate --workspace=bsm-frontend",
+    "build": "npm run build:packages && npm run build:web",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "eslint scripts eslint.config.js prettier.config.js && npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "api:check": "npm run api:check --workspace=@bedrock-server-manager/api-client",
+    "api:generate": "npm run api:generate --workspace=@bedrock-server-manager/api-client",
     "test:packages": "node scripts/test-packages.mjs",
-    "packages:check": "node scripts/check-packages.mjs"
+    "packages:check": "node scripts/check-packages.mjs",
+    "prepare": "npm run build:packages",
+    "build:packages": "npm run build --workspace=@bedrock-server-manager/api-client --workspace=@bedrock-server-manager/runtime --workspace=@bedrock-server-manager/storage",
+    "build:web": "npm run build --workspace=bsm-frontend",
+    "build:python": "npm run build && node scripts/build-python.mjs",
+    "check": "npm run build:packages && npm run api:check && npm run lint && npm run typecheck && npm test && npm run packages:check",
+    "dev": "npm run build:packages && npm run dev --workspace=bsm-frontend"
   },
   "engines": {
     "node": ">=22.12.0"

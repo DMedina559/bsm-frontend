@@ -2,6 +2,7 @@ import js from "@eslint/js";
 import globals from "globals";
 import frontend from "./frontend/eslint.config.js";
 export default [
+  { ignores: ["packages/*/dist/**"] },
   ...frontend.map((config) => ({
     ...config,
     ...(config.files
@@ -20,12 +21,13 @@ export default [
       : {}),
   })),
   {
-    files: ["scripts/**/*.mjs"],
+    files: ["scripts/**/*.mjs", "packages/*/scripts/**/*.mjs"],
     languageOptions: { globals: globals.node },
     rules: js.configs.recommended.rules,
   },
   {
     files: ["packages/**/*.js"],
+    ignores: ["packages/*/dist/**"],
     rules: {
       "no-restricted-globals": [
         "error",

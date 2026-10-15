@@ -5,14 +5,12 @@ on:
   pull_request:
     paths:
       - 'packages/api-client/**'
-      - 'scripts/generate-contract.mjs'
       - '.github/workflows/backend-contract.yml'
   push:
     branches-ignore:
       - 'main'
     paths:
       - 'packages/api-client/**'
-      - 'scripts/generate-contract.mjs'
       - '.github/workflows/backend-contract.yml'
 
 permissions:

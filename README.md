@@ -1,25 +1,103 @@
-# Bedrock Server Manager UI
+# Bedrock Server Manager frontend workspace
 
-This is the React frontend for Bedrock Server Manager, packaged as a Python library.
+The npm workspace contains the React web application and the reusable BSM API
+client, runtime, and storage packages. The Python distribution delivers the
+compiled web interface to Bedrock Server Manager.
 
-## Installation
+## Development
 
-```bash
+Use Node.js 22.12 or later. From the repository root:
+
+```sh
+npm ci
+npm run dev
+```
+
+Installation builds the shared packages automatically. The development server
+proxies backend requests to `http://localhost:11325`; run the backend separately.
+See [frontend development](frontend/README.md) for connection configuration,
+appearance, and browser tests.
+
+| Workspace                                              | Purpose                                                      | Distribution                              |
+| ------------------------------------------------------ | ------------------------------------------------------------ | ----------------------------------------- |
+| `frontend`                                             | React web application and browser adapters                   | Python package containing compiled assets |
+| [`packages/api-client`](packages/api-client/README.md) | Generated API types, operation client, HTTP transport        | Public npm SDK                            |
+| [`packages/runtime`](packages/runtime/README.md)       | Sessions, state reconciliation, metrics, operations, sockets | Private workspace                         |
+| [`packages/storage`](packages/storage/README.md)       | Versioned preferences and persistence adapters               | Private workspace                         |
+
+Shared packages receive platform dependencies explicitly. They do not import the
+frontend or React. Credentials, DOM downloads, navigation, and browser lifecycle
+integration stay in the web application.
+
+## Commands
+
+| Command                  | Result                                                                                     |
+| ------------------------ | ------------------------------------------------------------------------------------------ |
+| `npm run dev`            | Build shared packages and start the web development server                                 |
+| `npm run build`          | Build libraries and production web assets                                                  |
+| `npm run build:packages` | Build library JavaScript, declarations, and operation metadata into each package's `dist/` |
+| `npm run check`          | Check generation, lint, types, workspace tests, and isolated package consumers             |
+| `npm run api:generate`   | Regenerate the SDK contract types and operation registry, then rebuild the SDK             |
+| `npm run packages:check` | Pack/install packages in isolation and check their exports and consumer types              |
+| `npm run build:python`   | Build the web interface and its Python wheel/source distribution                           |
+
+Each workspace owns its `build`, `test`, and `lint` commands. Type checks are
+available where a public TypeScript surface is defined. Root commands coordinate
+these checks. For example, `npm run check --workspace=@bedrock-server-manager/api-client`
+checks just the SDK. Rebuild libraries after changing their source while Vite is
+running. Generated package output is not committed.
+
+Python delivery requires Python 3.11 or later and `python -m pip install build`.
+`npm run build:python` writes distributions to root `dist/`; `PYTHON` can select a
+Python executable. `build.sh` is a compatibility wrapper around this npm workflow.
+
+## Backend installation
+
+```sh
 pip install bsm-frontend
 ```
 
-## Usage
+The backend obtains the compiled asset directory through the Python wrapper:
 
 ```python
 from bsm_frontend import get_static_dir
-
 static_files_path = get_static_dir()
-print(f"Static files are located at: {static_files_path}")
 ```
 
 ## OpenAPI contract
 
-Install `bedrock-server-manager` from the target backend checkout. Export with `python -m bedrock_server_manager.web.contract --output packages/api-client/src/generated/openapi.json`, then run `npm run api:generate` from the repository root. CI compares the complete document with backend `dev` using the backend-owned exporter and its declared dependencies.
+The backend owns the API contract. Install `bedrock-server-manager` from the target
+backend checkout and export it with:
+
+```sh
+python -m bedrock_server_manager.web.contract --output packages/api-client/src/generated/openapi.json
+npm run api:generate
+```
+
+Generation belongs to the API client workspace. `npm run api:check` verifies its
+committed types and operation registry. The backend-contract workflow compares
+the pinned document against backend `dev`; normal package consumers do not need
+a Python backend to build or use the SDK.
+
+## Releases
+
+The SDK and frontend distribution have independent versions and release tags.
+The private root workspace has no published version.
+
+- **SDK:** update `packages/api-client/package.json` and the root lockfile, commit,
+  and publish a GitHub release tagged `api-client-v<package version>`. The npm
+  workflow verifies the version, checks the SDK and packed consumer, and publishes
+  only `@bedrock-server-manager/api-client`. GitHub prereleases use npm's `next`
+  tag; other releases use `latest`. Configure the `npm-release` environment's
+  `NPM_TOKEN` secret with permission to publish under the package's npm scope.
+- **Frontend/Python:** existing frontend release tags continue through the PyPI
+  workflow and `release` environment. The full shared validation workflow must
+  pass before publishing. SDK tags are excluded from this release path and from
+  Python/frontend version discovery.
+
+Runtime and storage remain private and have no registry publication workflow.
+Workspace links let the frontend consume the SDK without tying its version to
+the SDK release number. No npm package is published by installation or build.
 
 ## Application monitor
 
@@ -55,35 +133,3 @@ HTTPS URLs remain external. Bundled UI assets always resolve on the frontend
 origin; custom theme endpoints resolve on the backend origin. Token changes
 and proxy paths should be exercised alongside navigation, nested refreshes,
 assets, plugin content, downloads, and WebSocket reconnection.
-
-## Workspace development
-
-Use Node.js 22.12 or later and run `npm ci` at the repository root. Use
-`npm run build`, `npm test`, `npm run lint`, `npm run typecheck`,
-`npm run api:check`, and `npm run packages:check` there, or run frontend scripts with
-`npm run <script> --workspace=bsm-frontend`.
-
-- [`packages/api-client`](packages/api-client/README.md): generated API types, operation serialization, schema
-  discovery, URL resolution, and authenticated HTTP transport.
-- [`packages/runtime`](packages/runtime/README.md): instance-scoped session, revision reconciliation, metrics,
-  operation recovery, and WebSocket protocol factories.
-- [`packages/storage`](packages/storage/README.md): versioned preference storage with injected persistence and
-  change subscriptions; missing persistence falls back to memory.
-- `frontend/src/app` and `frontend/src/api`: browser adapters and application
-  composition. React hooks, navigation, DOM downloads, credentials, and ingress
-  discovery stay in the frontend.
-
-Build, lint, formatting, and test tools are declared at the workspace root; the
-frontend manifest contains its application dependencies.
-
-Packages do not import frontend code. Runtime factories receive their dependencies
-explicitly, so independent applications can use separate sessions and caches.
-The runtime package remains private while its interfaces are experimental.
-The API and storage packages can be packed independently; nothing is published
-by the normal frontend build.
-
-`npm run packages:check` packs and installs each package in a temporary consumer,
-imports its executable exports without a browser, and checks the API client's
-published TypeScript declarations. `npm test` runs frontend and package tests.
-See [frontend development](frontend/README.md) for proxy setup, production builds,
-preferences, and pre-commit hooks.

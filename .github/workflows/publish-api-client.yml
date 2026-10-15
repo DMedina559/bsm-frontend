@@ -1,0 +1,48 @@
+name: Publish API client
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  npm:
+    if: startsWith(github.event.release.tag_name, 'api-client-v')
+    runs-on: ubuntu-latest
+    environment: npm-release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: package-lock.json
+          registry-url: https://registry.npmjs.org
+      - name: Install workspace dependencies
+        run: npm ci
+      - name: Verify SDK release version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          node --input-type=module - <<'JS'
+          import { readFileSync } from 'node:fs';
+          const pkg = JSON.parse(readFileSync('packages/api-client/package.json', 'utf8'));
+          if (process.env.RELEASE_TAG !== `api-client-v${pkg.version}`) {
+            throw new Error('Release tag must match the API client package version');
+          }
+          if (pkg.private) throw new Error('Cannot publish a private package');
+          JS
+      - name: Validate API client
+        run: |
+          npm run check --workspace=@bedrock-server-manager/api-client
+          npm run packages:check -- api-client
+      - name: Publish API client
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_DIST_TAG: ${{ github.event.release.prerelease && 'next' || 'latest' }}
+        run: npm publish --workspace=@bedrock-server-manager/api-client --access public --provenance --tag "$NPM_DIST_TAG"

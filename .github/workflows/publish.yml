@@ -1,4 +1,4 @@
-name: Publish Package
+name: Publish Python distribution
 
 on:
   release:
@@ -9,6 +9,7 @@ permissions:
 
 jobs:
   validate:
+    if: ${{ !startsWith(github.event.release.tag_name, 'api-client-v') }}
     uses: ./.github/workflows/build-test.yml
 
   pypi:
@@ -45,8 +46,8 @@ jobs:
 
       - name: Build package
         run: |
-          chmod +x build.sh
-          ./build.sh
+          npm ci
+          npm run build:python
         env:
           SETUPTOOLS_SCM_PRETEND_VERSION: ${{ github.ref_name }}
 

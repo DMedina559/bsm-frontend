@@ -4,27 +4,34 @@
   "type": "module",
   "private": true,
   "files": [
-    "src",
+    "dist",
     "README.md"
   ],
   "exports": {
-    "./sessionRuntime": "./src/sessionRuntime.js",
-    "./stateReconciler": "./src/stateReconciler.js",
-    "./operationCoordinator": "./src/operationCoordinator.js",
-    "./applicationState": "./src/applicationState.js",
-    "./applicationMetrics": "./src/applicationMetrics.js",
-    "./operationRecovery": "./src/operationRecovery.js",
-    "./webSocketManager": "./src/webSocketManager.js",
-    "./draftRegistry": "./src/draftRegistry.js",
-    "./diagnostics": "./src/diagnostics.js",
-    "./queryKeys": "./src/queryKeys.js",
-    "./coreEvents": "./src/coreEvents.js",
-    ".": "./src/index.js"
+    "./sessionRuntime": "./dist/sessionRuntime.js",
+    "./stateReconciler": "./dist/stateReconciler.js",
+    "./operationCoordinator": "./dist/operationCoordinator.js",
+    "./applicationState": "./dist/applicationState.js",
+    "./applicationMetrics": "./dist/applicationMetrics.js",
+    "./operationRecovery": "./dist/operationRecovery.js",
+    "./webSocketManager": "./dist/webSocketManager.js",
+    "./draftRegistry": "./dist/draftRegistry.js",
+    "./diagnostics": "./dist/diagnostics.js",
+    "./queryKeys": "./dist/queryKeys.js",
+    "./coreEvents": "./dist/coreEvents.js",
+    ".": "./dist/index.js"
   },
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/DMedina559/bsm-frontend.git",
     "directory": "packages/runtime"
+  },
+  "scripts": {
+    "build": "node ../../scripts/build-package.mjs",
+    "test": "node ../../scripts/test-packages.mjs runtime",
+    "lint": "eslint src test",
+    "prepack": "npm run build",
+    "check": "npm run build && npm run lint && npm test"
   }
 }

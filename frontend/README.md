@@ -5,8 +5,8 @@ React web interface for Bedrock Server Manager. The Python backend runs separate
 ## Development
 
 Install dependencies from the repository root with `npm ci` using Node.js 22.12
-or later. Start Vite with `npm run dev` from this directory, or use
-`npm run dev --workspace=bsm-frontend` from the root. Open the printed `/app/` URL.
+or later. Start with root `npm run dev`, or use `npm run dev` from this directory
+after installation. Open the printed `/app/` URL.
 
 The development proxy targets `http://localhost:11325`. Set `VITE_API_URL` in
 `frontend/.env.local` to use another backend. Browser connection settings can
@@ -19,9 +19,8 @@ validation commands, and OpenAPI generation.
 
 Run `npm run build` from the repository root. Vite replaces
 `src/bsm_frontend/static` with the complete production bundle used by the Python
-package. Deploy its HTML and hashed assets together. `build.sh` installs the
-locked workspace dependencies, builds the interface, and builds the Python
-package; it requires Python's `build` package.
+package. Deploy its HTML and hashed assets together. Root `npm run build:python` builds the interface and Python distribution; it
+requires Python's `build` package. `build.sh` wraps installation and this command.
 
 The backend supplies the external ingress prefix through runtime HTML metadata.
 Test nested navigation, refreshes, assets, HTTP requests, and WebSockets behind
