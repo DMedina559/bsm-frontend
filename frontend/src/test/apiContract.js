@@ -1,6 +1,6 @@
 import Ajv2020 from "ajv/dist/2020";
 import addFormats from "ajv-formats";
-import contract from "../api/generated/openapi.json";
+import contract from "../../../packages/api-client/src/generated/openapi.json";
 
 const ajv = new Ajv2020({ strict: false, allErrors: true });
 addFormats(ajv);

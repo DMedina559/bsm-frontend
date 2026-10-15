@@ -2,10 +2,8 @@
 set -e
 
 echo "Building frontend..."
-cd frontend
-npm install
+npm ci
 npm run build
-cd ..
 
 echo "Building Python package..."
 python3 -m build

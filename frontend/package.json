@@ -15,7 +15,7 @@
     "test:run": "vitest run",
     "api:generate": "node ../scripts/generate-contract.mjs",
     "api:check": "node ../scripts/generate-contract.mjs --check",
-    "typecheck": "tsc --noEmit --strict --skipLibCheck --lib es2022,dom src/api/contract-check.ts && node ../scripts/check-api-calls.mjs",
+    "typecheck": "tsc --moduleResolution bundler --module esnext --noEmit --strict --skipLibCheck --lib es2022,dom src/api/contract-check.ts && node ../scripts/check-api-calls.mjs",
     "test:e2e": "playwright test"
   },
   "dependencies": {
@@ -29,7 +29,10 @@
     "react-dom": "^19.3.0",
     "react-router-dom": "^7.18.4",
     "react-syntax-highlighter": "^16.1.2",
-    "recharts": "^3.10.1"
+    "recharts": "^3.10.1",
+    "@bedrock-server-manager/api-client": "0.1.0",
+    "@bedrock-server-manager/runtime": "0.1.0",
+    "@bedrock-server-manager/storage": "0.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

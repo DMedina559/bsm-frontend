@@ -1,0 +1,30 @@
+{
+  "name": "@bedrock-server-manager/runtime",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "exports": {
+    "./sessionRuntime": "./src/sessionRuntime.js",
+    "./stateReconciler": "./src/stateReconciler.js",
+    "./operationCoordinator": "./src/operationCoordinator.js",
+    "./applicationState": "./src/applicationState.js",
+    "./applicationMetrics": "./src/applicationMetrics.js",
+    "./operationRecovery": "./src/operationRecovery.js",
+    "./webSocketManager": "./src/webSocketManager.js",
+    "./draftRegistry": "./src/draftRegistry.js",
+    "./diagnostics": "./src/diagnostics.js",
+    "./queryKeys": "./src/queryKeys.js",
+    "./coreEvents": "./src/coreEvents.js",
+    ".": "./src/index.js"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DMedina559/bsm-frontend.git",
+    "directory": "packages/runtime"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "bsm-workspace",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "frontend",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace=bsm-frontend",
+    "test": "npm run test:run --workspace=bsm-frontend && node --test packages/*/test/*.test.js",
+    "lint": "eslint frontend packages",
+    "typecheck": "npm run typecheck --workspace=bsm-frontend",
+    "api:check": "npm run api:check --workspace=bsm-frontend"
+  }
+}

@@ -9,6 +9,10 @@ on:
       - 'main'
     paths:
       - 'frontend/**'
+      - 'packages/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'eslint.config.js'
       - 'scripts/**'
       - '.github/workflows/build-test.yml'
   #pull_request:
@@ -35,19 +39,17 @@ jobs:
 
     - name: Install dependencies and build
       run: |
-        cd frontend
         npm ci
+        cd frontend
         npm run api:check
         npm run typecheck
         npm run build
 
     - name: Run Frontend Lint
-      working-directory: ./frontend
       run: npm run lint
 
     - name: Run Frontend Tests
-      working-directory: ./frontend
-      run: npm run test:run
+      run: npm test
 
     - name: Install browser
       working-directory: ./frontend

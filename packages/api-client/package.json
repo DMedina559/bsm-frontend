@@ -1,0 +1,35 @@
+{
+  "name": "@bedrock-server-manager/api-client",
+  "version": "0.1.0",
+  "type": "module",
+  "private": false,
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./src/operations.d.ts",
+      "default": "./src/operations.js"
+    },
+    "./operationRegistry": "./src/operationRegistry.js",
+    "./contract": "./src/generated/contract.d.ts",
+    "./transport": {
+      "types": "./src/transport.d.ts",
+      "default": "./src/transport.js"
+    },
+    "./urls": {
+      "types": "./src/urls.d.ts",
+      "default": "./src/urls.js"
+    }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DMedina559/bsm-frontend.git",
+    "directory": "packages/api-client"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

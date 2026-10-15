@@ -7,7 +7,7 @@ from pathlib import Path
 from bedrock_server_manager.web.contract import contract_changes
 
 expected = json.loads(
-    (Path(__file__).parent.parent / "frontend/src/api/generated/openapi.json").read_text(
+    (Path(__file__).parent.parent / "packages/api-client/src/generated/openapi.json").read_text(
         encoding="utf-8"
     )
 )

@@ -26,7 +26,7 @@ const Users = () => {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingUser, setEditingUser] = useState(
-    /** @type {import("../api/generated/contract").components["schemas"]["UserResponse"] | null} */ (
+    /** @type {import("@bedrock-server-manager/api-client/contract").components["schemas"]["UserResponse"] | null} */ (
       null
     ),
   );

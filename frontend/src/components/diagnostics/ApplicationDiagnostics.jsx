@@ -29,7 +29,7 @@ export default function ApplicationDiagnostics() {
   const [automatic, setAutomatic] = useState(false);
   const [section, setSection] = useState("all");
   const [baseline, setBaseline] = useState(
-    /** @type {import("../../api/generated/contract").components["schemas"]["DiagnosticSnapshot"] | null} */ (
+    /** @type {import("@bedrock-server-manager/api-client/contract").components["schemas"]["DiagnosticSnapshot"] | null} */ (
       null
     ),
   );

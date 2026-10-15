@@ -1,4 +1,4 @@
-import { buildOperationRegistry } from "../frontend/src/api/operationRegistry.js";
+import { buildOperationRegistry } from "../packages/api-client/src/operationRegistry.js";
 import fs from "node:fs/promises";
 import { createRequire } from "node:module";
 const require = createRequire(
@@ -7,7 +7,7 @@ const require = createRequire(
 const { format, resolveConfig } = require("prettier");
 const { default: openapiTS, astToString } = require("openapi-typescript");
 const source = new URL(
-  "../frontend/src/api/generated/openapi.json",
+  "../packages/api-client/src/generated/openapi.json",
   import.meta.url,
 );
 const schema = JSON.parse(await fs.readFile(source, "utf8"));
@@ -21,7 +21,7 @@ const files = {
 const formatting = await resolveConfig(source.pathname);
 for (const [name, raw] of Object.entries(files)) {
   const target = new URL(
-    `../frontend/src/api/generated/${name}`,
+    `../packages/api-client/src/generated/${name}`,
     import.meta.url,
   );
   const content = await format(raw, {

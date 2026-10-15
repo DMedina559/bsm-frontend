@@ -19,7 +19,7 @@ print(f"Static files are located at: {static_files_path}")
 
 ## OpenAPI contract
 
-Install `bedrock-server-manager` from the target backend checkout. Export with `python -m bedrock_server_manager.web.contract --output frontend/src/api/generated/openapi.json`, then run `npm run api:generate` in `frontend`. CI compares the complete document with backend `dev` using the backend-owned exporter and its declared dependencies.
+Install `bedrock-server-manager` from the target backend checkout. Export with `python -m bedrock_server_manager.web.contract --output packages/api-client/src/generated/openapi.json`, then run `npm run api:generate` in `frontend`. CI compares the complete document with backend `dev` using the backend-owned exporter and its declared dependencies.
 
 ## Application monitor
 
@@ -55,3 +55,25 @@ HTTPS URLs remain external. Bundled UI assets always resolve on the frontend
 origin; custom theme endpoints resolve on the backend origin. Token changes
 and proxy paths should be exercised alongside navigation, nested refreshes,
 assets, plugin content, downloads, and WebSocket reconnection.
+
+## Workspace development
+
+Run `npm ci` at the repository root. Use `npm run build`, `npm test`,
+`npm run lint`, and `npm run typecheck` there, or run frontend scripts with
+`npm run <script> --workspace=bsm-frontend`.
+
+- `packages/api-client`: generated API types, operation serialization, schema
+  discovery, URL resolution, and authenticated HTTP transport.
+- `packages/runtime`: instance-scoped session, revision reconciliation, metrics,
+  operation recovery, and WebSocket protocol factories.
+- `packages/storage`: versioned preference storage with injected persistence and
+  change subscriptions; missing persistence falls back to memory.
+- `frontend/src/app` and `frontend/src/api`: browser adapters and application
+  composition. React hooks, navigation, DOM downloads, credentials, and ingress
+  discovery stay in the frontend.
+
+Packages do not import frontend code. Runtime factories receive their dependencies
+explicitly, so independent applications can use separate sessions and caches.
+The runtime package remains private while its interfaces are experimental.
+The API and storage packages can be packed independently; nothing is published
+by the normal frontend build.

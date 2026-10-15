@@ -29,7 +29,7 @@ repos:
         language: node
         additional_dependencies: [prettier@3.9.9]
         require_serial: true
-        files: ^(frontend/|scripts/.*\.mjs$).*\.(js|jsx|ts|tsx|json|css|scss|html|md|yaml|yml)$
+        files: ^((frontend/|packages/|scripts/).*\.(js|jsx|ts|tsx|json|css|scss|html|md|yaml|yml)|package(-lock)?\.json|eslint\.config\.js)$
         exclude: |
           (?x)^frontend/(
             node_modules/|
@@ -40,8 +40,8 @@ repos:
 
       - id: frontend-eslint
         name: frontend-eslint
-        entry: npm run lint --prefix frontend/
+        entry: npm run lint
         language: system
-        files: ^(frontend/|scripts/.*\.mjs$).*\.(js|jsx)$
+        files: ^(frontend/|packages/|scripts/.*\.mjs$).*\.(js|jsx)$
         exclude: ^frontend/(node_modules|dist|build|coverage)/
         pass_filenames: false

@@ -1,0 +1,20 @@
+{
+  "name": "@bedrock-server-manager/storage",
+  "version": "0.1.0",
+  "type": "module",
+  "private": false,
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "exports": {
+    "./preferenceStore": "./src/preferenceStore.js",
+    "./sessionBoundary": "./src/sessionBoundary.js"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DMedina559/bsm-frontend.git",
+    "directory": "packages/storage"
+  }
+}
