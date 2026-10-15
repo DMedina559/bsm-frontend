@@ -2,17 +2,17 @@ name: Backend OpenAPI Contract
 
 on:
   workflow_dispatch:
-  #schedule:
-  #  - cron: '23 8 * * *'
+  pull_request:
+    paths:
+      - 'packages/api-client/**'
+      - 'scripts/generate-contract.mjs'
+      - '.github/workflows/backend-contract.yml'
   push:
     branches-ignore:
       - 'main'
     paths:
-      - 'frontend/**'
-      - 'packages/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'scripts/**'
+      - 'packages/api-client/**'
+      - 'scripts/generate-contract.mjs'
       - '.github/workflows/backend-contract.yml'
 
 permissions:
