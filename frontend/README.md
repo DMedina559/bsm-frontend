@@ -12,15 +12,14 @@ The development proxy targets `http://localhost:11325`. Set `VITE_API_URL` in
 `frontend/.env.local` to use another backend. Browser connection settings can
 select a remote backend; HTTPS pages require HTTPS backends.
 
-See the [workspace guide](../README.md#workspace-development) for shared packages,
+See the [workspace guide](../README.md#development) for shared packages,
 validation commands, and OpenAPI generation.
 
 ## Production
 
 Run `npm run build` from the repository root. Vite replaces
-`src/bsm_frontend/static` with the complete production bundle used by the Python
-package. Deploy its HTML and hashed assets together. Root `npm run build:python` builds the interface and Python distribution; it
-requires Python's `build` package. `build.sh` wraps installation and this command.
+`frontend/dist/` with the complete production web bundle. Deploy its HTML and hashed assets together. Root `npm run build:python` builds the interface and Python distribution; it
+requires Python's `build` package. `python/build.sh` wraps installation and this command.
 
 The backend supplies the external ingress prefix through runtime HTML metadata.
 Test nested navigation, refreshes, assets, HTTP requests, and WebSockets behind

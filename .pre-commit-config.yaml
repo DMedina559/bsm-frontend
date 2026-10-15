@@ -29,7 +29,7 @@ repos:
         language: node
         additional_dependencies: [prettier@3.9.10]
         require_serial: true
-        files: ^((frontend/|packages/|scripts/).*\.(js|jsx|mjs|ts|tsx|mts|json|css|scss|html|md|yaml|yml)|package(-lock)?\.json|(?:eslint|prettier)\.config\.js)$
+        files: ^((frontend/|packages/|scripts/|python/).*\.(js|jsx|mjs|ts|tsx|mts|json|css|scss|html|md|yaml|yml)|package(-lock)?\.json|(?:eslint|prettier)\.config\.js)$
         exclude: |
           (?x)^(packages/[^/]+/dist/|frontend/(
             node_modules/|

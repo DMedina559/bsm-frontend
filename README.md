@@ -48,14 +48,18 @@ checks just the SDK. Rebuild libraries after changing their source while Vite is
 running. Generated package output is not committed.
 
 Python delivery requires Python 3.11 or later and `python -m pip install build`.
-`npm run build:python` writes distributions to root `dist/`; `PYTHON` can select a
-Python executable. `build.sh` is a compatibility wrapper around this npm workflow.
+`npm run build:python` writes distributions to `python/dist/`; `PYTHON` can select a
+Python executable. `python/build.sh` is a compatibility wrapper around this npm workflow.
 
 ## Backend installation
 
 ```sh
 pip install bsm-frontend
 ```
+
+Python packaging configuration, wrapper source, tests, and distribution output
+live under [`python/`](python/README.md). Normal npm builds write only to
+`frontend/dist/`; Python delivery copies those assets into its own package.
 
 The backend obtains the compiled asset directory through the Python wrapper:
 

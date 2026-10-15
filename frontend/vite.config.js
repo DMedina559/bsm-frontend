@@ -57,7 +57,7 @@ export default defineConfig(({ mode }) => {
     },
     base: mode === "development" ? "/app/" : "./",
     build: {
-      outDir: "../src/bsm_frontend/static",
+      outDir: "dist",
       emptyOutDir: true,
     },
     server: {

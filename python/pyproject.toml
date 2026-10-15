@@ -38,6 +38,7 @@ bsm_frontend = ["static/**/*"]
 
 [tool.setuptools_scm]
 local_scheme = "no-local-version"
+search_parent_directories = true
 
 [tool.setuptools_scm.scm.git]
 describe_command = "git describe --dirty --tags --long --match [0-9]* --match v[0-9]*"

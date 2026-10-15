@@ -189,7 +189,7 @@ test.db-journal
 **/node_modules/
 frontend/dist/
 frontend/build/
-src/bsm_frontend/static
+python/src/bsm_frontend/static
 
 # Built workspace packages
 packages/*/dist/
