@@ -1,40 +1,80 @@
 # BSM application runtime
 
-Private, experimental package for session cancellation, revision/epoch ordering,
-HTTP/event reconciliation, metrics, draft tracking, operation coordination and
-recovery, and the authenticated WebSocket protocol.
+A private workspace package for session cancellation, HTTP/WebSocket state
+reconciliation, metrics, draft tracking, operation coordination, and recovery.
+It imports neither React nor a query-cache implementation.
 
-`createApplicationRuntime` creates isolated instances. Supply an application-owned
-query cache, backend identity callback, API operation caller, WebSocket URL resolver,
-logger, and platform adapter. The cache supplies `cancelQueries`, `invalidateQueries`, `removeQueries`,
-`resetQueries`, and `setQueriesData`, following the TanStack QueryClient interface.
-The package does not import React or a cache implementation.
+## Integration
 
-The platform adapter provides:
+`createApplicationRuntime` from `@bedrock-server-manager/runtime` creates an
+isolated runtime. Supply these application-owned dependencies:
 
-- `isOnline()` and `isVisible()` for current lifecycle state.
-- `getToken()` returning the current WebSocket credential synchronously.
-- `createWebSocket(url)` returning a standard WebSocket-compatible connection.
-- `connected()` to publish an authenticated connection notification.
-- `addEventListener(type, callback)` and `removeEventListener(type, callback)` for
-  `online`, `offline`, `visibilitychange`, and `bsm:socket-connected` events.
+| Dependency              | Responsibility                                                              |
+| ----------------------- | --------------------------------------------------------------------------- |
+| `queryClient`           | Query cache compatible with the methods listed below                        |
+| `getBackendIdentity()`  | Return the current canonical backend identity, including any ingress prefix |
+| `callOperation`         | Call authenticated backend operations                                       |
+| `resolveWebSocketUrl()` | Return the socket URL for the current backend                               |
+| `platform`              | Provide credentials, sockets, and lifecycle notifications                   |
+| `logger`                | Optional debug, warning, and error logging                                  |
 
-The frontend composes the individual module factories through small adapters to
-preserve its existing import surface. Factories accept explicit dependencies and
-allocate their state only when called. Pure query keys, event mappings, and
-response validators are available as separate exports.
+The cache must implement `cancelQueries`, `invalidateQueries`, `removeQueries`,
+`resetQueries`, and `setQueriesData` with TanStack QueryClient-compatible behavior.
+Use a separate cache for each runtime that must be isolated.
 
-Start socket managers and operation recovery explicitly; retain their returned
-cleanup functions. Reset the session before changing accounts/backends or clearing
-application caches. The application owns clearing its query cache and operation
-list at that boundary. Cleanup stops timers and subscriptions; session generations
-reject stale work. Each runtime requires its own query cache for full isolation.
+The frontend composes individual module factories through its
+[`src/app` adapters](../../frontend/src/app). Pure query keys, event mappings,
+and diagnostic validators are available through separate package exports.
+
+## Platform adapter
+
+| Method                                | Contract                                              |
+| ------------------------------------- | ----------------------------------------------------- |
+| `isOnline()`                          | Return whether connection attempts can proceed        |
+| `isVisible()`                         | Return whether the application is foregrounded        |
+| `getToken()`                          | Return the current WebSocket credential synchronously |
+| `createWebSocket(url)`                | Return a standard WebSocket-compatible object         |
+| `connected()`                         | Publish an authenticated-connection notification      |
+| `addEventListener(type, callback)`    | Register a lifecycle listener                         |
+| `removeEventListener(type, callback)` | Remove a registered listener                          |
+
+Lifecycle events are `online`, `offline`, `visibilitychange`, and
+`bsm:socket-connected`. The frontend's
+[`browserPlatform`](../../frontend/src/app/browserPlatform.js) is a concrete adapter.
+The package itself does not read browser globals.
+
+## Session ownership and cleanup
+
+The session module can be used independently within the workspace:
+
+```js
+import { createSessionRuntimeModule } from "@bedrock-server-manager/runtime/sessionRuntime";
+
+const { sessionRuntime } = createSessionRuntimeModule();
+const previous = sessionRuntime.capture();
+sessionRuntime.reset();
+console.log(previous.signal.aborted); // true
+```
+
+Start WebSocket managers and operation recovery explicitly, and retain their
+returned cleanup functions. Call them when the owning session or provider ends.
+Reset the session before changing accounts or backends so pending work becomes
+stale. The application also owns clearing its cache and operation list at that
+boundary; session cancellation is not a replacement for cache cleanup.
+
+Factories allocate their state when called. Do not share mutable instances across
+accounts that require isolation. Revision and epoch reconciliation coordinates
+HTTP snapshots with live events; the backend remains authoritative.
 
 ## Workspace commands
 
-This package remains private. Its `build` command copies executable modules and
-available declarations to `dist/`, which the frontend imports through the package
-exports. Installation prepares this output; rebuild after editing package source.
-`test`, `lint`, and `check` run this package's own checks from the repository's
-shared development tools. `npm pack` builds the package first for isolated
-consumer verification; it does not publish it.
+From the repository root:
+
+```sh
+npm run build --workspace=@bedrock-server-manager/runtime
+npm run check --workspace=@bedrock-server-manager/runtime
+```
+
+Installation prepares `dist/`; rebuild it after editing package source. `npm pack`
+builds the package for isolated consumer checks. This package is private and has
+no registry publication workflow.
