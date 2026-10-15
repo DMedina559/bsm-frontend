@@ -19,7 +19,7 @@ print(f"Static files are located at: {static_files_path}")
 
 ## OpenAPI contract
 
-Install `bedrock-server-manager` from the target backend checkout. Export with `python -m bedrock_server_manager.web.contract --output packages/api-client/src/generated/openapi.json`, then run `npm run api:generate` in `frontend`. CI compares the complete document with backend `dev` using the backend-owned exporter and its declared dependencies.
+Install `bedrock-server-manager` from the target backend checkout. Export with `python -m bedrock_server_manager.web.contract --output packages/api-client/src/generated/openapi.json`, then run `npm run api:generate` from the repository root. CI compares the complete document with backend `dev` using the backend-owned exporter and its declared dependencies.
 
 ## Application monitor
 
@@ -58,15 +58,16 @@ assets, plugin content, downloads, and WebSocket reconnection.
 
 ## Workspace development
 
-Run `npm ci` at the repository root. Use `npm run build`, `npm test`,
-`npm run lint`, and `npm run typecheck` there, or run frontend scripts with
+Use Node.js 22.12 or later and run `npm ci` at the repository root. Use
+`npm run build`, `npm test`, `npm run lint`, `npm run typecheck`,
+`npm run api:check`, and `npm run packages:check` there, or run frontend scripts with
 `npm run <script> --workspace=bsm-frontend`.
 
-- `packages/api-client`: generated API types, operation serialization, schema
+- [`packages/api-client`](packages/api-client/README.md): generated API types, operation serialization, schema
   discovery, URL resolution, and authenticated HTTP transport.
-- `packages/runtime`: instance-scoped session, revision reconciliation, metrics,
+- [`packages/runtime`](packages/runtime/README.md): instance-scoped session, revision reconciliation, metrics,
   operation recovery, and WebSocket protocol factories.
-- `packages/storage`: versioned preference storage with injected persistence and
+- [`packages/storage`](packages/storage/README.md): versioned preference storage with injected persistence and
   change subscriptions; missing persistence falls back to memory.
 - `frontend/src/app` and `frontend/src/api`: browser adapters and application
   composition. React hooks, navigation, DOM downloads, credentials, and ingress
@@ -77,3 +78,9 @@ explicitly, so independent applications can use separate sessions and caches.
 The runtime package remains private while its interfaces are experimental.
 The API and storage packages can be packed independently; nothing is published
 by the normal frontend build.
+
+`npm run packages:check` packs and installs each package in a temporary consumer,
+imports its executable exports without a browser, and checks the API client's
+published TypeScript declarations. `npm test` runs frontend and package tests.
+See [frontend development](frontend/README.md) for proxy setup, production builds,
+preferences, and pre-commit hooks.

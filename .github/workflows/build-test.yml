@@ -1,5 +1,3 @@
-# .github/workflows/build-test.yml
-
 name: Build Lint Test
 
 on:
@@ -13,18 +11,21 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'eslint.config.js'
+      - 'prettier.config.js'
+      - '.pre-commit-config.yaml'
       - 'scripts/**'
       - '.github/workflows/build-test.yml'
-  #pull_request:
-  #  paths:
-  #    - 'frontend/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
 
     steps:
     - name: Checkout repository
@@ -40,15 +41,17 @@ jobs:
     - name: Install dependencies and build
       run: |
         npm ci
-        cd frontend
         npm run api:check
         npm run typecheck
         npm run build
 
-    - name: Run Frontend Lint
+    - name: Verify package consumers
+      run: npm run packages:check
+
+    - name: Run Workspace Lint
       run: npm run lint
 
-    - name: Run Frontend Tests
+    - name: Run Workspace Tests
       run: npm test
 
     - name: Install browser

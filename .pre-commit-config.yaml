@@ -27,9 +27,9 @@ repos:
         name: frontend-prettier
         entry: prettier --write
         language: node
-        additional_dependencies: [prettier@3.9.9]
+        additional_dependencies: [prettier@3.9.10]
         require_serial: true
-        files: ^((frontend/|packages/|scripts/).*\.(js|jsx|ts|tsx|json|css|scss|html|md|yaml|yml)|package(-lock)?\.json|eslint\.config\.js)$
+        files: ^((frontend/|packages/|scripts/).*\.(js|jsx|ts|tsx|mts|json|css|scss|html|md|yaml|yml)|package(-lock)?\.json|(?:eslint|prettier)\.config\.js)$
         exclude: |
           (?x)^frontend/(
             node_modules/|
@@ -42,6 +42,6 @@ repos:
         name: frontend-eslint
         entry: npm run lint
         language: system
-        files: ^(frontend/|packages/|scripts/.*\.mjs$).*\.(js|jsx)$
+        files: ^((frontend/|packages/).*\.(js|jsx)|scripts/.*\.mjs|(?:eslint|prettier)\.config\.js)$
         exclude: ^frontend/(node_modules|dist|build|coverage)/
         pass_filenames: false

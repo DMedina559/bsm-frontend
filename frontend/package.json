@@ -57,7 +57,7 @@
     "globals": "^17.13.0",
     "jsdom": "^30.1.2",
     "openapi-typescript": "^7.13.0",
-    "prettier": "^3.9.10",
+    "prettier": "3.9.10",
     "typescript": "^5.9.3",
     "vite": "^8.3.4",
     "vitest": "^5.0.2"
@@ -67,11 +67,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/dmedina559/bedrock-server-manager.git"
+    "url": "https://github.com/DMedina559/bsm-frontend.git"
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/dmedina559/bedrock-server-manager/issues"
+    "url": "https://github.com/DMedina559/bsm-frontend/issues"
   },
   "homepage": "https://bedrock-server-manager.readthedocs.io/en/latest/#",
   "author": "dmedina559",

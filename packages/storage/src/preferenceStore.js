@@ -3,13 +3,6 @@ import { getSessionStorageKey } from "./sessionBoundary.js";
 export function createPreferenceStore(storage, definitions = {}, events = {}) {
   const listeners = new Map();
   const memory = new Map();
-  const getStorage = () => {
-    try {
-      return storage;
-    } catch {
-      return null;
-    }
-  };
   const keyFor = (identity, name) =>
     getSessionStorageKey(identity, `preference:${name}`);
   const notify = (key) => listeners.get(key)?.forEach((listener) => listener());
@@ -41,9 +34,7 @@ export function createPreferenceStore(storage, definitions = {}, events = {}) {
       const key = keyFor(identity, name);
       if (!key) return fallback;
       try {
-        const raw = memory.has(key)
-          ? memory.get(key)
-          : getStorage()?.getItem(key);
+        const raw = memory.has(key) ? memory.get(key) : storage?.getItem(key);
         if (raw == null) return fallback;
         let parsed = JSON.parse(raw);
         const definition = definitions[name];
@@ -94,7 +85,7 @@ export function createPreferenceStore(storage, definitions = {}, events = {}) {
         return false;
       }
       try {
-        const target = getStorage();
+        const target = storage;
         if (!target) throw new Error("Storage unavailable");
         target.setItem(key, raw);
         memory.delete(key);
@@ -108,7 +99,7 @@ export function createPreferenceStore(storage, definitions = {}, events = {}) {
       const key = keyFor(identity, name);
       if (!key) return false;
       try {
-        const target = getStorage();
+        const target = storage;
         if (!target) throw new Error("Storage unavailable");
         target.removeItem(key);
         memory.delete(key);

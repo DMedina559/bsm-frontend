@@ -12,7 +12,10 @@
       "types": "./src/operations.d.ts",
       "default": "./src/operations.js"
     },
-    "./operationRegistry": "./src/operationRegistry.js",
+    "./operationRegistry": {
+      "types": "./src/operationRegistry.d.ts",
+      "default": "./src/operationRegistry.js"
+    },
     "./contract": "./src/generated/contract.d.ts",
     "./transport": {
       "types": "./src/transport.d.ts",

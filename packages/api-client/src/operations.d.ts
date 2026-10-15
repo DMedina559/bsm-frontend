@@ -1,3 +1,4 @@
+import type { OpenApiSchema } from "./operationRegistry.js";
 import type { RequestOptions } from "./transport.js";
 import type { operations } from "./generated/contract.js";
 type Parameters<T> = T extends { parameters: infer P } ? P : never;
@@ -59,10 +60,7 @@ declare function resolveOperationUrl<K extends keyof operations>(
   ...args: Args<UrlOptions<operations[K]>>
 ): string;
 
-declare function createOperationClient(schema: {
-  paths?: Record<string, unknown>;
-  components?: Record<string, unknown>;
-}): {
+declare function createOperationClient(schema: OpenApiSchema): {
   resolveOperationUrl(
     id: string,
     options?: {

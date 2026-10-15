@@ -8,9 +8,15 @@
   ],
   "scripts": {
     "build": "npm run build --workspace=bsm-frontend",
-    "test": "npm run test:run --workspace=bsm-frontend && node --test packages/*/test/*.test.js",
-    "lint": "eslint frontend packages",
+    "test": "npm run test:run --workspace=bsm-frontend && npm run test:packages",
+    "lint": "eslint frontend packages scripts eslint.config.js prettier.config.js",
     "typecheck": "npm run typecheck --workspace=bsm-frontend",
-    "api:check": "npm run api:check --workspace=bsm-frontend"
+    "api:check": "npm run api:check --workspace=bsm-frontend",
+    "api:generate": "npm run api:generate --workspace=bsm-frontend",
+    "test:packages": "node scripts/test-packages.mjs",
+    "packages:check": "node scripts/check-packages.mjs"
+  },
+  "engines": {
+    "node": ">=22.12.0"
   }
 }

@@ -1,5 +1,8 @@
 # BSM preference storage
 
+Import `createPreferenceStore` and `getSessionStorageKey` from
+`@bedrock-server-manager/storage`.
+
 `createPreferenceStore(storage, definitions, events)` provides versioned,
 validated, account/backend-scoped preferences without browser dependencies.
 

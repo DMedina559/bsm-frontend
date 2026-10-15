@@ -6,13 +6,14 @@ recovery, and the authenticated WebSocket protocol.
 
 `createApplicationRuntime` creates isolated instances. Supply an application-owned
 query cache, backend identity callback, API operation caller, WebSocket URL resolver,
-logger, and platform adapter. The cache follows the query-client methods used by
-the runtime; the package does not import React or a cache implementation.
+logger, and platform adapter. The cache supplies `cancelQueries`, `invalidateQueries`, `removeQueries`,
+`resetQueries`, and `setQueriesData`, following the TanStack QueryClient interface.
+The package does not import React or a cache implementation.
 
 The platform adapter provides:
 
 - `isOnline()` and `isVisible()` for current lifecycle state.
-- `getToken()` for the current WebSocket credential.
+- `getToken()` returning the current WebSocket credential synchronously.
 - `createWebSocket(url)` returning a standard WebSocket-compatible connection.
 - `connected()` to publish an authenticated connection notification.
 - `addEventListener(type, callback)` and `removeEventListener(type, callback)` for
@@ -25,5 +26,6 @@ response validators are available as separate exports.
 
 Start socket managers and operation recovery explicitly; retain their returned
 cleanup functions. Reset the session before changing accounts/backends or clearing
-application caches. Cleanup stops timers and subscriptions; session generations
+application caches. The application owns clearing its query cache and operation
+list at that boundary. Cleanup stops timers and subscriptions; session generations
 reject stale work. Each runtime requires its own query cache for full isolation.

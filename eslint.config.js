@@ -1,3 +1,5 @@
+import js from "@eslint/js";
+import globals from "globals";
 import frontend from "./frontend/eslint.config.js";
 export default [
   ...frontend.map((config) => ({
@@ -17,6 +19,11 @@ export default [
         }
       : {}),
   })),
+  {
+    files: ["scripts/**/*.mjs"],
+    languageOptions: { globals: globals.node },
+    rules: js.configs.recommended.rules,
+  },
   {
     files: ["packages/**/*.js"],
     rules: {

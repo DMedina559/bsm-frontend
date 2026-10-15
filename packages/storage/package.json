@@ -8,8 +8,18 @@
     "README.md"
   ],
   "exports": {
-    "./preferenceStore": "./src/preferenceStore.js",
-    "./sessionBoundary": "./src/sessionBoundary.js"
+    "./preferenceStore": {
+      "types": "./src/preferenceStore.d.ts",
+      "default": "./src/preferenceStore.js"
+    },
+    "./sessionBoundary": {
+      "types": "./src/sessionBoundary.d.ts",
+      "default": "./src/sessionBoundary.js"
+    },
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
   },
   "license": "MIT",
   "repository": {

@@ -8,9 +8,11 @@ provides these APIs; other environments can supply their own Fetch implementatio
 import { createApiClient } from "@bedrock-server-manager/api-client";
 import { createHttpTransport } from "@bedrock-server-manager/api-client/transport";
 
+// Supply your application's credential provider.
+const getToken = async () => process.env.BSM_TOKEN ?? null;
 const transport = createHttpTransport({
   baseUrl: "https://bsm.example/ingress/instance",
-  getToken: async () => credentials.read(),
+  getToken,
 });
 const client = createApiClient(transport);
 const fleet = await client.callOperation("list_servers");
@@ -35,5 +37,5 @@ There are no automatic retries of writes.
 `ApiError` retains backend status, code, details, and committed operation results.
 Downloads return blobs; presentation and saving belong to the application.
 
-Generate and check the pinned contract using the repository's frontend
+Generate and check the pinned contract using the repository root
 `api:generate` and `api:check` scripts. Pack with `npm pack --workspace=@bedrock-server-manager/api-client`.

@@ -1,71 +1,68 @@
 # Bedrock Server Manager frontend
 
-React interface with the supplied server-stack branding, fleet dashboard, grouped navigation, and shared appearance system.
+React web interface for Bedrock Server Manager. The Python backend runs separately.
 
 ## Development
 
-Validation used Node 24. From this directory, run `npm ci`, then `npm run dev`, and open the development URL at `/app/`. The development server proxies backend routes to `http://localhost:11325`. Set `VITE_API_URL` in `.env.local` for another backend. The Python backend must run separately; its source is not included here.
+Install dependencies from the repository root with `npm ci` using Node.js 22.12
+or later. Start Vite with `npm run dev` from this directory, or use
+`npm run dev --workspace=bsm-frontend` from the root. Open the printed `/app/` URL.
 
-## Production integration
+The development proxy targets `http://localhost:11325`. Set `VITE_API_URL` in
+`frontend/.env.local` to use another backend. Browser connection settings can
+select a remote backend; HTTPS pages require HTTPS backends.
 
-Replace the corresponding frontend sources and public assets in your existing project, then run `npm run build`. Vite writes to `../src/bsm_frontend/static` and clears that output directory. Preserve this location for Python package integration. Navigation reports the actual backend version; the footer reports the frontend build version.
+See the [workspace guide](../README.md#workspace-development) for shared packages,
+validation commands, and OpenAPI generation.
 
-## Appearance
+## Production
 
-Account settings offer nine built-in palettes and available server-provided CSS themes. Theme selection uses the existing account API. Light, dark, system, and theme-default modes, plus comfortable or compact density, are device preferences shared between tabs. Theme-load and save errors are visible.
+Run `npm run build` from the repository root. Vite replaces
+`src/bsm_frontend/static` with the complete production bundle used by the Python
+package. Deploy its HTML and hashed assets together. `build.sh` installs the
+locked workspace dependencies, builds the interface, and builds the Python
+package; it requires Python's `build` package.
 
-Custom themes should use semantic `--bsm-*` variables from `src/styles/tokens.css`; legacy aliases remain available. Explicit light mode overrides shared light surfaces. Colors, typography, spacing, control sizes, focus rings, and status colors are centralized.
+The backend supplies the external ingress prefix through runtime HTML metadata.
+Test nested navigation, refreshes, assets, HTTP requests, and WebSockets behind
+the actual reverse proxy. See [reverse proxies and ingress](../README.md#reverse-proxies-and-ingress).
 
-## Checks
+## Application integration
 
-Run `npm run test:run`, `npm run lint`, `npm run build`, and `npm audit`.
+`src/api` configures the shared API client with browser credentials, backend URL
+resolution, session checks, and operation tracking. Browser downloads stay here.
+`src/app` composes shared runtime and storage factories with the application
+query cache and browser lifecycle adapter. React providers own startup/cleanup;
+hooks and pages consume that application instance.
 
-See `FRONTEND-AUDIT.md` for changes, evidence, and remaining integration checks.
+Shared packages must not import the frontend, React, browser storage, or DOM
+APIs. Browser-specific behavior belongs in these adapters.
 
-## Appearance and custom themes
+## Appearance and preferences
 
-Appearance is a separate navigation page at `/appearance`; Account contains profile and password settings. Comfortable and compact density change control padding and heights, navigation rows, form gaps, table spacing, and panel padding.
+Appearance manages themes, personal palettes, display mode, density, panorama,
+and sidebar transparency. Account settings manage the profile and password.
+Account theme selection is saved to the backend. Device preferences, fleet sorting,
+personal palettes, and notification history stay in this browser, scoped by
+backend and account where applicable.
 
-Create personal palettes in Appearance with the five color pickers. Save and apply to keep the palette in this browser. Reusing its name updates it; Edit loads it into the editor and Remove deletes it. Selecting an account theme disables the personal override. Display mode and density remain independent. Contrast feedback checks normal and secondary text on panel and page backgrounds. Personal palettes explicitly override colors in every display mode.
+Custom themes use semantic `--bsm-*` variables from `src/styles/tokens.css`.
+Administrators install shared CSS themes through the backend's theme directory.
+Personal palettes support JSON import/export and CSS export from Appearance.
 
-Export palette JSON to share or back up and Import palette to load it in another browser. Export CSS theme generates semantic CSS for a backend administrator to install. Installed server CSS themes come from `GET /api/info/themes`; selecting one saves its name through `POST /api/account/theme`, and the browser loads `/themes/NAME.css`. Reload Appearance after installing a new server theme. Use a simple filename without the `.css` extension as the listed theme name.
+The notification bell retains up to 100 messages for seven days per signed-in
+account/backend. Guest history stays in memory. Clear history removes retained
+messages. Preference storage falls back to memory if persistence is unavailable.
 
-The supplied frontend has no backend theme-upload endpoint. Install shared CSS files using your backend's theme directory and deployment process; its exact filesystem location depends on that installation. No unsupported file-upload API has been added. Personal palette import works entirely in the browser.
+## Validation and hooks
 
-## Fleet layout and sorting
+From the repository root, run `npm run lint`, `npm run typecheck`,
+`npm run api:check`, `npm test`, `npm run packages:check`, and `npm run build`.
+Run browser tests with `npm run test:e2e --workspace=bsm-frontend` after installing
+Chromium using `npm exec --workspace=bsm-frontend -- playwright install chromium`.
 
-New browser preferences default to comfortable density; existing saved density choices are preserved. The overview uses a smaller banner and tighter summary cards. Sort the server fleet by name, status, version, or player count in either direction. Names and versions use natural numeric ordering; unknown values stay last. Sort preferences are retained in this browser. Sidebar splash text uses the theme’s yellow warning color.
-
-Panorama background is an optional switch in Appearance, disabled by default. It is saved as a browser display preference, uses the existing `/api/panorama` endpoint on the configured backend, and adds a theme-colored overlay for legibility. Turning it off removes the image reference; resetting display preferences disables it.
-
-## Notification history
-
-The top-bar bell opens missed toast messages with severity and local timestamps. Messages remain in history after dismissal and survive reloads for signed-in accounts. History retains the latest 100 messages for seven days, stored separately for each account and configured backend in this browser. Opening history marks existing entries read; Clear history removes the saved messages. Guest messages remain in memory only. If browser storage is unavailable, history still works for the current page session.
-
-Personal palettes use the same swatch-card layout as built-in themes. Create palette or a card’s Edit control opens a focused editor dialog; saving applies the palette and closes the editor. Selection, import, removal, and export remain available.
-
-Panorama visibility in Appearance controls image prominence from 0% to 100% when enabled. It defaults to 18% to preserve the previous subtle background, is saved in this browser, and resets with other display preferences. Panel surfaces retain their theme colors.
-
-Sidebar transparency is a separate 0–100% browser preference in Appearance, defaulting to fully opaque. It changes only the sidebar background; labels and controls retain their opacity. Reset appearance restores 0%.
-
-If deployment requests bundles from `/assets/` rather than `/app/assets/`, rebuild this frontend, deploy the complete output including its index.html and assets directory together, restart the backend if needed, and hard-refresh the browser. The HTML includes a static app base and adjusts it for ingress routes. Do not mix an older index.html with newer hashed bundles.
-
-Built-in theme cards preview their actual default-mode page, panel, and accent colors. Non-default themes now have distinct surface palettes in both dark and light modes; the original Bedrock Emerald remains unchanged. Personal palette overrides continue to take priority.
-
-Density now scales typography and card geometry throughout the interface. Comfortable uses 15px body text, 20px card padding, 24px grid gaps, and 340px minimum fleet-card width; Compact uses 13px, 12px, 12px, and 270px respectively. Headings, navigation, icons, previews, dialogs, and tables also scale. Mobile tap targets remain at least 44px, with 16px input text in both modes.
-
-Personal palettes can include an optional description (up to 160 characters), shown on their cards and retained in saved and exported palette JSON. Existing palettes without descriptions still work.
-
-Reset appearance restores the account’s BSM Default theme and clears the active personal palette, then restores theme-default mode, Comfortable density, panorama off with 18% visibility, and an opaque sidebar. Saved palettes are retained. If the account theme request fails, current preferences stay in place and an error is shown.
-
-## Pre-commit hooks
-
-Install the hooks from the repository root with `pre-commit install`, then
-run `pre-commit run --all-files`. Prettier 3.9.9 runs in an isolated Node environment, matching the frontend
-dependency; keep the hook version
-in sync when updating Prettier. Formatting runs serially to avoid concurrent
-formatter processes.
-
-The ESLint hook uses this project's dependencies. Run `npm ci --prefix frontend`
-from the repository root before committing. pre-commit.ci skips this system
-hook; the Build Lint Test GitHub Actions workflow runs the full frontend lint.
+Install Python's `pre-commit` package and run `pre-commit install` from the root.
+`pre-commit run --all-files` checks formatting and workspace lint. The ESLint hook
+uses the dependencies installed by root `npm ci`; pre-commit.ci skips that system
+hook, while GitHub Actions runs it. Keep the hook's Prettier version aligned with
+the workspace dependency.
