@@ -25,17 +25,26 @@ jobs:
           registry-url: https://registry.npmjs.org
       - name: Install workspace dependencies
         run: npm ci
-      - name: Verify SDK release version
+      - name: Set SDK version from release tag
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           node --input-type=module - <<'JS'
           import { readFileSync } from 'node:fs';
+          import { execFileSync } from 'node:child_process';
           const pkg = JSON.parse(readFileSync('packages/api-client/package.json', 'utf8'));
-          if (process.env.RELEASE_TAG !== `api-client-v${pkg.version}`) {
-            throw new Error('Release tag must match the API client package version');
-          }
           if (pkg.private) throw new Error('Cannot publish a private package');
+          const tag = process.env.RELEASE_TAG;
+          const match = /^api-client-v(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$/.exec(tag ?? '');
+          if (!match) throw new Error('Expected api-client-v<SemVer>, for example api-client-v0.1.1 or api-client-v0.2.0-beta.1');
+          const version = match[1];
+          execFileSync('npm', [
+            'version', version,
+            '--workspace=@bedrock-server-manager/api-client',
+            '--no-git-tag-version', '--ignore-scripts', '--allow-same-version',
+          ], { stdio: 'inherit' });
+          const updated = JSON.parse(readFileSync('packages/api-client/package.json', 'utf8'));
+          if (updated.version !== version) throw new Error('Release tag must contain a canonical SemVer version');
           JS
       - name: Validate API client
         run: |

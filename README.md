@@ -112,10 +112,14 @@ The root workspace, runtime, and storage packages are private.
 | API client      | `api-client-v<SDK version>`                      | `publish-api-client.yml` | `npm-release` environment and its `NPM_TOKEN` secret with access to the npm scope |
 | Frontend/Python | `frontend-<version>`, such as `frontend-1.3.0b8` | `publish.yml`            | Existing PyPI trusted publisher and `release` environment                         |
 
-For an SDK release, update `packages/api-client/package.json`, refresh the root
-lockfile with `npm install --package-lock-only --ignore-scripts`, and commit both.
-The release tag must exactly match that package version. GitHub prereleases
-publish to npm's `next` tag; other SDK releases publish to `latest`.
+For an SDK release, publish a GitHub release tagged `api-client-v0.1.1`, for example.
+The workflow validates the SemVer tag and sets the SDK package and lockfile
+version in its temporary checkout before validation and publication. No manual
+manifest update or version commit is required. The committed version remains a
+development baseline; the published package gets its version from the release tag.
+For a beta, use a tag such as `api-client-v0.2.0-beta.1` and mark the GitHub release
+as a prerelease. GitHub prereleases publish to npm's `next` tag; other SDK releases
+publish to `latest`.
 
 Frontend/Python releases run the shared validation workflow before publishing.
 The `frontend-` prefix identifies the release; the published Python version and
