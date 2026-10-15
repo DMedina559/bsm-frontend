@@ -73,6 +73,9 @@ Use Node.js 22.12 or later and run `npm ci` at the repository root. Use
   composition. React hooks, navigation, DOM downloads, credentials, and ingress
   discovery stay in the frontend.
 
+Build, lint, formatting, and test tools are declared at the workspace root; the
+frontend manifest contains its application dependencies.
+
 Packages do not import frontend code. Runtime factories receive their dependencies
 explicitly, so independent applications can use separate sessions and caches.
 The runtime package remains private while its interfaces are experimental.

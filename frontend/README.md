@@ -66,3 +66,19 @@ Install Python's `pre-commit` package and run `pre-commit install` from the root
 uses the dependencies installed by root `npm ci`; pre-commit.ci skips that system
 hook, while GitHub Actions runs it. Keep the hook's Prettier version aligned with
 the workspace dependency.
+
+## Test layout
+
+Tests live outside application source under `tests/`:
+
+- `unit/` mirrors the source directories for component, page, and runtime tests.
+- `support/` contains shared providers, HTTP fixtures, contract validation, and setup.
+- `e2e/` contains Playwright browser scenarios.
+- `types/` checks the frontend's generated API call signatures.
+
+Shared package tests remain beside their packages under `packages/*/test`.
+Application source must not import test helpers or test frameworks.
+
+Public theme stylesheets and manifest icons are loaded dynamically. The bundled
+`public/image/panorama.png` is the backend's default panorama response; it is
+required even though the frontend requests it through an API operation.

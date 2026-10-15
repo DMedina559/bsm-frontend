@@ -1,9 +1,7 @@
 import { buildOperationRegistry } from "../packages/api-client/src/operationRegistry.js";
 import fs from "node:fs/promises";
 import { createRequire } from "node:module";
-const require = createRequire(
-  new URL("../frontend/package.json", import.meta.url),
-);
+const require = createRequire(new URL("../package.json", import.meta.url));
 const { format, resolveConfig } = require("prettier");
 const { default: openapiTS, astToString } = require("openapi-typescript");
 const source = new URL(

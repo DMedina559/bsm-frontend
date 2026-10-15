@@ -12,9 +12,7 @@ import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-const require = createRequire(
-  new URL("../frontend/package.json", import.meta.url),
-);
+const require = createRequire(new URL("../package.json", import.meta.url));
 const npm = process.env.npm_execpath;
 if (!npm) throw new Error("Run this check with npm run packages:check");
 const temporary = mkdtempSync(join(tmpdir(), "bsm-packages-"));

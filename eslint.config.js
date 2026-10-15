@@ -7,14 +7,14 @@ export default [
     ...(config.files
       ? {
           files: config.files.map((pattern) =>
-            pattern.startsWith("src/") ? `frontend/${pattern}` : pattern,
+            /^(src|tests)\//.test(pattern) ? `frontend/${pattern}` : pattern,
           ),
         }
       : {}),
     ...(config.ignores
       ? {
           ignores: config.ignores.map((pattern) =>
-            pattern.startsWith("src/") ? `frontend/${pattern}` : pattern,
+            /^(src|tests)\//.test(pattern) ? `frontend/${pattern}` : pattern,
           ),
         }
       : {}),
