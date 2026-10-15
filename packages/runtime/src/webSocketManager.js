@@ -1,13 +1,17 @@
+import { defaultScheduler } from "./scheduler.js";
+
 export function createWebSocketManagerModule({
   stateReconciler,
   resolveWebSocketUrl,
   logger,
   sessionRuntime,
   platform,
+  scheduler = defaultScheduler,
 } = {}) {
   function createWebSocketManager({ onMessage, onState }) {
     let identity = null;
     let connectionTicket = null;
+    let stopCurrent = () => {};
     const ref = (current) => ({ current });
     const socketRef = ref(null),
       authenticatedRef = ref(false),
@@ -34,8 +38,8 @@ export function createWebSocketManagerModule({
     const setIsFallback = (isFallback) => update({ isFallback });
     const disconnect = () => {
       generation.current += 1;
-      clearTimeout(retryTimer.current);
-      clearTimeout(authTimer.current);
+      scheduler.clearTimeout(retryTimer.current);
+      scheduler.clearTimeout(authTimer.current);
       authenticatedRef.current = false;
       setIsConnected(false);
       const socket = socketRef.current;
@@ -66,14 +70,14 @@ export function createWebSocketManagerModule({
         reconnectAttempts.current += 1;
         // Keep retrying while polling provides status after three failed connections.
         if (reconnectAttempts.current >= 3) setIsFallback(true);
-        clearTimeout(retryTimer.current);
-        retryTimer.current = setTimeout(
+        scheduler.clearTimeout(retryTimer.current);
+        retryTimer.current = scheduler.setTimeout(
           () => connectRef.current?.(),
           Math.min(
             1000 * 2 ** Math.min(reconnectAttempts.current - 1, 5),
             30000,
           ) *
-            (0.8 + Math.random() * 0.4),
+            (0.8 + scheduler.random() * 0.4),
         );
       };
       try {
@@ -91,7 +95,7 @@ export function createWebSocketManagerModule({
           socket.send(
             JSON.stringify({ action: "authenticate", token: token || "" }),
           );
-          authTimer.current = setTimeout(() => {
+          authTimer.current = scheduler.setTimeout(() => {
             if (current() && !authenticatedRef.current) socket.close();
           }, 10000);
         };
@@ -103,7 +107,7 @@ export function createWebSocketManagerModule({
               message.status === "success" &&
               message.message === "Authenticated successfully"
             ) {
-              clearTimeout(authTimer.current);
+              scheduler.clearTimeout(authTimer.current);
               authenticatedRef.current = true;
               reconnectAttempts.current = 0;
               setIsConnected(true);
@@ -135,7 +139,7 @@ export function createWebSocketManagerModule({
         };
         socket.onclose = () => {
           if (!current()) return;
-          clearTimeout(authTimer.current);
+          scheduler.clearTimeout(authTimer.current);
           socketRef.current = null;
           authenticatedRef.current = false;
           setIsConnected(false);
@@ -191,20 +195,20 @@ export function createWebSocketManagerModule({
       sendMessage,
       reconnect,
       start(nextIdentity) {
+        stopCurrent();
         identity = nextIdentity;
         reconnectAttempts.current = 0;
-        const stopReset = sessionRuntime.onReset(() => {
-          identity = null;
-          disconnect();
-        });
+        let stopped = false;
+        const stopReset = sessionRuntime.onReset(() => stop());
         const stopEpoch = stateReconciler.onEpochChange(({ ticket }) => {
           if (ticket !== connectionTicket) reconnect();
         });
         platform.addEventListener("online", online);
         platform.addEventListener("offline", offline);
         platform.addEventListener("visibilitychange", visibility);
-        connect();
-        return () => {
+        const stop = () => {
+          if (stopped) return;
+          stopped = true;
           identity = null;
           disconnect();
           stopReset();
@@ -213,6 +217,9 @@ export function createWebSocketManagerModule({
           platform.removeEventListener("offline", offline);
           platform.removeEventListener("visibilitychange", visibility);
         };
+        stopCurrent = stop;
+        connect();
+        return stop;
       },
     };
   }

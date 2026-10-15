@@ -8,18 +8,54 @@
     "README.md"
   ],
   "exports": {
-    "./sessionRuntime": "./dist/sessionRuntime.js",
-    "./stateReconciler": "./dist/stateReconciler.js",
-    "./operationCoordinator": "./dist/operationCoordinator.js",
-    "./applicationState": "./dist/applicationState.js",
-    "./applicationMetrics": "./dist/applicationMetrics.js",
-    "./operationRecovery": "./dist/operationRecovery.js",
-    "./webSocketManager": "./dist/webSocketManager.js",
-    "./draftRegistry": "./dist/draftRegistry.js",
-    "./diagnostics": "./dist/diagnostics.js",
-    "./queryKeys": "./dist/queryKeys.js",
-    "./coreEvents": "./dist/coreEvents.js",
-    ".": "./dist/index.js"
+    "./sessionRuntime": {
+      "types": "./dist/sessionRuntime.d.ts",
+      "default": "./dist/sessionRuntime.js"
+    },
+    "./stateReconciler": {
+      "types": "./dist/stateReconciler.d.ts",
+      "default": "./dist/stateReconciler.js"
+    },
+    "./operationCoordinator": {
+      "types": "./dist/operationCoordinator.d.ts",
+      "default": "./dist/operationCoordinator.js"
+    },
+    "./applicationState": {
+      "types": "./dist/applicationState.d.ts",
+      "default": "./dist/applicationState.js"
+    },
+    "./applicationMetrics": {
+      "types": "./dist/applicationMetrics.d.ts",
+      "default": "./dist/applicationMetrics.js"
+    },
+    "./operationRecovery": {
+      "types": "./dist/operationRecovery.d.ts",
+      "default": "./dist/operationRecovery.js"
+    },
+    "./webSocketManager": {
+      "types": "./dist/webSocketManager.d.ts",
+      "default": "./dist/webSocketManager.js"
+    },
+    "./draftRegistry": {
+      "types": "./dist/draftRegistry.d.ts",
+      "default": "./dist/draftRegistry.js"
+    },
+    "./diagnostics": {
+      "types": "./dist/diagnostics.d.ts",
+      "default": "./dist/diagnostics.js"
+    },
+    "./queryKeys": {
+      "types": "./dist/queryKeys.d.ts",
+      "default": "./dist/queryKeys.js"
+    },
+    "./coreEvents": {
+      "types": "./dist/coreEvents.d.ts",
+      "default": "./dist/coreEvents.js"
+    },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
   "license": "MIT",
   "repository": {
@@ -29,9 +65,11 @@
   },
   "scripts": {
     "build": "node ../../scripts/build-package.mjs",
-    "test": "node ../../scripts/test-packages.mjs runtime",
+    "test": "npm run build && node ../../scripts/test-packages.mjs runtime",
     "lint": "eslint src test",
     "prepack": "npm run build",
-    "check": "npm run build && npm run lint && npm test"
-  }
+    "check": "npm run build && npm run lint && npm run typecheck && npm test",
+    "typecheck": "tsc --noEmit --strict --module NodeNext --moduleResolution NodeNext test/consumer.mts"
+  },
+  "types": "./dist/index.d.ts"
 }

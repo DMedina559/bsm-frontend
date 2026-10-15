@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createApplicationRuntime } from "../src/index.js";
+import { createApplicationRuntime } from "@bedrock-server-manager/runtime";
 
 const create = () =>
   createApplicationRuntime({

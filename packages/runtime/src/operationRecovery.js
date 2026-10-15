@@ -1,3 +1,5 @@
+import { defaultScheduler } from "./scheduler.js";
+
 export function createOperationRecoveryModule({
   captureStateRequest,
   reconcileResourceSnapshot,
@@ -9,6 +11,7 @@ export function createOperationRecoveryModule({
   stateReconciler,
   sessionRuntime,
   platform,
+  scheduler = defaultScheduler,
 } = {}) {
   /** Polling is owned by the session, so navigation cannot abandon a task. */
   function startOperationRecovery(identity = null, generation = 0) {
@@ -42,7 +45,8 @@ export function createOperationRecoveryModule({
               !operation.terminal && operation.status !== "unknown",
           );
         const eligible = pending.filter(
-          (operation) => (attempts.get(operation.id)?.next ?? 0) <= Date.now(),
+          (operation) =>
+            (attempts.get(operation.id)?.next ?? 0) <= scheduler.now(),
         );
         const work = eligible.length
           ? [
@@ -99,7 +103,9 @@ export function createOperationRecoveryModule({
                   );
                   attempts.set(operation.id, {
                     failures,
-                    next: Date.now() + delay * (0.8 + Math.random() * 0.4),
+                    next:
+                      scheduler.now() +
+                      delay * (0.8 + scheduler.random() * 0.4),
                   });
                 }
               }
@@ -122,7 +128,7 @@ export function createOperationRecoveryModule({
         return;
       }
       discovering = true;
-      clearTimeout(discoveryTimer);
+      scheduler.clearTimeout(discoveryTimer);
       void queryClient.invalidateQueries({
         queryKey: [...queryKeys.tasks(), { identity, generation }],
         refetchType: "none",
@@ -179,7 +185,7 @@ export function createOperationRecoveryModule({
         .catch(() => {
           if (stopped) return;
           discoveryFailures += 1;
-          discoveryTimer = setTimeout(
+          discoveryTimer = scheduler.setTimeout(
             discover,
             Math.min(60000, 1000 * 2 ** Math.min(discoveryFailures, 6)),
           );
@@ -195,11 +201,11 @@ export function createOperationRecoveryModule({
     void discover();
     const stopEpoch = stateReconciler.onEpochChange(() => {
       attempts.clear();
-      queueMicrotask(() => {
+      scheduler.queueMicrotask(() => {
         if (!stopped) void discover();
       });
     });
-    const timer = setInterval(poll, 5000);
+    const timer = scheduler.setInterval(poll, 5000);
     const unsubscribe = operationCoordinator.subscribe(poll);
     const resume = () => {
       attempts.clear();
@@ -212,20 +218,19 @@ export function createOperationRecoveryModule({
     platform.addEventListener("bsm:socket-connected", onConnected);
     platform.addEventListener("online", resume);
     const stop = () => {
+      if (stopped) return;
       stopped = true;
       controller.abort();
-      clearInterval(timer);
-      clearTimeout(discoveryTimer);
+      scheduler.clearInterval(timer);
+      scheduler.clearTimeout(discoveryTimer);
       unsubscribe();
       stopEpoch();
       platform.removeEventListener("online", resume);
       platform.removeEventListener("bsm:socket-connected", onConnected);
-    };
-    const removeReset = sessionRuntime.onReset(stop);
-    return () => {
-      stop();
       removeReset();
     };
+    const removeReset = sessionRuntime.onReset(stop);
+    return stop;
   }
 
   return { startOperationRecovery };

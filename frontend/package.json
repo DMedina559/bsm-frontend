@@ -13,7 +13,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:run": "vitest run",
-    "typecheck": "tsc --moduleResolution bundler --module esnext --noEmit --strict --skipLibCheck --lib es2022,dom tests/types/api-contract.ts && node ../scripts/check-api-calls.mjs",
+    "typecheck": "tsc --moduleResolution bundler --module esnext --noEmit --strict --skipLibCheck --lib es2022,dom tests/types/api-contract.ts tests/types/runtime-contract.ts && node ../scripts/check-api-calls.mjs",
     "test:e2e": "playwright test",
     "test:watch": "vitest"
   },

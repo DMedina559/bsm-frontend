@@ -1,6 +1,14 @@
 import js from "@eslint/js";
 import globals from "globals";
 import frontend from "./frontend/eslint.config.js";
+const browserGlobals = [
+  "window",
+  "document",
+  "navigator",
+  "localStorage",
+  "sessionStorage",
+];
+
 export default [
   { ignores: ["packages/*/dist/**"] },
   ...frontend.map((config) => ({
@@ -29,13 +37,14 @@ export default [
     files: ["packages/**/*.js"],
     ignores: ["packages/*/dist/**"],
     rules: {
-      "no-restricted-globals": [
+      "no-restricted-globals": ["error", ...browserGlobals],
+      "no-restricted-properties": [
         "error",
-        "window",
-        "document",
-        "navigator",
-        "localStorage",
-        "sessionStorage",
+        ...browserGlobals.map((property) => ({
+          object: "globalThis",
+          property,
+          message: "Browser APIs belong in the frontend platform adapter.",
+        })),
       ],
       "no-restricted-imports": [
         "error",
@@ -43,8 +52,11 @@ export default [
           patterns: [
             "**/frontend/**",
             "react",
+            "react/*",
             "react-dom",
+            "react-dom/*",
             "@tanstack/react-query",
+            "@tanstack/react-query/*",
           ],
         },
       ],

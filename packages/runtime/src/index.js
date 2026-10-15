@@ -16,6 +16,7 @@ export function createApplicationRuntime({
   callOperation,
   resolveWebSocketUrl,
   platform,
+  scheduler,
   logger = { debug() {}, warn() {}, error() {} },
 }) {
   const session = createSessionRuntimeModule();
@@ -50,6 +51,7 @@ export function createApplicationRuntime({
     queryClient,
     queryKeys,
     platform,
+    scheduler,
   });
   const sockets = createWebSocketManagerModule({
     ...session,
@@ -57,6 +59,7 @@ export function createApplicationRuntime({
     logger,
     resolveWebSocketUrl,
     platform,
+    scheduler,
   });
   return {
     ...session,

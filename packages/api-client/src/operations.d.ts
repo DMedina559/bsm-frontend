@@ -48,19 +48,19 @@ type Options<T> = UrlOptions<T> &
     headers?: Record<string, string>;
   };
 type Args<T> = {} extends T ? [options?: T] : [options: T];
-declare function callOperation<
+type CallOperation = <
   K extends keyof operations,
   R extends "json" | "blob" = "json",
 >(
   id: K,
   ...args: Args<Options<operations[K]> & { responseType?: R }>
-): Promise<R extends "blob" ? Blob | null : Response<operations[K]>>;
-declare function resolveOperationUrl<K extends keyof operations>(
+) => Promise<R extends "blob" ? Blob | null : Response<operations[K]>>;
+type ResolveOperationUrl = <K extends keyof operations>(
   id: K,
   ...args: Args<UrlOptions<operations[K]>>
-): string;
+) => string;
 
-declare function createOperationClient(schema: OpenApiSchema): {
+type CreateOperationClient = (schema: OpenApiSchema) => {
   resolveOperationUrl(
     id: string,
     options?: {
@@ -82,20 +82,20 @@ declare function createOperationClient(schema: OpenApiSchema): {
     },
   ): Promise<unknown>;
 };
-declare function discoverOperationClient(
+type DiscoverOperationClient = (
   url?: string,
   options?: {
     signal?: AbortSignal;
     session?: SessionSnapshot;
     timeout?: number;
   },
-): Promise<ReturnType<typeof createOperationClient>>;
+) => Promise<ReturnType<CreateOperationClient>>;
 
 export function createApiClient(options: {
   request: (url: string, options?: RequestOptions) => Promise<unknown>;
 }): {
-  callOperation: typeof callOperation;
-  resolveOperationUrl: typeof resolveOperationUrl;
-  createOperationClient: typeof createOperationClient;
-  discoverOperationClient: typeof discoverOperationClient;
+  callOperation: CallOperation;
+  resolveOperationUrl: ResolveOperationUrl;
+  createOperationClient: CreateOperationClient;
+  discoverOperationClient: DiscoverOperationClient;
 };
