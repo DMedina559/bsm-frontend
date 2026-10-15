@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => {
   let appVersion = packageJson.version || "unknown";
   try {
     const gitVersion = execSync(
-      'git describe --tags --always --match "[0-9]*" --match "v[0-9]*"',
+      'git describe --tags --always --match "frontend-[0-9]*" --match "[0-9]*" --match "v[0-9]*"',
       {
         stdio: "pipe",
       },
@@ -28,7 +28,7 @@ export default defineConfig(({ mode }) => {
       .toString()
       .trim();
     if (gitVersion) {
-      appVersion = gitVersion;
+      appVersion = gitVersion.replace(/^frontend-/, "");
     }
   } catch {
     console.warn(

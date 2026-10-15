@@ -39,9 +39,10 @@ bsm_frontend = ["static/**/*"]
 [tool.setuptools_scm]
 local_scheme = "no-local-version"
 search_parent_directories = true
+tag_regex = '^(?:frontend-|v)?(?P<version>[0-9].*)$'
 
 [tool.setuptools_scm.scm.git]
-describe_command = "git describe --dirty --tags --long --match [0-9]* --match v[0-9]*"
+describe_command = "git describe --dirty --tags --long --match frontend-[0-9]* --match [0-9]* --match v[0-9]*"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

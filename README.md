@@ -107,10 +107,10 @@ backend until requests are sent.
 The SDK and frontend/Python distribution have independent release versions.
 The root workspace, runtime, and storage packages are private.
 
-| Release         | GitHub release tag                      | Workflow                 | Required publishing setup                                                         |
-| --------------- | --------------------------------------- | ------------------------ | --------------------------------------------------------------------------------- |
-| API client      | `api-client-v<SDK version>`             | `publish-api-client.yml` | `npm-release` environment and its `NPM_TOKEN` secret with access to the npm scope |
-| Frontend/Python | Frontend version tag, such as `1.3.0b8` | `publish.yml`            | Existing PyPI trusted publisher and `release` environment                         |
+| Release         | GitHub release tag                               | Workflow                 | Required publishing setup                                                         |
+| --------------- | ------------------------------------------------ | ------------------------ | --------------------------------------------------------------------------------- |
+| API client      | `api-client-v<SDK version>`                      | `publish-api-client.yml` | `npm-release` environment and its `NPM_TOKEN` secret with access to the npm scope |
+| Frontend/Python | `frontend-<version>`, such as `frontend-1.3.0b8` | `publish.yml`            | Existing PyPI trusted publisher and `release` environment                         |
 
 For an SDK release, update `packages/api-client/package.json`, refresh the root
 lockfile with `npm install --package-lock-only --ignore-scripts`, and commit both.
@@ -118,6 +118,11 @@ The release tag must exactly match that package version. GitHub prereleases
 publish to npm's `next` tag; other SDK releases publish to `latest`.
 
 Frontend/Python releases run the shared validation workflow before publishing.
+The `frontend-` prefix identifies the release; the published Python version and
+displayed application version omit it. Historical unprefixed and `v`-prefixed
+frontend tags remain readable for local builds, but new Python publications
+require a `frontend-` release tag. Publishing a GitHub release triggers the
+corresponding workflow; pushing a tag alone does not publish.
 SDK tags do not trigger Python publication or influence Python/frontend version
 discovery. Library builds and local package checks do not publish to a registry.
 
