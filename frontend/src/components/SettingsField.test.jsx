@@ -61,3 +61,27 @@ it("uses bounds and units for metric intervals and protects reported server stat
   expect(interval).toHaveAccessibleDescription(/seconds/);
   expect(screen.getByLabelText("status")).toHaveAttribute("readonly");
 });
+
+it("edits CORS origins without dropping separators and explains restart behavior", () => {
+  function Harness() {
+    const [origins, setOrigins] = useState(["https://one.example"]);
+    return (
+      <SettingsField
+        path="web.cors_origins"
+        value={origins}
+        onChange={(_, value) => setOrigins(value)}
+      />
+    );
+  }
+  render(<Harness />);
+  const input = screen.getByLabelText("Allowed CORS origins");
+  expect(input).toHaveAccessibleDescription(/web server restart/);
+  fireEvent.change(input, { target: { value: "https://one.example, " } });
+  expect(input).toHaveValue("https://one.example, ");
+  fireEvent.change(input, {
+    target: { value: "https://one.example, https://two.example" },
+  });
+  expect(input).toHaveValue("https://one.example, https://two.example");
+  fireEvent.change(input, { target: { value: "" } });
+  expect(input).toHaveValue("");
+});

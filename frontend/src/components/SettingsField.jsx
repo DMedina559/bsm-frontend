@@ -1,5 +1,11 @@
 import React from "react";
 import { settingField } from "../utils/settingsFields";
+const parseArray = (text) =>
+  text
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
 export default function SettingsField({
   path,
   label,
@@ -12,6 +18,17 @@ export default function SettingsField({
   const [numeric] = React.useState(
     () => metadata.type === "number" || typeof value === "number",
   );
+  const [arrayDraft, setArrayDraft] = React.useState(() =>
+    Array.isArray(value) ? value.join(", ") : "",
+  );
+  React.useEffect(() => {
+    if (
+      Array.isArray(value) &&
+      JSON.stringify(parseArray(arrayDraft)) !== JSON.stringify(value)
+    ) {
+      setArrayDraft(value.join(", "));
+    }
+  }, [value, arrayDraft]);
   const id = `setting-${path}`;
   const helpId = `${id}-help`;
   return (
@@ -39,7 +56,7 @@ export default function SettingsField({
           min={metadata.min}
           max={metadata.max}
           required={numeric}
-          value={Array.isArray(value) ? value.join(", ") : (value ?? "")}
+          value={Array.isArray(value) ? arrayDraft : (value ?? "")}
           readOnly={readOnly}
           aria-describedby={
             Array.isArray(value) ||
@@ -49,19 +66,19 @@ export default function SettingsField({
               ? helpId
               : undefined
           }
-          onChange={(event) =>
-            onChange(
-              path,
-              Array.isArray(value)
-                ? event.target.value
-                    .split(",")
-                    .map((item) => item.trim())
-                    .filter(Boolean)
-                : numeric && event.target.value !== ""
+          onChange={(event) => {
+            if (Array.isArray(value)) {
+              setArrayDraft(event.target.value);
+              onChange(path, parseArray(event.target.value));
+            } else {
+              onChange(
+                path,
+                numeric && event.target.value !== ""
                   ? Number(event.target.value)
                   : event.target.value,
-            )
-          }
+              );
+            }
+          }}
         />
       )}
       {(Array.isArray(value) ||
@@ -72,7 +89,7 @@ export default function SettingsField({
           {readOnly
             ? "Reported by the server. This field is read only."
             : Array.isArray(value)
-              ? "Comma-separated values."
+              ? `Comma-separated values. ${metadata.description || ""}`
               : metadata.description}
           {metadata.unit && ` (${metadata.unit})`}
         </small>

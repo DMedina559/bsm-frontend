@@ -36,11 +36,11 @@ describe("theme preferences", () => {
     expect(resolveMode("default", "system", true)).toBe("dark");
   });
   it("preserves asset and ingress prefixes", () => {
-    expect(themeStylesheetUrl("blue", "/ingress/app/", "/ingress")).toBe(
+    expect(themeStylesheetUrl("blue", "/ingress/app/")).toBe(
       "/ingress/app/assets/css/themes/blue.css",
     );
-    expect(themeStylesheetUrl("custom name", "/app", "/ingress")).toBe(
-      "/ingress/themes/custom%20name.css",
+    expect(themeStylesheetUrl("custom name", "/app")).toBe(
+      "/themes/custom%20name.css",
     );
   });
 });
@@ -74,11 +74,11 @@ it("bounds sidebar transparency and defaults to opaque", () => {
 });
 
 it("versions built-in theme CSS independently from the frontend release label", () => {
-  expect(themeStylesheetUrl("default", "/app/", "", "abc123")).toBe(
+  expect(themeStylesheetUrl("default", "/app/", "abc123")).toBe(
     "/app/assets/css/themes/default.css?v=abc123",
   );
-  expect(themeStylesheetUrl("custom", "/app/", "/ingress", "abc123")).toBe(
-    "/ingress/themes/custom.css",
+  expect(themeStylesheetUrl("custom", "/app/", "abc123")).toBe(
+    "/themes/custom.css",
   );
 });
 

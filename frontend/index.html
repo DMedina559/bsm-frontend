@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <base id="app-asset-base" href="/app/" />
-    <link rel="icon" type="image/svg+xml" href="./image/icon/favicon.svg" />
+    <link rel="icon" type="image/x-icon" href="./image/icon/favicon.ico" />
     <link
       rel="icon"
       type="image/png"
-      href="./image/icon/favicon-192x192.png"
+      href="./image/icon/web-app-manifest-192x192.png"
       sizes="192x192"
     />
     <link
@@ -40,8 +40,10 @@
             document.documentElement.dataset.density = appearance.density;
         } catch (_) {}
         var path = window.location.pathname;
-        var appIndex = path.search(/\/app(?:\/|$)/);
-        if (appIndex !== -1) {
+        var baseElement = document.getElementById("app-asset-base");
+        var matches = [...path.matchAll(/\/app(?=\/|$)/g)];
+        var appIndex = matches.at(-1)?.index ?? -1;
+        if (appIndex !== -1 && baseElement.dataset.apiBase === undefined) {
           var basePath = path.substring(0, appIndex + 4) + "/";
           document
             .getElementById("app-asset-base")

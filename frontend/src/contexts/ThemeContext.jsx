@@ -12,8 +12,8 @@ import React, {
   useState,
 } from "react";
 import { useAuth } from "./AuthContext";
-import { resolveApiUrl, getApiBaseUrl } from "../api/transport";
-import { getApiProxyBasePath, resolveAppAssetUrl } from "../utils/basePath";
+import { resolveApiUrl } from "../api/transport";
+import { resolveAppAssetUrl } from "../utils/basePath";
 import {
   DEFAULT_APPEARANCE,
   BUILT_IN_THEMES,
@@ -230,12 +230,7 @@ export const ThemeProvider = ({ children }) => {
         `The ${theme} stylesheet could not be loaded. Base styling is in use.`,
       );
     try {
-      const stylesheet = themeStylesheetUrl(
-        theme,
-        import.meta.env.BASE_URL,
-        getApiBaseUrl() || getApiProxyBasePath(),
-        __THEME_REVISION__,
-      );
+      const stylesheet = themeStylesheetUrl(theme, "./", __THEME_REVISION__);
       link.href = BUILT_IN_THEMES.includes(theme)
         ? resolveAppAssetUrl(stylesheet)
         : resolveApiUrl(stylesheet);

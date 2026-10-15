@@ -55,19 +55,45 @@ export function getApiBaseUrl() {
  * @param {string} url - The base URL to set.
  */
 export function setApiBaseUrl(url) {
-  if (!url) {
-    localStorage.removeItem("api_base_url");
-  } else {
-    // Ensure no trailing slash
-    localStorage.setItem("api_base_url", url.replace(/\/$/, ""));
-  }
+  if (!url) localStorage.removeItem("api_base_url");
+  else localStorage.setItem("api_base_url", validateBackendUrl(url));
+}
+
+/** Validate an absolute backend URL before storing or sending credentials. */
+export function validateBackendUrl(value) {
+  const url = new URL(value);
+  if (
+    !["http:", "https:"].includes(url.protocol) ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash
+  )
+    throw new Error(
+      "Enter an HTTP or HTTPS URL without credentials, a query, or a fragment.",
+    );
+  if (window.location.protocol === "https:" && url.protocol === "http:")
+    throw new Error(
+      "An HTTPS page requires an HTTPS backend to avoid mixed content.",
+    );
+  return url.href.replace(/\/+$/, "");
+}
+
+/** Resolve sockets using the same backend validation and prefix as HTTP. */
+export function resolveWebSocketUrl() {
+  const url = new URL(resolveApiUrl("/ws"), window.location.origin);
+  url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+  return url.href;
 }
 
 /** Resolve API/download URLs against the configured backend, preserving ingress prefixes. */
 export function resolveApiUrl(url) {
   if (typeof url !== "string" || !url.trim())
     throw new ApiError("Missing API URL", 0, null);
-  const base = getApiBaseUrl() || getApiProxyBasePath();
+  const configured = getApiBaseUrl();
+  const base = configured
+    ? validateBackendUrl(configured)
+    : getApiProxyBasePath();
   const finalUrl =
     url.startsWith("/") && !url.startsWith("//") && base
       ? `${base}${url}`

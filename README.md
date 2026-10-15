@@ -35,3 +35,23 @@ Administrators can also open Diagnostics on a backend with the diagnostics API:
 Refresh manually or enable a 15-second interval while Diagnostics is open. Unknown plugin status means the backend could not resolve its runtime status; it does not prove the plugin is loaded. Missing timestamps mean no corresponding timestamp was reported. Stale observations retain their source timing.
 
 Download an authenticated support report and review it before sharing. Baselines and reports are not saved in browser storage. Leaving Diagnostics discards the baseline; account/session changes invalidate pending work. History requests start only when you open History.
+
+## Reverse proxies and ingress
+
+The production backend serves one `app-asset-base` element with `data-api-base`
+containing the external proxy prefix. The router, HTTP client, WebSocket
+client, and bundled assets use this runtime metadata. Standalone frontend
+hosting retains pathname-based detection as a fallback. Build assets with
+`npm run build`; test the production build through BSM rather than relying
+only on Vite's development proxy.
+
+An HTTPS page requires an HTTPS remote backend. The connection dialog and
+HTTP/WebSocket resolvers reject mixed-content configurations, including
+previously stored HTTP URLs. Direct HTTP remains supported on an HTTP page.
+
+Plugin display URLs beginning with `/`, `./`, or `../` are backend-relative
+and receive the configured backend or ingress prefix once. App-navigation links remain on the frontend origin. Explicit external
+HTTPS URLs remain external. Bundled UI assets always resolve on the frontend
+origin; custom theme endpoints resolve on the backend origin. Token changes
+and proxy paths should be exercised alongside navigation, nested refreshes,
+assets, plugin content, downloads, and WebSocket reconnection.

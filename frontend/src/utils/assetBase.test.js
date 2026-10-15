@@ -31,3 +31,23 @@ it("provides the app asset base before JavaScript runs", () => {
   ).toBe("/app/assets/index.js");
   dom.window.close();
 });
+it("keeps the backend's single runtime base when route segments contain app", () => {
+  const html = source
+    .replace(/<base\b[^>]*>/g, "")
+    .replace(
+      "<head>",
+      '<head><base id="app-asset-base" href="/proxy/app/token/app/" data-api-base="/proxy/app/token">',
+    );
+  const dom = new JSDOM(html, {
+    url: "https://bsm.test/proxy/app/token/app/plugin/app",
+    runScripts: "dangerously",
+  });
+  expect(dom.window.document.querySelectorAll("base")).toHaveLength(1);
+  expect(dom.window.document.baseURI).toBe(
+    "https://bsm.test/proxy/app/token/app/",
+  );
+  expect(
+    dom.window.document.getElementById("app-asset-base").dataset.apiBase,
+  ).toBe("/proxy/app/token");
+  dom.window.close();
+});

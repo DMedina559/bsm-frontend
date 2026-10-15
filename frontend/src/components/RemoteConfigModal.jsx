@@ -1,5 +1,9 @@
 import React, { useState } from "react";
-import { getApiBaseUrl, setApiBaseUrl } from "../api/transport";
+import {
+  getApiBaseUrl,
+  setApiBaseUrl,
+  validateBackendUrl,
+} from "../api/transport";
 import Modal from "./Modal";
 import { useDialog } from "../contexts/DialogContext";
 const RemoteConfigModal = ({ isOpen, onClose }) => {
@@ -24,20 +28,9 @@ const RemoteConfigModal = ({ isOpen, onClose }) => {
     const value = remoteUrl.trim();
     if (value) {
       try {
-        const url = new URL(value);
-        if (
-          !["http:", "https:"].includes(url.protocol) ||
-          url.username ||
-          url.password ||
-          url.search ||
-          url.hash
-        )
-          throw new Error();
-        apply(value.replace(/\/+$/, ""));
-      } catch {
-        setError(
-          "Enter an HTTP or HTTPS URL without credentials, a query, or a fragment.",
-        );
+        apply(validateBackendUrl(value));
+      } catch (error) {
+        setError(error.message || "Invalid backend URL.");
       }
     } else apply("");
   };
