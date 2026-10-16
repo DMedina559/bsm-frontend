@@ -169,8 +169,8 @@ for (const [port, base, config, prefix] of [
               `$1${JSON.stringify(config)}$2`,
             )
             .replace(
-              '<base id="app-asset-base"',
-              `<base data-api-base="${prefix}" id="app-asset-base"`,
+              '<base id="app-asset-base" href="/app/"',
+              `<base data-api-base="${prefix}" id="app-asset-base" href="${base || ""}/"`,
             ),
         );
       }
