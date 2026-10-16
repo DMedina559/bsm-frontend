@@ -68,7 +68,12 @@ sessionRuntime.reset();
 console.log(previous.signal.aborted); // true
 ```
 
-Start WebSocket managers and operation recovery explicitly, and retain their
+`runtime.start({ identity, generation, onMessage, onState })` starts a single
+socket/recovery owner and returns `{ manager, stop }`. Supplying an existing
+manager preserves view subscriptions across owner changes. Starting again
+replaces the previous owner; stale cleanup cannot stop the new one.
+
+When composing low-level modules, start WebSocket managers and operation recovery explicitly, and retain their
 returned cleanup functions. Call them when the owning session or provider ends.
 Session reset also stops sockets and recovery, removes their platform listeners,
 clears their timers, and aborts pending recovery requests. Cleanup functions are
@@ -76,8 +81,11 @@ idempotent. Starting the same WebSocket manager again replaces its previous
 owner; the previous cleanup function cannot stop the new connection.
 
 Reset the session before changing accounts or backends so pending work becomes
-stale. The application also owns clearing its cache and operation list at that
-boundary; session cancellation is not a replacement for cache cleanup.
+stale. For a composed runtime, call `runtime.reset()` to stop the active owner, reset
+the session, clear drafts and operations, and clear the host cache. The cache may
+provide `clear()`; otherwise the runtime removes all queries. `runtime.dispose()`
+performs the same cleanup when the host ends. Low-level `sessionRuntime.reset()`
+only cancels session work; it does not replace full application cleanup.
 
 Factories allocate their state when called. Do not share mutable instances across
 accounts that require isolation. Revision and epoch reconciliation coordinates
@@ -102,3 +110,12 @@ compiles consumer examples, and runs the runtime lifecycle tests against the
 installed archive. Those tests reject browser-global access during import and
 execution and exercise authentication, retries, reconciliation, cancellation,
 and session cleanup using an injected platform and scheduler.
+
+Unavailable tasks have a local `availability` state. A 404 stops polling without
+fabricating a backend revision or replacing the last authoritative snapshot.
+Discovery after reconnect can restore availability from the backend.
+
+Shared JavaScript implementations are checked against typed dependency and
+factory return contracts by root `npm run check:implementations`. Consumer types
+are also compiled from installed archives. Dynamic backend payloads remain
+validated at reconciliation boundaries.

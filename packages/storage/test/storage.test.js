@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createPreferenceStore } from "../src/preferenceStore.js";
+import { createPreferenceStore } from "@bedrock-server-manager/storage/preferenceStore";
 
 test("storage falls back to instance-local memory without browser persistence", () => {
   const one = createPreferenceStore(),
@@ -34,4 +34,17 @@ test("storage subscribes and releases injected persistence events", () => {
   assert.equal(notified, 2);
   stop();
   assert.equal(removed, true);
+});
+
+test("a failing subscriber does not interrupt persistence or other observers", () => {
+  const store = createPreferenceStore();
+  let calls = 0;
+  store.subscribe("account", "density", () => {
+    throw Error("subscriber failed");
+  });
+  store.subscribe("account", "density", () => calls++);
+  assert.equal(store.write("account", "density", "compact"), true);
+  assert.equal(store.read("account", "density", "comfort"), "compact");
+  assert.equal(store.remove("account", "density"), true);
+  assert.equal(calls, 2);
 });

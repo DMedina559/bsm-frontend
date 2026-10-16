@@ -9,3 +9,7 @@ export const createOperationClient: ReturnType<
 export const discoverOperationClient: ReturnType<
   typeof createApiClient
 >["discoverOperationClient"];
+
+export const inspectBackendContract: ReturnType<
+  typeof createApiClient
+>["inspectBackendContract"];

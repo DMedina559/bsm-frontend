@@ -1,8 +1,10 @@
+/** @param {Parameters<typeof import("./stateReconciler.d.ts").createStateReconcilerModule>[0]} dependencies
+ * @returns {ReturnType<typeof import("./stateReconciler.d.ts").createStateReconcilerModule>} */
 export function createStateReconcilerModule({
   logger,
   sessionRuntime,
   getBackendIdentity,
-} = {}) {
+}) {
   const terminalTaskStatus = (status) =>
     [
       "completed",
@@ -101,6 +103,7 @@ export function createStateReconcilerModule({
       if (binding) binding.observedEpoch = incoming;
       return true;
     };
+    /** @param {unknown[]} key @param {any} value @param {import("./contracts.js").ReconcileOptions<any>} [options] */
     const accept = (
       key,
       value,

@@ -17,7 +17,8 @@ export default defineConfig(({ mode }) => {
     ? target.replace("https", "wss")
     : target.replace("http", "ws");
 
-  let appVersion = packageJson.version || "unknown";
+  let appVersion =
+    process.env.BSM_FRONTEND_VERSION || packageJson.version || "unknown";
   try {
     const gitVersion = execSync(
       'git describe --tags --always --match "frontend-[0-9]*" --match "[0-9]*" --match "v[0-9]*"',
@@ -27,7 +28,7 @@ export default defineConfig(({ mode }) => {
     )
       .toString()
       .trim();
-    if (gitVersion) {
+    if (gitVersion && !process.env.BSM_FRONTEND_VERSION) {
       appVersion = gitVersion.replace(/^frontend-/, "");
     }
   } catch {

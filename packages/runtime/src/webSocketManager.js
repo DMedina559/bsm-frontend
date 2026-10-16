@@ -1,5 +1,7 @@
 import { defaultScheduler } from "./scheduler.js";
 
+/** @param {Parameters<typeof import("./webSocketManager.d.ts").createWebSocketManagerModule>[0]} dependencies
+ * @returns {ReturnType<typeof import("./webSocketManager.d.ts").createWebSocketManagerModule>} */
 export function createWebSocketManagerModule({
   stateReconciler,
   resolveWebSocketUrl,
@@ -7,7 +9,7 @@ export function createWebSocketManagerModule({
   sessionRuntime,
   platform,
   scheduler = defaultScheduler,
-} = {}) {
+}) {
   function createWebSocketManager({ onMessage, onState }) {
     let identity = null;
     let connectionTicket = null;

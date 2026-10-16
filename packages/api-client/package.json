@@ -24,6 +24,10 @@
     "./urls": {
       "types": "./dist/urls.d.ts",
       "default": "./dist/urls.js"
+    },
+    "./metadata": {
+      "types": "./dist/metadata.d.ts",
+      "default": "./dist/metadata.js"
     }
   },
   "license": "MIT",
@@ -37,7 +41,7 @@
   },
   "scripts": {
     "build": "node ../../scripts/build-package.mjs",
-    "test": "node ../../scripts/test-packages.mjs api-client",
+    "test": "npm run build && node ../../scripts/test-packages.mjs api-client",
     "lint": "eslint src test scripts",
     "prepack": "npm run build",
     "typecheck": "tsc --noEmit --strict --module NodeNext --moduleResolution NodeNext test/consumer.mts",

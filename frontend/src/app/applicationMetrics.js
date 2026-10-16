@@ -1,8 +1,7 @@
-import { stateReconciler } from "./stateReconciler";
-import { createApplicationMetricsModule } from "@bedrock-server-manager/runtime/applicationMetrics";
+import { application } from "./application";
 export const {
   metricsFields,
   validMetricsSample,
   reconcileMetricsSnapshot,
   reconcileMetricsEvent,
-} = createApplicationMetricsModule({ stateReconciler });
+} = application;

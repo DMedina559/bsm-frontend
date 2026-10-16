@@ -1,3 +1,4 @@
+import BackendCompatibility from "../components/BackendCompatibility";
 import OperationsStatus from "../components/OperationsStatus";
 import React, { useEffect, useRef, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
@@ -131,6 +132,7 @@ const Layout = () => {
               )}
             </div>
           )}
+          <BackendCompatibility />
           <Outlet />
           <Footer />
         </main>

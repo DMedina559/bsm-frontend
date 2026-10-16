@@ -1,0 +1,154 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {
+  createHttpTransport,
+  ApiError,
+} from "@bedrock-server-manager/api-client/transport";
+import { createUrlResolver } from "@bedrock-server-manager/api-client/urls";
+const transport = (fetch, options = {}) =>
+  createHttpTransport({
+    baseUrl: "https://bsm.example/prefix",
+    fetch,
+    ...options,
+  });
+
+test("transport reads JSON and empty responses and serializes write methods", async () => {
+  for (const method of ["GET", "POST", "PUT", "DELETE"]) {
+    let request;
+    const client = transport(async (url, options) => {
+      request = { url, ...options };
+      return Response.json({ ok: true });
+    });
+    assert.deepEqual(
+      await client.request("/api/test", {
+        method,
+        ...(method === "POST" || method === "PUT"
+          ? { body: { value: 1 } }
+          : {}),
+      }),
+      { ok: true },
+    );
+    assert.equal(request.method, method);
+    assert.equal(request.url, "https://bsm.example/prefix/api/test");
+    if (method === "POST" || method === "PUT")
+      assert.equal(request.body, '{"value":1}');
+  }
+  assert.equal(
+    await transport(async () => new Response(null, { status: 204 })).request(
+      "/api/test",
+    ),
+    null,
+  );
+});
+
+test("transport classifies malformed JSON, HTML, application, HTTP and network errors", async () => {
+  for (const [response, message] of [
+    [
+      () =>
+        new Response("invalid", {
+          headers: { "content-type": "application/json" },
+        }),
+      "Invalid JSON",
+    ],
+    [() => new Response("<!doctype html><html></html>"), "Session expired"],
+    [() => new Response("Not Found", { status: 404 }), "Non-JSON"],
+    [
+      () => Response.json({ detail: "Bad request" }, { status: 400 }),
+      "Bad request",
+    ],
+    [
+      () => Response.json({ status: "error", message: "Application failed" }),
+      "Application failed",
+    ],
+  ])
+    await assert.rejects(
+      transport(async () => response()).request("/api/test"),
+      (error) => error instanceof ApiError && error.message.includes(message),
+    );
+  await assert.rejects(
+    transport(async () => {
+      throw Error("Network failed");
+    }).request("/api/test"),
+    { status: 0 },
+  );
+});
+
+test("headers are case insensitive and credential headers are redacted", async () => {
+  const logs = [];
+  let headers;
+  const client = transport(
+    async (_url, options) => {
+      headers = new Headers(options.headers);
+      return Response.json({});
+    },
+    {
+      getToken: () => "secret",
+      logger: { debug: (...args) => logs.push(args), warn() {}, error() {} },
+    },
+  );
+  await client.request("/api/test", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "old-secret",
+    },
+    body: { value: 1 },
+  });
+  assert.equal(headers.get("content-type"), "application/json");
+  assert.equal(headers.get("authorization"), "Bearer secret");
+  assert.ok(!JSON.stringify(logs).includes("old-secret"));
+  assert.ok(!JSON.stringify(logs).includes("Bearer secret"));
+});
+
+test("timeouts and session cancellation interrupt unresolved credential providers", async () => {
+  const client = transport(
+    async () => {
+      throw Error("Must not fetch");
+    },
+    { getToken: () => new Promise(() => {}) },
+  );
+  const keepAlive = setTimeout(() => {}, 1000);
+  try {
+    await assert.rejects(client.request("/api/test", { timeout: 5 }), {
+      name: "TimeoutError",
+    });
+  } finally {
+    clearTimeout(keepAlive);
+  }
+  const controller = new AbortController();
+  const pending = client.request("/api/test", { signal: controller.signal });
+  controller.abort();
+  await assert.rejects(pending, { name: "AbortError" });
+});
+
+test("cancellation while decoding JSON retains the cancellation reason", async () => {
+  const controller = new AbortController();
+  const client = transport(async () => ({
+    ok: true,
+    status: 200,
+    headers: new Headers({ "content-type": "application/json" }),
+    json: async () => {
+      controller.abort();
+      throw controller.signal.reason;
+    },
+  }));
+  await assert.rejects(
+    client.request("/api/test", { signal: controller.signal }),
+    { name: "AbortError" },
+  );
+});
+
+test("backend URLs retain their path boundary, including encoded traversal and absolute URLs", () => {
+  const resolve = createUrlResolver("https://bsm.example/ingress/one/");
+  for (const path of [
+    "/../../api/account",
+    "/%2e%2e/%2e%2e/api/account",
+    "https://bsm.example/ingress/two/api",
+    "//foreign.example/api",
+  ])
+    assert.throws(() => resolve(path));
+  assert.equal(
+    resolve("/api/account"),
+    "https://bsm.example/ingress/one/api/account",
+  );
+});

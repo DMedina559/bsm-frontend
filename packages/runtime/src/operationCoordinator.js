@@ -1,3 +1,5 @@
+/** @param {Parameters<typeof import("./operationCoordinator.d.ts").createOperationCoordinatorModule>[0]} dependencies
+ * @returns {ReturnType<typeof import("./operationCoordinator.d.ts").createOperationCoordinatorModule>} */
 export function createOperationCoordinatorModule({
   createStateReconciler,
   stateReconciler,
@@ -5,7 +7,7 @@ export function createOperationCoordinatorModule({
   queryClient,
   queryKeys,
   resourceInvalidation,
-} = {}) {
+}) {
   /**
    * Tracks operation progress independently from page lifecycles.
    * Backend responses and WebSocket task snapshots remain authoritative.
@@ -56,7 +58,10 @@ export function createOperationCoordinatorModule({
         const previous = operations.get(key);
         if (!reconciler.read(["task", key]) && terminalTaskStatus(status))
           reconciler.task({ id: key, status }, { source: "local" });
-        const authoritative = reconciler.read(["task", key])?.value;
+        const authoritative =
+          /** @type {import("./contracts.js").TaskSnapshot | undefined} */ (
+            reconciler.read(["task", key])?.value
+          );
         const nextStatus =
           authoritative?.status ?? status ?? previous?.status ?? "pending";
         const next = {
@@ -81,6 +86,18 @@ export function createOperationCoordinatorModule({
         notify();
         return next;
       },
+      markUnavailable(id, error) {
+        const key = String(id);
+        const previous = operations.get(key);
+        if (!previous || previous.terminal) return;
+        operations.set(key, {
+          ...previous,
+          status: "unknown",
+          availability: "unavailable",
+          error,
+        });
+        notify();
+      },
       reconcileTask(message, options = {}) {
         if (message?.type !== "task_update" || !message.data) return false;
         const data = message.data;
@@ -96,14 +113,19 @@ export function createOperationCoordinatorModule({
           : reconciler.task({ ...data, status }, options);
         if (
           !result.value ||
-          (!result.accepted && previous.task === result.value)
+          (!result.accepted &&
+            previous.task === result.value &&
+            previous.status !== "unknown")
         )
           return false;
-        const accepted = result.value;
+        const accepted = /** @type {import("./contracts.js").TaskSnapshot} */ (
+          result.value
+        );
         const acceptedStatus = accepted.status;
         operations.set(key, {
           ...previous,
           status: acceptedStatus,
+          availability: "available",
           updatedAt: Date.now(),
           progress: accepted.progress ?? previous.progress,
           error: accepted.error ?? null,

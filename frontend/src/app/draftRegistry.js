@@ -1,2 +1,2 @@
-import { createDraftRegistryModule } from "@bedrock-server-manager/runtime/draftRegistry";
-export const { draftRegistry } = createDraftRegistryModule();
+import { application } from "./application";
+export const { draftRegistry } = application;

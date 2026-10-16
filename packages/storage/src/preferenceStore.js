@@ -1,22 +1,33 @@
 import { getSessionStorageKey } from "./sessionBoundary.js";
 /** Versioned, validated preferences with safe migrations and tab subscriptions. */
+/** @param {import("./preferenceStore.d.ts").PreferenceStorage} [storage]
+ * @param {Record<string, import("./preferenceStore.d.ts").PreferenceDefinition>} [definitions]
+ * @param {import("./preferenceStore.d.ts").PreferenceEvents} [events]
+ * @returns {import("./preferenceStore.d.ts").PreferenceStore} */
 export function createPreferenceStore(storage, definitions = {}, events = {}) {
   const listeners = new Map();
   const memory = new Map();
   const keyFor = (identity, name) =>
     getSessionStorageKey(identity, `preference:${name}`);
-  const notify = (key) => listeners.get(key)?.forEach((listener) => listener());
+  const emit = (callbacks) =>
+    callbacks?.forEach((listener) => {
+      try {
+        listener();
+      } catch {
+        /* One subscriber cannot interrupt other observers. */
+      }
+    });
+  const notify = (key) => emit(listeners.get(key));
   const onStorage = (event) => {
     if (event.key === null) {
       memory.clear();
-      listeners.forEach((callbacks) =>
-        callbacks.forEach((listener) => listener()),
-      );
+      listeners.forEach(emit);
     } else {
       memory.delete(event.key);
       notify(event.key);
     }
   };
+  /** @type {import("./preferenceStore.d.ts").PreferenceStore} */
   const store = {
     subscribe(identity, name, listener) {
       const key = keyFor(identity, name);

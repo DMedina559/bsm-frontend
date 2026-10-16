@@ -1,4 +1,6 @@
-export function createApplicationMetricsModule({ stateReconciler } = {}) {
+/** @param {Parameters<typeof import("./applicationMetrics.d.ts").createApplicationMetricsModule>[0]} dependencies
+ * @returns {ReturnType<typeof import("./applicationMetrics.d.ts").createApplicationMetricsModule>} */
+export function createApplicationMetricsModule({ stateReconciler }) {
   const metricsFields = [
     "app_cpu_percent",
     "app_ram_mb",
@@ -16,6 +18,7 @@ export function createApplicationMetricsModule({ stateReconciler } = {}) {
     "disk_read_kib_s",
     "disk_write_kib_s",
   ];
+  /** @returns {sample is import("./contracts.js").MetricsSample} */
   function validMetricsSample(sample) {
     return Boolean(
       sample &&
@@ -34,6 +37,7 @@ export function createApplicationMetricsModule({ stateReconciler } = {}) {
       Array.isArray(sample.servers) &&
       sample.servers.every(
         (server) =>
+          server &&
           typeof server.server_name === "string" &&
           ["pid", "cpu_percent", "memory_mb"].every(
             (field) =>
@@ -89,9 +93,13 @@ export function createApplicationMetricsModule({ stateReconciler } = {}) {
     }
     return result;
   }
+  /** @returns {import("./contracts.js").ReconcileResult<import("./contracts.js").MetricsSnapshot>} */
   function reconcileMetricsEvent(sample, options) {
     if (!validMetricsSample(sample)) return { accepted: false };
-    const previous = stateReconciler.read(["application-metrics"])?.value;
+    const previous =
+      /** @type {import("./contracts.js").MetricsSnapshot | undefined} */ (
+        stateReconciler.read(["application-metrics"])?.value
+      );
     const history = [
       ...(previous?.history ?? []).filter(
         (item) =>

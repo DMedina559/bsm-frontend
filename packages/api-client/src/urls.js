@@ -15,12 +15,24 @@ export function createUrlResolver(baseUrl) {
   return (path) => {
     if (typeof path !== "string" || !path.trim())
       throw new TypeError("Missing API URL");
+    if (
+      path
+        .split(/[?#]/)[0]
+        .split("/")
+        .some((segment) => [".", ".."].includes(decodeURIComponent(segment)))
+    )
+      throw new TypeError("API paths cannot contain traversal segments");
     const url = new URL(
       path.startsWith("/") && !path.startsWith("//") ? prefix + path : path,
       prefix + "/",
     );
     if (
       url.origin !== base.origin ||
+      !(
+        base.pathname === "/" ||
+        url.pathname === base.pathname.replace(/\/+$/, "") ||
+        url.pathname.startsWith(base.pathname.replace(/\/+$/, "") + "/")
+      ) ||
       url.username ||
       url.password ||
       !["http:", "https:"].includes(url.protocol)

@@ -63,7 +63,8 @@ version return the caller's fallback value.
 
 `read` can also receive a caller-specific validator. `write` and `remove` return
 whether the operation was accepted; a successful write may have used memory
-fallback rather than persistent storage.
+fallback rather than persistent storage. Subscriber failures are isolated so a
+completed write still returns normally and other observers are notified.
 
 ## Workspace commands
 

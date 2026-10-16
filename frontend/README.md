@@ -124,9 +124,12 @@ npm exec --workspace=bsm-frontend -- playwright install chromium
 npm run test:e2e --workspace=bsm-frontend
 ```
 
-Playwright starts its own development server. Its fixtures supply API responses;
-the browser suite does not require a live backend. Production proxy behavior still
-needs validation against a deployed backend.
+Build the production assets first with `npm run build`. Playwright serves that
+compiled output at `/app/`, a standalone root, and an ingress prefix. It exercises
+real cross-origin HTTP preflights and authenticated sockets against local fixture
+backends, including backend changes across tabs. It does not need a running BSM
+instance. Deployment-specific proxy and certificate settings still need checking
+in the target environment.
 
 | Test directory            | Contents                                                    |
 | ------------------------- | ----------------------------------------------------------- |
@@ -150,3 +153,40 @@ pre-commit run --all-files
 The ESLint hook uses dependencies installed by root `npm ci`. pre-commit.ci skips
 that system hook; GitHub Actions runs workspace lint. Keep the hook's Prettier
 version aligned with the root dependency.
+
+## Standalone deployment
+
+Serve `frontend/dist/` with history fallback to `index.html`. The default remains
+an embedded application at `/app/`; Home Assistant ingress prefixes are inferred
+from backend-provided metadata or the application path.
+
+For standalone hosting, edit the `bsm-config` JSON element in the built
+`index.html` before serving it. No JavaScript rebuild is needed:
+
+```json
+{
+  "mode": "standalone",
+  "appBase": "/console/",
+  "backendUrl": "https://bsm.example/prefix"
+}
+```
+
+`appBase` controls browser routes and bundled assets; `backendUrl` controls HTTP
+and WebSocket connections independently. A standalone app exposes connection
+settings on the sign-in screen. The user's browser must be able to reach the
+backend, which must allow the UI origin for HTTP and WebSocket connections.
+An HTTPS frontend requires an HTTPS backend.
+
+Bearer credentials are scoped to the backend origin and ingress prefix. Changing
+connections cancels the previous application's work and signs out of the selected
+connection. Ambiguous legacy unscoped tokens are discarded; embedded deployments
+can recover an existing cookie session through reauthentication. Credentials use
+memory if browser persistence is blocked. A compatibility notice compares the
+backend's advertised operation IDs to the UI's pinned contract; it does not
+infer compatibility from unrelated frontend and backend version numbers.
+
+The `application` instance in `src/app/application.js` owns the runtime and cache
+lifecycle. Thin module adapters preserve convenient imports for React hooks.
+Use `application.reset()` at session boundaries and `application.dispose()` when
+the application ends. Package source behavior belongs in `packages/*/test/`;
+browser-specific adapters and React integration remain in frontend tests.

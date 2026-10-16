@@ -88,6 +88,7 @@ export interface QueryFilters {
 }
 /** A structural cache interface; no dependency on a particular cache library. */
 export interface QueryClient {
+  clear?(): void;
   cancelQueries(filters: QueryFilters): Promise<void>;
   invalidateQueries(filters: QueryFilters): Promise<void>;
   removeQueries(filters: QueryFilters): void;
@@ -134,6 +135,7 @@ export interface RuntimeScheduler<Handle = unknown> {
   random(): number;
 }
 export interface Operation extends Data {
+  availability?: "available" | "unavailable";
   id: string;
   kind?: string;
   serverName?: string;
@@ -156,6 +158,7 @@ export interface OperationCoordinator {
   get(id: string | number): Operation | null;
   list(): Operation[];
   register(input: OperationInput): Operation;
+  markUnavailable(id: string | number, error: unknown): void;
   reconcileTask(
     message: SocketMessage,
     options?: ReconcileOptions<TaskSnapshot> & { synchronize?: boolean },

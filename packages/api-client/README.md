@@ -120,6 +120,22 @@ must be `api-client-v<version>`, such as `api-client-v0.1.1` or
 from that tag, updates the manifest and lockfile in its temporary checkout, and
 checks the SDK and isolated consumer before publication. No manual package
 version update or version commit is needed. Mark beta releases as GitHub
-prereleases to publish under npm's `next` tag. See the
+prereleases for clarity. SemVer prerelease versions automatically use npm's
+`next` tag even if the GitHub flag is omitted. See the
 [release guide](https://github.com/DMedina559/bsm-frontend#releases) for credentials
 and prerelease tags.
+
+## Contract compatibility
+
+`@bedrock-server-manager/api-client/metadata` exports `contractMetadata` with the
+canonical schema fingerprint, exporter provenance, and operation IDs.
+`compareCapabilities(schema, requiredOperations)` compares an advertised OpenAPI
+contract without assuming frontend and backend version numbers must match.
+A configured client also exposes `inspectBackendContract({ signal, timeout })` to
+fetch that information through the authenticated transport. Discovery is explicit;
+it does not replace the client's pinned types or silently add core operations.
+
+Request timeouts and cancellation cover asynchronous credentials and response
+body decoding. Header names are case insensitive. The default URL resolver
+rejects traversal and requests outside the configured backend's origin and path
+prefix. A custom resolver remains responsible for its own destination policy.

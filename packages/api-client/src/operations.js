@@ -1,3 +1,4 @@
+import { compareCapabilities, contractMetadata } from "./metadata.js";
 import operations from "./generated/operations.json" with { type: "json" };
 import { buildOperationRegistry } from "./operationRegistry.js";
 export function createApiClient({ request }) {
@@ -149,7 +150,26 @@ export function createApiClient({ request }) {
     return createOperationClient(schema);
   }
 
+  async function inspectBackendContract(options = {}) {
+    const schema = await request("/api/openapi.json", {
+      method: "GET",
+      ...options,
+    });
+    if (
+      typeof schema?.openapi !== "string" ||
+      !schema.openapi.startsWith("3.") ||
+      !schema.paths ||
+      typeof schema.paths !== "object" ||
+      Array.isArray(schema.paths)
+    )
+      throw new Error("Invalid OpenAPI 3 schema");
+    return {
+      ...compareCapabilities(schema),
+      schemaHash: contractMetadata.schemaHash,
+    };
+  }
   return {
+    inspectBackendContract,
     callOperation,
     resolveOperationUrl,
     createOperationClient,

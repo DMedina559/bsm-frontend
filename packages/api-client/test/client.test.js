@@ -1,9 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
-import { createApiClient } from "../src/operations.js";
-import { createHttpTransport, ApiError } from "../src/transport.js";
-import { createUrlResolver } from "../src/urls.js";
+import { createApiClient } from "@bedrock-server-manager/api-client";
+import {
+  createHttpTransport,
+  ApiError,
+} from "@bedrock-server-manager/api-client/transport";
+import { createUrlResolver } from "@bedrock-server-manager/api-client/urls";
 
 test("client authenticates and serializes operations against a real HTTP server without a browser", async () => {
   const requests = [];
@@ -92,4 +95,26 @@ test("an expired session cannot send credentials after an asynchronous credentia
   release("old-token");
   await assert.rejects(pending, { name: "AbortError" });
   assert.equal(sent, false);
+});
+
+test("contract metadata and capability inspection use the same schema interpretation as discovery", async () => {
+  const { contractMetadata, compareCapabilities } =
+    await import("@bedrock-server-manager/api-client/metadata");
+  const schema = {
+    openapi: "3.1.0",
+    info: { version: "4.0.0" },
+    paths: {
+      "/api/ping": { get: { operationId: "ping", responses: { 200: {} } } },
+    },
+  };
+  assert.match(contractMetadata.schemaHash, /^[a-f0-9]{64}$/);
+  assert.ok(contractMetadata.operations.includes("list_servers"));
+  assert.deepEqual(compareCapabilities(schema, ["ping", "missing"]), {
+    missing: ["missing"],
+    backendVersion: "4.0.0",
+  });
+  const client = createApiClient({ request: async () => schema });
+  const result = await client.inspectBackendContract();
+  assert.equal(result.schemaHash, contractMetadata.schemaHash);
+  assert.ok(result.missing.includes("list_servers"));
 });

@@ -1,7 +1,8 @@
+import { getPreferenceIdentity } from "../app/backendIdentity";
 import { coreEventTopics } from "../app/coreEvents";
 import { queryClient } from "../app/queryClient";
-import { getPreferenceIdentity } from "../app/backendIdentity";
-import { startOperationRecovery } from "../app/operationRecovery";
+import { application } from "../app/application";
+import "../api/operations";
 import { reconcileSocketMessage } from "../app/applicationState";
 import { operationCoordinator } from "../app/operationCoordinator";
 import React, {
@@ -52,13 +53,14 @@ export const WebSocketProvider = ({ children }) => {
   );
   useEffect(() => {
     setIsFallback(false);
-    return manager.start(identity);
-  }, [identity, sessionGeneration, manager]);
+    const owner = application.start({
+      identity: resourceIdentity,
+      generation: sessionGeneration ?? 0,
+      manager,
+    });
+    return owner.stop;
+  }, [resourceIdentity, sessionGeneration, manager]);
   const { subscribe, unsubscribe, sendMessage, reconnect } = manager;
-  useEffect(() => {
-    if (resourceIdentity === null) return;
-    return startOperationRecovery(resourceIdentity, sessionGeneration ?? 0);
-  }, [resourceIdentity, sessionGeneration]);
   useEffect(() => {
     if (identity === null) return;
     coreEventTopics.forEach(subscribe);

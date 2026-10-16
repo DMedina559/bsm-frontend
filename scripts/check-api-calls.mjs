@@ -1,3 +1,4 @@
+import { isGeneratedApiCall } from "./api-call-sites.mjs";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -20,6 +21,7 @@ const program = ts.createProgram(roots, {
   moduleResolution: ts.ModuleResolutionKind.Bundler,
   target: ts.ScriptTarget.ES2022,
 });
+const checker = program.getTypeChecker();
 const spans = new Map();
 let calls = 0;
 for (const source of program.getSourceFiles()) {
@@ -28,9 +30,7 @@ for (const source of program.getSourceFiles()) {
   const visit = (node) => {
     if (
       ts.isCallExpression(node) &&
-      ["callOperation", "resolveOperationUrl", "writeOperation"].includes(
-        node.expression.getText(source),
-      )
+      isGeneratedApiCall(node, checker, source)
     ) {
       ranges.push([node.getStart(source), node.end]);
       calls++;

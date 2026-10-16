@@ -4,6 +4,10 @@ export function createDraftRegistryModule() {
   const notify = () => listeners.forEach((listener) => listener());
   const draftRegistry = {
     dirty: () => drafts.size > 0,
+    clear() {
+      drafts.clear();
+      notify();
+    },
     subscribe(listener) {
       listeners.add(listener);
       return () => listeners.delete(listener);

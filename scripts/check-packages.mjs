@@ -4,6 +4,7 @@ import {
   readFileSync,
   writeFileSync,
   cpSync,
+  readdirSync,
   rmSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -144,18 +145,13 @@ try {
       { stdio: "inherit" },
     );
   }
-  if (names.includes("runtime")) {
-    const directory = join(temporary, "runtime-tests");
-    cpSync(join(root, "packages/runtime/test"), directory, { recursive: true });
-    execFileSync(
-      process.execPath,
-      [
-        "--test",
-        join(directory, "runtime.test.js"),
-        join(directory, "platform.test.js"),
-      ],
-      { stdio: "inherit" },
-    );
+  for (const name of names) {
+    const directory = join(temporary, `${name}-tests`);
+    cpSync(join(root, `packages/${name}/test`), directory, { recursive: true });
+    const tests = readdirSync(directory)
+      .filter((file) => file.endsWith(".test.js"))
+      .map((file) => join(directory, file));
+    execFileSync(process.execPath, ["--test", ...tests], { stdio: "inherit" });
   }
   console.log(
     `Verified ${names.length} packed packages, ${exportCount} executable exports and declarations, and consumer types.`,

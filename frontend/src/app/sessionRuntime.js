@@ -1,3 +1,2 @@
-import { createSessionRuntimeModule } from "@bedrock-server-manager/runtime/sessionRuntime";
-export const { createSessionRuntime, sessionRuntime } =
-  createSessionRuntimeModule();
+import { application } from "./application";
+export const { createSessionRuntime, sessionRuntime } = application;

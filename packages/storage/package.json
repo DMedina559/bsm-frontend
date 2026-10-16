@@ -29,7 +29,7 @@
   },
   "scripts": {
     "build": "node ../../scripts/build-package.mjs",
-    "test": "node ../../scripts/test-packages.mjs storage",
+    "test": "npm run build && node ../../scripts/test-packages.mjs storage",
     "lint": "eslint src test",
     "prepack": "npm run build",
     "typecheck": "tsc --noEmit --strict --module NodeNext --moduleResolution NodeNext test/consumer.mts",

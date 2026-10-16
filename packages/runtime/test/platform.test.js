@@ -25,6 +25,9 @@ function create(host, callOperation = async () => []) {
   const data = new Map();
   const invalidations = [];
   const cache = {
+    clear() {
+      data.clear();
+    },
     async cancelQueries() {},
     async resetQueries() {
       data.clear();
@@ -319,4 +322,51 @@ test("HTTP snapshots cannot overwrite newer events or outlive cancellation and b
   });
   await flush();
   assert.equal(data.get(JSON.stringify(key)), undefined);
+});
+
+test("missing revisioned tasks become unavailable without rewriting backend history", async () => {
+  const host = createHost();
+  let polls = 0;
+  const { runtime } = create(host, async (id) => {
+    if (id === "list_tasks") return [];
+    polls++;
+    throw Object.assign(Error("expired"), { status: 404 });
+  });
+  runtime.operationCoordinator.register({ id: "expired", kind: "backup" });
+  runtime.reconcileTaskResponse(
+    { id: "expired", status: "running", epoch: "instance", revision: 3 },
+    runtime.captureStateRequest(),
+  );
+  const stop = runtime.startOperationRecovery("account");
+  await flush();
+  await host.advance(15000);
+  assert.equal(runtime.operationCoordinator.get("expired").status, "unknown");
+  assert.equal(
+    runtime.stateReconciler.read(["task", "expired"]).value.status,
+    "running",
+  );
+  assert.equal(polls, 1);
+  stop();
+});
+
+test("application reset and disposal release the active owner, drafts, operations and cache", async () => {
+  const host = createHost();
+  const { runtime, data } = create(host);
+  const owner = runtime.start({
+    identity: "account",
+    onMessage() {},
+    onState() {},
+  });
+  runtime.draftRegistry.register();
+  runtime.operationCoordinator.register({ id: "job" });
+  data.set("cached", "old account");
+  runtime.reset();
+  owner.stop();
+  runtime.dispose();
+  await flush();
+  assert.equal(host.listenerCount(), 0);
+  assert.equal(host.timers.size, 0);
+  assert.equal(runtime.draftRegistry.dirty(), false);
+  assert.equal(runtime.operationCoordinator.list().length, 0);
+  assert.equal(data.size, 0);
 });

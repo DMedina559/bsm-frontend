@@ -9,88 +9,17 @@ import { operationCoordinator } from "../app/operationCoordinator";
  * Handles fetch logic, headers, authentication, and response parsing.
  */
 import { sessionRuntime } from "../app/sessionRuntime";
-import { getApiProxyBasePath, serializeHttpUrl } from "../utils/basePath";
 
 import { logger } from "../utils/logger";
 
-/**
- * Gets the configured API base URL from localStorage.
- * @returns {string} The base URL (e.g. "http://localhost:11325") or empty string.
- */
-export function getApiBaseUrl() {
-  return localStorage.getItem("api_base_url") || "";
-}
-
-/**
- * Sets the API base URL.
- * @param {string} url - The base URL to set.
- */
-export function setApiBaseUrl(url) {
-  if (!url) localStorage.removeItem("api_base_url");
-  else localStorage.setItem("api_base_url", validateBackendUrl(url));
-}
-
-/** Validate an absolute backend URL before storing or sending credentials. */
-export function validateBackendUrl(value) {
-  const url = new URL(value);
-  if (
-    !["http:", "https:"].includes(url.protocol) ||
-    url.username ||
-    url.password ||
-    url.search ||
-    url.hash
-  )
-    throw new Error(
-      "Enter an HTTP or HTTPS URL without credentials, a query, or a fragment.",
-    );
-  if (window.location.protocol === "https:" && url.protocol === "http:")
-    throw new Error(
-      "An HTTPS page requires an HTTPS backend to avoid mixed content.",
-    );
-  return url.href.replace(/\/+$/, "");
-}
-
-/** Resolve sockets using the same backend validation and prefix as HTTP. */
-export function resolveWebSocketUrl() {
-  const url = new URL(resolveApiUrl("/ws"), window.location.origin);
-  url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
-  return url.href;
-}
-
-/** Resolve API/download URLs against the configured backend, preserving ingress prefixes. */
-export function resolveApiUrl(url) {
-  if (typeof url !== "string" || !url.trim())
-    throw new ApiError("Missing API URL", 0, null);
-  const configured = getApiBaseUrl();
-  const base = configured
-    ? validateBackendUrl(configured)
-    : getApiProxyBasePath();
-  const finalUrl =
-    url.startsWith("/") && !url.startsWith("//") && base
-      ? `${base}${url}`
-      : url;
-  const backend = new URL(
-    base || window.location.origin,
-    window.location.origin,
-  );
-  const target = new URL(finalUrl, window.location.origin);
-  if (
-    !["http:", "https:"].includes(target.protocol) ||
-    target.origin !== backend.origin ||
-    target.username ||
-    target.password
-  ) {
-    throw new ApiError(
-      "API requests must target the configured backend.",
-      0,
-      null,
-    );
-  }
-  return serializeHttpUrl(
-    target,
-    finalUrl.startsWith("/") && !finalUrl.startsWith("//"),
-  );
-}
+import { getToken, resolveApiUrl } from "../app/connection";
+export {
+  getApiBaseUrl,
+  setApiBaseUrl,
+  validateBackendUrl,
+  resolveApiUrl,
+  resolveWebSocketUrl,
+} from "../app/connection";
 
 /**
  * Sends an HTTP request to the API.
@@ -104,9 +33,7 @@ export const { request } = createHttpTransport({
   resolveApiUrl,
   logger,
   captureSession: () => sessionRuntime.capture(),
-  getToken: () =>
-    sessionStorage.getItem("access_token") ||
-    localStorage.getItem("access_token"),
+  getToken,
   prepareRequest: ({ session, signal }) => {
     const stateTicket = stateReconciler.capture(signal);
     return () => {

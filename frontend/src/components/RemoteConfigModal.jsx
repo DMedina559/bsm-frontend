@@ -1,3 +1,4 @@
+import { localSettings, sessionSettings } from "../app/browserStorage";
 import React, { useState } from "react";
 import {
   getApiBaseUrl,
@@ -16,9 +17,9 @@ const RemoteConfigModal = ({ isOpen, onClose }) => {
   const apply = (value) => {
     setApiBaseUrl(value);
     // A different backend must not receive the previous backend's bearer token.
-    localStorage.removeItem("access_token");
-    sessionStorage.removeItem("access_token");
-    localStorage.removeItem("selectedServer");
+    localSettings.removeItem("access_token");
+    sessionSettings.removeItem("access_token");
+    localSettings.removeItem("selectedServer");
     setIsSaving(true);
     window.location.reload();
   };
@@ -35,7 +36,11 @@ const RemoteConfigModal = ({ isOpen, onClose }) => {
     } else apply("");
   };
   const handleReset = async () => {
-    if (await confirmAction("Reset to the local backend and sign in again?"))
+    if (
+      await confirmAction(
+        "Reset to the configured default backend and sign in again?",
+      )
+    )
       apply("");
   };
   return (
@@ -78,7 +83,7 @@ const RemoteConfigModal = ({ isOpen, onClose }) => {
             onClick={handleReset}
             disabled={isSaving}
           >
-            Reset to local
+            Reset to default
           </button>
           <button
             type="submit"

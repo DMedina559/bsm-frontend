@@ -10,6 +10,8 @@ import { queryKeys, resourceInvalidation } from "./queryKeys.js";
 import { mutationResources, lifecycleEvents } from "./coreEvents.js";
 
 /** Create isolated BSM state against an application-owned cache and platform. */
+/** @param {import("./index.d.ts").RuntimeOptions} options
+ * @returns {import("./index.d.ts").ApplicationRuntime} */
 export function createApplicationRuntime({
   queryClient,
   getBackendIdentity,
@@ -61,7 +63,44 @@ export function createApplicationRuntime({
     platform,
     scheduler,
   });
+  let stopActive = () => {};
+  const drafts = createDraftRegistryModule();
+  const reset = () => {
+    stopActive();
+    const generation = session.sessionRuntime.reset();
+    operations.operationCoordinator.clear();
+    drafts.draftRegistry.clear();
+    if (queryClient.clear) queryClient.clear();
+    else queryClient.removeQueries({});
+    return generation;
+  };
+  const start = ({
+    identity,
+    generation = 0,
+    onMessage = () => {},
+    onState = () => {},
+    manager = sockets.createWebSocketManager({ onMessage, onState }),
+  }) => {
+    stopActive();
+    const stopSocket = manager.start(identity);
+    const stopRecovery =
+      identity === null
+        ? () => {}
+        : recovery.startOperationRecovery(identity, generation);
+    let stopped = false;
+    const stop = () => {
+      if (stopped) return;
+      stopped = true;
+      stopSocket();
+      stopRecovery();
+    };
+    stopActive = stop;
+    return { manager, stop };
+  };
   return {
+    reset,
+    start,
+    dispose: reset,
     ...session,
     ...state,
     ...operations,
@@ -69,7 +108,7 @@ export function createApplicationRuntime({
     ...application,
     ...recovery,
     ...sockets,
-    ...createDraftRegistryModule(),
+    ...drafts,
     queryKeys,
   };
 }

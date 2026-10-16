@@ -1,5 +1,7 @@
 import { defaultScheduler } from "./scheduler.js";
 
+/** @param {Parameters<typeof import("./operationRecovery.d.ts").createOperationRecoveryModule>[0]} dependencies
+ * @returns {ReturnType<typeof import("./operationRecovery.d.ts").createOperationRecoveryModule>} */
 export function createOperationRecoveryModule({
   captureStateRequest,
   reconcileResourceSnapshot,
@@ -12,7 +14,7 @@ export function createOperationRecoveryModule({
   sessionRuntime,
   platform,
   scheduler = defaultScheduler,
-} = {}) {
+}) {
   /** Polling is owned by the session, so navigation cannot abandon a task. */
   function startOperationRecovery(identity = null, generation = 0) {
     const session = sessionRuntime.capture();
@@ -67,10 +69,20 @@ export function createOperationRecoveryModule({
               const operation = work[index++];
               const ticket = captureStateRequest(controller.signal);
               try {
-                const data = await callOperation("get_task_status", {
+                const response = await callOperation("get_task_status", {
                   path: { task_id: operation.id },
                   signal: controller.signal,
                 });
+                if (
+                  !response ||
+                  typeof response !== "object" ||
+                  Array.isArray(response)
+                )
+                  throw new Error("Invalid task status response");
+                const data =
+                  /** @type {import("./contracts.js").TaskSnapshot} */ (
+                    response
+                  );
                 if (!stopped && sessionRuntime.isCurrent(session)) {
                   attempts.delete(operation.id);
                   reconcileTaskResponse(
@@ -82,18 +94,11 @@ export function createOperationRecoveryModule({
                 if (stopped || !sessionRuntime.isCurrent(session)) return;
                 if (error.status === 404) {
                   attempts.delete(operation.id);
-                  reconcileTaskResponse(
-                    {
-                      task_id: operation.id,
-                      status: "unknown",
-                      error: {
-                        code: "task_unavailable",
-                        message: "Task snapshot is unavailable",
-                        details: null,
-                      },
-                    },
-                    ticket,
-                  );
+                  operationCoordinator.markUnavailable(operation.id, {
+                    code: "task_unavailable",
+                    message: "Task snapshot is unavailable",
+                    details: null,
+                  });
                 } else {
                   const failures =
                     (attempts.get(operation.id)?.failures ?? 0) + 1;

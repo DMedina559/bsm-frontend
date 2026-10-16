@@ -1,3 +1,5 @@
+import { setCredentials } from "../../../src/app/connection";
+import { getToken } from "../../../src/app/connection";
 import { queryClient } from "../../../src/app/queryClient";
 import { sessionRuntime } from "../../../src/app/sessionRuntime";
 import React from "react";
@@ -150,7 +152,7 @@ describe("AuthContext", () => {
       screen.getByText("Login Remember").click();
     });
 
-    expect(localStorage.getItem("access_token")).toBe("test_token");
+    expect(getToken()).toBe("test_token");
     expect(sessionStorage.getItem("access_token")).toBeNull();
     expect(screen.getByText("User: testuser")).toBeInTheDocument();
   });
@@ -175,7 +177,7 @@ describe("AuthContext", () => {
       screen.getByText("Login Session").click();
     });
 
-    expect(sessionStorage.getItem("access_token")).toBe("test_token");
+    expect(getToken()).toBe("test_token");
     expect(localStorage.getItem("access_token")).toBeNull();
     expect(screen.getByText("User: testuser")).toBeInTheDocument();
   });
@@ -217,7 +219,7 @@ describe("AuthContext", () => {
       );
     });
 
-    localStorage.setItem("access_token", "test_token");
+    setCredentials("test_token", true);
     expect(screen.getByText("User: testuser")).toBeInTheDocument();
 
     api.request.mockResolvedValueOnce({}); // logout
@@ -243,7 +245,7 @@ describe("AuthContext", () => {
       );
     });
 
-    localStorage.setItem("access_token", "test_token");
+    setCredentials("test_token", true);
 
     api.request.mockRejectedValueOnce(new Error("Network Error")); // logout failure
 
@@ -276,7 +278,7 @@ it("rejects an old authentication response after logout", async () => {
         })
       : Promise.resolve({}),
   );
-  sessionStorage.setItem("access_token", "token");
+  setCredentials("token");
   await act(async () => {
     render(
       <AuthProvider>
@@ -307,7 +309,7 @@ it("applies only the newest concurrent authentication check", async () => {
   api.request.mockImplementation(
     () => new Promise((resolve) => requests.push(resolve)),
   );
-  sessionStorage.setItem("access_token", "token");
+  setCredentials("token");
   await act(async () => {
     render(
       <AuthProvider>

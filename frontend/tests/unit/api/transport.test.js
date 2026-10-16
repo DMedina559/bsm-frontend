@@ -1,3 +1,4 @@
+import { setCredentials } from "../../../src/app/connection";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   request,
@@ -26,182 +27,12 @@ describe("api", () => {
     setApiBaseUrl("");
     expect(getApiBaseUrl()).toBe("");
   });
-
-  describe("request", () => {
-    it("handles 204 No Content", async () => {
-      globalThis.fetch = vi.fn(() =>
-        Promise.resolve({
-          status: 204,
-        }),
-      );
-      const res = await request("/test");
-      expect(res).toBeNull();
-    });
-
-    it("handles valid JSON response", async () => {
-      globalThis.fetch = vi.fn(() =>
-        Promise.resolve({
-          status: 200,
-          ok: true,
-          headers: new Headers({ "content-type": "application/json" }),
-          json: () => Promise.resolve({ data: "test" }),
-        }),
-      );
-      const res = await request("/test");
-      expect(res).toEqual({ data: "test" });
-    });
-
-    it("handles invalid JSON response", async () => {
-      globalThis.fetch = vi.fn(() =>
-        Promise.resolve({
-          status: 200,
-          ok: true,
-          headers: new Headers({ "content-type": "application/json" }),
-          json: () => Promise.reject(new Error("Invalid JSON")),
-        }),
-      );
-      await expect(request("/test")).rejects.toThrow(ApiError);
-      await expect(request("/test")).rejects.toThrow(
-        "Invalid JSON response from server",
-      );
-    });
-
-    it("handles non-JSON response error", async () => {
-      globalThis.fetch = vi.fn(() =>
-        Promise.resolve({
-          status: 404,
-          ok: false,
-          headers: new Headers({ "content-type": "text/html" }),
-          text: () => Promise.resolve("Not Found"),
-        }),
-      );
-      await expect(request("/test")).rejects.toThrow(ApiError);
-    });
-
-    it("handles non-JSON HTML redirect response", async () => {
-      globalThis.fetch = vi.fn(() =>
-        Promise.resolve({
-          status: 200,
-          ok: true,
-          headers: new Headers({ "content-type": "text/html" }),
-          text: () => Promise.resolve("<!doctype html><html></html>"),
-        }),
-      );
-      await expect(request("/test")).rejects.toThrow(
-        "Session expired (Redirected to App)",
-      );
-    });
-
-    it("handles API error with detail", async () => {
-      globalThis.fetch = vi.fn(() =>
-        Promise.resolve({
-          status: 400,
-          ok: false,
-          headers: new Headers({ "content-type": "application/json" }),
-          json: () => Promise.resolve({ detail: "Bad Request Detail" }),
-        }),
-      );
-      await expect(request("/test")).rejects.toThrow("Bad Request Detail");
-    });
-
-    it("handles legacy API error in 200 response", async () => {
-      globalThis.fetch = vi.fn(() =>
-        Promise.resolve({
-          status: 200,
-          ok: true,
-          headers: new Headers({ "content-type": "application/json" }),
-          json: () =>
-            Promise.resolve({ status: "error", message: "Legacy Error" }),
-        }),
-      );
-      await expect(request("/test")).rejects.toThrow("Legacy Error");
-    });
-
-    it("handles network error", async () => {
-      globalThis.fetch = vi.fn(() =>
-        Promise.reject(new Error("Network Error")),
-      );
-      await expect(request("/test")).rejects.toThrow("Network Error");
-    });
-  });
-
-  describe("helper methods", () => {
-    it("sends GET requests", async () => {
-      globalThis.fetch = vi.fn(() =>
-        Promise.resolve({
-          status: 200,
-          ok: true,
-          headers: new Headers({ "content-type": "application/json" }),
-          json: () => Promise.resolve({}),
-        }),
-      );
-      await request("/test", { method: "GET" });
-      expect(globalThis.fetch).toHaveBeenCalledWith(
-        "/test",
-        expect.objectContaining({ method: "GET" }),
-      );
-    });
-
-    it("serializes POST request bodies", async () => {
-      globalThis.fetch = vi.fn(() =>
-        Promise.resolve({
-          status: 200,
-          ok: true,
-          headers: new Headers({ "content-type": "application/json" }),
-          json: () => Promise.resolve({}),
-        }),
-      );
-      await request("/test", { method: "POST", body: { data: "test" } });
-      expect(globalThis.fetch).toHaveBeenCalledWith(
-        "/test",
-        expect.objectContaining({
-          method: "POST",
-          body: JSON.stringify({ data: "test" }),
-        }),
-      );
-    });
-
-    it("serializes PUT request bodies", async () => {
-      globalThis.fetch = vi.fn(() =>
-        Promise.resolve({
-          status: 200,
-          ok: true,
-          headers: new Headers({ "content-type": "application/json" }),
-          json: () => Promise.resolve({}),
-        }),
-      );
-      await request("/test", { method: "PUT", body: { data: "test" } });
-      expect(globalThis.fetch).toHaveBeenCalledWith(
-        "/test",
-        expect.objectContaining({
-          method: "PUT",
-          body: JSON.stringify({ data: "test" }),
-        }),
-      );
-    });
-
-    it("sends DELETE requests", async () => {
-      globalThis.fetch = vi.fn(() =>
-        Promise.resolve({
-          status: 200,
-          ok: true,
-          headers: new Headers({ "content-type": "application/json" }),
-          json: () => Promise.resolve({}),
-        }),
-      );
-      await request("/test", { method: "DELETE" });
-      expect(globalThis.fetch).toHaveBeenCalledWith(
-        "/test",
-        expect.objectContaining({ method: "DELETE" }),
-      );
-    });
-  });
 });
 
 describe("authenticated API URL routing", () => {
   it("blocks credential transmission to foreign origins", async () => {
     localStorage.clear();
-    localStorage.setItem("access_token", "sensitive-token");
+    setCredentials("sensitive-token", true);
     globalThis.fetch = vi.fn();
     await expect(
       request("https://untrusted.example/api/action"),
@@ -341,7 +172,7 @@ it("uses the generated login and reauthentication contracts through the authenti
   expect(loginRequest.headers["Content-Type"]).toBe(
     "application/x-www-form-urlencoded",
   );
-  sessionStorage.setItem("access_token", "current-token");
+  setCredentials("current-token");
   await callOperation("reauthenticate", { query: { remember_me: false } });
   const [reauthUrl, reauthRequest] = fetch.mock.calls[1];
   expect(reauthUrl).toBe("/auth/reauth?remember_me=false");

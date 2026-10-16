@@ -31,6 +31,19 @@ export class ApiError extends Error {
   }
 }
 
+function abortable(value, signal) {
+  return new Promise((resolve, reject) => {
+    const aborted = () => reject(signal.reason);
+    if (signal.aborted) return aborted();
+    signal.addEventListener("abort", aborted, { once: true });
+    Promise.resolve(value)
+      .then(resolve, reject)
+      .finally(() => signal.removeEventListener("abort", aborted));
+  });
+}
+
+/** @param {Parameters<typeof import("./transport.d.ts").createHttpTransport>[0]} dependencies
+ * @returns {ReturnType<typeof import("./transport.d.ts").createHttpTransport>} */
 export function createHttpTransport({
   baseUrl,
   resolveApiUrl = createUrlResolver(baseUrl),
@@ -43,6 +56,7 @@ export function createHttpTransport({
   onResponse = () => {},
   logger = { debug() {}, warn() {}, error() {} },
 }) {
+  /** @param {string} url @param {import("./transport.d.ts").RequestOptions} [options] */
   async function request(url, options = {}) {
     const {
       method = "GET",
@@ -66,21 +80,26 @@ export function createHttpTransport({
       Accept: responseType === "blob" ? "*/*" : "application/json",
     };
 
+    const normalizedHeaders = new Headers(defaultHeaders);
+    new Headers(headers).forEach((value, key) =>
+      normalizedHeaders.set(key, value),
+    );
+    /** @type {RequestInit & { headers: Record<string, string> }} */
     const config = {
       method: method.toUpperCase(),
-      headers: { ...defaultHeaders, ...headers },
+      headers: {},
       ...restOptions,
       signal,
     };
 
     const credential = getToken();
     const token =
-      credential && typeof credential.then === "function"
-        ? await credential
+      credential && typeof credential !== "string"
+        ? await abortable(credential, signal)
         : credential;
     assertCurrent();
     if (token) {
-      config.headers["Authorization"] = `Bearer ${token}`;
+      normalizedHeaders.set("Authorization", `Bearer ${token}`);
     }
 
     if (body !== undefined) {
@@ -90,17 +109,30 @@ export function createHttpTransport({
         body instanceof Blob ||
         body instanceof ArrayBuffer ||
         ArrayBuffer.isView(body);
-      const contentType = config.headers["Content-Type"];
+      const contentType = normalizedHeaders.get("Content-Type");
       if (
         !raw &&
         typeof body !== "string" &&
         (!contentType || contentType.includes("application/json"))
       ) {
-        config.headers["Content-Type"] = contentType || "application/json";
+        normalizedHeaders.set(
+          "Content-Type",
+          contentType || "application/json",
+        );
         config.body = JSON.stringify(body);
-      } else config.body = body;
+      } else config.body = /** @type {BodyInit} */ (body);
     }
 
+    config.headers = Object.fromEntries(
+      [...normalizedHeaders].map(([key, value]) => [
+        {
+          authorization: "Authorization",
+          "content-type": "Content-Type",
+          accept: "Accept",
+        }[key] ?? key,
+        value,
+      ]),
+    );
     try {
       const finalUrl = resolveApiUrl(url);
 
@@ -108,8 +140,14 @@ export function createHttpTransport({
         method: config.method,
         url: finalUrl,
         headers: {
-          ...config.headers,
-          Authorization: token ? "[redacted]" : undefined,
+          ...Object.fromEntries(
+            Object.entries(config.headers).map(([key, value]) => [
+              key,
+              /authorization|cookie|token|secret|api-key/i.test(key)
+                ? "[redacted]"
+                : value,
+            ]),
+          ),
         },
       });
 
@@ -135,6 +173,9 @@ export function createHttpTransport({
         try {
           data = await response.json();
         } catch (err) {
+          signal.throwIfAborted();
+          if (err.name === "AbortError" || err.name === "TimeoutError")
+            throw err;
           // Fallback if JSON parsing fails but header said JSON
           logger.error(`[API] Error: Invalid JSON response`, {
             url: finalUrl,

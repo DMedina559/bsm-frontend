@@ -1,6 +1,3 @@
-import { logger } from "../utils/logger";
-import { sessionRuntime } from "./sessionRuntime";
-import { getBackendIdentity } from "./backendIdentity";
-import { createStateReconcilerModule } from "@bedrock-server-manager/runtime/stateReconciler";
+import { application } from "./application";
 export const { terminalTaskStatus, createStateReconciler, stateReconciler } =
-  createStateReconcilerModule({ logger, sessionRuntime, getBackendIdentity });
+  application;

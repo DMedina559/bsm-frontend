@@ -1,4 +1,4 @@
-name: Publish Python distribution
+name: Publish frontend distributions
 
 on:
   release:
@@ -20,55 +20,45 @@ jobs:
     permissions:
       contents: read
       id-token: write
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
+      - uses: actions/download-artifact@v4
         with:
-          fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: '3.11'
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: package-lock.json
-
-      - name: Install build dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install build setuptools-scm
-
-      - name: Resolve frontend release version
-        id: version
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: |
-          python - <<'PYTHON'
-          import os
-          from packaging.version import Version
-
-          tag = os.environ["RELEASE_TAG"]
-          if not tag.startswith("frontend-"):
-              raise ValueError("Frontend release tags must start with frontend-")
-          version = Version(tag.removeprefix("frontend-"))
-          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
-              output.write(f"version={version}\n")
-          PYTHON
-
-      - name: Build package
-        run: |
-          npm ci
-          npm run build:python
-        env:
-          SETUPTOOLS_SCM_PRETEND_VERSION: ${{ steps.version.outputs.version }}
-
-      - name: Publish to PyPI
+          name: frontend-distributions
+      - name: Publish verified Python distribution
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: python/dist/
+
+  npm:
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: npm-release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          registry-url: https://registry.npmjs.org
+      - uses: actions/download-artifact@v4
+        with:
+          name: frontend-distributions
+      - name: Resolve npm frontend release channel
+        id: version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          IS_PRERELEASE: ${{ github.event.release.prerelease }}
+        run: |
+          node --input-type=module - <<'JS'
+          import { appendFileSync } from 'node:fs';
+          import { resolveReleaseTag } from './scripts/release-version.mjs';
+          const release = resolveReleaseTag('frontend', process.env.RELEASE_TAG, process.env.IS_PRERELEASE === 'true');
+          appendFileSync(process.env.GITHUB_OUTPUT, `dist-tag=${release.distTag}\n`);
+          JS
+      - name: Publish verified npm frontend archive
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_DIST_TAG: ${{ steps.version.outputs.dist-tag }}
+        run: npm publish frontend/build/artifacts/*.tgz --access public --provenance --tag "$NPM_DIST_TAG"

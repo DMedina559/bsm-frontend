@@ -2,7 +2,8 @@
 
 An npm workspace containing the BSM web interface and its reusable API client,
 application runtime, and preference storage. A separate Python distribution
-provides the compiled web interface to the Bedrock Server Manager backend.
+provides the compiled web interface to the Bedrock Server Manager backend. The
+same verified assets can also be distributed as a static npm package.
 
 ## Quick start
 
@@ -31,14 +32,15 @@ root lockfile with the manifest changes.
 
 ## Repository layout
 
-| Location                                              | Responsibility                                              | Delivery               |
-| ----------------------------------------------------- | ----------------------------------------------------------- | ---------------------- |
-| [frontend/](frontend/README.md)                       | React interface and browser adapters                        | Static web application |
-| [packages/api-client/](packages/api-client/README.md) | Typed operations, HTTP transport, schema discovery          | Publishable npm SDK    |
-| [packages/runtime/](packages/runtime/README.md)       | Session, state, metrics, operation, and socket coordination | Private workspace      |
-| [packages/storage/](packages/storage/README.md)       | Validated, versioned preferences                            | Private workspace      |
-| [python/](python/README.md)                           | Python wrapper, packaging configuration, and tests          | PyPI distribution      |
-| scripts/                                              | Shared build and validation commands                        | Repository tooling     |
+| Location                                              | Responsibility                                              | Delivery                    |
+| ----------------------------------------------------- | ----------------------------------------------------------- | --------------------------- |
+| [frontend/](frontend/README.md)                       | React interface and browser adapters                        | Static web application      |
+| [packages/api-client/](packages/api-client/README.md) | Typed operations, HTTP transport, schema discovery          | Publishable npm SDK         |
+| [packages/runtime/](packages/runtime/README.md)       | Session, state, metrics, operation, and socket coordination | Private workspace           |
+| [packages/storage/](packages/storage/README.md)       | Validated, versioned preferences                            | Private workspace           |
+| [packages/frontend/](packages/frontend/README.md)     | Static npm distribution manifest and hosting guide          | Publishable frontend assets |
+| [python/](python/README.md)                           | Python wrapper, packaging configuration, and tests          | PyPI distribution           |
+| scripts/                                              | Shared build and validation commands                        | Repository tooling          |
 
 Build and test tools are declared in the root manifest. Shared libraries receive
 platform dependencies explicitly; browser storage, DOM behavior, and React
@@ -48,17 +50,19 @@ integration belong to the web application.
 
 Run these commands from the repository root.
 
-| Command                  | Purpose                                                                       |
-| ------------------------ | ----------------------------------------------------------------------------- |
-| `npm run dev`            | Build shared libraries and start Vite                                         |
-| `npm run build`          | Build shared libraries and production web assets                              |
-| `npm run build:packages` | Refresh library outputs under `packages/*/dist/`                              |
-| `npm run check`          | Build libraries; check generation, lint, types, tests, and packed consumers   |
-| `npm test`               | Run frontend and library tests                                                |
-| `npm run api:check`      | Check that committed API types and operation metadata match the pinned schema |
-| `npm run api:generate`   | Regenerate API types and metadata, then rebuild the SDK                       |
-| `npm run packages:check` | Verify isolated package installation, exports, and consumer types             |
-| `npm run build:python`   | Build the web interface and its Python distributions                          |
+| Command                         | Purpose                                                                       |
+| ------------------------------- | ----------------------------------------------------------------------------- |
+| `npm run dev`                   | Watch shared libraries and start Vite                                         |
+| `npm run build`                 | Build shared libraries and production web assets                              |
+| `npm run build:packages`        | Refresh library outputs under `packages/*/dist/`                              |
+| `npm run check`                 | Build libraries; check generation, lint, types, tests, and packed consumers   |
+| `npm test`                      | Run frontend and library tests                                                |
+| `npm run api:check`             | Check that committed API types and operation metadata match the pinned schema |
+| `npm run api:generate`          | Regenerate API types and metadata, then rebuild the SDK                       |
+| `npm run packages:check`        | Verify isolated package installation, exports, and consumer types             |
+| `npm run pack:frontend`         | Pack the verified frontend for npm after Python asset staging                 |
+| `npm run check:implementations` | Check shared JavaScript implementations and typed factory boundaries          |
+| `npm run build:python`          | Build the web interface and its Python distributions                          |
 
 `npm run check` does not run browser scenarios or build the Python distribution.
 See the [frontend validation guide](frontend/README.md#validation) and
@@ -69,8 +73,9 @@ Workspaces also expose their own commands, for example:
 npm run check --workspace=@bedrock-server-manager/api-client
 ```
 
-Rebuild shared libraries after editing their source while Vite is running.
-Generated outputs are not committed.
+`npm run dev` rebuilds shared libraries as their source changes. To run the
+processes separately, use `npm run dev:packages` and `npm run dev:web` in separate
+terminals. Generated outputs are not committed.
 
 ## Build outputs
 
@@ -79,6 +84,7 @@ Generated outputs are not committed.
 | `packages/*/dist/`                | Library JavaScript, plus declarations and metadata where provided |
 | `frontend/dist/`                  | Complete production HTML, assets, and public files                |
 | `python/src/bsm_frontend/static/` | Web assets copied during Python packaging                         |
+| `frontend/build/artifacts/`       | Prebuilt npm frontend archive                                     |
 | `python/dist/`                    | Python wheel and source archive                                   |
 
 A normal npm build does not require Python. For Python delivery, install Python
@@ -99,7 +105,8 @@ npm run check
 
 Review and commit the schema and generated files together. Generation belongs to
 the API client workspace. The backend-contract workflow compares the pinned
-schema with backend `dev`; using the SDK does not require Python or a running
+schema with backend `dev`. Generated metadata records a SHA-256 contract
+fingerprint, the source exporter, and supported operation IDs; using the SDK does not require Python or a running
 backend until requests are sent.
 
 ## Releases
@@ -110,7 +117,7 @@ The root workspace, runtime, and storage packages are private.
 | Release         | GitHub release tag                               | Workflow                 | Required publishing setup                                                         |
 | --------------- | ------------------------------------------------ | ------------------------ | --------------------------------------------------------------------------------- |
 | API client      | `api-client-v<SDK version>`                      | `publish-api-client.yml` | `npm-release` environment and its `NPM_TOKEN` secret with access to the npm scope |
-| Frontend/Python | `frontend-<version>`, such as `frontend-1.3.0b8` | `publish.yml`            | Existing PyPI trusted publisher and `release` environment                         |
+| Frontend assets | `frontend-<version>`, such as `frontend-1.3.0b8` | `publish.yml`            | PyPI trusted publisher (`release`) and npm credentials (`npm-release`)            |
 
 For an SDK release, publish a GitHub release tagged `api-client-v0.1.1`, for example.
 The workflow validates the SemVer tag and sets the SDK package and lockfile
@@ -118,10 +125,15 @@ version in its temporary checkout before validation and publication. No manual
 manifest update or version commit is required. The committed version remains a
 development baseline; the published package gets its version from the release tag.
 For a beta, use a tag such as `api-client-v0.2.0-beta.1` and mark the GitHub release
-as a prerelease. GitHub prereleases publish to npm's `next` tag; other SDK releases
-publish to `latest`.
+as a prerelease. SemVer prereleases always publish to npm's `next` tag, even if
+the GitHub prerelease checkbox is omitted; stable releases use `latest` unless
+explicitly marked as GitHub prereleases.
 
-Frontend/Python releases run the shared validation workflow before publishing.
+Frontend releases run shared validation, then publish the verified Python and
+npm archives without rebuilding. `frontend-1.3.0b8` produces Python version
+`1.3.0b8` and npm `@bedrock-server-manager/frontend` version `1.3.0-beta.8`.
+The source frontend-assets workspace stays private to prevent accidental
+publication of an unstaged package; the prepared archive is public.
 The `frontend-` prefix identifies the release; the published Python version and
 displayed application version omit it. Historical unprefixed and `v`-prefixed
 frontend tags remain readable for local builds, but new Python publications

@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { createPreferenceStore } from "../../../src/app/preferenceStore";
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+import { createPreferenceStore } from "@bedrock-server-manager/storage/preferenceStore";
 
 const storage = () => {
   const values = new Map();
@@ -14,31 +15,32 @@ describe("preference storage", () => {
   it("keeps accounts separate", () => {
     const store = createPreferenceStore(storage());
     store.write("alice", "layout", "grid");
-    expect(store.read("alice", "layout", "list")).toBe("grid");
-    expect(store.read("bob", "layout", "list")).toBe("list");
+    assert.equal(store.read("alice", "layout", "list"), "grid");
+    assert.equal(store.read("bob", "layout", "list"), "list");
   });
   it("falls back for invalid versions and malformed JSON", () => {
     const backend = storage();
     const store = createPreferenceStore(backend);
     const key = "bsm:alice:preference:layout";
     backend.setItem(key, JSON.stringify({ version: 99, value: "grid" }));
-    expect(store.read("alice", "layout", "list")).toBe("list");
+    assert.equal(store.read("alice", "layout", "list"), "list");
     backend.setItem(key, "invalid-json");
-    expect(store.read("alice", "layout", "list")).toBe("list");
+    assert.equal(store.read("alice", "layout", "list"), "list");
   });
 
   it("does not persist unauthenticated preferences", () => {
     const store = createPreferenceStore(storage());
-    expect(store.write(null, "layout", "grid")).toBe(false);
-    expect(store.read(null, "layout", "list")).toBe("list");
+    assert.equal(store.write(null, "layout", "grid"), false);
+    assert.equal(store.read(null, "layout", "list"), "list");
   });
 
   it("rejects invalid preference values", () => {
     const store = createPreferenceStore(storage());
     store.write("alice", "layout", "grid");
-    expect(
+    assert.equal(
       store.read("alice", "layout", "list", (value) => value === "list"),
-    ).toBe("list");
+      "list",
+    );
   });
 });
 
@@ -55,11 +57,12 @@ it("migrates and validates before persisting a new schema", () => {
       migrations: { 1: (value) => (value === "cards" ? "grid" : value) },
     },
   });
-  expect(store.read("alice", "layout", "list")).toBe("grid");
-  expect(
+  assert.equal(store.read("alice", "layout", "list"), "grid");
+  assert.equal(
     JSON.parse(backend.getItem("bsm:alice:preference:layout")).version,
-  ).toBe(2);
-  expect(store.write("alice", "layout", "bad")).toBe(false);
+    2,
+  );
+  assert.equal(store.write("alice", "layout", "bad"), false);
 });
 it("notifies subscribers and releases them", () => {
   const store = createPreferenceStore(storage());
@@ -69,7 +72,7 @@ it("notifies subscribers and releases them", () => {
   store.remove("alice", "layout");
   stop();
   store.write("alice", "layout", "list");
-  expect(calls).toBe(2);
+  assert.equal(calls, 2);
 });
 it("synchronizes memory preferences when durable storage throws, including removal", () => {
   const store = createPreferenceStore({
@@ -85,11 +88,11 @@ it("synchronizes memory preferences when durable storage throws, including remov
   });
   let notifications = 0;
   const stop = store.subscribe("alice", "layout", () => notifications++);
-  expect(store.write("alice", "layout", "grid")).toBe(true);
-  expect(store.read("alice", "layout", "list")).toBe("grid");
-  expect(store.read("bob", "layout", "list")).toBe("list");
-  expect(store.remove("alice", "layout")).toBe(true);
-  expect(store.read("alice", "layout", "list")).toBe("list");
-  expect(notifications).toBe(2);
+  assert.equal(store.write("alice", "layout", "grid"), true);
+  assert.equal(store.read("alice", "layout", "list"), "grid");
+  assert.equal(store.read("bob", "layout", "list"), "list");
+  assert.equal(store.remove("alice", "layout"), true);
+  assert.equal(store.read("alice", "layout", "list"), "list");
+  assert.equal(notifications, 2);
   stop();
 });

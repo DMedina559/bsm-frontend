@@ -1,5 +1,5 @@
 import { resolveApiUrl } from "../api/transport";
-import { getApiProxyBasePath } from "./basePath";
+import { getAppBasePath } from "./basePath";
 import { isSafeUrl } from "./urlValidation";
 
 /** Backend-relative plugin resources retain ingress; external URLs stay external. */
@@ -25,7 +25,7 @@ export function resolvePluginUrl(value, { navigation = false } = {}) {
       navigation &&
       (relative.pathname === "/app" || relative.pathname.startsWith("/app/"))
     ) {
-      return getApiProxyBasePath() + path;
+      return getAppBasePath().replace(/\/+$/, "") + path.slice(4);
     }
     return resolveApiUrl(path);
   } catch {

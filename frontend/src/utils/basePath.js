@@ -1,3 +1,4 @@
+import { getAppConfig } from "../app/config";
 /**
  * @fileoverview Utility for determining dynamic base path
  */
@@ -10,6 +11,7 @@
  * @returns {string} The base path prefix (e.g. '/api/hassio_ingress/xyz') or empty string
  */
 export const getApiProxyBasePath = () => {
+  if (getAppConfig().mode === "standalone") return "";
   if (typeof window === "undefined" || !window.location) {
     return "";
   }
@@ -48,10 +50,20 @@ export const getApiProxyBasePath = () => {
   return "";
 };
 
+export function getAppBasePath() {
+  const config = getAppConfig();
+  if (globalThis.BSM_CONFIG?.appBase || config.mode === "standalone")
+    return config.appBase;
+  return `${getApiProxyBasePath()}/app`;
+}
+
 /** Resolve bundled assets on the frontend origin, preserving ingress prefixes. */
 export function resolveAppAssetUrl(path) {
   const origin = window.location.origin;
-  const target = new URL(path, `${origin}${getApiProxyBasePath()}/app/`);
+  const target = new URL(
+    path,
+    `${origin}${getAppBasePath().replace(/\/+$/, "")}/`,
+  );
   if (
     !["http:", "https:"].includes(target.protocol) ||
     target.origin !== origin ||

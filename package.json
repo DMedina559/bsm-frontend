@@ -8,9 +8,9 @@
   ],
   "scripts": {
     "build": "npm run build:packages && npm run build:web",
-    "test": "npm run test --workspaces --if-present",
+    "test": "npm run test:tooling && npm run test --workspaces --if-present",
     "lint": "eslint scripts eslint.config.js prettier.config.js && npm run lint --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present && npm run check:implementations",
     "api:check": "npm run api:check --workspace=@bedrock-server-manager/api-client",
     "api:generate": "npm run api:generate --workspace=@bedrock-server-manager/api-client",
     "test:packages": "node scripts/test-packages.mjs",
@@ -20,7 +20,12 @@
     "build:web": "npm run build --workspace=bsm-frontend",
     "build:python": "npm run build && node scripts/build-python.mjs",
     "check": "npm run build:packages && npm run api:check && npm run lint && npm run typecheck && npm test && npm run packages:check",
-    "dev": "npm run build:packages && npm run dev --workspace=bsm-frontend"
+    "dev": "node scripts/dev.mjs",
+    "dev:packages": "node scripts/watch-packages.mjs",
+    "dev:web": "npm run dev --workspace=bsm-frontend",
+    "test:tooling": "node --test scripts/test/*.test.mjs",
+    "check:implementations": "node scripts/check-implementations.mjs",
+    "pack:frontend": "node scripts/pack-frontend.mjs"
   },
   "engines": {
     "node": ">=22.12.0"
@@ -51,6 +56,7 @@
     "prettier": "3.9.10",
     "typescript": "^5.9.3",
     "vite": "^8.3.4",
-    "vitest": "^5.0.2"
+    "vitest": "^5.0.2",
+    "ws": "^8.22.0"
   }
 }

@@ -1,3 +1,5 @@
+/** @param {Parameters<typeof import("./applicationState.d.ts").createApplicationStateModule>[0]} dependencies
+ * @returns {ReturnType<typeof import("./applicationState.d.ts").createApplicationStateModule>} */
 export function createApplicationStateModule({
   reconcileMetricsSnapshot,
   reconcileMetricsEvent,
@@ -8,7 +10,7 @@ export function createApplicationStateModule({
   stateReconciler,
   operationCoordinator,
   resourceInvalidation,
-} = {}) {
+}) {
   stateReconciler.onEpochChange(() => {
     operationCoordinator.clear();
     // Reset cached data as well as watermarks; mounted queries refetch immediately.
@@ -40,6 +42,7 @@ export function createApplicationStateModule({
     });
     if (selected.accepted)
       for (const server of data.servers) {
+        /** @type {import("./contracts.js").ReconcileOptions<any>} */
         const options = {
           source: "http",
           ticket,
@@ -87,7 +90,10 @@ export function createApplicationStateModule({
           for (const field of ["players", "status"]) {
             const update = stateReconciler.read([field, server.name]);
             if (update && update.clock > requestClock)
-              next = { ...next, ...update.value };
+              next = {
+                ...next,
+                .../** @type {Record<string, unknown>} */ (update.value),
+              };
           }
           return next;
         }),
@@ -109,7 +115,9 @@ export function createApplicationStateModule({
           stateReconciler.task(task, { source: "http", ticket }).value ?? task,
       );
       const known = new Set(tasks.map((task) => task.id ?? task.task_id));
-      for (const record of stateReconciler.entries("task"))
+      for (const record of /** @type {import("./contracts.js").StateRecord<import("./contracts.js").TaskSnapshot>[]} */ (
+        stateReconciler.entries("task")
+      ))
         if (
           record.source === "event" &&
           record.clock > ticket.clock &&

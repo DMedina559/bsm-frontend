@@ -1,10 +1,11 @@
+import { localSettings, sessionSettings } from "../app/browserStorage";
 import { callOperation } from "../api/operations";
 import React, { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useServer } from "../contexts/ServerContext";
 import { useToast } from "../contexts/ToastContext";
-import { getApiProxyBasePath } from "../utils/basePath";
+import { resolveAppAssetUrl } from "../utils/basePath";
 import { logger } from "../utils/logger";
 import {
   LayoutDashboard,
@@ -42,7 +43,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
   } = useServer();
   const [pluginPages, setPluginPages] = useState([]);
   const [isCollapsed, setIsCollapsed] = useState(
-    () => localStorage.getItem("sidebarCollapsed") === "true",
+    () => localSettings.getItem("sidebarCollapsed") === "true",
   );
   const [appVersion, setAppVersion] = useState("Unknown");
   const [splashText, setSplashText] = useState("");
@@ -77,7 +78,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
   }, []);
   const toggleSidebar = () => {
     setIsCollapsed((previous) => {
-      localStorage.setItem("sidebarCollapsed", String(!previous));
+      localSettings.setItem("sidebarCollapsed", String(!previous));
       return !previous;
     });
   };
@@ -174,7 +175,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
           label: "Settings",
           icon: Settings,
         },
-        ...(sessionStorage.getItem("show_hidden_flag") === "true"
+        ...(sessionSettings.getItem("show_hidden_flag") === "true"
           ? [
               {
                 path: "/playground",
@@ -233,7 +234,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
       <header className="sidebar-header">
         <img
           className="sidebar-brand-icon"
-          src={`${getApiProxyBasePath()}/app/image/icon/web-app-manifest-512x512.png`}
+          src={resolveAppAssetUrl("image/icon/web-app-manifest-512x512.png")}
           alt="Bedrock Server Manager"
         />
         {!effectiveCollapsed && (

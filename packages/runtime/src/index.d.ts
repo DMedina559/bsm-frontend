@@ -24,7 +24,20 @@ export interface RuntimeOptions {
   scheduler?: RuntimeScheduler;
   logger?: Logger;
 }
-export type ApplicationRuntime = SessionModule &
+export type ApplicationRuntime = {
+  reset(): number;
+  dispose(): number;
+  start(options: {
+    identity: string | null;
+    generation?: number;
+    manager?: import("./contracts.js").WebSocketManager;
+    onMessage?: (
+      message: import("./contracts.js").SocketMessage,
+      ticket: import("./contracts.js").StateTicket,
+    ) => void;
+    onState?: (state: import("./contracts.js").ConnectionState) => void;
+  }): { manager: import("./contracts.js").WebSocketManager; stop(): void };
+} & SessionModule &
   StateModule &
   OperationModule &
   ApplicationStateModule &

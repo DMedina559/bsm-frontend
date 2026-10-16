@@ -19,7 +19,14 @@ const testImports = {
 };
 
 export default [
-  { ignores: ["dist"] },
+  {
+    ignores: [
+      "**/dist/**",
+      "**/build/**",
+      "**/test-results/**",
+      "**/playwright-report/**",
+    ],
+  },
   {
     files: ["**/*.{js,jsx}"],
     languageOptions: {

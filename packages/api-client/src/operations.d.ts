@@ -94,6 +94,13 @@ type DiscoverOperationClient = (
 export function createApiClient(options: {
   request: (url: string, options?: RequestOptions) => Promise<unknown>;
 }): {
+  inspectBackendContract(
+    options?: Pick<RequestOptions, "signal" | "session" | "timeout">,
+  ): Promise<{
+    missing: string[];
+    backendVersion: string | null;
+    schemaHash: string;
+  }>;
   callOperation: CallOperation;
   resolveOperationUrl: ResolveOperationUrl;
   createOperationClient: CreateOperationClient;

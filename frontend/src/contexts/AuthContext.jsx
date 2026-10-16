@@ -1,3 +1,10 @@
+import {
+  getToken,
+  setCredentials,
+  clearCredentials,
+  isSessionStorageEvent,
+} from "../app/connection";
+import { application } from "../app/application";
 import { callOperation } from "../api/operations";
 import { sessionRuntime } from "../app/sessionRuntime";
 import { queryClient } from "../app/queryClient";
@@ -87,9 +94,7 @@ export const AuthProvider = ({ children }) => {
   };
   const resetSession = () => {
     setAccountEnabled(false);
-    setSessionGeneration(sessionRuntime.reset());
-    queryClient.clear();
-    operationCoordinator.clear();
+    setSessionGeneration(application.reset());
   };
 
   const checkUser = async () => {
@@ -129,9 +134,7 @@ export const AuthProvider = ({ children }) => {
 
       // If we authenticated successfully (likely via cookie in a new tab)
       // but have no token in storage, grab a fresh token via reauth.
-      const hasToken =
-        sessionStorage.getItem("access_token") ||
-        localStorage.getItem("access_token");
+      const hasToken = getToken();
 
       if (!hasToken) {
         logger.debug(
@@ -143,7 +146,7 @@ export const AuthProvider = ({ children }) => {
           });
           if (!current()) return;
           if (reauthData.access_token) {
-            sessionStorage.setItem("access_token", reauthData.access_token);
+            setCredentials(reauthData.access_token);
             resetSession();
           }
         } catch (reauthError) {
@@ -215,7 +218,15 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const changed = (event) => {
-      if (event.key !== "access_token" && event.key !== "api_base_url") return;
+      if (event.type === "storage" && !isSessionStorageEvent(event)) return;
+      if (event.key === "api_base_url") {
+        // Credentials are backend-scoped. Discard ambiguous legacy tokens in this tab.
+        try {
+          sessionStorage.removeItem("access_token");
+        } catch {
+          /* Storage may be unavailable. */
+        }
+      }
       checkGeneration.current += 1;
       resetSession();
       identityRef.current = null;
@@ -223,7 +234,11 @@ export const AuthProvider = ({ children }) => {
       void checkUser();
     };
     window.addEventListener("storage", changed);
-    return () => window.removeEventListener("storage", changed);
+    window.addEventListener("bsm:connection-changed", changed);
+    return () => {
+      window.removeEventListener("storage", changed);
+      window.removeEventListener("bsm:connection-changed", changed);
+    };
     // Resource callbacks use refs and the latest generation rather than user state.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -246,13 +261,7 @@ export const AuthProvider = ({ children }) => {
     if (attempt !== checkGeneration.current) return data;
     if (data.access_token) {
       logger.info(`[Auth] Login successful`, { username });
-      if (rememberMe) {
-        sessionStorage.removeItem("access_token");
-        localStorage.setItem("access_token", data.access_token);
-      } else {
-        localStorage.removeItem("access_token");
-        sessionStorage.setItem("access_token", data.access_token);
-      }
+      setCredentials(data.access_token, rememberMe);
     } else {
       logger.warn(`[Auth] Login failed or token missing`, { username, data });
     }
@@ -274,8 +283,7 @@ export const AuthProvider = ({ children }) => {
       logger.warn("[Auth] Logout failed on server", { error: e });
     }
     if (attempt !== checkGeneration.current) return;
-    localStorage.removeItem("access_token");
-    sessionStorage.removeItem("access_token");
+    clearCredentials();
     queryClient.clear();
     operationCoordinator.clear();
     identityRef.current = null;
