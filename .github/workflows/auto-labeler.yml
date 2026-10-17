@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   label-item:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Auto Labeler
         uses: actions/github-script@v9

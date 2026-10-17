@@ -10,7 +10,7 @@ permissions:
 jobs:
   release:
     if: startsWith(github.event.release.tag_name, 'api-client-v') || startsWith(github.event.release.tag_name, 'runtime-v') || startsWith(github.event.release.tag_name, 'storage-v') || startsWith(github.event.release.tag_name, 'frontend-')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       product: ${{ steps.version.outputs.product }}
       workspace: ${{ steps.version.outputs.workspace }}
@@ -45,7 +45,7 @@ jobs:
   library:
     needs: release
     if: needs.release.outputs.product != 'frontend'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -84,7 +84,7 @@ jobs:
           mkdir -p build/npm-release
           npm pack --workspace="$NPM_WORKSPACE" --pack-destination build/npm-release
       - name: Upload verified npm archive
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: npm-package
           path: build/npm-release/*.tgz
@@ -99,14 +99,14 @@ jobs:
   pypi:
     needs: [release, validate]
     if: needs.release.outputs.product == 'frontend'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment:
       name: release
     permissions:
       contents: read
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: frontend-distributions
       - name: Publish verified Python distribution
@@ -121,7 +121,7 @@ jobs:
           ((needs.release.outputs.product == 'frontend' &&
             needs.validate.result == 'success') ||
            (needs.release.outputs.product != 'frontend' && needs.library.result == 'success')) }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment: npm-release
     permissions:
       contents: read
@@ -138,7 +138,7 @@ jobs:
           node --version
           npm --version
           test "$(npm --version)" = '11.21.0'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: ${{ needs.release.outputs.artifact-name }}
           path: release-artifacts
