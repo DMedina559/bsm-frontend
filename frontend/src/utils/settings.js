@@ -1,4 +1,17 @@
+import { settingField } from "./settingsFields";
 const UNSAFE_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+/** Only user changes belong in writes; reported state is never submitted. */
+export function changedSettings(settings, savedSnapshot) {
+  const baseline = flattenSettings(JSON.parse(savedSnapshot ?? "{}"));
+  return Object.entries(flattenSettings(settings)).filter(
+    ([path, value]) =>
+      path !== "config_schema_version" &&
+      !path.startsWith("plugin_settings.") &&
+      !path.startsWith("server_info.") &&
+      !settingField(path).readOnly &&
+      JSON.stringify(value) !== JSON.stringify(baseline[path]),
+  );
+}
 export function isSafeSettingPath(path) {
   return (
     typeof path === "string" &&

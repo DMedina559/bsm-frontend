@@ -20,7 +20,6 @@ export const THEME_LABELS = {
   pink: "Orchid",
   yellow: "Gold",
 };
-export const APPEARANCE_KEY = "bsm.appearance.v4";
 export const DEFAULT_APPEARANCE = {
   mode: "theme",
   density: "comfortable",
@@ -90,15 +89,6 @@ export function normalizeAppearance(value) {
       ? value.density
       : "comfortable",
   };
-}
-export function readAppearance() {
-  try {
-    return normalizeAppearance(
-      JSON.parse(localStorage.getItem(APPEARANCE_KEY)),
-    );
-  } catch {
-    return { ...DEFAULT_APPEARANCE };
-  }
 }
 export function resolveMode(theme, mode, systemDark) {
   if (mode === "system") return systemDark ? "dark" : "light";

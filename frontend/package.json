@@ -11,12 +11,12 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "preview": "vite preview",
-    "test": "vitest",
+    "test": "vitest run",
     "test:run": "vitest run",
-    "api:generate": "node ../scripts/generate-contract.mjs",
-    "api:check": "node ../scripts/generate-contract.mjs --check",
-    "typecheck": "tsc --noEmit --strict --skipLibCheck --lib es2022,dom src/api/contract-check.ts && node ../scripts/check-api-calls.mjs",
-    "test:e2e": "playwright test"
+    "typecheck": "tsc --moduleResolution bundler --module esnext --noEmit --strict --skipLibCheck --lib es2022,dom tests/types/api-contract.ts tests/types/runtime-contract.ts && node ../scripts/check-api-calls.mjs",
+    "test:e2e": "playwright test",
+    "test:watch": "vitest",
+    "test:e2e:backend": "playwright test --config=playwright.backend.config.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -29,46 +29,18 @@
     "react-dom": "^19.3.0",
     "react-router-dom": "^7.18.4",
     "react-syntax-highlighter": "^16.1.2",
-    "recharts": "^3.10.1"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.39.4",
-    "@playwright/test": "^1.64.0",
-    "@testing-library/dom": "^10.4.2",
-    "@testing-library/jest-dom": "^7.0.1",
-    "@testing-library/react": "^16.3.3",
-    "@testing-library/user-event": "^14.6.7",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.1.2",
-    "@vitest/coverage-v8": "^5.0.2",
-    "ajv": "^8.20.0",
-    "ajv-formats": "^3.0.1",
-    "axe-core": "^4.14.0",
-    "eslint": "^9.39.4",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.6",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.7",
-    "globals": "^17.13.0",
-    "jsdom": "^30.1.2",
-    "openapi-typescript": "^7.13.0",
-    "prettier": "^3.9.10",
-    "typescript": "^5.9.3",
-    "vite": "^8.3.4",
-    "vitest": "^5.0.2"
-  },
-  "overrides": {
-    "minimatch": "^10.2.1"
+    "recharts": "^3.10.1",
+    "@bedrock-server-manager/api-client": "*",
+    "@bedrock-server-manager/runtime": "*",
+    "@bedrock-server-manager/storage": "*"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/dmedina559/bedrock-server-manager.git"
+    "url": "https://github.com/DMedina559/bsm-frontend.git"
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/dmedina559/bedrock-server-manager/issues"
+    "url": "https://github.com/DMedina559/bsm-frontend/issues"
   },
   "homepage": "https://bedrock-server-manager.readthedocs.io/en/latest/#",
   "author": "dmedina559",

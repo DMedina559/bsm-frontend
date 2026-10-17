@@ -55,11 +55,11 @@ export function useServerInstallation(onInstalled) {
   useEffect(() => {
     if (
       !operation ||
-      handled.current === operation.id ||
+      handled.current === `${operation.id}:${operation.status}` ||
       (!operation.terminal && operation.status !== "unknown")
     )
       return;
-    handled.current = operation.id;
+    handled.current = `${operation.id}:${operation.status}`;
     const session = sessionRuntime.capture();
     const backend = getBackendIdentity();
     const assertCurrent = () => {
@@ -73,7 +73,8 @@ export function useServerInstallation(onInstalled) {
     const success =
       ["completed", "complete", "success"].includes(operation.status) &&
       !["error", "skipped"].includes(operation.task?.result?.status);
-    operationCoordinator.acknowledge(operation.id);
+    if (operation.terminal && !operationCoordinator.acknowledge(operation.id))
+      return;
     if (success) {
       addToast("Installation completed successfully!", "success");
       void onInstalled(operation.serverName, assertCurrent).catch((error) => {

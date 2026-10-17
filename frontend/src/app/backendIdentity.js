@@ -1,18 +1,9 @@
-import { getApiProxyBasePath } from "../utils/basePath";
 /** Canonical backend identity includes its ingress path, not just its host. */
-export function getBackendIdentity() {
-  let configured = "";
-  try {
-    configured = localStorage.getItem("api_base_url") || "";
-  } catch {
-    /* Storage may be unavailable. */
-  }
-  const url = new URL(
-    configured || getApiProxyBasePath() || "/",
-    window.location.origin,
-  );
-  return `${url.origin}${url.pathname.replace(/\/+$/, "")}`;
-}
+export { getConnectionIdentity as getBackendIdentity } from "./connection";
+import {
+  getApiBaseUrl,
+  getConnectionIdentity as getBackendIdentity,
+} from "./connection";
 export function getPreferenceIdentity(user) {
   const account = user?.id ?? user?.username ?? null;
   return account === null
@@ -25,7 +16,7 @@ export function migrateAccountPreference(store, user, name) {
   const account = user?.id ?? user?.username ?? null;
   if (account === null) return;
   try {
-    if (localStorage.getItem("api_base_url")) return;
+    if (getApiBaseUrl()) return;
     const identity = getPreferenceIdentity(user);
     const missing = Symbol("missing");
     if (store.read(identity, name, missing) !== missing) return;

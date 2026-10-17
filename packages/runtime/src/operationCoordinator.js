@@ -1,0 +1,201 @@
+/** @param {Parameters<typeof import("./operationCoordinator.d.ts").createOperationCoordinatorModule>[0]} dependencies
+ * @returns {ReturnType<typeof import("./operationCoordinator.d.ts").createOperationCoordinatorModule>} */
+export function createOperationCoordinatorModule({
+  diagnostics,
+  createStateReconciler,
+  stateReconciler,
+  terminalTaskStatus,
+  queryClient,
+  queryKeys,
+  resourceInvalidation,
+  refreshResources = (keys) =>
+    Promise.all(
+      keys.map((queryKey) =>
+        queryClient.invalidateQueries(resourceInvalidation(queryKey)),
+      ),
+    ),
+}) {
+  /**
+   * Tracks operation progress independently from page lifecycles.
+   * Backend responses and WebSocket task snapshots remain authoritative.
+   */
+  function createOperationCoordinator(reconciler = createStateReconciler()) {
+    const operations = new Map();
+    const listeners = new Set();
+    let snapshot = [];
+    const notify = () => {
+      const terminal = [...operations.values()].filter(
+        (operation) => operation.terminal || operation.status === "unknown",
+      );
+      terminal
+        .slice(0, Math.max(0, terminal.length - 100))
+        .forEach((operation) => {
+          operations.delete(operation.id);
+          reconciler.releaseTaskPayload(operation.id);
+        });
+      snapshot = [...operations.values()];
+      listeners.forEach((listener) => {
+        try {
+          listener(snapshot);
+        } catch (error) {
+          console.error("Operation listener failed", error);
+        }
+      });
+    };
+    return {
+      subscribe(listener) {
+        listeners.add(listener);
+        try {
+          listener([...operations.values()]);
+        } catch (error) {
+          console.error("Operation listener failed", error);
+        }
+        return () => listeners.delete(listener);
+      },
+      get(id) {
+        return operations.get(String(id)) ?? null;
+      },
+      list() {
+        return snapshot;
+      },
+      register({ id, kind, serverName, status, ...extra }) {
+        if (id === null || id === undefined || id === "")
+          throw new Error("Operation ID required");
+        const key = String(id);
+        const previous = operations.get(key);
+        if (!reconciler.read(["task", key]) && terminalTaskStatus(status))
+          reconciler.task({ id: key, status }, { source: "local" });
+        const authoritative =
+          /** @type {import("./contracts.js").TaskSnapshot | undefined} */ (
+            reconciler.read(["task", key])?.value
+          );
+        const nextStatus =
+          authoritative?.status ?? status ?? previous?.status ?? "pending";
+        const next = {
+          createdAt: previous?.createdAt ?? Date.now(),
+          updatedAt: Date.now(),
+          ...previous,
+          id: key,
+          kind,
+          serverName,
+          status: nextStatus,
+          terminal: terminalTaskStatus(nextStatus),
+          ...extra,
+          ...(authoritative
+            ? {
+                task: authoritative,
+                error: authoritative.error ?? null,
+                progress: authoritative.progress ?? previous?.progress,
+              }
+            : {}),
+        };
+        operations.set(key, next);
+        notify();
+        return next;
+      },
+      markUnavailable(id, error) {
+        const key = String(id);
+        const previous = operations.get(key);
+        if (!previous || previous.terminal) return;
+        operations.set(key, {
+          ...previous,
+          status: "unknown",
+          availability: "unavailable",
+          error,
+        });
+        notify();
+      },
+      reconcileTask(message, options = {}) {
+        if (message?.type !== "task_update" || !message.data) return false;
+        const data = message.data;
+        const id = data.task_id ?? data.id;
+        if (id === undefined || id === null || id === "") return false;
+        const key = String(id);
+        const previous = operations.get(key);
+        if (!previous) return false;
+        const status = data.status ?? previous.status;
+        if (typeof status !== "string") return false;
+        const result = options.synchronize
+          ? { accepted: false, value: reconciler.read(["task", key])?.value }
+          : reconciler.task({ ...data, status }, options);
+        if (
+          !result.value ||
+          (!result.accepted &&
+            previous.task === result.value &&
+            previous.status !== "unknown")
+        )
+          return false;
+        const accepted = /** @type {import("./contracts.js").TaskSnapshot} */ (
+          result.value
+        );
+        const acceptedStatus = accepted.status;
+        operations.set(key, {
+          ...previous,
+          status: acceptedStatus,
+          availability: "available",
+          updatedAt: Date.now(),
+          progress: accepted.progress ?? previous.progress,
+          error: accepted.error ?? null,
+          task: accepted,
+          terminal: terminalTaskStatus(acceptedStatus),
+        });
+        if (!previous.terminal && terminalTaskStatus(acceptedStatus)) {
+          const keys = [
+            queryKeys.tasks(),
+            ...(Array.isArray(previous.affectedKeys)
+              ? previous.affectedKeys
+              : []),
+          ];
+          const kind = previous.kind ?? "background";
+          const name = previous.serverName;
+          if (/install|start|stop|restart|update|delete|background/.test(kind))
+            keys.push(queryKeys.servers());
+          if (/world|addon|export|upload|background/.test(kind))
+            keys.push(queryKeys.content());
+          if (name && /addon/.test(kind))
+            keys.push(queryKeys.serverAddons(name));
+          if (name && /backup|restore/.test(kind))
+            keys.push(queryKeys.serverBackups(name));
+          if (name && /properties|restore/.test(kind))
+            keys.push(queryKeys.serverProperties(name));
+          if (name && /settings/.test(kind))
+            keys.push(queryKeys.serverSettings(name));
+          if (name && /start|stop|restart|update/.test(kind))
+            keys.push(queryKeys.serverMonitor(name));
+          if (/scan|players/.test(kind)) keys.push(queryKeys.globalPlayers());
+          diagnostics?.record("refresh-request", {
+            reason: "task-terminal",
+            count: keys.length,
+          });
+          void refreshResources(keys);
+        }
+        notify();
+        return true;
+      },
+      acknowledge(id) {
+        const operation = operations.get(String(id));
+        if (!operation || operation.acknowledged) return false;
+        operations.set(String(id), { ...operation, acknowledged: true });
+        notify();
+        return true;
+      },
+      remove(id) {
+        const removed = operations.delete(String(id));
+        if (removed) {
+          reconciler.releaseTaskPayload(id);
+          notify();
+        }
+        return removed;
+      },
+      clear() {
+        for (const id of operations.keys()) reconciler.forget(["task", id]);
+        operations.clear();
+        notify();
+      },
+    };
+  }
+
+  const operationCoordinator = createOperationCoordinator(stateReconciler);
+
+  return { createOperationCoordinator, operationCoordinator };
+}

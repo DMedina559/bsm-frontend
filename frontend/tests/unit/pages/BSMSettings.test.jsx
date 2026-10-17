@@ -1,0 +1,80 @@
+import { render, screen, fireEvent, waitFor } from "../../support/utils";
+import BSMSettings from "../../../src/pages/BSMSettings";
+import { vi, describe, it, expect, beforeEach } from "vitest";
+import * as api from "../../support/httpFixtures";
+
+vi.mock("../../../src/api/transport", async (importOriginal) => {
+  const { createHttpTransport } = await import("../../support/httpFixtures");
+  return createHttpTransport(await importOriginal());
+});
+
+describe("BSMSettings", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    api.get.mockImplementation((url) => {
+      if (url === "/api/settings/get") {
+        return Promise.resolve({
+          status: "success",
+          settings: {
+            server: {
+              name: "Bedrock Server",
+              port: 19132,
+            },
+            advanced: {
+              debug: false,
+            },
+          },
+        });
+      }
+      return Promise.resolve({});
+    });
+
+    api.post.mockResolvedValue({ status: "success" });
+  });
+
+  it("renders settings form", async () => {
+    render(<BSMSettings />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Global Settings")).toBeInTheDocument();
+    });
+    // Section headers
+    expect(await screen.findByText("server")).toBeInTheDocument();
+    // Inputs
+    expect(screen.getByDisplayValue("Bedrock Server")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("19132")).toBeInTheDocument();
+  });
+
+  it("saves settings", async () => {
+    render(<BSMSettings />);
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue("Bedrock Server")).toBeInTheDocument();
+    });
+
+    const nameInput = screen.getByDisplayValue("Bedrock Server");
+    fireEvent.change(nameInput, { target: { value: "New Name" } });
+
+    const saveBtn = screen.getByText("Save Changes").closest("button");
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+      expect(api.request).toHaveBeenCalledWith(
+        "/api/settings/set",
+        expect.objectContaining({
+          method: "POST",
+          body: expect.objectContaining({
+            key: "server.name",
+            value: "New Name",
+          }),
+        }),
+      );
+    });
+    expect(
+      api.request.mock.calls
+        .filter(([url]) => url === "/api/settings/set")
+        .map(([, options]) => options.body),
+    ).toEqual([{ key: "server.name", value: "New Name" }]);
+  });
+});

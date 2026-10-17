@@ -1,0 +1,20 @@
+{
+  "name": "@bedrock-server-manager/frontend",
+  "version": "0.0.0",
+  "description": "Prebuilt Bedrock Server Manager web interface",
+  "private": true,
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DMedina559/bsm-frontend.git",
+    "directory": "packages/frontend"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

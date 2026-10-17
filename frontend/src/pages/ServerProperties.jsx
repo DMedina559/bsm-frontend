@@ -92,7 +92,11 @@ const ServerProperties = () => {
         : undefined,
     [resourceQuery.data],
   );
-  const draft = useEditableDraft(selectedServer, draftData, EMPTY_PROPERTIES);
+  const draft = useEditableDraft(
+    `server-properties:${selectedServer ?? ""}`,
+    draftData,
+    EMPTY_PROPERTIES,
+  );
   const {
     value: properties,
     setValue: setProperties,
@@ -148,7 +152,7 @@ const ServerProperties = () => {
   const handleSave = async (e) => {
     e.preventDefault();
     if (!selectedServer) return;
-    if (saving) return;
+    if (saving || draft.conflicted) return;
 
     const propsObj = properties.reduce((acc, curr) => {
       acc[curr.key] = curr.value;
@@ -499,7 +503,7 @@ const ServerProperties = () => {
           <button
             className="action-button"
             form="server-properties-form"
-            disabled={loading || saving}
+            disabled={loading || saving || draft.conflicted}
             type="submit"
           >
             {setupFlow ? (
@@ -806,7 +810,7 @@ const ServerProperties = () => {
               <button
                 type="submit"
                 className="action-button"
-                disabled={loading || saving}
+                disabled={loading || saving || draft.conflicted}
               >
                 {setupFlow ? (
                   <>

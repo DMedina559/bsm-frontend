@@ -1,3 +1,6 @@
+import { sessionSettings } from "./app/browserStorage";
+import { application } from "./app/application";
+import { setApiBaseUrl } from "./app/connection";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./app/queryClient";
 import DraftNavigationGuard from "./components/DraftNavigationGuard";
@@ -114,15 +117,15 @@ const App = () => {
       const hidden = params.get("hidden");
 
       if (hidden === "true") {
-        sessionStorage.setItem("show_hidden_flag", "true");
+        sessionSettings.setItem("show_hidden_flag", "true");
         // Clean URL without reloading
         const newUrl = window.location.pathname;
         window.history.replaceState({}, "", newUrl);
         // Force a re-render to ensure components pick up the change immediately
         window.location.reload();
       } else if (hidden === "false") {
-        sessionStorage.removeItem("show_hidden_flag");
-        localStorage.removeItem("api_base_url");
+        sessionSettings.removeItem("show_hidden_flag");
+        setApiBaseUrl("");
         const newUrl = window.location.pathname;
         window.history.replaceState({}, "", newUrl);
         window.location.reload();
@@ -132,36 +135,41 @@ const App = () => {
     checkHiddenFlag();
     // Also check on popstate in case URL changes without full reload
     window.addEventListener("popstate", checkHiddenFlag);
-    return () => window.removeEventListener("popstate", checkHiddenFlag);
+    return () => {
+      window.removeEventListener("popstate", checkHiddenFlag);
+      application.dispose();
+    };
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ThemeProvider>
-          <ToastProvider>
-            <DialogProvider>
-              <DraftNavigationGuard />
-              <WebSocketProvider>
-                <ServerProvider>
-                  <ErrorBoundary>
-                    <Suspense
-                      fallback={
-                        <div className="app-loading" role="status">
-                          Loading workspace…
-                        </div>
-                      }
-                    >
-                      <AppRoutes />
-                    </Suspense>
-                  </ErrorBoundary>
-                </ServerProvider>
-              </WebSocketProvider>
-            </DialogProvider>
-          </ToastProvider>
-        </ThemeProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ThemeProvider>
+            <ToastProvider>
+              <DialogProvider>
+                <DraftNavigationGuard />
+                <WebSocketProvider>
+                  <ServerProvider>
+                    <ErrorBoundary>
+                      <Suspense
+                        fallback={
+                          <div className="app-loading" role="status">
+                            Loading workspace…
+                          </div>
+                        }
+                      >
+                        <AppRoutes />
+                      </Suspense>
+                    </ErrorBoundary>
+                  </ServerProvider>
+                </WebSocketProvider>
+              </DialogProvider>
+            </ToastProvider>
+          </ThemeProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

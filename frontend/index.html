@@ -2,7 +2,64 @@
 <html lang="en" data-mode="dark" data-density="comfortable">
   <head>
     <meta charset="UTF-8" />
+    <script id="bsm-config" type="application/json">
+      {}
+    </script>
+    <script>
+      globalThis.BSM_CONFIG =
+        globalThis.BSM_CONFIG ||
+        JSON.parse(document.getElementById("bsm-config").textContent);
+    </script>
     <base id="app-asset-base" href="/app/" />
+    <script>
+      (function () {
+        try {
+          var appearance = JSON.parse(
+            localStorage.getItem("bsm.appearance.v4") || "{}",
+          );
+          var mode = appearance.mode;
+          if (mode === "system")
+            mode = window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light";
+          if (mode === "light" || mode === "dark")
+            document.documentElement.dataset.mode = mode;
+          if (["compact", "comfortable"].includes(appearance.density))
+            document.documentElement.dataset.density = appearance.density;
+        } catch (_) {}
+        var configured = globalThis.BSM_CONFIG;
+        var configuredBase =
+          configured.appBase || (configured.mode === "standalone" ? "/" : null);
+        if (
+          configuredBase &&
+          configuredBase.startsWith("/") &&
+          !configuredBase.startsWith("//") &&
+          !/[?#\\]/.test(configuredBase)
+        ) {
+          document
+            .getElementById("app-asset-base")
+            .setAttribute("href", configuredBase.replace(/\/+$/, "") + "/");
+          return;
+        }
+        var path = window.location.pathname;
+        var baseElement = document.getElementById("app-asset-base");
+        var matches = [...path.matchAll(/\/app(?=\/|$)/g)];
+        var appIndex = matches.at(-1)?.index ?? -1;
+        if (appIndex !== -1 && baseElement.dataset.apiBase === undefined) {
+          var basePath = path.substring(0, appIndex + 4) + "/";
+          document
+            .getElementById("app-asset-base")
+            .setAttribute("href", basePath);
+          if (path.endsWith("/app")) {
+            window.history.replaceState(
+              null,
+              "",
+              basePath + window.location.search + window.location.hash,
+            );
+          }
+        }
+      })();
+    </script>
     <link rel="icon" type="image/x-icon" href="./image/icon/favicon.ico" />
     <link
       rel="icon"
@@ -23,41 +80,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#081613" />
     <title>Bedrock Server Manager</title>
-    <script>
-      (function () {
-        try {
-          var appearance = JSON.parse(
-            localStorage.getItem("bsm.appearance.v4") || "{}",
-          );
-          var mode = appearance.mode;
-          if (mode === "system")
-            mode = window.matchMedia("(prefers-color-scheme: dark)").matches
-              ? "dark"
-              : "light";
-          if (mode === "light" || mode === "dark")
-            document.documentElement.dataset.mode = mode;
-          if (["compact", "comfortable"].includes(appearance.density))
-            document.documentElement.dataset.density = appearance.density;
-        } catch (_) {}
-        var path = window.location.pathname;
-        var baseElement = document.getElementById("app-asset-base");
-        var matches = [...path.matchAll(/\/app(?=\/|$)/g)];
-        var appIndex = matches.at(-1)?.index ?? -1;
-        if (appIndex !== -1 && baseElement.dataset.apiBase === undefined) {
-          var basePath = path.substring(0, appIndex + 4) + "/";
-          document
-            .getElementById("app-asset-base")
-            .setAttribute("href", basePath);
-          if (path.endsWith("/app")) {
-            window.history.replaceState(
-              null,
-              "",
-              basePath + window.location.search + window.location.hash,
-            );
-          }
-        }
-      })();
-    </script>
   </head>
   <body>
     <div id="root"></div>

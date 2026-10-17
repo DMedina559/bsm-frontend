@@ -1,0 +1,46 @@
+{
+  "name": "@bedrock-server-manager/storage",
+  "version": "0.1.0",
+  "description": "Validated, versioned Bedrock Server Manager preferences with injectable persistence",
+  "type": "module",
+  "private": false,
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    "./preferenceStore": {
+      "types": "./dist/preferenceStore.d.ts",
+      "default": "./dist/preferenceStore.js"
+    },
+    "./sessionBoundary": {
+      "types": "./dist/sessionBoundary.d.ts",
+      "default": "./dist/sessionBoundary.js"
+    },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DMedina559/bsm-frontend.git",
+    "directory": "packages/storage"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node ../../scripts/build-package.mjs",
+    "test": "npm run build && node ../../scripts/test-packages.mjs storage",
+    "lint": "eslint src test",
+    "prepack": "npm run build",
+    "typecheck": "tsc --noEmit --strict --module NodeNext --moduleResolution NodeNext test/consumer.mts",
+    "check": "npm run build && npm run lint && npm run typecheck && npm test",
+    "prepublishOnly": "npm run check"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

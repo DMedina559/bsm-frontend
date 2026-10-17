@@ -1,0 +1,83 @@
+{
+  "name": "@bedrock-server-manager/runtime",
+  "version": "0.1.0",
+  "description": "Bedrock Server Manager application state, session, and WebSocket coordination",
+  "type": "module",
+  "private": false,
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    "./sessionRuntime": {
+      "types": "./dist/sessionRuntime.d.ts",
+      "default": "./dist/sessionRuntime.js"
+    },
+    "./stateReconciler": {
+      "types": "./dist/stateReconciler.d.ts",
+      "default": "./dist/stateReconciler.js"
+    },
+    "./operationCoordinator": {
+      "types": "./dist/operationCoordinator.d.ts",
+      "default": "./dist/operationCoordinator.js"
+    },
+    "./applicationState": {
+      "types": "./dist/applicationState.d.ts",
+      "default": "./dist/applicationState.js"
+    },
+    "./applicationMetrics": {
+      "types": "./dist/applicationMetrics.d.ts",
+      "default": "./dist/applicationMetrics.js"
+    },
+    "./operationRecovery": {
+      "types": "./dist/operationRecovery.d.ts",
+      "default": "./dist/operationRecovery.js"
+    },
+    "./webSocketManager": {
+      "types": "./dist/webSocketManager.d.ts",
+      "default": "./dist/webSocketManager.js"
+    },
+    "./draftRegistry": {
+      "types": "./dist/draftRegistry.d.ts",
+      "default": "./dist/draftRegistry.js"
+    },
+    "./diagnostics": {
+      "types": "./dist/diagnostics.d.ts",
+      "default": "./dist/diagnostics.js"
+    },
+    "./queryKeys": {
+      "types": "./dist/queryKeys.d.ts",
+      "default": "./dist/queryKeys.js"
+    },
+    "./coreEvents": {
+      "types": "./dist/coreEvents.d.ts",
+      "default": "./dist/coreEvents.js"
+    },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DMedina559/bsm-frontend.git",
+    "directory": "packages/runtime"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node ../../scripts/build-package.mjs",
+    "test": "npm run build && node ../../scripts/test-packages.mjs runtime && vitest run",
+    "lint": "eslint src test",
+    "prepack": "npm run build",
+    "check": "npm run build && npm run lint && npm run typecheck && npm test",
+    "typecheck": "tsc --noEmit --strict --module NodeNext --moduleResolution NodeNext test/consumer.mts",
+    "prepublishOnly": "npm run check"
+  },
+  "types": "./dist/index.d.ts",
+  "publishConfig": {
+    "access": "public"
+  }
+}

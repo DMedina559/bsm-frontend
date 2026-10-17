@@ -6,15 +6,33 @@ import react from "eslint-plugin-react";
 import prettierPlugin from "eslint-plugin-prettier";
 import prettierConfig from "eslint-config-prettier";
 
+const testImports = {
+  group: [
+    "**/tests/**",
+    "**/*.test.*",
+    "vitest",
+    "@testing-library/*",
+    "@playwright/test",
+    "node:*",
+  ],
+  message: "Test helpers and tooling belong in tests, not application source.",
+};
+
 export default [
-  { ignores: ["dist"] },
+  {
+    ignores: [
+      "**/dist/**",
+      "**/build/**",
+      "**/test-results/**",
+      "**/playwright-report/**",
+    ],
+  },
   {
     files: ["**/*.{js,jsx}"],
     languageOptions: {
       ecmaVersion: 2020,
       globals: {
         ...globals.browser,
-        ...globals.jest, // For tests if we use Jest/Vitest globals
         __APP_VERSION__: "readonly",
         __THEME_REVISION__: "readonly",
       },
@@ -51,24 +69,28 @@ export default [
     },
   },
   {
-    files: ["**/*Context.jsx", "**/test/utils.jsx"],
+    files: ["**/*Context.jsx", "**/tests/support/utils.jsx"],
     rules: {
       "react-refresh/only-export-components": "off",
     },
   },
   {
+    files: ["tests/**/*.{js,jsx}"],
+    languageOptions: { globals: globals.jest },
+    rules: { "react-refresh/only-export-components": "off" },
+  },
+  {
     files: ["src/**/*.{js,jsx}"],
-    ignores: [
-      "src/**/*.test.*",
-      "src/test/**",
-      "src/api/**",
-      "src/pages/Content.jsx",
-      "src/features/plugins/**",
-    ],
+    rules: { "no-restricted-imports": ["error", { patterns: [testImports] }] },
+  },
+  {
+    files: ["src/**/*.{js,jsx}"],
+    ignores: ["src/api/**", "src/pages/Content.jsx", "src/features/plugins/**"],
     rules: {
       "no-restricted-imports": [
         "error",
         {
+          patterns: [testImports],
           paths: [
             "./api/transport",
             "../api/transport",

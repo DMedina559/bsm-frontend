@@ -1,3 +1,4 @@
+import RuntimeDiagnostics from "./RuntimeDiagnostics";
 import { useEffect, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { RefreshCw, Download } from "lucide-react";
@@ -29,7 +30,7 @@ export default function ApplicationDiagnostics() {
   const [automatic, setAutomatic] = useState(false);
   const [section, setSection] = useState("all");
   const [baseline, setBaseline] = useState(
-    /** @type {import("../../api/generated/contract").components["schemas"]["DiagnosticSnapshot"] | null} */ (
+    /** @type {import("@bedrock-server-manager/api-client/contract").components["schemas"]["DiagnosticSnapshot"] | null} */ (
       null
     ),
   );
@@ -111,6 +112,7 @@ export default function ApplicationDiagnostics() {
   };
   return (
     <div className="diagnostics-view">
+      <RuntimeDiagnostics />
       <div className="application-monitor-heading">
         <div>
           <h2 className="monitor-view-title">Diagnostics</h2>

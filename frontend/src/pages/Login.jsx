@@ -1,3 +1,5 @@
+import { sessionSettings } from "../app/browserStorage";
+import { getAppConfig } from "../app/config";
 import AuthBrand from "../components/AuthBrand";
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
@@ -15,7 +17,9 @@ const Login = () => {
   const { login, user } = useAuth();
   const navigate = useNavigate();
   const showConfigButton =
-    sessionStorage.getItem("show_hidden_flag") === "true" || !!getApiBaseUrl();
+    getAppConfig().mode === "standalone" ||
+    sessionSettings.getItem("show_hidden_flag") === "true" ||
+    !!getApiBaseUrl();
   const location = useLocation();
 
   // Where to redirect after login

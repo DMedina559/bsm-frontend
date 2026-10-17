@@ -1,3 +1,4 @@
+import { resolveApiUrl } from "../app/connection";
 import React from "react";
 import "./Footer.css";
 const Footer = () => {
@@ -12,7 +13,11 @@ const Footer = () => {
           Docs
         </a>{" "}
         |{" "}
-        <a href="../docs" target="_blank" rel="noopener noreferrer">
+        <a
+          href={resolveApiUrl("/docs")}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           HTTP API
         </a>{" "}
         |{" "}

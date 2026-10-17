@@ -1,0 +1,56 @@
+{
+  "name": "@bedrock-server-manager/api-client",
+  "version": "0.1.0",
+  "type": "module",
+  "private": false,
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/operations.d.ts",
+      "default": "./dist/operations.js"
+    },
+    "./operationRegistry": {
+      "types": "./dist/operationRegistry.d.ts",
+      "default": "./dist/operationRegistry.js"
+    },
+    "./contract": "./dist/generated/contract.d.ts",
+    "./transport": {
+      "types": "./dist/transport.d.ts",
+      "default": "./dist/transport.js"
+    },
+    "./urls": {
+      "types": "./dist/urls.d.ts",
+      "default": "./dist/urls.js"
+    },
+    "./metadata": {
+      "types": "./dist/metadata.d.ts",
+      "default": "./dist/metadata.js"
+    }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DMedina559/bsm-frontend.git",
+    "directory": "packages/api-client"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node ../../scripts/build-package.mjs",
+    "test": "npm run build && node ../../scripts/test-packages.mjs api-client",
+    "lint": "eslint src test scripts",
+    "prepack": "npm run build",
+    "typecheck": "tsc --noEmit --strict --module NodeNext --moduleResolution NodeNext test/consumer.mts",
+    "api:generate": "node scripts/generate-contract.mjs && npm run build",
+    "api:check": "node scripts/generate-contract.mjs --check",
+    "check": "npm run build && npm run api:check && npm run lint && npm run typecheck && npm test",
+    "prepublishOnly": "npm run check"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

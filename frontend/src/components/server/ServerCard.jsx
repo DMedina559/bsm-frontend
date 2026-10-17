@@ -1,3 +1,6 @@
+import { memo } from "react";
+import { useOnline } from "../../app/useOnline";
+import { useServerSnapshot } from "../../app/useServerSnapshot";
 import { useResourceQuery } from "../../app/resourceQueries";
 import ServerCardMenu from "./ServerCardMenu";
 import "../../styles/server-card.css";
@@ -46,7 +49,7 @@ const actionDefinitions = {
   },
 };
 
-export default function ServerCard({
+function ServerCard({
   server,
   isAdmin = false,
   busy,
@@ -55,6 +58,7 @@ export default function ServerCard({
   onUpdate,
   onCommand,
 }) {
+  const online = useOnline();
   const {
     data: propertyData,
     isPending: portsPending,
@@ -172,6 +176,7 @@ export default function ServerCard({
         {actions.map((action) => {
           const { Icon, label, title, className } = actionDefinitions[action];
           const disabled =
+            !online ||
             busy ||
             (action === "update" && !stable) ||
             (action === "command" && !running);
@@ -197,3 +202,13 @@ export default function ServerCard({
     </article>
   );
 }
+
+const MemoServerCard = memo(ServerCard);
+export const ConnectedServerCard = memo(function ConnectedServerCard({
+  serverName,
+  ...props
+}) {
+  const server = useServerSnapshot(serverName);
+  return server ? <MemoServerCard server={server} {...props} /> : null;
+});
+export default MemoServerCard;

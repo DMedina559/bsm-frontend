@@ -13,7 +13,8 @@ const ServerInstall = () => {
     async (name, assertCurrent) => {
       await refreshServers();
       assertCurrent();
-      setSelectedServer(name);
+      if ((await setSelectedServer(name)) === false) return;
+      assertCurrent();
       navigate("/server-properties", { state: { setupFlow: true } });
     },
     [navigate, refreshServers, setSelectedServer],

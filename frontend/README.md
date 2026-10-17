@@ -1,71 +1,272 @@
-# Bedrock Server Manager frontend
+# BSM web interface
 
-React interface with the supplied server-stack branding, fleet dashboard, grouped navigation, and shared appearance system.
+The React application provides server management, monitoring, configuration, and
+plugin interfaces for a separately running BSM backend.
+
+Paths below are relative to the repository root unless noted otherwise.
 
 ## Development
 
-Validation used Node 24. From this directory, run `npm ci`, then `npm run dev`, and open the development URL at `/app/`. The development server proxies backend routes to `http://localhost:11325`. Set `VITE_API_URL` in `.env.local` for another backend. The Python backend must run separately; its source is not included here.
+Use Node.js 22.12 or later:
 
-## Production integration
+```sh
+npm ci
+npm run dev
+```
 
-Replace the corresponding frontend sources and public assets in your existing project, then run `npm run build`. Vite writes to `../src/bsm_frontend/static` and clears that output directory. Preserve this location for Python package integration. Navigation reports the actual backend version; the footer reports the frontend build version.
+Open the URL printed by Vite, including `/app/`. The backend proxy defaults to
+`http://localhost:11325`. Set `VITE_API_URL` in `frontend/.env.local` to change the
+proxy target, then restart Vite. The browser's connection settings can also select
+a remote backend. An HTTPS page requires an HTTPS backend.
 
-## Appearance
+Installation prepares shared library output. `npm run dev` watches shared library
+source and refreshes the imported modules. If you run Vite separately, also run
+`npm run dev:packages` or rebuild libraries with `npm run build:packages`.
 
-Account settings offer nine built-in palettes and available server-provided CSS themes. Theme selection uses the existing account API. Light, dark, system, and theme-default modes, plus comfortable or compact density, are device preferences shared between tabs. Theme-load and save errors are visible.
+## Production builds
 
-Custom themes should use semantic `--bsm-*` variables from `src/styles/tokens.css`; legacy aliases remain available. Explicit light mode overrides shared light surfaces. Colors, typography, spacing, control sizes, focus rings, and status colors are centralized.
+```sh
+npm run build
+```
 
-## Checks
+Deploy the complete `frontend/dist/` directory, keeping its HTML and hashed assets
+together. For delivery through the Python backend, use `npm run build:python`;
+that command stages the web output inside the Python package. See the
+[Python guide](../python/README.md#build-from-a-checkout).
 
-Run `npm run test:run`, `npm run lint`, `npm run build`, and `npm audit`.
+The backend supplies proxy metadata through the `app-asset-base` HTML element;
+`data-api-base` identifies the external API prefix. Routing, HTTP requests,
+WebSockets, and assets use this metadata. Standalone hosting falls back to
+pathname-based prefix detection.
 
-See `FRONTEND-AUDIT.md` for changes, evidence, and remaining integration checks.
+Check nested navigation, page refreshes, styles, icons, authenticated downloads,
+and WebSocket reconnection through the actual reverse proxy. Vite's development
+proxy alone does not verify a production ingress configuration. Previously stored
+HTTP backend URLs are rejected when the page is served over HTTPS.
 
-## Appearance and custom themes
+Plugin display URLs starting with `/`, `./`, or `../` resolve against the backend
+and its ingress prefix. Explicit external HTTPS URLs remain external. Built-in
+assets resolve against the frontend; custom theme endpoints use the backend.
 
-Appearance is a separate navigation page at `/appearance`; Account contains profile and password settings. Comfortable and compact density change control padding and heights, navigation rows, form gaps, table spacing, and panel padding.
+## Application structure
 
-Create personal palettes in Appearance with the five color pickers. Save and apply to keep the palette in this browser. Reusing its name updates it; Edit loads it into the editor and Remove deletes it. Selecting an account theme disables the personal override. Display mode and density remain independent. Contrast feedback checks normal and secondary text on panel and page backgrounds. Personal palettes explicitly override colors in every display mode.
+| Directory                  | Responsibility                                                                     |
+| -------------------------- | ---------------------------------------------------------------------------------- |
+| `frontend/src/api/`        | Browser credentials, API URL resolution, request lifecycle checks, downloads       |
+| `frontend/src/app/`        | Composition of shared runtime/storage factories, query cache, and browser adapters |
+| `frontend/src/contexts/`   | React providers and lifecycle ownership                                            |
+| `frontend/src/pages/`      | Routed application screens                                                         |
+| `frontend/src/components/` | Reusable interface components                                                      |
+| `frontend/tests/`          | Unit tests, browser scenarios, fixtures, and type checks                           |
 
-Export palette JSON to share or back up and Import palette to load it in another browser. Export CSS theme generates semantic CSS for a backend administrator to install. Installed server CSS themes come from `GET /api/info/themes`; selecting one saves its name through `POST /api/account/theme`, and the browser loads `/themes/NAME.css`. Reload Appearance after installing a new server theme. Use a simple filename without the `.css` extension as the listed theme name.
+Providers own startup and cleanup; pages and hooks consume the application
+instance. Core commands use the generated operation IDs; the command adapter
+attaches task kind and server context without interpreting URL fragments. The
+WebSocket provider passes this caller explicitly to `application.start()` before
+starting recovery. Shared packages must not import React, DOM APIs, browser storage, or
+frontend code. Application source must not import test helpers or test frameworks.
 
-The supplied frontend has no backend theme-upload endpoint. Install shared CSS files using your backend's theme directory and deployment process; its exact filesystem location depends on that installation. No unsupported file-upload API has been added. Personal palette import works entirely in the browser.
+## Appearance and preferences
 
-## Fleet layout and sorting
+Appearance controls themes, personal palettes, display mode, density, panorama,
+and sidebar transparency. Account settings contain profile and password controls.
+The selected account theme is saved to the backend. Device preferences, personal
+palettes, fleet sorting, and notification history stay in this browser, scoped by
+backend and account where applicable.
 
-New browser preferences default to comfortable density; existing saved density choices are preserved. The overview uses a smaller banner and tighter summary cards. Sort the server fleet by name, status, version, or player count in either direction. Names and versions use natural numeric ordering; unknown values stay last. Sort preferences are retained in this browser. Sidebar splash text uses the theme’s yellow warning color.
+Custom themes use the semantic `--bsm-*` variables in
+[`src/styles/tokens.css`](src/styles/tokens.css). Administrators install shared
+CSS themes in the backend's theme directory. Personal palettes support JSON
+import/export and CSS export from Appearance.
 
-Panorama background is an optional switch in Appearance, disabled by default. It is saved as a browser display preference, uses the existing `/api/panorama` endpoint on the configured backend, and adds a theme-colored overlay for legibility. Turning it off removes the image reference; resetting display preferences disables it.
+The notification bell retains up to 100 messages for seven days per signed-in
+account and backend. Guest history stays in memory. Clear history removes retained
+messages. Preferences use memory when persistent storage is unavailable. Application
+preferences share one store and the version/validation definitions in
+`src/app/preferenceDefinitions.js`. Selected server, appearance, palettes, fleet
+sorting, metric units and sidebar collapse are scoped by backend and account.
+Legacy unscoped preferences migrate only for embedded default connections;
+remote connections do not inherit ambiguous values. Logging overrides remain
+device settings; the hidden-navigation flag lasts for the browser session.
+Credentials belong to the separate connection adapter.
 
-## Notification history
+Server snapshots, tasks, metrics and drafts are not persisted as browser truth.
+Background refreshes preserve dirty forms and display conflicts. Session changes
+invalidate pending saves and clear application-owned drafts and operations.
 
-The top-bar bell opens missed toast messages with severity and local timestamps. Messages remain in history after dismissal and survive reloads for signed-in accounts. History retains the latest 100 messages for seven days, stored separately for each account and configured backend in this browser. Opening history marks existing entries read; Clear history removes the saved messages. Guest messages remain in memory only. If browser storage is unavailable, history still works for the current page session.
+Public themes and manifest icons are loaded dynamically. Keep the bundled
+`public/image/panorama.png`: the backend uses it as its default panorama response,
+even though the web application requests the image through the API.
 
-Personal palettes use the same swatch-card layout as built-in themes. Create palette or a card’s Edit control opens a focused editor dialog; saving applies the palette and closes the editor. Selection, import, removal, and export remain available.
+## Metrics and diagnostics
 
-Panorama visibility in Appearance controls image prominence from 0% to 100% when enabled. It defaults to 18% to preserve the previous subtle background, is saved in this browser, and resets with other display preferences. Panel surfaces retain their theme colors.
+Metrics groups application performance, host utilization, runtime activity, and
+Bedrock processes. Pause freezes the displayed observations while backend
+collection continues. Missing measurements appear as a dash. Backend in-memory
+history resets on restart.
 
-Sidebar transparency is a separate 0–100% browser preference in Appearance, defaulting to fully opaque. It changes only the sidebar background; labels and controls retain their opacity. Reset appearance restores 0%.
+Administrators can open Diagnostics when the backend supports its API:
 
-If deployment requests bundles from `/assets/` rather than `/app/assets/`, rebuild this frontend, deploy the complete output including its index.html and assets directory together, restart the backend if needed, and hard-refresh the browser. The HTML includes a static app base and adjusts it for ingress routes. Do not mix an older index.html with newer hashed bundles.
+- **Overview:** readiness, health, findings, and subsystem status.
+- **Subsystems:** subsystem observations, timing, and registered plugin details.
+- **History:** retained records, filtering, and correlated events or tasks.
+- **Advanced:** collector details, comparison baselines, and support reports.
 
-Built-in theme cards preview their actual default-mode page, panel, and accent colors. Non-default themes now have distinct surface palettes in both dark and light modes; the original Bedrock Emerald remains unchanged. Personal palette overrides continue to take priority.
+Diagnostics offers manual refresh and an optional 15-second interval. Baselines
+stay in memory and are discarded when leaving the view or changing sessions.
+Counter comparisons are suppressed across backend restarts. History requests
+start when the History view opens. Review downloaded reports before sharing them.
 
-Density now scales typography and card geometry throughout the interface. Comfortable uses 15px body text, 20px card padding, 24px grid gaps, and 340px minimum fleet-card width; Compact uses 13px, 12px, 12px, and 270px respectively. Headings, navigation, icons, previews, dialogs, and tables also scale. Mobile tap targets remain at least 44px, with 16px input text in both modes.
+## Validation
 
-Personal palettes can include an optional description (up to 160 characters), shown on their cards and retained in saved and exported palette JSON. Existing palettes without descriptions still work.
+From the repository root:
 
-Reset appearance restores the account’s BSM Default theme and clears the active personal palette, then restores theme-default mode, Comfortable density, panorama off with 18% visibility, and an opaque sidebar. Saved palettes are retained. If the account theme request fails, current preferences stay in place and an error is shown.
+```sh
+npm run check
+npm run build
+```
+
+For interactive unit-test development:
+
+```sh
+npm run test:watch --workspace=bsm-frontend
+```
+
+Install the supported browsers and run browser scenarios:
+
+```sh
+npm exec --workspace=bsm-frontend -- playwright install chromium firefox webkit
+npm run test:e2e --workspace=bsm-frontend
+```
+
+Build the production assets first with `npm run build`. Playwright serves that
+compiled output at `/app/`, a standalone root, and an ingress prefix. It exercises
+real cross-origin HTTP preflights and authenticated sockets against local fixture
+backends, including backend changes across tabs. It does not need a running BSM
+instance. Deployment-specific proxy and certificate settings still need checking
+in the target environment.
+
+The browser suite runs on Chromium, Firefox, and WebKit. The packaged-app smoke
+check starts an isolated BSM instance with temporary configuration and data:
+
+```sh
+npm run build:python
+python -m pip install /path/to/supported/backend
+python -m pip install --force-reinstall --no-deps python/dist/*.whl
+npm run test:e2e:backend --workspace=bsm-frontend
+```
+
+Use the backend commit in `packages/api-client/backend-source.json`. Set
+`BSM_BACKEND_PYTHON` if that installation uses a different Python executable.
+CI runs this smoke check and compares the supported backend's exported contract
+before publishing frontend distributions.
+
+| Test directory            | Contents                                                    |
+| ------------------------- | ----------------------------------------------------------- |
+| `frontend/tests/unit/`    | Component, page, utility, and runtime tests                 |
+| `frontend/tests/support/` | Shared providers, HTTP fixtures, setup, contract assertions |
+| `frontend/tests/e2e/`     | Playwright application scenarios                            |
+| `frontend/tests/backend/` | Packaged app smoke test against the supported BSM backend   |
+| `frontend/tests/types/`   | Frontend API call type checks                               |
+
+Shared library tests live under `packages/*/test/`.
 
 ## Pre-commit hooks
 
-Install the hooks from the repository root with `pre-commit install`, then
-run `pre-commit run --all-files`. Prettier 3.9.9 runs in an isolated Node environment, matching the frontend
-dependency; keep the hook version
-in sync when updating Prettier. Formatting runs serially to avoid concurrent
-formatter processes.
+Install Python's `pre-commit` package, then run these commands from the root:
 
-The ESLint hook uses this project's dependencies. Run `npm ci --prefix frontend`
-from the repository root before committing. pre-commit.ci skips this system
-hook; the Build Lint Test GitHub Actions workflow runs the full frontend lint.
+```sh
+python -m pip install pre-commit
+pre-commit install
+pre-commit run --all-files
+```
+
+The ESLint hook uses dependencies installed by root `npm ci`. pre-commit.ci skips
+that system hook; GitHub Actions runs workspace lint. Keep the hook's Prettier
+version aligned with the root dependency.
+
+## Standalone deployment
+
+Serve `frontend/dist/` with history fallback to `index.html`. The default remains
+an embedded application at `/app/`; Home Assistant ingress prefixes are inferred
+from backend-provided metadata or the application path.
+
+For standalone hosting, edit the `bsm-config` JSON element in the built
+`index.html` before serving it. No JavaScript rebuild is needed:
+
+```json
+{
+  "mode": "standalone",
+  "appBase": "/console/",
+  "backendUrl": "https://bsm.example/prefix"
+}
+```
+
+`appBase` controls browser routes and bundled assets; `backendUrl` controls HTTP
+and WebSocket connections independently. A standalone app exposes connection
+settings on the sign-in screen. The user's browser must be able to reach the
+backend, which must allow the UI origin for HTTP and WebSocket connections.
+An HTTPS frontend requires an HTTPS backend.
+
+Bearer credentials are scoped to the backend origin and ingress prefix. Changing
+connections cancels the previous application's work and signs out of the selected
+connection. Ambiguous legacy unscoped tokens are discarded; embedded deployments
+can recover an existing cookie session through reauthentication. Credentials use
+memory if browser persistence is blocked. A compatibility notice compares the
+backend's advertised operation IDs to the UI's pinned contract; it does not
+infer compatibility from unrelated frontend and backend version numbers.
+
+The `application` instance in `src/app/application.js` owns the runtime and cache
+lifecycle. Thin module adapters preserve convenient imports for React hooks.
+Use `application.reset()` at session boundaries and `application.dispose()` when
+the application ends. Reconnect/fallback recovery refreshes active resources in the current session,
+coalescing duplicate requests and pausing periodic resource work while hidden or
+offline. Task recovery has its own owner; diagnostics intervals remain opt-in.
+Package source behavior belongs in `packages/*/test/`;
+browser-specific adapters and React integration remain in frontend tests.
+
+## Browser recovery and shared sessions
+
+Basic fleet snapshots use the disposable IndexedDB `bsm-view-state` database.
+Records are versioned, scoped to the backend (including ingress prefix) and
+account, expire after 24 hours, and contain only name, status, version and player
+count. Player identities, credentials and configuration are excluded. A network
+failure can display a dated, explicitly stale snapshot; it never enters runtime
+reconciliation as a backend observation. Reconnecting refreshes it from HTTP.
+The application shell and an authenticated in-memory session must already be
+available; this feature does not bypass sign-in or install an offline shell.
+Mutations are rejected while offline and are never queued for later replay.
+
+**Account → Browser recovery** offers opt-in recovery of recognized global/server
+settings and structured server properties. IndexedDB stores only safe changed
+fields and their field baselines, for up to seven days. Restoring is explicit and
+rebases those fields on fresh backend data; changed baselines show a conflict
+notice. Secrets, unknown/custom fields, plugin settings, raw files and addon order
+are excluded. Saving, discarding or disabling recovery removes saved edits. The
+same account controls can clear cached views and saved edits. Both record types
+share a 100-record cap and a 256 KB per-record limit. Unsupported schemas are
+removed; disabled/failed storage falls back to ordinary in-memory editing.
+
+When Web Locks and BroadcastChannel are available, tabs for the same backend and
+account share one authenticated socket and one task discovery/polling owner.
+The browser releases ownership when the owner closes; waiting tabs take over.
+`pagehide` releases ownership and `pageshow` re-enters the election. Each tab
+announces its topics and pending task metadata, and the owner retains their union.
+Leaving or expired peers release their topics. Accepted HTTP task snapshots and
+live frames pass through each tab's normal reconciliation gates. Credentials and
+HTTP writes are never broadcast. Each view still owns its HTTP resource reads and
+visibility-aware resource refreshes. Browsers that cannot coordinate use independent
+sockets and recovery. Custom low-level socket sends are owner-only; application
+commands use the generated HTTP client.
+
+Overview cards observe a single fleet entry with a query selector and use stable
+event callbacks. Structural sharing keeps unrelated cards from rendering when
+another server changes; the fleet query remains the only request owner.
+
+The administrator diagnostics screen includes opt-in frontend observations:
+rejection reasons, refresh families, ownership changes, compaction counts and
+subscription/reference counts. Only 200 payload-free observations are retained
+in memory; reset clears them. Long-session compaction runs every 250 accepted
+observations, drops expendable event payloads, and reduces old terminal tasks to
+identity/status. Revisions, arrival clocks, epoch tombstones and task terminal
+watermarks remain until session/epoch reset, preserving replay protection.

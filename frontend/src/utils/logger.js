@@ -7,8 +7,12 @@ const LogLevel = {
 };
 
 // 1. Check local storage first (so you can toggle logs live in production)
-const storedOverride =
-  typeof window !== "undefined" ? localStorage.getItem("APP_LOG_LEVEL") : null;
+let storedOverride = null;
+try {
+  storedOverride = globalThis.localStorage?.getItem("APP_LOG_LEVEL");
+} catch {
+  /* Use the configured log level when persistence is blocked. */
+}
 
 // 2. Resolve the level
 const currentLevel = storedOverride
