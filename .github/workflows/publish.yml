@@ -137,10 +137,13 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
-          registry-url: https://registry.npmjs.org
           package-manager-cache: false
       - name: Install npm for trusted publishing
-        run: npm install --global npm@11.21.0
+        run: |
+          npm install --global npm@11.21.0
+          node --version
+          npm --version
+          test "$(npm --version)" = '11.21.0'
       - uses: actions/download-artifact@v4
         with:
           name: ${{ needs.release.outputs.artifact-name }}
@@ -163,4 +166,4 @@ jobs:
         env:
           NPM_ARCHIVE: ${{ steps.archive.outputs.path }}
           NPM_DIST_TAG: ${{ needs.release.outputs.dist-tag }}
-        run: npm publish "$NPM_ARCHIVE" --ignore-scripts --access public --provenance --tag "$NPM_DIST_TAG"
+        run: npm publish "$NPM_ARCHIVE" --registry=https://registry.npmjs.org --ignore-scripts --access public --provenance --tag "$NPM_DIST_TAG" --loglevel=verbose
