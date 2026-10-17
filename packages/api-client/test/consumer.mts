@@ -28,3 +28,11 @@ await dynamic.callOperation("plugin_operation", {
 });
 const discovered = await client.discoverOperationClient();
 await discovered.callOperation("plugin_operation");
+
+const health = await client.callOperation("get_application_health");
+if (health) {
+  const pid: number = health.pid;
+  const version: string = health.version;
+  const instance: string | null | undefined = health.instance_id;
+  console.log(pid, version, instance);
+}

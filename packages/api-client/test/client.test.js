@@ -118,3 +118,38 @@ test("contract metadata and capability inspection use the same schema interpreta
   assert.equal(result.schemaHash, contractMetadata.schemaHash);
   assert.ok(result.missing.includes("list_servers"));
 });
+
+test("health preserves runtime identity and degraded observations with user authentication", async () => {
+  for (const [instance_id, ready] of [
+    ["runtime-1", true],
+    [null, false],
+  ]) {
+    const health = {
+      pid: 123,
+      instance_id,
+      version: "4.0.0b8",
+      ready,
+      lifecycle: ready ? "ready" : "stopping",
+      health: ready ? "healthy" : "degraded",
+      checks: { lifecycle: { healthy: ready, message: "Lifecycle check" } },
+      checked_at: 1,
+    };
+    const client = createApiClient(
+      createHttpTransport({
+        baseUrl: "https://bsm.example/prefix",
+        getToken: () => "user-token",
+        fetch: async (url, options) => {
+          assert.equal(url, "https://bsm.example/prefix/api/health");
+          const headers = new Headers(options.headers);
+          assert.equal(headers.get("Authorization"), "Bearer user-token");
+          assert.equal(headers.has("X-BSM-Readiness-Token"), false);
+          return Response.json(health);
+        },
+      }),
+    );
+    assert.deepEqual(
+      await client.callOperation("get_application_health"),
+      health,
+    );
+  }
+});

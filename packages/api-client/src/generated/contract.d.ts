@@ -327,7 +327,7 @@ export interface paths {
     };
     /**
      * Get Application Health
-     * @description Dependency readiness. A degraded response remains HTTP 200 for UI clients.
+     * @description Return health and process identity for a user or local supervisor.
      */
     get: operations["get_application_health"];
     put?: never;
@@ -3000,9 +3000,13 @@ export interface components {
        * @enum {string}
        */
       health: "healthy" | "degraded";
+      /** Instance Id */
+      instance_id?: string | null;
       lifecycle: components["schemas"]["LifecyclePhase"];
       /** Message */
       message?: string | null;
+      /** Pid */
+      pid: number;
       /** Ready */
       ready: boolean;
       /**
@@ -3011,6 +3015,8 @@ export interface components {
        * @constant
        */
       status?: "success";
+      /** Version */
+      version: string;
     };
     /** GetApplicationMetricsResponse */
     GetApplicationMetricsResponse: {

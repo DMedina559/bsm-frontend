@@ -2492,6 +2492,17 @@
             "title": "Health",
             "type": "string"
           },
+          "instance_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instance Id"
+          },
           "lifecycle": {
             "$ref": "#/components/schemas/LifecyclePhase"
           },
@@ -2506,6 +2517,11 @@
             ],
             "title": "Message"
           },
+          "pid": {
+            "exclusiveMinimum": 0.0,
+            "title": "Pid",
+            "type": "integer"
+          },
           "ready": {
             "title": "Ready",
             "type": "boolean"
@@ -2515,9 +2531,21 @@
             "default": "success",
             "title": "Status",
             "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
           }
         },
-        "required": ["ready", "lifecycle", "health", "checks", "checked_at"],
+        "required": [
+          "pid",
+          "version",
+          "ready",
+          "lifecycle",
+          "health",
+          "checks",
+          "checked_at"
+        ],
         "title": "GetApplicationHealthResponse",
         "type": "object"
       },
@@ -6258,6 +6286,11 @@
         "name": "X-BSM-Shutdown-Token",
         "type": "apiKey"
       },
+      "LocalReadiness": {
+        "in": "header",
+        "name": "X-BSM-Readiness-Token",
+        "type": "apiKey"
+      },
       "OAuth2PasswordBearer": {
         "flows": {
           "password": {
@@ -8456,7 +8489,7 @@
     },
     "/api/health": {
       "get": {
-        "description": "Dependency readiness. A degraded response remains HTTP 200 for UI clients.",
+        "description": "Return health and process identity for a user or local supervisor.",
         "operationId": "get_application_health",
         "responses": {
           "200": {
@@ -8551,6 +8584,9 @@
           }
         },
         "security": [
+          {
+            "LocalReadiness": []
+          },
           {
             "OAuth2PasswordBearer": []
           },
