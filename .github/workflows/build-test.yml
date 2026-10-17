@@ -16,8 +16,6 @@ on:
       - ".pre-commit-config.yaml"
       - ".github/workflows/build-test.yml"
       - ".github/workflows/publish.yml"
-      - ".github/workflows/publish-api-client.yml"
-      - ".github/workflows/publish-packages.yml"
   push:
     branches-ignore:
       - 'main'
@@ -25,8 +23,6 @@ on:
       - 'README.md'
       - 'LICENSE'
       - '.github/workflows/publish.yml'
-      - '.github/workflows/publish-api-client.yml'
-      - '.github/workflows/publish-packages.yml'
       - 'python/**'
       - 'frontend/**'
       - 'packages/**'

@@ -43,3 +43,20 @@ export function resolveReleaseTag(product, tag, prerelease = false) {
   }
   throw new Error("Unknown release product");
 }
+
+export function resolveRelease(tag, prerelease = false) {
+  const product = ["api-client", "runtime", "storage", "frontend"].find(
+    (name) => tag.startsWith(name === "frontend" ? "frontend-" : `${name}-v`),
+  );
+  if (!product) throw new Error("Unsupported release tag");
+  const release = resolveReleaseTag(product, tag, prerelease);
+  return {
+    product,
+    workspace: `@bedrock-server-manager/${product}`,
+    version: release.version,
+    npmVersion: release.npmVersion ?? release.version,
+    distTag: release.distTag,
+    artifactName:
+      product === "frontend" ? "frontend-distributions" : "npm-package",
+  };
+}

@@ -1,4 +1,4 @@
-name: Publish frontend distributions
+name: Publish packages
 
 on:
   release:
@@ -8,18 +8,103 @@ permissions:
   contents: read
 
 jobs:
+  release:
+    if: startsWith(github.event.release.tag_name, 'api-client-v') || startsWith(github.event.release.tag_name, 'runtime-v') || startsWith(github.event.release.tag_name, 'storage-v') || startsWith(github.event.release.tag_name, 'frontend-')
+    runs-on: ubuntu-latest
+    outputs:
+      product: ${{ steps.version.outputs.product }}
+      workspace: ${{ steps.version.outputs.workspace }}
+      npm-version: ${{ steps.version.outputs.npm-version }}
+      dist-tag: ${{ steps.version.outputs.dist-tag }}
+      artifact-name: ${{ steps.version.outputs.artifact-name }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Resolve release
+        id: version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          IS_PRERELEASE: ${{ github.event.release.prerelease }}
+        run: |
+          node --input-type=module - <<'JS'
+          import { appendFileSync } from 'node:fs';
+          import { resolveRelease } from './scripts/release-version.mjs';
+          const release = resolveRelease(process.env.RELEASE_TAG, process.env.IS_PRERELEASE === 'true');
+          const outputs = {
+            product: release.product, workspace: release.workspace,
+            'npm-version': release.npmVersion, 'dist-tag': release.distTag,
+            'artifact-name': release.artifactName,
+          };
+          for (const [name, value] of Object.entries(outputs))
+            appendFileSync(process.env.GITHUB_OUTPUT, `${name}=${value}\n`);
+          JS
+
+  library:
+    needs: release
+    if: needs.release.outputs.product != 'frontend'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Install workspace dependencies
+        run: npm ci
+      - name: Set library version
+        env:
+          NPM_WORKSPACE: ${{ needs.release.outputs.workspace }}
+          NPM_VERSION: ${{ needs.release.outputs.npm-version }}
+          PACKAGE_NAME: ${{ needs.release.outputs.product }}
+        run: |
+          node --input-type=module - <<'JS'
+          import { readFileSync } from 'node:fs';
+          import { execFileSync } from 'node:child_process';
+          const path = `packages/${process.env.PACKAGE_NAME}/package.json`;
+          const pkg = JSON.parse(readFileSync(path, 'utf8'));
+          if (pkg.private || pkg.name !== process.env.NPM_WORKSPACE)
+            throw new Error('Unexpected publishable library');
+          execFileSync('npm', [
+            'version', process.env.NPM_VERSION, `--workspace=${process.env.NPM_WORKSPACE}`,
+            '--no-git-tag-version', '--ignore-scripts', '--allow-same-version',
+          ], { stdio: 'inherit' });
+          const updated = JSON.parse(readFileSync(path, 'utf8'));
+          if (updated.version !== process.env.NPM_VERSION)
+            throw new Error('Release tag must contain a canonical SemVer version');
+          JS
+      - name: Validate and pack library
+        env:
+          NPM_WORKSPACE: ${{ needs.release.outputs.workspace }}
+          PACKAGE_NAME: ${{ needs.release.outputs.product }}
+        run: |
+          npm run check --workspace="$NPM_WORKSPACE"
+          npm run packages:check -- "$PACKAGE_NAME" --pack-destination build/npm-release
+      - name: Upload verified npm archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-package
+          path: build/npm-release/*.tgz
+          if-no-files-found: error
+          retention-days: 7
+
   validate:
-    if: startsWith(github.event.release.tag_name, 'frontend-')
+    needs: release
+    if: needs.release.outputs.product == 'frontend'
     uses: ./.github/workflows/build-test.yml
 
   contract:
-    if: startsWith(github.event.release.tag_name, 'frontend-')
+    needs: release
+    if: needs.release.outputs.product == 'frontend'
     uses: ./.github/workflows/backend-contract.yml
     with:
       backend-ref: pinned
 
   pypi:
-    needs: [validate, contract]
+    needs: [release, validate, contract]
+    if: needs.release.outputs.product == 'frontend'
     runs-on: ubuntu-latest
     environment:
       name: release
@@ -36,7 +121,12 @@ jobs:
           packages-dir: python/dist/
 
   npm:
-    needs: [validate, contract]
+    needs: [release, library, validate, contract]
+    if: >-
+      ${{ !cancelled() && needs.release.result == 'success' &&
+          ((needs.release.outputs.product == 'frontend' &&
+            needs.validate.result == 'success' && needs.contract.result == 'success') ||
+           (needs.release.outputs.product != 'frontend' && needs.library.result == 'success')) }}
     runs-on: ubuntu-latest
     environment: npm-release
     permissions:
@@ -53,20 +143,24 @@ jobs:
         run: npm install --global npm@11.21.0
       - uses: actions/download-artifact@v4
         with:
-          name: frontend-distributions
-      - name: Resolve npm frontend release channel
-        id: version
+          name: ${{ needs.release.outputs.artifact-name }}
+          path: release-artifacts
+      - name: Verify npm release archive
+        id: archive
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
           IS_PRERELEASE: ${{ github.event.release.prerelease }}
         run: |
           node --input-type=module - <<'JS'
           import { appendFileSync } from 'node:fs';
-          import { resolveReleaseTag } from './scripts/release-version.mjs';
-          const release = resolveReleaseTag('frontend', process.env.RELEASE_TAG, process.env.IS_PRERELEASE === 'true');
-          appendFileSync(process.env.GITHUB_OUTPUT, `dist-tag=${release.distTag}\n`);
+          import { resolveRelease } from './scripts/release-version.mjs';
+          import { selectReleaseArchive } from './scripts/release-artifacts.mjs';
+          const release = resolveRelease(process.env.RELEASE_TAG, process.env.IS_PRERELEASE === 'true');
+          const archive = selectReleaseArchive('release-artifacts', release);
+          appendFileSync(process.env.GITHUB_OUTPUT, `path=${archive}\n`);
           JS
-      - name: Publish verified npm frontend archive
+      - name: Publish verified npm archive
         env:
-          NPM_DIST_TAG: ${{ steps.version.outputs.dist-tag }}
-        run: npm publish frontend/build/artifacts/*.tgz --access public --provenance --tag "$NPM_DIST_TAG"
+          NPM_ARCHIVE: ${{ steps.archive.outputs.path }}
+          NPM_DIST_TAG: ${{ needs.release.outputs.dist-tag }}
+        run: npm publish "$NPM_ARCHIVE" --ignore-scripts --access public --provenance --tag "$NPM_DIST_TAG"

@@ -6,9 +6,11 @@ import {
   cpSync,
   readdirSync,
   rmSync,
+  mkdirSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join, resolve } from "node:path";
+import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 
@@ -17,11 +19,15 @@ const require = createRequire(new URL("../package.json", import.meta.url));
 const ts = require("typescript");
 const npm = process.env.npm_execpath;
 if (!npm) throw new Error("Run this check with npm run packages:check");
-const temporary = mkdtempSync(join(tmpdir(), "bsm-packages-"));
 const available = ["api-client", "runtime", "storage"];
-const names = process.argv.slice(2).length ? process.argv.slice(2) : available;
+const { values, positionals } = parseArgs({
+  options: { "pack-destination": { type: "string" } },
+  allowPositionals: true,
+});
+const names = positionals.length ? positionals : available;
 if (names.some((name) => !available.includes(name)))
   throw new Error("Unknown package");
+const temporary = mkdtempSync(join(tmpdir(), "bsm-packages-"));
 const runNpm = (args) =>
   execFileSync(process.execPath, [npm, ...args], {
     cwd: root,
@@ -159,6 +165,13 @@ try {
   console.log(
     `Verified ${names.length} packed packages, ${exportCount} executable exports and declarations, and consumer types.`,
   );
+  if (values["pack-destination"]) {
+    const destination = resolve(root, values["pack-destination"]);
+    mkdirSync(destination, { recursive: true });
+    for (const archive of archives)
+      cpSync(archive, join(destination, basename(archive)));
+    console.log(`Saved verified npm archives to ${destination}`);
+  }
 } finally {
   rmSync(temporary, { recursive: true, force: true });
 }

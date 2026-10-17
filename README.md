@@ -116,9 +116,9 @@ release versions. The root workspace and source web application stay private.
 
 | Release         | GitHub release tag                               | Workflow                 | Required publishing setup                                                         |
 | --------------- | ------------------------------------------------ | ------------------------ | --------------------------------------------------------------------------------- |
-| API client      | `api-client-v<SDK version>`                      | `publish-api-client.yml` | npm trusted publishing through the `npm-release` environment |
-| Runtime         | `runtime-v<SemVer>`                            | `publish-packages.yml`   | npm trusted publishing through the `npm-release` environment |
-| Storage         | `storage-v<SemVer>`                            | `publish-packages.yml`   | npm trusted publishing through the `npm-release` environment |
+| API client      | `api-client-v<SDK version>`                      | `publish.yml`           | npm trusted publishing through the `npm-release` environment |
+| Runtime         | `runtime-v<SemVer>`                            | `publish.yml`           | npm trusted publishing through the `npm-release` environment |
+| Storage         | `storage-v<SemVer>`                            | `publish.yml`           | npm trusted publishing through the `npm-release` environment |
 | Frontend assets | `frontend-<version>`, such as `frontend-1.3.0b8` | `publish.yml`            | PyPI trusted publisher (`release`) and npm trusted publisher (`npm-release`)            |
 
 For an SDK release, publish a GitHub release tagged `api-client-v0.1.1`, for example.
@@ -133,7 +133,11 @@ explicitly marked as GitHub prereleases.
 
 Runtime and storage follow the same tag-derived versioning and npm channel rules,
 using tags such as `runtime-v0.1.0-beta.1` and `storage-v0.1.0-beta.1`.
-Each release validates and publishes only its selected library.
+The shared workflow validates and publishes only the selected package. Library
+archives pass isolated consumer checks before publication; frontend releases
+retain their full application and backend-contract validation. The npm publishing
+job checks the archive's package name, version, and public visibility and publishes
+it without rebuilding.
 
 Frontend releases run shared validation, then publish the verified Python and
 npm archives without rebuilding. `frontend-1.3.0b8` produces Python version
