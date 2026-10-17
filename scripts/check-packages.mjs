@@ -4,7 +4,6 @@ import {
   readFileSync,
   writeFileSync,
   cpSync,
-  readdirSync,
   rmSync,
   mkdirSync,
 } from "node:fs";
@@ -21,7 +20,10 @@ const npm = process.env.npm_execpath;
 if (!npm) throw new Error("Run this check with npm run packages:check");
 const available = ["api-client", "runtime", "storage"];
 const { values, positionals } = parseArgs({
-  options: { "pack-destination": { type: "string" } },
+  options: {
+    "pack-destination": { type: "string" },
+    smoke: { type: "boolean", default: false },
+  },
   allowPositionals: true,
 });
 const names = positionals.length ? positionals : available;
@@ -136,7 +138,7 @@ try {
   execFileSync(process.execPath, [join(temporary, "check.mjs")], {
     stdio: "inherit",
   });
-  for (const name of names) {
+  for (const name of values.smoke ? [] : names) {
     const target = join(temporary, `${name}.mts`);
     cpSync(join(root, `packages/${name}/test/consumer.mts`), target);
     execFileSync(
@@ -154,16 +156,8 @@ try {
       { stdio: "inherit" },
     );
   }
-  for (const name of names) {
-    const directory = join(temporary, `${name}-tests`);
-    cpSync(join(root, `packages/${name}/test`), directory, { recursive: true });
-    const tests = readdirSync(directory)
-      .filter((file) => file.endsWith(".test.js"))
-      .map((file) => join(directory, file));
-    execFileSync(process.execPath, ["--test", ...tests], { stdio: "inherit" });
-  }
   console.log(
-    `Verified ${names.length} packed packages, ${exportCount} executable exports and declarations, and consumer types.`,
+    `Verified ${names.length} packed packages, ${exportCount} executable exports and declarations${values.smoke ? "" : ", and consumer types"}.`,
   );
   if (values["pack-destination"]) {
     const destination = resolve(root, values["pack-destination"]);

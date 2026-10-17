@@ -14,18 +14,6 @@ on:
         type: choice
         options: [dev, pinned]
         default: dev
-  pull_request:
-    paths:
-      - "packages/api-client/**"
-      - ".github/workflows/backend-contract.yml"
-      - "scripts/backend-source.mjs"
-  push:
-    branches-ignore:
-      - "main"
-    paths:
-      - "packages/api-client/**"
-      - ".github/workflows/backend-contract.yml"
-      - "scripts/backend-source.mjs"
 
 permissions:
   contents: read
@@ -37,10 +25,6 @@ concurrency:
 jobs:
   backend-contract:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.14"]
     steps:
       - uses: actions/checkout@v7
         with:
@@ -68,7 +52,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@v7
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.14"
       - name: Install backend-owned contract tooling
         run: python -m pip install './backend-contract'
       - name: Compare client contract with target backend

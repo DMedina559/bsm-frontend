@@ -17,22 +17,21 @@ on:
       - ".github/workflows/build-test.yml"
       - ".github/workflows/publish.yml"
   push:
-    branches-ignore:
-      - 'main'
+    branches: [dev, main]
     paths:
-      - 'README.md'
-      - 'LICENSE'
-      - '.github/workflows/publish.yml'
-      - 'python/**'
-      - 'frontend/**'
-      - 'packages/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'eslint.config.js'
-      - 'prettier.config.js'
-      - '.pre-commit-config.yaml'
-      - 'scripts/**'
-      - '.github/workflows/build-test.yml'
+      - "README.md"
+      - "LICENSE"
+      - ".github/workflows/publish.yml"
+      - "python/**"
+      - "frontend/**"
+      - "packages/**"
+      - "package.json"
+      - "package-lock.json"
+      - "eslint.config.js"
+      - "prettier.config.js"
+      - ".pre-commit-config.yaml"
+      - "scripts/**"
+      - ".github/workflows/build-test.yml"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -48,112 +47,111 @@ jobs:
       frontend-version: ${{ steps.version.outputs.version }}
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v7
-      with:
-        fetch-depth: 0
-        persist-credentials: false
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v7
-      with:
-        node-version: '22'
-        package-manager-cache: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          package-manager-cache: false
 
-    - name: Resolve frontend release identity
-      if: github.event_name == 'release' && startsWith(github.event.release.tag_name, 'frontend-')
-      id: version
-      env:
-        RELEASE_TAG: ${{ github.event.release.tag_name }}
-      run: |
-        node --input-type=module - <<'JS'
-        import { appendFileSync } from 'node:fs';
-        import { resolveReleaseTag } from './scripts/release-version.mjs';
-        const { version } = resolveReleaseTag('frontend', process.env.RELEASE_TAG);
-        appendFileSync(process.env.GITHUB_ENV, `SETUPTOOLS_SCM_PRETEND_VERSION=${version}\nBSM_FRONTEND_VERSION=${version}\n`);
-        appendFileSync(process.env.GITHUB_OUTPUT, `version=${version}\n`);
-        JS
+      - name: Resolve frontend release identity
+        if: github.event_name == 'release' && startsWith(github.event.release.tag_name, 'frontend-')
+        id: version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          node --input-type=module - <<'JS'
+          import { appendFileSync } from 'node:fs';
+          import { resolveReleaseTag } from './scripts/release-version.mjs';
+          const { version } = resolveReleaseTag('frontend', process.env.RELEASE_TAG);
+          appendFileSync(process.env.GITHUB_ENV, `SETUPTOOLS_SCM_PRETEND_VERSION=${version}\nBSM_FRONTEND_VERSION=${version}\n`);
+          appendFileSync(process.env.GITHUB_OUTPUT, `version=${version}\n`);
+          JS
 
-    - name: Install dependencies and build
-      run: |
-        npm ci
-        npm run api:check
-        npm run typecheck
-        npm run build
+      - name: Install dependencies and build
+        run: |
+          npm ci
+          npm run api:check
+          npm run typecheck
+          npm run build
 
-    - name: Verify package consumers
-      run: npm run packages:check
+      - name: Verify package consumers
+        run: npm run packages:check
 
-    - name: Run Workspace Lint
-      run: npm run lint
+      - name: Run Workspace Lint
+        run: npm run lint
 
-    - name: Run Workspace Tests
-      run: npm test
+      - name: Run Workspace Tests
+        run: npm test
 
-    - name: Install browser
-      working-directory: ./frontend
-      run: npx playwright install --with-deps chromium firefox webkit
+      - name: Install browser
+        working-directory: ./frontend
+        run: npx playwright install --with-deps chromium firefox webkit
 
-    - name: Run full app browser tests
-      working-directory: ./frontend
-      run: npm run test:e2e
+      - name: Run full app browser tests
+        working-directory: ./frontend
+        run: npm run test:e2e
 
-    - name: Set up Python
-      uses: actions/setup-python@v7
-      with:
-        python-version: '3.11'
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
 
-    - name: Validate Python distribution
-      run: |
-        python -m pip install build setuptools-scm twine pytest
-        PYTHONPATH=python/src python -m pytest -c python/pyproject.toml python/tests
-        node scripts/build-python.mjs
-        python -m twine check python/dist/*
-        python -m pip install --force-reinstall python/dist/*.whl
-        python - <<'PYTHON'
-        from bsm_frontend import get_static_dir
-        static = get_static_dir()
-        for asset in ("index.html", "assets/site.webmanifest", "image/panorama.png"):
-            assert (static / asset).is_file(), f"Missing packaged frontend asset: {asset}"
-        assert list((static / "assets").glob("*.js")), "Missing packaged JavaScript bundles"
-        PYTHON
+      - name: Validate Python distribution
+        run: |
+          python -m pip install build setuptools-scm twine pytest
+          PYTHONPATH=python/src python -m pytest -c python/pyproject.toml python/tests
+          node scripts/build-python.mjs
+          python -m twine check python/dist/*
+          python -m pip install --force-reinstall python/dist/*.whl
+          python - <<'PYTHON'
+          from bsm_frontend import get_static_dir
+          static = get_static_dir()
+          for asset in ("index.html", "assets/site.webmanifest", "image/panorama.png"):
+              assert (static / asset).is_file(), f"Missing packaged frontend asset: {asset}"
+          assert list((static / "assets").glob("*.js")), "Missing packaged JavaScript bundles"
+          PYTHON
 
-    - name: Resolve supported backend
-      id: backend-source
-      run: node scripts/backend-source.mjs
+      - name: Resolve supported backend
+        id: backend-source
+        run: node scripts/backend-source.mjs
 
-    - uses: actions/checkout@v7
-      with:
-        repository: DMedina559/bedrock-server-manager
-        ref: ${{ steps.backend-source.outputs.revision }}
-        path: backend-smoke
-        persist-credentials: false
+      - uses: actions/checkout@v7
+        with:
+          repository: DMedina559/bedrock-server-manager
+          ref: ${{ steps.backend-source.outputs.revision }}
+          path: backend-smoke
+          persist-credentials: false
 
-    - name: Validate against the supported backend
-      run: |
-        python -m pip install './backend-smoke'
-        python -m pip install --force-reinstall --no-deps python/dist/*.whl
-        python -m bedrock_server_manager.web.contract --check packages/api-client/src/generated/openapi.json
-        npm run test:e2e:backend --workspace=bsm-frontend
+      - name: Validate against the supported backend
+        run: |
+          python -m pip install './backend-smoke'
+          python -m pip install --force-reinstall --no-deps python/dist/*.whl
+          python -m bedrock_server_manager.web.contract --check packages/api-client/src/generated/openapi.json
+          npm run test:e2e:backend --workspace=bsm-frontend
 
+      - name: Pack the same verified frontend for npm
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name || '' }}
+          IS_PRERELEASE: ${{ github.event.release.prerelease || false }}
+        run: npm run pack:frontend
 
-    - name: Pack the same verified frontend for npm
-      env:
-        RELEASE_TAG: ${{ github.event.release.tag_name || '' }}
-        IS_PRERELEASE: ${{ github.event.release.prerelease || false }}
-      run: npm run pack:frontend
+      - name: Upload verified frontend distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-distributions
+          path: |
+            frontend/dist/
+            frontend/build/artifacts/*.tgz
+            python/dist/
+          retention-days: 7
 
-    - name: Upload verified frontend distributions
-      uses: actions/upload-artifact@v4
-      with:
-        name: frontend-distributions
-        path: |
-          frontend/dist/
-          frontend/build/artifacts/*.tgz
-          python/dist/
-        retention-days: 7
-
-  windows-packages:
+  windows-packaging:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
@@ -161,16 +159,13 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v7
         with:
-          node-version: '22.12.0'
-          cache: npm
-          cache-dependency-path: package-lock.json
+          node-version: "22.12.0"
+          package-manager-cache: false
       - run: npm ci
-      - run: npm run test:tooling
-      - run: npm run typecheck
-      - run: npm run test:packages
-      - run: npm run packages:check
+      - name: Check Windows package installation and exports
+        run: npm run packages:check -- --smoke
 
-  python-maximum:
+  python-minimum:
     needs: build-and-test
     runs-on: ubuntu-latest
     steps:
@@ -183,19 +178,11 @@ jobs:
           name: frontend-distributions
       - uses: actions/setup-python@v7
         with:
-          python-version: '3.14'
-      - name: Validate maximum supported Python
-        env:
-          RELEASE_VERSION: ${{ needs.build-and-test.outputs.frontend-version }}
+          python-version: "3.11"
+      - name: Validate the built wheel on minimum supported Python
         run: |
-          if [ -n "$RELEASE_VERSION" ]; then export SETUPTOOLS_SCM_PRETEND_VERSION="$RELEASE_VERSION"; fi
-          python -m pip install build setuptools-scm twine pytest
-          python - <<'PYTHON'
-          import shutil
-          shutil.copytree("frontend/dist", "python/src/bsm_frontend/static", dirs_exist_ok=True)
-          PYTHON
-          PYTHONPATH=python/src python -m pytest -c python/pyproject.toml python/tests
-          python -m build python --outdir /tmp/frontend-python-maximum
-          python -m twine check /tmp/frontend-python-maximum/*
-          python -m pip install /tmp/frontend-python-maximum/*.whl
+          python -m pip install pytest
+          python -m pip install --no-deps python/dist/*.whl
+          cd "${{ runner.temp }}"
+          python -m pytest -c /dev/null --import-mode=importlib "$GITHUB_WORKSPACE/python/tests"
           python -c "from bsm_frontend import get_static_dir; assert (get_static_dir() / 'index.html').is_file()"
