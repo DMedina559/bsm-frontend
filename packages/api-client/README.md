@@ -127,6 +127,11 @@ and prerelease tags.
 
 ## Contract compatibility
 
+`backend-source.json` pins the supported backend commit used by release validation
+and the packaged application's integration smoke test. Update it alongside reviewed
+contract changes. The separate backend-contract workflow also compares against
+backend `dev` to detect upstream drift.
+
 `@bedrock-server-manager/api-client/metadata` exports `contractMetadata` with the
 canonical schema fingerprint, exporter provenance, and operation IDs.
 `compareCapabilities(schema, requiredOperations)` compares an advertised OpenAPI

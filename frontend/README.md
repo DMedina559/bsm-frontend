@@ -132,10 +132,10 @@ For interactive unit-test development:
 npm run test:watch --workspace=bsm-frontend
 ```
 
-Install Chromium and run browser scenarios:
+Install the supported browsers and run browser scenarios:
 
 ```sh
-npm exec --workspace=bsm-frontend -- playwright install chromium
+npm exec --workspace=bsm-frontend -- playwright install chromium firefox webkit
 npm run test:e2e --workspace=bsm-frontend
 ```
 
@@ -146,11 +146,27 @@ backends, including backend changes across tabs. It does not need a running BSM
 instance. Deployment-specific proxy and certificate settings still need checking
 in the target environment.
 
+The browser suite runs on Chromium, Firefox, and WebKit. The packaged-app smoke
+check starts an isolated BSM instance with temporary configuration and data:
+
+```sh
+npm run build:python
+python -m pip install /path/to/supported/backend
+python -m pip install --force-reinstall --no-deps python/dist/*.whl
+npm run test:e2e:backend --workspace=bsm-frontend
+```
+
+Use the backend commit in `packages/api-client/backend-source.json`. Set
+`BSM_BACKEND_PYTHON` if that installation uses a different Python executable.
+CI runs this smoke check and compares the supported backend's exported contract
+before publishing frontend distributions.
+
 | Test directory            | Contents                                                    |
 | ------------------------- | ----------------------------------------------------------- |
 | `frontend/tests/unit/`    | Component, page, utility, and runtime tests                 |
 | `frontend/tests/support/` | Shared providers, HTTP fixtures, setup, contract assertions |
 | `frontend/tests/e2e/`     | Playwright application scenarios                            |
+| `frontend/tests/backend/` | Packaged app smoke test against the supported BSM backend   |
 | `frontend/tests/types/`   | Frontend API call type checks                               |
 
 Shared library tests live under `packages/*/test/`.

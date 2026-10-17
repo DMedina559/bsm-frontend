@@ -71,5 +71,10 @@ describe("BSMSettings", () => {
         }),
       );
     });
+    expect(
+      api.request.mock.calls
+        .filter(([url]) => url === "/api/settings/set")
+        .map(([, options]) => options.body),
+    ).toEqual([{ key: "server.name", value: "New Name" }]);
   });
 });

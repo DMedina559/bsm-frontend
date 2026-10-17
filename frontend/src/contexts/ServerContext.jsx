@@ -14,6 +14,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -24,6 +25,8 @@ import { useAuth } from "./AuthContext";
 import { queryKeys } from "../app/queryKeys";
 import { preferenceStore as preferences } from "../app/preferenceStore";
 import { logger } from "../utils/logger";
+import { draftRegistry } from "../app/draftRegistry";
+import { useDialog } from "./DialogContext";
 
 const ServerContext = createContext(null);
 export const useServer = () => useContext(ServerContext);
@@ -49,13 +52,47 @@ async function loadServers({ signal }) {
 export const ServerProvider = ({ children }) => {
   const { user, sessionGeneration } = useAuth();
   const identity = getPreferenceIdentity(user);
+  const { confirmAction } = useDialog() ?? {};
 
   const [selectedServer, setSelectedServerState] = useState(null);
   const selectedServerRef = useRef(selectedServer);
   const [selectionIdentity, setSelectionIdentity] = useState(null);
+  const selectionRequest = useRef(0);
+  const activeIdentity = useRef(identity);
+  useLayoutEffect(() => {
+    activeIdentity.current = identity;
+    return () => {
+      activeIdentity.current = null;
+    };
+  }, [identity]);
+  const setSelectedServer = useCallback(
+    async (name, { persist = true } = {}) => {
+      const request = ++selectionRequest.current;
+      if (selectedServerRef.current === name) return true;
+      if (
+        draftRegistry.dirty() &&
+        (!confirmAction ||
+          !(await confirmAction("Discard unsaved changes and switch servers?")))
+      )
+        return false;
+      if (
+        request !== selectionRequest.current ||
+        activeIdentity.current !== identity
+      )
+        return false;
+      selectedServerRef.current = name;
+      setSelectedServerState(name);
+      if (persist) {
+        if (name) preferences.write(identity, "selectedServer", name);
+        else preferences.remove(identity, "selectedServer");
+      }
+      return true;
+    },
+    [identity, confirmAction],
+  );
 
   useEffect(() => {
-    const restore = () => {
+    const restore = (initial = false) => {
       migrateAccountPreference(preferences, user, "selectedServer");
       const saved = preferences.read(
         identity,
@@ -63,12 +100,15 @@ export const ServerProvider = ({ children }) => {
         null,
         (value) => typeof value === "string" && value.length > 0,
       );
-      selectedServerRef.current = saved;
-      setSelectedServerState(saved);
-      setSelectionIdentity(identity);
+      if (initial) {
+        selectionRequest.current++;
+        selectedServerRef.current = saved;
+        setSelectedServerState(saved);
+        setSelectionIdentity(identity);
+      } else void setSelectedServer(saved, { persist: false });
     };
-    restore();
-    return preferences.subscribe(identity, "selectedServer", restore);
+    restore(true);
+    return preferences.subscribe(identity, "selectedServer", () => restore());
     // Identity captures the account and backend.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [identity]);
@@ -105,16 +145,6 @@ export const ServerProvider = ({ children }) => {
     () => serverQuery.data?.servers ?? [],
     [serverQuery.data],
   );
-  const setSelectedServer = useCallback(
-    (name) => {
-      selectedServerRef.current = name;
-      setSelectedServerState(name);
-      if (name) preferences.write(identity, "selectedServer", name);
-      else preferences.remove(identity, "selectedServer");
-    },
-    [identity],
-  );
-
   useEffect(() => {
     if (identity === null) {
       setSelectedServer(null);

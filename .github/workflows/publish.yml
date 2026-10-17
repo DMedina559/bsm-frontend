@@ -12,8 +12,14 @@ jobs:
     if: startsWith(github.event.release.tag_name, 'frontend-')
     uses: ./.github/workflows/build-test.yml
 
+  contract:
+    if: startsWith(github.event.release.tag_name, 'frontend-')
+    uses: ./.github/workflows/backend-contract.yml
+    with:
+      backend-ref: pinned
+
   pypi:
-    needs: validate
+    needs: [validate, contract]
     runs-on: ubuntu-latest
     environment:
       name: release
@@ -30,7 +36,7 @@ jobs:
           packages-dir: python/dist/
 
   npm:
-    needs: validate
+    needs: [validate, contract]
     runs-on: ubuntu-latest
     environment: npm-release
     permissions:

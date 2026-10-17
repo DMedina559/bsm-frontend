@@ -1,23 +1,35 @@
 name: Backend OpenAPI Contract
 
 on:
+  workflow_call:
+    inputs:
+      backend-ref:
+        type: string
+        default: dev
   workflow_dispatch:
+    inputs:
+      backend-ref:
+        description: Backend branch, tag, commit, or pinned
+        type: string
+        default: dev
   pull_request:
     paths:
-      - 'packages/api-client/**'
-      - '.github/workflows/backend-contract.yml'
+      - "packages/api-client/**"
+      - ".github/workflows/backend-contract.yml"
+      - "scripts/backend-source.mjs"
   push:
     branches-ignore:
-      - 'main'
+      - "main"
     paths:
-      - 'packages/api-client/**'
-      - '.github/workflows/backend-contract.yml'
+      - "packages/api-client/**"
+      - ".github/workflows/backend-contract.yml"
+      - "scripts/backend-source.mjs"
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-backend-contract
   cancel-in-progress: true
 
 jobs:
@@ -26,15 +38,23 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.14']
+        python-version: ["3.14"]
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+      - name: Resolve backend target
+        id: backend-source
+        env:
+          BSM_BACKEND_REF: ${{ inputs.backend-ref || 'dev' }}
+        run: node scripts/backend-source.mjs
       - uses: actions/checkout@v7
         with:
-          repository: DMedina559/bedrock-server-manager
-          ref: dev
+          repository: ${{ steps.backend-source.outputs.repository }}
+          ref: ${{ steps.backend-source.outputs.ref }}
           path: backend-contract
           persist-credentials: false
       - uses: actions/setup-python@v7
@@ -42,5 +62,5 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install backend-owned contract tooling
         run: python -m pip install './backend-contract'
-      - name: Compare client contract with backend dev
+      - name: Compare client contract with target backend
         run: python -m bedrock_server_manager.web.contract --output /tmp/backend-openapi.json --check packages/api-client/src/generated/openapi.json

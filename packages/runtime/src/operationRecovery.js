@@ -169,13 +169,14 @@ export function createOperationRecoveryModule({
             return;
           discoveryFailures = 0;
           tasks.forEach((task) => {
+            if (!task || typeof task.id !== "string") return;
+            const tracked = operationCoordinator.get(task.id);
             if (
-              !task ||
-              typeof task.id !== "string" ||
+              !tracked &&
               !["queued", "running", "cancelling"].includes(task.status)
             )
               return;
-            if (!operationCoordinator.get(task.id))
+            if (!tracked)
               operationCoordinator.register({
                 id: task.id,
                 kind: "background",

@@ -164,3 +164,39 @@ it("queues one rediscovery when reconnects arrive during discovery", async () =>
   );
   stop();
 });
+
+it.each(["completed", "failed", "cancelled"])(
+  "recovers an unavailable operation from a terminal %s HTTP list snapshot",
+  async (status) => {
+    let tasks = [];
+    get.mockImplementation(async (id) => {
+      if (id === "list_tasks") return tasks;
+      throw Object.assign(new Error("Missing task"), { status: 404 });
+    });
+    const stop = startOperationRecovery();
+    operationCoordinator.register({
+      id: "recover",
+      kind: "backup",
+      serverName: "alpha",
+    });
+    await vi.advanceTimersByTimeAsync(1);
+    expect(operationCoordinator.get("recover").status).toBe("unknown");
+    tasks = [
+      { id: "recover", status, epoch: "backend", revision: 2 },
+      {
+        id: "old-finished",
+        status: "completed",
+        epoch: "backend",
+        revision: 1,
+      },
+    ];
+    fixture.host.emit("online");
+    await vi.advanceTimersByTimeAsync(1);
+    expect(operationCoordinator.get("recover")).toMatchObject({
+      status,
+      terminal: true,
+    });
+    expect(operationCoordinator.get("old-finished")).toBeNull();
+    stop();
+  },
+);

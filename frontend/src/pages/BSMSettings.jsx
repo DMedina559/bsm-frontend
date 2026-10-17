@@ -6,7 +6,7 @@ import { queryKeys } from "../app/queryKeys";
 import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
 import SettingsGroups from "../components/SettingsGroups";
 import {
-  flattenSettings,
+  changedSettings,
   updateSetting,
   isSafeSettingPath,
 } from "../utils/settings";
@@ -56,16 +56,11 @@ const BSMSettings = () => {
   }, [resourceQuery.error]);
   const handleSave = async (e) => {
     e.preventDefault();
-    if (saving) return;
+    if (saving || draft.conflicted) return;
 
     try {
-      const flattened = flattenSettings(settings);
-
-      // Iterate through keys and save each one individually as the API expects
       await write.mutateAsync({
-        entries: Object.entries(flattened).filter(
-          ([key]) => !key.startsWith("plugin_settings."),
-        ),
+        entries: changedSettings(settings, savedSnapshot),
       });
       markSaved(settings);
       addToast("Settings saved successfully.", "success");
@@ -256,7 +251,7 @@ const BSMSettings = () => {
               <button
                 type="submit"
                 className="action-button"
-                disabled={loading || saving || !!loadError}
+                disabled={loading || saving || !!loadError || draft.conflicted}
               >
                 <Save
                   size={16}

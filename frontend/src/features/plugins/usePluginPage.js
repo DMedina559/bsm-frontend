@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { request } from "../../api/transport";
 import { useAuth } from "../../contexts/AuthContext";
@@ -73,10 +73,8 @@ export function usePluginPage({ url, parameters, server, inline }) {
   };
 }
 
-export function usePluginSubscriptions(schema, server, scope) {
-  const { isConnected, subscribe, unsubscribe, addMessageListener } =
-    useWebSocket();
-  const [snapshots, setSnapshots] = useState({ scope, messages: {} });
+export function usePluginSubscriptions(schema, server) {
+  const { isConnected, subscribe, unsubscribe } = useWebSocket();
   const topicsKey = JSON.stringify(
     (schema?.websocketSubscriptions ?? [])
       .filter((topic) => typeof topic === "string")
@@ -89,19 +87,4 @@ export function usePluginSubscriptions(schema, server, scope) {
     topics.forEach(subscribe);
     return () => topics.forEach(unsubscribe);
   }, [isConnected, topicsKey, subscribe, unsubscribe]);
-  useEffect(() => {
-    const topics = new Set(JSON.parse(topicsKey));
-    setSnapshots({ scope, messages: {} });
-    return addMessageListener((message) => {
-      if (topics.has(message.topic))
-        setSnapshots((previous) => ({
-          scope,
-          messages: {
-            ...(previous.scope === scope ? previous.messages : {}),
-            [message.topic]: message,
-          },
-        }));
-    });
-  }, [scope, topicsKey, addMessageListener]);
-  return snapshots.scope === scope ? snapshots.messages : {};
 }

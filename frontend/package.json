@@ -15,7 +15,8 @@
     "test:run": "vitest run",
     "typecheck": "tsc --moduleResolution bundler --module esnext --noEmit --strict --skipLibCheck --lib es2022,dom tests/types/api-contract.ts tests/types/runtime-contract.ts && node ../scripts/check-api-calls.mjs",
     "test:e2e": "playwright test",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e:backend": "playwright test --config=playwright.backend.config.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

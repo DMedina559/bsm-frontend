@@ -25,6 +25,8 @@ const baseline = {
 beforeEach(() => {
   vi.clearAllMocks();
   store.read.mockResolvedValue(undefined);
+  store.write.mockResolvedValue(true);
+  store.remove.mockResolvedValue(true);
   preference.enabled = true;
 });
 it("offers explicit recovery, rebases on fresh secrets, and flags changed backend values", async () => {
@@ -44,7 +46,7 @@ it("offers explicit recovery, rebases on fresh secrets, and flags changed backen
   expect(result.current.value.web.jwt_secret_key).toBe("private");
   expect(result.current.conflicted).toBe(true);
   expect(JSON.stringify(store.write.mock.calls)).not.toContain("private");
-  act(() => result.current.markSaved(result.current.value));
+  await act(async () => result.current.markSaved(result.current.value));
   expect(store.remove).toHaveBeenCalled();
   expect(result.current.recoverable).toBeFalsy();
 });

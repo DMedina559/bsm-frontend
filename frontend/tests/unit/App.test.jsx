@@ -4,6 +4,18 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import App from "../../src/App";
 import { BrowserRouter } from "react-router-dom";
 
+const failures = vi.hoisted(() => ({ provider: false }));
+vi.mock("../../src/contexts/WebSocketContext", async (original) => {
+  const actual = await original();
+  return {
+    ...actual,
+    WebSocketProvider: ({ children }) => {
+      if (failures.provider) throw new Error("Socket provider unavailable");
+      return <actual.WebSocketProvider>{children}</actual.WebSocketProvider>;
+    },
+  };
+});
+
 // Mock the API module
 vi.mock("../../src/api/transport", async (importOriginal) => {
   const { createHttpTransport, configureHttpFixtures } =
@@ -87,4 +99,25 @@ it("routes setup correctly through the data router under a proxy basename", asyn
   expect(router.state.location.pathname).toBe("/ingress/app/setup");
   view.unmount();
   router.dispose();
+});
+
+it("offers recovery when an application provider fails before routes mount", () => {
+  const report = vi.spyOn(console, "error").mockImplementation(() => {});
+  failures.provider = true;
+  try {
+    render(
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>,
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "This workspace could not be opened",
+    );
+    expect(
+      screen.getByRole("button", { name: "Reload interface" }),
+    ).toBeVisible();
+  } finally {
+    failures.provider = false;
+    report.mockRestore();
+  }
 });

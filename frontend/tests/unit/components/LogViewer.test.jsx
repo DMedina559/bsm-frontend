@@ -172,3 +172,62 @@ it("cancels session reads and clears private history on sign-out", async () => {
   expect(screen.getByRole("region").textContent).not.toContain("private data");
   expect(get).toHaveBeenCalledTimes(1);
 });
+
+it("bounds live output, retains Unicode offsets, and can page back then return to live", async () => {
+  const { MAX_LOG_BYTES } = await import("../../../src/utils/logWindow");
+  const recent = "🌍\n".repeat(60_000);
+  const length = new TextEncoder().encode(recent).length;
+  get
+    .mockResolvedValueOnce({
+      data: recent,
+      start: 0,
+      end: length,
+      file_id: "large",
+      has_more: false,
+    })
+    .mockImplementationOnce(async (url) => {
+      const before = Number(
+        new URL(url, "http://bsm").searchParams.get("before"),
+      );
+      return {
+        data: "older\n",
+        start: before - 6,
+        end: before,
+        file_id: "large",
+        has_more: true,
+      };
+    })
+    .mockResolvedValue({
+      data: "latest\n",
+      start: length,
+      end: length + 7,
+      file_id: "large",
+      has_more: true,
+    });
+  render(<LogViewer topic="app_log" />);
+  const region = screen.getByRole("region");
+  await waitFor(() => expect(region.textContent).toContain("🌍"));
+  expect(
+    new TextEncoder().encode(region.textContent).length,
+  ).toBeLessThanOrEqual(MAX_LOG_BYTES);
+  expect(region.textContent).not.toContain("�");
+  fireEvent.click(screen.getByRole("button", { name: "Load older entries" }));
+  await screen.findByText(/Viewing older entries/);
+  const older = region.textContent;
+  act(() =>
+    socket.listener({
+      topic: "app_log",
+      type: "log_update",
+      data: "not yet visible\n",
+      start: length,
+      end: length + 16,
+      file_id: "large",
+    }),
+  );
+  expect(region.textContent).toBe(older);
+  fireEvent.click(screen.getByRole("button", { name: "Follow live" }));
+  await waitFor(() => expect(region.textContent).toBe("latest\n"));
+  expect(new TextEncoder().encode(older).length).toBeLessThanOrEqual(
+    MAX_LOG_BYTES,
+  );
+});

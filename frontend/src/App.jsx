@@ -142,32 +142,34 @@ const App = () => {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ThemeProvider>
-          <ToastProvider>
-            <DialogProvider>
-              <DraftNavigationGuard />
-              <WebSocketProvider>
-                <ServerProvider>
-                  <ErrorBoundary>
-                    <Suspense
-                      fallback={
-                        <div className="app-loading" role="status">
-                          Loading workspace…
-                        </div>
-                      }
-                    >
-                      <AppRoutes />
-                    </Suspense>
-                  </ErrorBoundary>
-                </ServerProvider>
-              </WebSocketProvider>
-            </DialogProvider>
-          </ToastProvider>
-        </ThemeProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ThemeProvider>
+            <ToastProvider>
+              <DialogProvider>
+                <DraftNavigationGuard />
+                <WebSocketProvider>
+                  <ServerProvider>
+                    <ErrorBoundary>
+                      <Suspense
+                        fallback={
+                          <div className="app-loading" role="status">
+                            Loading workspace…
+                          </div>
+                        }
+                      >
+                        <AppRoutes />
+                      </Suspense>
+                    </ErrorBoundary>
+                  </ServerProvider>
+                </WebSocketProvider>
+              </DialogProvider>
+            </ToastProvider>
+          </ThemeProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

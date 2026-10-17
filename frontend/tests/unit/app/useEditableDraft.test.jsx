@@ -2,6 +2,10 @@ import { act, renderHook } from "@testing-library/react";
 import { expect, it, vi } from "vitest";
 import { useEditableDraft } from "../../../src/app/useEditableDraft";
 const confirm = vi.hoisted(() => vi.fn());
+const recovery = vi.hoisted(() => ({ enabled: false }));
+vi.mock("../../../src/app/usePreference", () => ({
+  usePreference: () => [recovery.enabled],
+}));
 vi.mock("../../../src/contexts/AuthContext", () => ({
   useAuth: () => ({ user: { id: "admin" }, sessionGeneration: 1 }),
 }));
@@ -76,4 +80,75 @@ it("does not acknowledge an old save after the configured backend changes", asyn
   sessionRuntime.reset();
   act(() => saved({ name: "submitted" }));
   expect(result.current.dirty).toBe(true);
+});
+
+it("debounces browser recovery, reports failures, and flushes the last edit on leaving", async () => {
+  const { browserRecords } = await import("../../../src/app/browserRecords");
+  const write = vi.spyOn(browserRecords, "write").mockResolvedValue(true);
+  recovery.enabled = true;
+  vi.useFakeTimers();
+  const data = { monitoring: { app_metrics_interval_sec: 3 } };
+  const view = renderHook(() => useEditableDraft("settings", data, empty));
+  try {
+    for (let i = 4; i <= 10; i++)
+      act(() =>
+        view.result.current.setValue({
+          monitoring: { app_metrics_interval_sec: i },
+        }),
+      );
+    await act(async () => vi.advanceTimersByTimeAsync(399));
+    expect(write).not.toHaveBeenCalled();
+    await act(async () => vi.advanceTimersByTimeAsync(1));
+    expect(write).toHaveBeenCalledOnce();
+    expect(write.mock.calls[0][3]).toEqual([
+      { path: "monitoring.app_metrics_interval_sec", baseline: 3, value: 10 },
+    ]);
+    expect(view.result.current.persistenceStatus).toBe("saved");
+    write.mockResolvedValueOnce(undefined);
+    act(() =>
+      view.result.current.setValue({
+        monitoring: { app_metrics_interval_sec: 11 },
+      }),
+    );
+    await act(async () => vi.advanceTimersByTimeAsync(400));
+    expect(view.result.current.persistenceStatus).toBe("unavailable");
+    act(() =>
+      view.result.current.setValue({
+        monitoring: { app_metrics_interval_sec: 12 },
+      }),
+    );
+    view.unmount();
+    expect(write).toHaveBeenCalledTimes(3);
+    expect(write.mock.calls[2][3][0].value).toBe(12);
+  } finally {
+    view.unmount();
+    recovery.enabled = false;
+    vi.useRealTimers();
+    write.mockRestore();
+  }
+});
+it("cancels a delayed recovery write after the session is reset", async () => {
+  const { browserRecords } = await import("../../../src/app/browserRecords");
+  const { sessionRuntime } = await import("../../../src/app/sessionRuntime");
+  const write = vi.spyOn(browserRecords, "write").mockResolvedValue(true);
+  recovery.enabled = true;
+  vi.useFakeTimers();
+  const data = { monitoring: { app_metrics_interval_sec: 3 } };
+  const view = renderHook(() => useEditableDraft("settings", data, empty));
+  try {
+    act(() =>
+      view.result.current.setValue({
+        monitoring: { app_metrics_interval_sec: 10 },
+      }),
+    );
+    sessionRuntime.reset();
+    await act(async () => vi.advanceTimersByTimeAsync(500));
+    view.unmount();
+    expect(write).not.toHaveBeenCalled();
+  } finally {
+    view.unmount();
+    recovery.enabled = false;
+    vi.useRealTimers();
+    write.mockRestore();
+  }
 });

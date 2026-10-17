@@ -6,7 +6,7 @@ import QueryStatus from "../components/QueryStatus";
 import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
 import SettingsGroups from "../components/SettingsGroups";
 import {
-  flattenSettings,
+  changedSettings,
   updateSetting,
   isSafeSettingPath,
 } from "../utils/settings";
@@ -77,14 +77,11 @@ const ServerConfig = () => {
   const handleSave = async (e) => {
     e.preventDefault();
     if (!selectedServer) return;
-    if (saving) return;
+    if (saving || draft.conflicted) return;
 
     try {
-      const flattened = flattenSettings(settings);
       await write.mutateAsync({
-        entries: Object.entries(flattened).filter(
-          ([key]) => key !== "config_schema_version",
-        ),
+        entries: changedSettings(settings, savedSnapshot),
       });
       markSaved(settings);
       addToast("Server settings saved successfully.", "success");
@@ -435,7 +432,9 @@ const ServerConfig = () => {
                 <button
                   type="submit"
                   className="action-button"
-                  disabled={loading || saving || !!loadError}
+                  disabled={
+                    loading || saving || !!loadError || draft.conflicted
+                  }
                 >
                   <Save
                     size={16}

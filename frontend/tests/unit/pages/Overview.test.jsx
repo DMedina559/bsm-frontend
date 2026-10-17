@@ -62,7 +62,7 @@ describe("Overview", () => {
     fireEvent.click(
       await screen.findByRole("button", { name: "Open Server2 monitor" }),
     );
-    expect(window.location.pathname).toBe("/monitor");
+    await waitFor(() => expect(window.location.pathname).toBe("/monitor"));
     expect(screen.getByLabelText("Selected server")).toHaveTextContent(
       "Server2",
     );
@@ -82,7 +82,9 @@ describe("Overview", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Properties", exact: true }),
     );
-    expect(window.location.pathname).toBe("/server-properties");
+    await waitFor(() =>
+      expect(window.location.pathname).toBe("/server-properties"),
+    );
     expect(screen.getByLabelText("Selected server")).toHaveTextContent(
       "Server2",
     );

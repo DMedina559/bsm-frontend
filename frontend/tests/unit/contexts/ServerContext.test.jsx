@@ -20,6 +20,10 @@ const state = vi.hoisted(() => ({
   subscribe: vi.fn(),
   unsubscribe: vi.fn(),
   connected: false,
+  confirm: vi.fn(async () => true),
+}));
+vi.mock("../../../src/contexts/DialogContext", () => ({
+  useDialog: () => ({ confirmAction: state.confirm }),
 }));
 vi.mock("../../../src/contexts/AuthContext", () => ({
   useAuth: () => ({ user: state.user }),
@@ -186,4 +190,35 @@ it("never renders another account's selection while its preferences restore", as
       .filter((snapshot) => snapshot.account === "other")
       .map((snapshot) => snapshot.selectedServer),
   ).not.toContain("First");
+});
+
+it("keeps the selected server when an unsaved-change confirmation is cancelled", async () => {
+  const { draftRegistry } = await import("../../../src/app/draftRegistry");
+  request.mockResolvedValue({
+    status: "success",
+    servers: [{ name: "First" }, { name: "Second" }],
+  });
+  createPreferenceStore().write(
+    getPreferenceIdentity(state.user),
+    "selectedServer",
+    "Second",
+  );
+  render(tree());
+  await waitFor(() =>
+    expect(screen.getByTestId("selection")).toHaveTextContent("Second"),
+  );
+  const release = draftRegistry.register();
+  try {
+    state.confirm.mockResolvedValueOnce(false);
+    fireEvent.click(screen.getByText("Select"));
+    await waitFor(() => expect(state.confirm).toHaveBeenCalledOnce());
+    expect(screen.getByTestId("selection")).toHaveTextContent("Second");
+    state.confirm.mockResolvedValueOnce(true);
+    fireEvent.click(screen.getByText("Select"));
+    await waitFor(() =>
+      expect(screen.getByTestId("selection")).toHaveTextContent("First"),
+    );
+  } finally {
+    release();
+  }
 });

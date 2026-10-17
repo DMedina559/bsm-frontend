@@ -6,6 +6,9 @@ async function backend(context, role = "admin") {
     installed: false,
     tasks: new Map(),
     accounts: [],
+    extraServers: [],
+    players: [],
+    writes: [],
   };
   await context.routeWebSocket(/\/ws$/, (socket) => {
     state.sockets.push(socket);
@@ -54,9 +57,10 @@ async function backend(context, role = "admin") {
             {
               name: `${identity}-server`,
               status: "stopped",
-              players: [],
+              players: state.players,
               version: "1.0",
             },
+            ...state.extraServers,
             ...(state.installed
               ? [{ name: "NewServer", status: "stopped", players: [] }]
               : []),
@@ -75,9 +79,25 @@ async function backend(context, role = "admin") {
         });
         data = { status: "accepted", task_id: "install-task" };
       } else if (path === "/api/downloads/list") data = { custom_zips: [] };
+      else if (path.endsWith("/settings/get"))
+        data = {
+          settings: {
+            server_info: { status: "STOPPED", installed_version: "1.0" },
+            settings: {
+              autostart: false,
+              autoupdate: false,
+              target_version: "LATEST",
+            },
+            custom: {},
+          },
+        };
+      else if (path.endsWith("/settings/set"))
+        state.writes.push({ path, body: JSON.parse(request.postData()) });
+      else if (request.method() === "POST" && path.includes("/api/server/"))
+        state.writes.push({ path, body: JSON.parse(request.postData()) });
       else if (path.endsWith("/properties/get"))
         data = {
-          properties: { "server-name": "NewServer" },
+          properties: { "server-name": decodeURIComponent(path.split("/")[3]) },
           raw_content: "server-name=NewServer",
         };
       else if (path.includes("themes")) data = { themes: [] };
@@ -587,7 +607,7 @@ test("shows a dated read-only cached fleet and never queues offline changes", as
     .poll(() =>
       page.evaluate(async () => {
         const db = await new Promise((resolve) => {
-          const request = indexedDB.open("bsm-view-state", 1);
+          const request = indexedDB.open("bsm-view-state", 2);
           request.onsuccess = () => resolve(request.result);
         });
         return new Promise((resolve) => {
@@ -651,7 +671,7 @@ test("restores opt-in drafts after reload without persisting secrets or writing 
     .poll(() =>
       page.evaluate(async () => {
         const db = await new Promise((resolve) => {
-          const request = indexedDB.open("bsm-view-state", 1);
+          const request = indexedDB.open("bsm-view-state", 2);
           request.onsuccess = () => resolve(request.result);
         });
         return new Promise((resolve) => {
@@ -734,4 +754,71 @@ test("administrators can inspect bounded frontend rejection diagnostics without 
   await expect(
     page.getByText("No observations recorded.", { exact: true }),
   ).toBeVisible();
+});
+
+test("server changes protect drafts, including changes requested by another tab", async ({
+  context,
+  page,
+}) => {
+  const state = await backend(context);
+  state.extraServers.push({ name: "beta", status: "stopped", players: [] });
+  await login(page, "alice");
+  await page.getByRole("link", { name: "Properties", exact: true }).click();
+  await page.locator("#server-name").fill("Unsaved alpha edit");
+  await page.locator("#server-select").selectOption("beta");
+  await expect(page.getByRole("dialog")).toContainText(
+    "Discard unsaved changes and switch servers?",
+  );
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(page.locator("#server-select")).toHaveValue("alice-server");
+  await expect(page.locator("#server-name")).toHaveValue("Unsaved alpha edit");
+  const second = await context.newPage();
+  await login(second, "alice");
+  await second.locator("#server-select").selectOption("beta");
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(page.locator("#server-name")).toHaveValue("Unsaved alpha edit");
+  await page.locator("#server-select").selectOption("beta");
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect(page.locator("#server-name")).toHaveValue("beta");
+  await second.close();
+});
+test("a cross-tab server switch closes a player action before it can target another server", async ({
+  context,
+  page,
+}) => {
+  const state = await backend(context);
+  state.extraServers.push({ name: "beta", status: "running", players: [] });
+  state.players.push({ name: "AlicePlayer", xuid: "12345" });
+  await login(page, "alice");
+  await page.getByRole("link", { name: "Online Players", exact: true }).click();
+  await page.getByRole("button", { name: "Ban", exact: true }).click();
+  await expect(page.getByRole("dialog")).toContainText("Ban AlicePlayer");
+  const second = await context.newPage();
+  await login(second, "alice");
+  await second.locator("#server-select").selectOption("beta");
+  await expect(page.locator("#server-select")).toHaveValue("beta");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  expect(state.writes).toEqual([]);
+  await second.close();
+});
+test("saving one server setting sends only that writable field", async ({
+  context,
+  page,
+}) => {
+  const state = await backend(context);
+  await login(page, "alice");
+  await page.locator('a[href="/app/server-config"]').click();
+  await page.getByLabel("target version", { exact: true }).fill("PREVIEW");
+  await page
+    .getByRole("button", { name: "Save Settings", exact: true })
+    .click();
+  await expect
+    .poll(() => state.writes)
+    .toEqual([
+      {
+        path: "/api/server/alice-server/settings/set",
+        body: { key: "settings.target_version", value: "PREVIEW" },
+      },
+    ]);
 });

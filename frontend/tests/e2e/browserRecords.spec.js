@@ -9,13 +9,38 @@ test("IndexedDB records enforce scope, expiry, schema and capacity with safe fai
 }) => {
   await page.goto("login");
   const result = await page.evaluate(async (source) => {
+    let clock = Date.now();
     const url = URL.createObjectURL(
       new Blob([source], { type: "text/javascript" }),
     );
+    // Existing version-one records survive the index-only database migration.
+    await new Promise((resolve, reject) => {
+      const request = indexedDB.open("bsm-view-state", 1);
+      request.onupgradeneeded = () =>
+        request.result.createObjectStore("records", { keyPath: "id" });
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const db = request.result;
+        const tx = db.transaction("records", "readwrite");
+        tx.objectStore("records").put({
+          id: JSON.stringify(["backend/account", "draft", "legacy"]),
+          scope: "backend/account",
+          kind: "draft",
+          version: 1,
+          savedAt: clock,
+          expiresAt: clock + 100,
+          value: { legacy: true },
+        });
+        tx.oncomplete = () => {
+          db.close();
+          resolve();
+        };
+      };
+    });
     const { createBrowserRecords } = await import(url);
     URL.revokeObjectURL(url);
-    let clock = Date.now();
     const records = createBrowserRecords({ indexedDB, now: () => clock });
+    const migrated = await records.read("backend/account", "draft", "legacy");
     await records.write(
       "backend/account",
       "draft",
@@ -43,7 +68,7 @@ test("IndexedDB records enforce scope, expiry, schema and capacity with safe fai
       );
     }
     const db = await new Promise((resolve) => {
-      const request = indexedDB.open("bsm-view-state", 1);
+      const request = indexedDB.open("bsm-view-state", 2);
       request.onsuccess = () => resolve(request.result);
     });
     const count = await new Promise((resolve) => {
@@ -88,6 +113,7 @@ test("IndexedDB records enforce scope, expiry, schema and capacity with safe fai
       100,
     );
     return {
+      migrated: migrated.value,
       own: own.value,
       other: !!other,
       otherBackend: !!otherBackend,
@@ -99,6 +125,7 @@ test("IndexedDB records enforce scope, expiry, schema and capacity with safe fai
     };
   }, source);
   expect(result).toEqual({
+    migrated: { legacy: true },
     own: { safe: true },
     other: false,
     otherBackend: false,

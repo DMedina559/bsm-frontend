@@ -8,7 +8,7 @@ import { useToast } from "../contexts/ToastContext";
 
 import { logger } from "../utils/logger";
 import { Users, X } from "lucide-react";
-const OnlinePlayers = () => {
+const OnlinePlayersWorkspace = () => {
   const { selectedServer, servers } = useServer();
   const { addToast } = useToast();
 
@@ -609,4 +609,7 @@ const OnlinePlayers = () => {
     </div>
   );
 };
-export default OnlinePlayers;
+export default function OnlinePlayers() {
+  const { selectedServer } = useServer();
+  return <OnlinePlayersWorkspace key={selectedServer ?? ""} />;
+}

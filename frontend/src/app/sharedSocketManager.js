@@ -10,6 +10,7 @@ export function createSharedSocketManager({
   locks = navigator.locks,
   Channel = window.BroadcastChannel,
   events = window,
+  visibility = document,
   now = Date.now,
   setInterval: interval = setInterval,
   clearInterval: clear = clearInterval,
@@ -275,28 +276,30 @@ export function createSharedSocketManager({
       const requestOwnership = () => {
         if (!current() || suspended) return;
         controller = new AbortController();
-        void locks
-          .request(name, { signal: controller.signal }, async () => {
-            if (!current() || suspended) return;
-            owner = id;
-            term = Math.max(now(), latestTerm + 1);
-            latestTerm = term;
-            // Install the release before notifying recovery observers.
-            const held = new Promise((resolve) => {
-              release = resolve;
-            });
-            setLeader(true);
-            runtime.diagnostics.record("coordination", {
-              reason: "owner-acquired",
-            });
-            post({ type: "state", state });
-            sync();
-            stopSocket = manager.start(identity);
-            publishPresence(true);
-            await held;
-          })
+        void Promise.resolve()
+          .then(() =>
+            locks.request(name, { signal: controller.signal }, async () => {
+              if (!current() || suspended) return;
+              owner = id;
+              term = Math.max(now(), latestTerm + 1);
+              latestTerm = term;
+              // Install the release before notifying recovery observers.
+              const held = new Promise((resolve) => {
+                release = resolve;
+              });
+              setLeader(true);
+              runtime.diagnostics.record("coordination", {
+                reason: "owner-acquired",
+              });
+              post({ type: "state", state });
+              sync();
+              stopSocket = manager.start(identity);
+              publishPresence(true);
+              await held;
+            }),
+          )
           .catch((error) => {
-            if (!current() || error?.name === "AbortError") return;
+            if (!current() || suspended || error?.name === "AbortError") return;
             // If the platform denies locks, keep a fully working independent tab.
             channel?.close();
             channel = null;
@@ -322,10 +325,16 @@ export function createSharedSocketManager({
           suspended = false;
           requestOwnership();
           publishPresence(true);
-        }
+        } else if (current()) publishPresence(true);
+      };
+      const visible = () => {
+        if (visibility.visibilityState !== "hidden") resume();
       };
       events.addEventListener("pagehide", suspend);
       events.addEventListener("pageshow", resume);
+      visibility.addEventListener("freeze", suspend);
+      visibility.addEventListener("resume", resume);
+      visibility.addEventListener("visibilitychange", visible);
       const timer = interval(() => {
         if (!current() || suspended) return;
         for (const [peer, value] of peers)
@@ -363,6 +372,9 @@ export function createSharedSocketManager({
         stopReset();
         events.removeEventListener("pagehide", suspend);
         events.removeEventListener("pageshow", resume);
+        visibility.removeEventListener("freeze", suspend);
+        visibility.removeEventListener("resume", resume);
+        visibility.removeEventListener("visibilitychange", visible);
         channel?.close();
         channel = null;
         publishPresence = () => {};

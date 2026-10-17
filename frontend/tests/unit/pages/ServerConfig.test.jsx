@@ -35,9 +35,7 @@ describe("ServerConfig", () => {
             },
             settings: {
               target_version: "LATEST",
-            },
-            auto_backup: {
-              enabled: true,
+              autostart: true,
             },
           },
         });
@@ -70,7 +68,7 @@ describe("ServerConfig", () => {
     // Toggle boolean
     // Find the select for enabled.
     // Label is "enabled".
-    const select = screen.getByLabelText("enabled");
+    const select = screen.getByLabelText("autostart");
     fireEvent.change(select, { target: { value: "false" } });
 
     const saveBtn = screen.getByText(/Save Settings/i).closest("button");
@@ -82,6 +80,11 @@ describe("ServerConfig", () => {
         expect.objectContaining({ method: "POST" }),
       );
     });
+    expect(
+      api.request.mock.calls
+        .filter(([url]) => url.endsWith("/settings/set"))
+        .map(([, options]) => options.body),
+    ).toEqual([{ key: "settings.autostart", value: false }]);
   });
 
   it("renders the delete button and handles deletion", async () => {
@@ -189,12 +192,24 @@ describe("ServerConfig", () => {
           dirty ? "local-edit" : "PREVIEW",
         ),
       );
-      if (dirty)
+      if (dirty) {
         await waitFor(() =>
           expect(
             screen.getByText(/saved settings changed while you were editing/i),
           ).toBeInTheDocument(),
         );
+        expect(
+          screen.getByText(/Save Settings/i).closest("button"),
+        ).toBeDisabled();
+        fireEvent.submit(
+          screen.getByLabelText("target version").closest("form"),
+        );
+        expect(
+          api.request.mock.calls.filter(([url]) =>
+            url.endsWith("/settings/set"),
+          ),
+        ).toHaveLength(0);
+      }
     },
   );
 });

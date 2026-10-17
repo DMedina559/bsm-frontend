@@ -95,12 +95,16 @@ function cluster() {
       }),
     };
     let heartbeat;
+    const events = new EventTarget();
+    const visibility = new EventTarget();
+    visibility.visibilityState = "visible";
     const manager = createSharedSocketManager({
       id,
       runtime,
       locks,
       Channel,
-      events: new EventTarget(),
+      events,
+      visibility,
       now: () => clock,
       setInterval: (callback) => {
         heartbeat = callback;
@@ -119,6 +123,8 @@ function cluster() {
       socket,
       incoming,
       callbacks,
+      events,
+      visibility,
       tick: () => heartbeat?.(),
     };
     tabs.push(result);
@@ -127,6 +133,9 @@ function cluster() {
   return {
     tab,
     frames,
+    elapse: (ms) => {
+      clock += ms;
+    },
     advance: (ms) => {
       clock += ms;
       tabs.forEach((tab) => tab.tick());
@@ -262,5 +271,53 @@ it.each([
     } finally {
       vi.unstubAllGlobals();
     }
+  },
+);
+
+it("rejoins expired subscriptions immediately when a suspended peer becomes visible", async () => {
+  const { tab, elapse } = cluster();
+  const first = tab("owner"),
+    second = tab("peer");
+  second.manager.subscribe("peer-only");
+  const stopFirst = first.manager.start("account");
+  await settle();
+  const stopSecond = second.manager.start("account");
+  await settle();
+  expect(first.socket.subscribe).toHaveBeenCalledWith("peer-only");
+  elapse(13_000);
+  first.tick();
+  await settle();
+  expect(first.socket.unsubscribe).toHaveBeenCalledWith("peer-only");
+  second.visibility.dispatchEvent(new Event("visibilitychange"));
+  await settle();
+  expect(
+    first.socket.subscribe.mock.calls.filter(
+      ([topic]) => topic === "peer-only",
+    ),
+  ).toHaveLength(2);
+  stopFirst();
+  stopSecond();
+});
+it.each(["pagehide", "freeze"])(
+  "releases ownership on %s and rejoins without a second socket",
+  async (event) => {
+    const { tab } = cluster();
+    const first = tab("one"),
+      second = tab("two");
+    const stopFirst = first.manager.start("account");
+    await settle();
+    const stopSecond = second.manager.start("account");
+    await settle();
+    const target = event === "freeze" ? first.visibility : first.events;
+    target.dispatchEvent(new Event(event));
+    await settle();
+    expect(second.socket.start).toHaveBeenCalledOnce();
+    target.dispatchEvent(new Event(event === "freeze" ? "resume" : "pageshow"));
+    await settle();
+    expect(first.socket.start).toHaveBeenCalledOnce();
+    stopSecond();
+    await settle();
+    expect(first.socket.start).toHaveBeenCalledTimes(2);
+    stopFirst();
   },
 );

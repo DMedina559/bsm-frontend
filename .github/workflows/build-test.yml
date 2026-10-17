@@ -94,7 +94,7 @@ jobs:
 
     - name: Install browser
       working-directory: ./frontend
-      run: npx playwright install --with-deps chromium
+      run: npx playwright install --with-deps chromium firefox webkit
 
     - name: Run full app browser tests
       working-directory: ./frontend
@@ -119,6 +119,25 @@ jobs:
             assert (static / asset).is_file(), f"Missing packaged frontend asset: {asset}"
         assert list((static / "assets").glob("*.js")), "Missing packaged JavaScript bundles"
         PYTHON
+
+    - name: Resolve supported backend
+      id: backend-source
+      run: node scripts/backend-source.mjs
+
+    - uses: actions/checkout@v7
+      with:
+        repository: ${{ steps.backend-source.outputs.repository }}
+        ref: ${{ steps.backend-source.outputs.ref }}
+        path: backend-smoke
+        persist-credentials: false
+
+    - name: Validate against the supported backend
+      run: |
+        python -m pip install './backend-smoke'
+        python -m pip install --force-reinstall --no-deps python/dist/*.whl
+        python -m bedrock_server_manager.web.contract --check packages/api-client/src/generated/openapi.json
+        npm run test:e2e:backend --workspace=bsm-frontend
+
 
     - name: Pack the same verified frontend for npm
       env:

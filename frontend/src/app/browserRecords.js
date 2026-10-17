@@ -9,7 +9,7 @@ export function createBrowserRecords({ indexedDB, now = Date.now } = {}) {
     if (!indexedDB) return Promise.resolve(null);
     if (!database)
       database = new Promise((resolve) => {
-        const request = indexedDB.open(DB_NAME, 1);
+        const request = indexedDB.open(DB_NAME, 2);
         let settled = false;
         const unavailable = () => {
           settled = true;
@@ -18,8 +18,12 @@ export function createBrowserRecords({ indexedDB, now = Date.now } = {}) {
         const timer = setTimeout(unavailable, 3000);
         request.onupgradeneeded = () => {
           const db = request.result;
-          if (!db.objectStoreNames.contains("records"))
-            db.createObjectStore("records", { keyPath: "id" });
+          const records = db.objectStoreNames.contains("records")
+            ? request.transaction.objectStore("records")
+            : db.createObjectStore("records", { keyPath: "id" });
+          for (const key of ["savedAt", "expiresAt"])
+            if (!records.indexNames.contains(key))
+              records.createIndex(key, key);
         };
         request.onsuccess = () => {
           clearTimeout(timer);
@@ -103,24 +107,32 @@ export function createBrowserRecords({ indexedDB, now = Date.now } = {}) {
       }
       return transact((store, done) => {
         store.put(record);
-        const request = store.getAll();
-        request.onsuccess = () => {
-          const records = request.result
-            .filter((record) => {
-              if (valid(record)) return true;
-              store.delete(record.id);
-              return false;
-            })
-            .sort((a, b) => b.savedAt - a.savedAt);
-          records
-            .slice(MAX_RECORDS)
-            .forEach((record) => store.delete(record.id));
-          done(true);
+        // Prune index keys without deserializing every cached payload.
+        const expired = store.index("expiresAt").openKeyCursor();
+        expired.onsuccess = () => {
+          const cursor = expired.result;
+          if (!cursor || cursor.key > now()) return;
+          store.delete(cursor.primaryKey);
+          cursor.continue();
+        };
+        const oldest = store.index("savedAt").openKeyCursor(null, "prev");
+        let count = 0;
+        oldest.onsuccess = () => {
+          const cursor = oldest.result;
+          if (!cursor) {
+            done(true);
+            return;
+          }
+          if (++count > MAX_RECORDS) store.delete(cursor.primaryKey);
+          cursor.continue();
         };
       });
     },
     remove(scope, kind, key) {
-      return transact((store) => store.delete(id(scope, kind, key)));
+      return transact((store, done) => {
+        store.delete(id(scope, kind, key));
+        done(true);
+      });
     },
     clear(scope, kind) {
       return transact((store, done) => {

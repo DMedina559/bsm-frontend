@@ -1,86 +1,82 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
+import { useWebSocket } from "../../contexts/WebSocketContext";
 import { ComponentRegistry } from "./componentRegistry";
+
+// Append streams consume every frame, independently of React's render batching.
+function usePluginStream(topic, receive) {
+  const { addMessageListener } = useWebSocket();
+  const receiver = useRef(receive);
+  useLayoutEffect(() => {
+    receiver.current = receive;
+  });
+  useEffect(() => {
+    if (!topic) return;
+    return addMessageListener((message) => {
+      if (message.topic === topic) receiver.current(message);
+    });
+  }, [topic, addMessageListener]);
+}
+const EMPTY = [];
 export const ChartWrapper = ({
-  latestSocketMessage,
-  data: initialData,
+  socketTopic,
+  data: initialData = EMPTY,
   updateMode = "append",
   maxPoints = 20,
   ...props
 }) => {
-  const [data, setData] = useState(initialData || []);
+  const limit =
+    Number.isSafeInteger(maxPoints) && maxPoints > 0 ? maxPoints : 20;
+  const [data, setData] = useState(() => initialData.slice(-limit));
   useEffect(() => {
-    if (initialData !== undefined && !latestSocketMessage) {
-      setData(initialData);
-    }
-  }, [initialData, latestSocketMessage]);
-  useEffect(() => {
-    if (latestSocketMessage && latestSocketMessage.data !== undefined) {
-      const incoming = latestSocketMessage.data;
-      if (
-        updateMode === "replace" ||
-        (Array.isArray(incoming) && updateMode !== "append")
-      ) {
-        setData(Array.isArray(incoming) ? incoming : [incoming]);
-      } else {
-        if (Array.isArray(incoming)) {
-          setData(incoming);
-        } else {
-          setData((prev) => {
-            const updated = [...prev, incoming];
-            if (updated.length > maxPoints) {
-              return updated.slice(updated.length - maxPoints);
-            }
-            return updated;
-          });
-        }
-      }
-    }
-  }, [latestSocketMessage, updateMode, maxPoints]);
+    setData(initialData.slice(-limit));
+  }, [initialData, limit]);
+  usePluginStream(socketTopic, (message) => {
+    if (message.data === undefined) return;
+    const incoming = message.data;
+    setData((previous) => {
+      const next = Array.isArray(incoming)
+        ? incoming
+        : updateMode === "replace"
+          ? [incoming]
+          : [...previous, incoming];
+      return next.slice(-limit);
+    });
+  });
   return <ComponentRegistry.Chart data={data} {...props} />;
 };
 export const LogViewerWrapper = ({
-  latestSocketMessage,
-  lines: initialLines,
+  socketTopic,
+  lines: initialLines = EMPTY,
   ...props
 }) => {
-  const [lines, setLines] = useState(initialLines || []);
+  const [lines, setLines] = useState(() => initialLines.slice(-1000));
   useEffect(() => {
-    if (latestSocketMessage && latestSocketMessage.data) {
-      const newContent = latestSocketMessage.data;
-      const newLines =
-        typeof newContent === "string" ? newContent.split("\n") : [newContent];
-      if (newLines.length > 0 && newLines[newLines.length - 1] === "") {
-        newLines.pop();
-      }
-      setLines((prev) => [...prev, ...newLines].slice(-1000));
-    }
-  }, [latestSocketMessage]);
+    setLines(initialLines.slice(-1000));
+  }, [initialLines]);
+  usePluginStream(socketTopic, (message) => {
+    if (message.data === undefined) return;
+    const incoming =
+      typeof message.data === "string"
+        ? message.data.split("\n")
+        : [message.data];
+    if (incoming.at(-1) === "") incoming.pop();
+    setLines((previous) => [...previous, ...incoming].slice(-1000));
+  });
   return <ComponentRegistry.LogViewer lines={lines} {...props} />;
 };
 export const StatCardWrapper = ({
-  latestSocketMessage,
+  socketTopic,
   value: initialValue,
   dataKey,
   ...props
 }) => {
   const [value, setValue] = useState(initialValue);
-  useEffect(() => {
-    if (latestSocketMessage && latestSocketMessage.data && dataKey) {
-      const keys = dataKey.split(".");
-      let current = latestSocketMessage.data;
-      for (const key of keys) {
-        if (current && current[key] !== undefined) {
-          current = current[key];
-        } else {
-          current = undefined;
-          break;
-        }
-      }
-      if (current !== undefined) {
-        setValue(current);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [latestSocketMessage]);
+  useEffect(() => setValue(initialValue), [initialValue, dataKey]);
+  usePluginStream(socketTopic, (message) => {
+    if (!dataKey) return;
+    let next = message.data;
+    for (const key of dataKey.split(".")) next = next?.[key];
+    if (next !== undefined) setValue(next);
+  });
   return <ComponentRegistry.StatCard value={value} {...props} />;
 };

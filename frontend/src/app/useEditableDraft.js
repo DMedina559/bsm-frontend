@@ -30,6 +30,12 @@ export function useEditableDraft(resource, data, empty) {
   const [recoveryEnabled] = usePreference("draftRecovery", false);
   const recoveryKey = JSON.stringify([scope, resource]);
   const [recovery, setRecovery] = useState(null);
+  const [persistence, setPersistence] = useState(null);
+  const pendingPersistence = useRef(null);
+  const persistenceScope = useRef({ scope, enabled: recoveryEnabled });
+  useLayoutEffect(() => {
+    persistenceScope.current = { scope, enabled: recoveryEnabled };
+  }, [scope, recoveryEnabled]);
   const editedRecovery = useRef(null);
   const { generation, signal } = sessionRuntime.capture();
   const identity = `${backend}:${user?.id ?? user?.username ?? ""}:${sessionGeneration ?? 0}:${resource}`;
@@ -60,6 +66,15 @@ export function useEditableDraft(resource, data, empty) {
       sessionRuntime.isCurrent({ generation, signal }) &&
       getBackendIdentity() === backend,
     [identity, generation, signal, backend],
+  );
+  // Flush the latest edit when leaving a resource; typing only resets its timer.
+  useEffect(
+    () => () => {
+      const job = pendingPersistence.current;
+      pendingPersistence.current = null;
+      job?.();
+    },
+    [recoveryKey],
   );
   useEffect(() => {
     setState((previous) => {
@@ -161,16 +176,61 @@ export function useEditableDraft(resource, data, empty) {
       JSON.parse(current.baseline),
       current.value,
     );
-    if (dirty && patch.length)
-      void browserRecords.write(
-        scope,
-        "draft",
-        resource,
-        patch,
-        7 * 24 * 60 * 60 * 1000,
-      );
-    else void browserRecords.remove(scope, "draft", resource);
-  }, [scope, resource, recoveryEnabled, current, dirty, isCurrent]);
+    let active = true;
+    const persist = () => {
+      if (pendingPersistence.current === persist)
+        pendingPersistence.current = null;
+      if (
+        !persistenceScope.current.enabled ||
+        persistenceScope.current.scope !== scope ||
+        !sessionRuntime.isCurrent({ generation, signal }) ||
+        getBackendIdentity() !== backend
+      )
+        return;
+      const stored = dirty && patch.length;
+      const saving = stored
+        ? browserRecords.write(
+            scope,
+            "draft",
+            resource,
+            patch,
+            7 * 24 * 60 * 60 * 1000,
+          )
+        : browserRecords.remove(scope, "draft", resource);
+      void saving.then((success) => {
+        if (active && isCurrent())
+          setPersistence({
+            key: recoveryKey,
+            status: !success
+              ? "unavailable"
+              : stored
+                ? "saved"
+                : dirty
+                  ? "excluded"
+                  : "cleared",
+          });
+      });
+    };
+    pendingPersistence.current = persist;
+    setPersistence({ key: recoveryKey, status: "pending" });
+    const timer = dirty && patch.length ? setTimeout(persist, 400) : null;
+    if (timer === null) persist();
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [
+    scope,
+    resource,
+    recoveryEnabled,
+    current,
+    dirty,
+    isCurrent,
+    generation,
+    signal,
+    backend,
+    recoveryKey,
+  ]);
   const recoverable =
     recoveryEnabled &&
     recovery?.key === recoveryKey &&
@@ -223,6 +283,10 @@ export function useEditableDraft(resource, data, empty) {
     markSaved,
     dirty,
     conflicted,
+    persistenceStatus:
+      recoveryEnabled && persistence?.key === recoveryKey
+        ? persistence.status
+        : null,
     recoverable,
     canRestore: data !== undefined,
     restoreRecovery,

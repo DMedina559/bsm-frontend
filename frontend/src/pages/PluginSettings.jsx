@@ -30,6 +30,7 @@ function PluginEditor({ name }) {
   );
   async function save(event) {
     event.preventDefault();
+    if (draft.conflicted || write.isPending) return;
     try {
       const submitted = draft.value;
       await write.mutateAsync(submitted);
@@ -87,7 +88,7 @@ function PluginEditor({ name }) {
             <button
               className="action-button"
               type="submit"
-              disabled={!draft.dirty || write.isPending}
+              disabled={!draft.dirty || write.isPending || draft.conflicted}
             >
               <Save size={16} />
               {write.isPending ? "Saving…" : "Save Changes"}

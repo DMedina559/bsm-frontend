@@ -63,9 +63,8 @@ const Overview = () => {
     );
 
   const handleServerClick = useStableCallback(
-    (serverName, path = "/monitor") => {
-      setSelectedServer(serverName);
-      navigate(path);
+    async (serverName, path = "/monitor") => {
+      if ((await setSelectedServer(serverName)) !== false) navigate(path);
     },
   );
   const handleRefresh = useStableCallback(async () => {
