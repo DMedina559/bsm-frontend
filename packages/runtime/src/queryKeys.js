@@ -21,6 +21,7 @@ export const queryKeys = Object.freeze({
   content: (kind) => (kind === undefined ? ["content"] : ["content", kind]),
   downloads: () => ["downloads"],
   plugins: () => ["plugins"],
+  pluginPages: () => ["plugins", "pages"],
   pluginSettings: (name) =>
     name ? ["plugin-settings", name] : ["plugin-settings"],
   plugin: (name) => ["plugins", name],
@@ -36,6 +37,15 @@ export const queryKeys = Object.freeze({
 });
 /** Fleet invalidation must not refetch every server's settings and backups. */
 export function resourceInvalidation(queryKey) {
+  // An absent event target is a wildcard within this resource family only.
+  if (queryKey[1] === null && ["servers", "monitor"].includes(queryKey[0]))
+    return {
+      queryKey: [queryKey[0]],
+      predicate: (query) =>
+        queryKey.every(
+          (part, index) => part === null || part === query.queryKey[index],
+        ),
+    };
   return queryKey.length === 1 && queryKey[0] === "servers"
     ? {
         queryKey,

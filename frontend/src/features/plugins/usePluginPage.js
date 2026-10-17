@@ -58,6 +58,7 @@ export function usePluginPage({ url, parameters, server, inline }) {
   });
   return {
     ...query,
+    queryKey: key,
     schema: inline ?? query.data,
     canRefresh: Boolean(endpoint) && !inline,
     loading: !inline && Boolean(endpoint) && query.isPending,

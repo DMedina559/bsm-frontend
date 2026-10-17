@@ -15,6 +15,26 @@ export function createStateReconcilerModule({
       "cancelled",
       "canceled",
     ].includes(String(status).toLowerCase());
+  const validTaskSnapshot = (data) => {
+    const id = data?.task_id ?? data?.id;
+    return Boolean(
+      data &&
+      typeof data === "object" &&
+      !Array.isArray(data) &&
+      ((typeof id === "string" && id.trim()) ||
+        (typeof id === "number" && Number.isSafeInteger(id))) &&
+      typeof data.status === "string" &&
+      (terminalTaskStatus(data.status) ||
+        ["pending", "queued", "running", "cancelling", "unknown"].includes(
+          data.status,
+        )) &&
+      ((data.revision == null && data.epoch == null) ||
+        (Number.isSafeInteger(data.revision) &&
+          data.revision > 0 &&
+          typeof data.epoch === "string" &&
+          data.epoch.trim())),
+    );
+  };
   const taskRank = (status) =>
     ({ pending: 0, queued: 0, running: 1, cancelling: 2 })[status];
 
@@ -270,13 +290,11 @@ export function createStateReconcilerModule({
       task(data, options) {
         const id = data?.task_id ?? data?.id;
         if (
-          id == null ||
-          id === "" ||
-          typeof data.status !== "string" ||
-          (!terminalTaskStatus(data.status) &&
-            !["pending", "queued", "running", "cancelling", "unknown"].includes(
-              data.status,
-            ))
+          !validTaskSnapshot({
+            ...data,
+            revision: options?.revision ?? data?.revision,
+            epoch: options?.epoch ?? data?.epoch,
+          })
         )
           return { accepted: false };
         return accept(["task", String(id)], data, {
@@ -300,5 +318,10 @@ export function createStateReconcilerModule({
   const stateReconciler = createStateReconciler();
   sessionRuntime.onReset(() => stateReconciler.clear());
 
-  return { terminalTaskStatus, createStateReconciler, stateReconciler };
+  return {
+    terminalTaskStatus,
+    validTaskSnapshot,
+    createStateReconciler,
+    stateReconciler,
+  };
 }

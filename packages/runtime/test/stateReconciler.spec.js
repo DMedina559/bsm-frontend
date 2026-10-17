@@ -1,7 +1,10 @@
 import { beforeEach, expect, it, vi } from "vitest";
-import { createStateReconciler } from "../../../src/app/stateReconciler";
+import { createFixture } from "./fixture.js";
+let fixture;
+const createStateReconciler = () => fixture.runtime.createStateReconciler();
 let state;
 beforeEach(() => {
+  fixture = createFixture();
   state = createStateReconciler();
 });
 it("keeps the later HTTP request when overlapping responses arrive backwards", () => {
@@ -87,17 +90,11 @@ it("prevents task regression and malformed frames poisoning revisions", () => {
 });
 it("rejects responses and socket frames after changing the configured backend", () => {
   const ticket = state.capture();
-  const previous = localStorage.getItem("api_base_url");
-  try {
-    localStorage.setItem("api_base_url", "https://other.example/ingress");
-    expect(() =>
-      state.accept(["settings"], {}, { source: "http", ticket }),
-    ).toThrow("Session changed");
-    expect(state.accept(["settings"], {}, { ticket }).accepted).toBe(false);
-  } finally {
-    if (previous === null) localStorage.removeItem("api_base_url");
-    else localStorage.setItem("api_base_url", previous);
-  }
+  fixture.setBackend("https://other.example/ingress");
+  expect(() =>
+    state.accept(["settings"], {}, { source: "http", ticket }),
+  ).toThrow("Session changed");
+  expect(state.accept(["settings"], {}, { ticket }).accepted).toBe(false);
 });
 it("accepts lower revisions after a restart and rejects retired HTTP and socket work", () => {
   const firstSocket = state.capture();
@@ -204,9 +201,7 @@ it("preserves resource watermarks and terminal tasks through query cache churn",
 });
 it("continues epoch cleanup after a listener throws", async () => {
   const engine = createStateReconciler();
-  const error = vi
-    .spyOn((await import("../../../src/utils/logger")).logger, "error")
-    .mockImplementation(() => {});
+  const error = vi.spyOn(fixture.logger, "error").mockImplementation(() => {});
   const cleanup = vi.fn();
   engine.onEpochChange(() => {
     throw new Error("broken cleanup");
@@ -318,4 +313,13 @@ it("bounds terminal payloads without evicting task ordering metadata", () => {
     ).accepted,
   ).toBe(true);
   expect(state.read(["task", "2"]).value.result).toBeNull();
+});
+
+it("validates task metadata after combining snapshot and event-envelope fields", () => {
+  expect(
+    state.task(
+      { id: "task", status: "running", revision: 1 },
+      { epoch: "instance" },
+    ).accepted,
+  ).toBe(true);
 });

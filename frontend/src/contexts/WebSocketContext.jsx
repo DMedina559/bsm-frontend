@@ -1,8 +1,8 @@
 import { getPreferenceIdentity } from "../app/backendIdentity";
 import { coreEventTopics } from "../app/coreEvents";
-import { queryClient } from "../app/queryClient";
+import { startResourceRecovery } from "../app/resourceRecovery";
 import { application } from "../app/application";
-import "../api/operations";
+import { callOperation } from "../api/operations";
 import { reconcileSocketMessage } from "../app/applicationState";
 import { operationCoordinator } from "../app/operationCoordinator";
 import React, {
@@ -54,6 +54,7 @@ export const WebSocketProvider = ({ children }) => {
   useEffect(() => {
     setIsFallback(false);
     const owner = application.start({
+      callOperation,
       identity: resourceIdentity,
       generation: sessionGeneration ?? 0,
       manager,
@@ -66,16 +67,16 @@ export const WebSocketProvider = ({ children }) => {
     coreEventTopics.forEach(subscribe);
     return () => coreEventTopics.forEach(unsubscribe);
   }, [identity, subscribe, unsubscribe]);
-  useEffect(() => {
-    if (identity !== null && isConnected) void queryClient.invalidateQueries();
-  }, [identity, isConnected]);
-  useEffect(() => {
-    if (identity === null || !isFallback) return;
-    const timer = setInterval(() => {
-      void queryClient.invalidateQueries({ refetchType: "active" });
-    }, 60_000);
-    return () => clearInterval(timer);
-  }, [identity, isFallback]);
+  useEffect(
+    () =>
+      startResourceRecovery({
+        identity: resourceIdentity,
+        generation: sessionGeneration ?? 0,
+        connected: isConnected,
+        fallback: isFallback,
+      }),
+    [resourceIdentity, sessionGeneration, isConnected, isFallback],
+  );
   // Backend task topics replay the latest task snapshot upon subscription.
   // Keep subscriptions tied to registered operations, including after reconnect.
   useEffect(() => {

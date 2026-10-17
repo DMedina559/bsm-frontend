@@ -10,7 +10,7 @@ export const lifecycleEvents = [
   "after_server_install",
   "after_server_players_change",
 ];
-const server = (name, key) => (name ? [key(name)] : []);
+const server = (name, key) => [key(name || null)];
 export const mutationResources = {
   after_setting_update: () => [
     q.settings(),
@@ -26,18 +26,19 @@ export const mutationResources = {
     ...server(name, q.serverProperties),
     q.servers(),
   ],
-  after_allowlist_change: (name) =>
-    name ? [q.access([name, "allowlist"])] : [],
-  after_permission_change: (name) =>
-    name ? [q.access([name, "permissions"])] : [],
-  after_add_server_ban: (name) => (name ? [q.access([name, "bans"])] : []),
-  after_remove_server_ban: (name) => (name ? [q.access([name, "bans"])] : []),
+  after_allowlist_change: (name) => [q.access([name || null, "allowlist"])],
+  after_permission_change: (name) => [q.access([name || null, "permissions"])],
+  after_add_server_ban: (name) => [q.access([name || null, "bans"])],
+  after_remove_server_ban: (name) => [q.access([name || null, "bans"])],
   after_players_add: () => [q.globalPlayers()],
   after_player_db_scan: () => [q.globalPlayers()],
   after_backup: (name) => server(name, q.serverBackups),
   after_prune_backups: (name) => server(name, q.serverBackups),
-  after_restore: (name) =>
-    name ? [q.server(name), q.serverMonitor(name), q.servers()] : [],
+  after_restore: (name) => [
+    q.server(name || null),
+    q.serverMonitor(name || null),
+    q.servers(),
+  ],
   after_world_export: () => [q.content()],
   after_world_import: (name) => [
     ...server(name, q.serverProperties),

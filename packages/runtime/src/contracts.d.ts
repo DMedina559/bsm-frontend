@@ -163,7 +163,7 @@ export interface OperationCoordinator {
     message: SocketMessage,
     options?: ReconcileOptions<TaskSnapshot> & { synchronize?: boolean },
   ): boolean;
-  acknowledge(id: string | number): void;
+  acknowledge(id: string | number): boolean;
   remove(id: string | number): boolean;
   clear(): void;
 }

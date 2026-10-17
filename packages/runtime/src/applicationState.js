@@ -8,8 +8,18 @@ export function createApplicationStateModule({
   queryClient,
   queryKeys,
   stateReconciler,
+  validTaskSnapshot,
   operationCoordinator,
   resourceInvalidation,
+  refreshResources = (keys, afterCancel = () => {}) =>
+    Promise.all(
+      keys.map(async (key) => {
+        const filter = resourceInvalidation(key);
+        await queryClient.cancelQueries(filter);
+        afterCancel();
+        await queryClient.invalidateQueries(filter);
+      }),
+    ),
 }) {
   stateReconciler.onEpochChange(() => {
     operationCoordinator.clear();
@@ -36,6 +46,21 @@ export function createApplicationStateModule({
     }).value;
   }
   function reconcileServerSnapshot(data, ticket) {
+    if (
+      !Array.isArray(data?.servers) ||
+      !data.servers.every(
+        (server) =>
+          typeof server?.name === "string" &&
+          server.name.length > 0 &&
+          (!Array.isArray(server.players) ||
+            server.players.every(
+              (player) =>
+                typeof player?.name === "string" &&
+                typeof player?.xuid === "string",
+            )),
+      )
+    )
+      throw new Error("Invalid fleet response");
     const selected = stateReconciler.accept(["fleet"], data, {
       source: "http",
       ticket,
@@ -105,6 +130,14 @@ export function createApplicationStateModule({
       return reconcileMetricsSnapshot(data, { source: "http", ticket }).value;
     if (resource === "monitor")
       return reconcileMonitorSnapshot(data, target, ticket);
+    if (
+      resource === "tasks" &&
+      (!Array.isArray(data) || !data.every(validTaskSnapshot))
+    ) {
+      const error = new Error("Invalid task list response");
+      error.name = "InvalidResponseError";
+      throw error;
+    }
     const selected = stateReconciler.accept(["query", key], data, {
       source: "http",
       ticket,
@@ -146,26 +179,19 @@ export function createApplicationStateModule({
   };
   const refreshFleet = () => {
     const ticket = captureStateRequest();
-    void queryClient
-      .cancelQueries(resourceInvalidation(queryKeys.servers()))
-      .then(() => {
-        if (!stateReconciler.current(ticket)) return;
-        // Cancellation reverts React Query to its pre-request snapshot. Restore
-        // accepted socket patches before asking for a fresh authoritative read.
-        queryClient.setQueriesData(
-          resourceInvalidation(queryKeys.servers()),
-          (data) =>
-            Array.isArray(data?.servers)
-              ? rebaseFleet(
-                  data,
-                  stateReconciler.read(["fleet"])?.requestClock ?? 0,
-                )
-              : data,
-        );
-        return queryClient.invalidateQueries(
-          resourceInvalidation(queryKeys.servers()),
-        );
-      });
+    void refreshResources([queryKeys.servers()], () => {
+      if (!stateReconciler.current(ticket)) return;
+      queryClient.setQueriesData(
+        resourceInvalidation(queryKeys.servers()),
+        (data) =>
+          Array.isArray(data?.servers)
+            ? rebaseFleet(
+                data,
+                stateReconciler.read(["fleet"])?.requestClock ?? 0,
+              )
+            : data,
+      );
+    });
   };
 
   /**
@@ -365,13 +391,9 @@ export function createApplicationStateModule({
           message.topic,
         )
       )
-        void queryClient.invalidateQueries({
-          queryKey: queryKeys.server(name),
-        });
+        void refreshResources([queryKeys.server(name)]);
       if (message.topic !== "event:after_delete_server_data")
-        void queryClient.invalidateQueries({
-          queryKey: queryKeys.serverMonitor(name),
-        });
+        void refreshResources([queryKeys.serverMonitor(name)]);
     }
     if (
       [
@@ -380,10 +402,8 @@ export function createApplicationStateModule({
         "event:after_delete_server_data",
       ].includes(message.topic)
     )
-      void queryClient.invalidateQueries(
-        resourceInvalidation(queryKeys.pluginSettings()),
-      );
-    void queryClient.invalidateQueries(resourceInvalidation(queryKeys.audit()));
+      void refreshResources([queryKeys.pluginSettings()]);
+    void refreshResources([queryKeys.audit()]);
     refreshFleet();
     return true;
   }
@@ -436,7 +456,12 @@ export function createApplicationStateModule({
         : null;
       if (resources) {
         const payload = message.data;
-        if (!payload || payload.result?.status !== "success") return true;
+        if (payload?.result?.status && payload.result.status !== "success")
+          return true;
+        if (!payload || payload.result?.status !== "success") {
+          void refreshResources(resources(payload?.server_name));
+          return false;
+        }
         const name = payload.server_name ?? payload.result.server_name;
         const accepted = stateReconciler.accept(
           ["event", message.topic, name ?? ""],
@@ -450,13 +475,7 @@ export function createApplicationStateModule({
         );
         if (!accepted.accepted) return false;
         const keys = [...resources(name), queryKeys.audit()];
-        for (const key of keys) {
-          const filter = resourceInvalidation(key);
-          void queryClient.cancelQueries(filter).then(() => {
-            if (stateReconciler.current(ticket))
-              return queryClient.invalidateQueries(filter);
-          });
-        }
+        void refreshResources(keys);
       }
     }
     return true;

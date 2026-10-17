@@ -1,4 +1,5 @@
-import { startOperationRecovery } from "../../../src/app/operationRecovery";
+import { application } from "../../../src/app/application";
+import { callOperation } from "../../../src/api/operations";
 import { operationCoordinator } from "../../../src/app/operationCoordinator";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../../../src/app/queryClient";
@@ -193,10 +194,26 @@ describe("ServerInstall", () => {
       </QueryClientProvider>,
     );
     await submit();
-    const stop = startOperationRecovery("admin");
+    const { stop } = application.start({ identity: "admin", callOperation });
     await waitFor(() => expect(mocks.navigate).toHaveBeenCalledTimes(1));
     stop();
     expect(mocks.refreshServers).toHaveBeenCalledTimes(1);
+  });
+  it("resumes completion after a temporary unavailable task snapshot", async () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ServerInstall />
+      </QueryClientProvider>,
+    );
+    await submit();
+    act(() =>
+      operationCoordinator.markUnavailable("install-task", {
+        message: "Unavailable",
+      }),
+    );
+    expect(mocks.navigate).not.toHaveBeenCalled();
+    emit("completed", { status: "success" });
+    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledTimes(1));
   });
   it("handles duplicate completion frames once", async () => {
     render(

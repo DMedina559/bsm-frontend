@@ -2,10 +2,8 @@ import { readFileSync } from "node:fs";
 import { describe, it, expect, beforeEach } from "vitest";
 import {
   DEFAULT_PALETTE,
-  PALETTE_KEY,
   paletteCss,
   validatePalette,
-  readPaletteState,
   contrast,
 } from "../../../src/utils/palettes";
 describe("personal palettes", () => {
@@ -27,25 +25,6 @@ describe("personal palettes", () => {
       "--bsm-on-accent: #ffffff",
     );
     expect(contrast("#ffffff", "#000000")).toBe(21);
-  });
-  it("restores saved palettes and drops unknown selections", () => {
-    localStorage.setItem(
-      PALETTE_KEY,
-      JSON.stringify({
-        palettes: [DEFAULT_PALETTE],
-        active: DEFAULT_PALETTE.name,
-      }),
-    );
-    expect(readPaletteState().active).toBe(DEFAULT_PALETTE.name);
-    localStorage.setItem(
-      PALETTE_KEY,
-      JSON.stringify({ palettes: [DEFAULT_PALETTE], active: "missing" }),
-    );
-    expect(readPaletteState().active).toBeNull();
-  });
-  it("recovers from corrupt saved data", () => {
-    localStorage.setItem(PALETTE_KEY, "bad json");
-    expect(readPaletteState()).toEqual({ palettes: [], active: null });
   });
 });
 

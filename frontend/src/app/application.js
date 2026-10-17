@@ -7,17 +7,20 @@ import { logger } from "../utils/logger";
 /** One owner for each application's runtime, cache and operation adapter. */
 export function createFrontendApplication(options) {
   /** @type {import("@bedrock-server-manager/runtime").CallOperation} */
-  let callOperation = () => {
-    throw new Error("The API adapter has not been configured.");
-  };
+  let callOperation;
   const runtime = createApplicationRuntime({
     ...options,
     callOperation: (...args) => callOperation(...args),
   });
   return {
     ...runtime,
-    configureOperationCaller(caller) {
+    start({ callOperation: caller, ...owner }) {
+      if (typeof caller !== "function")
+        throw new Error(
+          "An operation caller is required before application startup.",
+        );
       callOperation = caller;
+      return runtime.start(owner);
     },
   };
 }

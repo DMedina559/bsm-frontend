@@ -151,7 +151,7 @@ it("owns core subscriptions and refreshes resources on authenticated reconnect",
     .filter((frame) => frame.action === "subscribe")
     .map((frame) => frame.topic);
   expect(subscriptions).toEqual(expect.arrayContaining(coreEventTopics));
-  expect(invalidate).toHaveBeenCalledWith();
+  expect(invalidate).not.toHaveBeenCalledWith();
   unmount();
   invalidate.mockRestore();
 });

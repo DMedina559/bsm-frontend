@@ -1,5 +1,13 @@
+import { getBackendIdentity } from "./backendIdentity";
+import { sessionRuntime } from "./sessionRuntime";
 import { draftRegistry } from "./draftRegistry";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useDialog } from "../contexts/DialogContext";
 const serialize = (value) => JSON.stringify(value);
@@ -7,7 +15,9 @@ const serialize = (value) => JSON.stringify(value);
 export function useEditableDraft(resource, data, empty) {
   const { user, sessionGeneration } = useAuth();
   const { confirmAction } = useDialog();
-  const identity = `${user?.id ?? user?.username ?? ""}:${sessionGeneration ?? 0}:${resource}`;
+  const backend = getBackendIdentity();
+  const { generation, signal } = sessionRuntime.capture();
+  const identity = `${backend}:${user?.id ?? user?.username ?? ""}:${sessionGeneration ?? 0}:${resource}`;
   const [state, setState] = useState(() => ({
     identity,
     value: data ?? empty,
@@ -22,9 +32,17 @@ export function useEditableDraft(resource, data, empty) {
           baseline: data === undefined ? null : serialize(data),
         };
   const identityRef = useRef(identity);
-  useEffect(() => {
+  useLayoutEffect(() => {
     identityRef.current = identity;
   }, [identity]);
+  const isCurrent = useCallback(
+    () =>
+      identityRef.current === identity &&
+      !signal.aborted &&
+      sessionRuntime.isCurrent({ generation, signal }) &&
+      getBackendIdentity() === backend,
+    [identity, generation, signal, backend],
+  );
   useEffect(() => {
     setState((previous) => {
       if (previous.identity !== identity)
@@ -43,7 +61,8 @@ export function useEditableDraft(resource, data, empty) {
         data !== undefined &&
         serialize(data) !== previous.pendingBackend &&
         (previous.baseline === null ||
-          serialize(previous.value) === previous.baseline)
+          (serialize(data) !== previous.baseline &&
+            serialize(previous.value) === previous.baseline))
       )
         return { identity, value: data, baseline: serialize(data) };
       return previous;
@@ -64,7 +83,7 @@ export function useEditableDraft(resource, data, empty) {
   );
   const markSaved = useCallback(
     (submitted) => {
-      if (identityRef.current !== identity) return;
+      if (!isCurrent()) return;
       setState((previous) =>
         previous.identity === identity
           ? {
@@ -75,7 +94,7 @@ export function useEditableDraft(resource, data, empty) {
           : previous,
       );
     },
-    [identity, data],
+    [identity, data, isCurrent],
   );
   const dirty =
     current.baseline !== null && serialize(current.value) !== current.baseline;
@@ -92,7 +111,7 @@ export function useEditableDraft(resource, data, empty) {
       return false;
     const before = serialize(current.value);
     const result = await refetch();
-    if (identityRef.current !== identity || result.error) return false;
+    if (!isCurrent() || result.error) return false;
     setState((previous) =>
       previous.identity === identity && serialize(previous.value) === before
         ? { identity, value: result.data, baseline: serialize(result.data) }

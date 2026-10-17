@@ -9,6 +9,7 @@ export type {
   EpochChange,
 } from "./contracts.js";
 export interface StateModule {
+  validTaskSnapshot(data: unknown): boolean;
   terminalTaskStatus(status: unknown): boolean;
   createStateReconciler(): StateReconciler;
   stateReconciler: StateReconciler;

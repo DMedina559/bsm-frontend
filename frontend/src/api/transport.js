@@ -3,7 +3,6 @@ export { ApiError } from "@bedrock-server-manager/api-client/transport";
 import { ApiError } from "@bedrock-server-manager/api-client/transport";
 import { stateReconciler } from "../app/stateReconciler";
 import { getBackendIdentity } from "../app/backendIdentity";
-import { operationCoordinator } from "../app/operationCoordinator";
 /**
  * @fileoverview Core API client for making HTTP requests.
  * Handles fetch logic, headers, authentication, and response parsing.
@@ -45,18 +44,6 @@ export const { request } = createHttpTransport({
         throw new DOMException("Session changed", "AbortError");
       signal.throwIfAborted();
     };
-  },
-  onResponse: ({ url, body, method, data }) => {
-    if (method !== "GET" && data?.task_id) {
-      const server = url.match(/\/api\/server\/([^/]+)/)?.[1];
-      operationCoordinator.register({
-        id: data.task_id,
-        kind: url.split("/").filter(Boolean).slice(-2).join(":"),
-        serverName:
-          body?.server_name ?? (server ? decodeURIComponent(server) : null),
-        status: "pending",
-      });
-    }
   },
 });
 /** Binary responses share authentication, cancellation, timeouts and API errors. */

@@ -20,11 +20,10 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useAuth } from "./AuthContext";
 import { queryKeys } from "../app/queryKeys";
-import { createPreferenceStore } from "../app/preferenceStore";
+import { preferenceStore as preferences } from "../app/preferenceStore";
 import { logger } from "../utils/logger";
 
 const ServerContext = createContext(null);
-const preferences = createPreferenceStore();
 export const useServer = () => useContext(ServerContext);
 
 async function loadServers({ signal }) {
@@ -124,10 +123,12 @@ export const ServerProvider = ({ children }) => {
     return result.isSuccess;
   }, [refetch]);
 
+  const currentSelection =
+    selectionIdentity === identity ? selectedServer : null;
   const value = useMemo(
     () => ({
       servers,
-      selectedServer,
+      selectedServer: currentSelection,
       setSelectedServer,
       loading: identity !== null && serverQuery.isPending,
       error: serverQuery.error?.message ?? null,
@@ -135,7 +136,7 @@ export const ServerProvider = ({ children }) => {
     }),
     [
       servers,
-      selectedServer,
+      currentSelection,
       setSelectedServer,
       identity,
       serverQuery.isPending,

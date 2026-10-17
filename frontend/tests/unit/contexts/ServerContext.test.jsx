@@ -148,3 +148,42 @@ it("reconciles socket players arriving during an HTTP refresh", async () => {
     expect(screen.getByTestId("players")).toHaveTextContent("Joined"),
   );
 });
+
+it("never renders another account's selection while its preferences restore", async () => {
+  request.mockResolvedValue({
+    status: "success",
+    servers: [{ name: "First" }],
+  });
+  const observed = [];
+  function ObserveSelection() {
+    const { selectedServer } = useServer();
+    observed.push({ account: state.user.username, selectedServer });
+    return null;
+  }
+  const view = () => (
+    <QueryClientProvider client={queryClient}>
+      <ServerProvider>
+        <Harness />
+        <ObserveSelection />
+      </ServerProvider>
+    </QueryClientProvider>
+  );
+  const { rerender } = render(view());
+  await waitFor(() =>
+    expect(screen.getByTestId("selection")).toHaveTextContent("First"),
+  );
+  request.mockResolvedValue({
+    status: "success",
+    servers: [{ name: "Second" }],
+  });
+  state.user = { username: "other" };
+  rerender(view());
+  await waitFor(() =>
+    expect(screen.getByTestId("selection")).toHaveTextContent("Second"),
+  );
+  expect(
+    observed
+      .filter((snapshot) => snapshot.account === "other")
+      .map((snapshot) => snapshot.selectedServer),
+  ).not.toContain("First");
+});

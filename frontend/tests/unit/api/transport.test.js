@@ -202,6 +202,7 @@ it("encodes server parameters and preserves task tracking for generated backup c
   expect(JSON.parse(options.body)).toEqual(body);
   expect(operationCoordinator.get("backup-123")).toMatchObject({
     serverName: "my server/one",
+    kind: "create_backup",
     status: "pending",
   });
   operationCoordinator.clear();
@@ -220,7 +221,11 @@ it("does not register an old mutation task after the backend restarts", async ()
         finish = resolve;
       }),
   );
-  const pending = request("/api/server/alpha/backup", { method: "POST" });
+  const { callOperation } = await import("../../../src/api/operations");
+  const pending = callOperation("create_backup", {
+    path: { server_name: "alpha" },
+    body: { backup_type: "world" },
+  });
   stateReconciler.accept(
     ["monitor"],
     { epoch: "next", revision: 1 },

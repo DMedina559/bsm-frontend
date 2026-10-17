@@ -21,6 +21,7 @@ export const queryKeys: Readonly<{
   content(kind?: string): QueryKey;
   downloads(): QueryKey;
   plugins(): QueryKey;
+  pluginPages(): QueryKey;
   pluginSettings(name?: string): QueryKey;
   plugin(name: string): QueryKey;
   tasks(): QueryKey;

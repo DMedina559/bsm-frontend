@@ -1,30 +1,35 @@
-import { queryClient } from "../../../src/app/queryClient";
 import { beforeEach, afterEach, it, expect, vi } from "vitest";
-import { operationCoordinator } from "../../../src/app/operationCoordinator";
-import { startOperationRecovery } from "../../../src/app/operationRecovery";
-import { sessionRuntime } from "../../../src/app/sessionRuntime";
-import { get } from "../../support/httpFixtures";
-vi.mock("../../../src/api/transport", async (importOriginal) => {
-  const { createHttpTransport, configureHttpFixtures } =
-    await import("../../support/httpFixtures");
-  const fixtures = { get: vi.fn() };
-  configureHttpFixtures(fixtures);
-  return createHttpTransport(await importOriginal());
-});
+import { createFixture } from "./fixture.js";
+let fixture,
+  operationCoordinator,
+  sessionRuntime,
+  startOperationRecovery,
+  stateReconciler,
+  queryClient,
+  get;
 beforeEach(() => {
   vi.useFakeTimers();
+  fixture = createFixture();
+  ({
+    operationCoordinator,
+    sessionRuntime,
+    startOperationRecovery,
+    stateReconciler,
+  } = fixture.runtime);
+  ({ queryClient, callOperation: get } = fixture);
   operationCoordinator.clear();
   queryClient.clear();
   get.mockReset();
 });
 afterEach(() => {
+  fixture.runtime.dispose();
   vi.useRealTimers();
   operationCoordinator.clear();
 });
 it("recovers task completion independently of pages and drops obsolete responses", async () => {
   let finish;
   get.mockImplementation((url) =>
-    url === "/api/tasks/list"
+    url === "list_tasks"
       ? Promise.resolve([])
       : new Promise((resolve) => {
           finish = resolve;
@@ -41,7 +46,7 @@ it("recovers task completion independently of pages and drops obsolete responses
   await vi.advanceTimersByTimeAsync(1);
   expect(operationCoordinator.get("task").terminal).toBe(true);
   get.mockImplementation((url) =>
-    url === "/api/tasks/list"
+    url === "list_tasks"
       ? Promise.resolve([])
       : new Promise((resolve) => {
           finish = resolve;
@@ -60,7 +65,7 @@ it("bounds concurrent task polls and backs off failures", async () => {
   let active = 0;
   let maximum = 0;
   get.mockImplementation(async (url) => {
-    if (url === "/api/tasks/list") return [];
+    if (url === "list_tasks") return [];
     active++;
     maximum = Math.max(maximum, active);
     await new Promise((resolve) => setTimeout(resolve, 10));
@@ -71,21 +76,20 @@ it("bounds concurrent task polls and backs off failures", async () => {
   await vi.advanceTimersByTimeAsync(50);
   expect(maximum).toBe(4);
   expect(
-    get.mock.calls.filter(([url]) => url.includes("/status/")).length,
+    get.mock.calls.filter(([url]) => url === "get_task_status").length,
   ).toBe(10);
   await vi.advanceTimersByTimeAsync(5000);
   expect(
-    get.mock.calls.filter(([url]) => url.includes("/status/")).length,
+    get.mock.calls.filter(([url]) => url === "get_task_status").length,
   ).toBe(10);
   stop();
 });
 it("rediscovers active tasks after a backend epoch change", async () => {
-  const { stateReconciler } = await import("../../../src/app/stateReconciler");
   stateReconciler.clear();
   stateReconciler.accept(["monitor"], { epoch: "first", revision: 100 });
   let restarted = false;
   get.mockImplementation(async (url) =>
-    url === "/api/tasks/list"
+    url === "list_tasks"
       ? restarted
         ? [
             {
@@ -115,17 +119,16 @@ it("rediscovers active tasks after a backend epoch change", async () => {
   );
   await vi.advanceTimersByTimeAsync(1);
   expect(operationCoordinator.get("new-task")?.status).toBe("running");
-  expect(
-    get.mock.calls.filter(([url]) => url === "/api/tasks/list"),
-  ).toHaveLength(2);
+  expect(get.mock.calls.filter(([url]) => url === "list_tasks")).toHaveLength(
+    2,
+  );
   stop();
   stateReconciler.clear();
 });
 it("retries discovery without registered tasks and refreshes on reconnect", async () => {
   let calls = 0;
   get.mockImplementation(async (url) => {
-    if (url !== "/api/tasks/list")
-      return { id: "recovered", status: "running" };
+    if (url !== "list_tasks") return { id: "recovered", status: "running" };
     calls++;
     if (calls === 1) throw new Error("offline");
     return [];
@@ -133,11 +136,11 @@ it("retries discovery without registered tasks and refreshes on reconnect", asyn
   const stop = startOperationRecovery();
   await vi.advanceTimersByTimeAsync(2100);
   expect(calls).toBe(2);
-  window.dispatchEvent(new Event("bsm:socket-connected"));
+  fixture.host.emit("bsm:socket-connected");
   await vi.advanceTimersByTimeAsync(1);
   expect(calls).toBe(3);
   stop();
-  window.dispatchEvent(new Event("bsm:socket-connected"));
+  fixture.host.emit("bsm:socket-connected");
   await vi.advanceTimersByTimeAsync(60000);
   expect(calls).toBe(3);
 });
@@ -152,12 +155,12 @@ it("queues one rediscovery when reconnects arrive during discovery", async () =>
   get.mockResolvedValue([]);
   const stop = startOperationRecovery();
   await vi.advanceTimersByTimeAsync(1);
-  window.dispatchEvent(new Event("bsm:socket-connected"));
-  window.dispatchEvent(new Event("bsm:socket-connected"));
+  fixture.host.emit("bsm:socket-connected");
+  fixture.host.emit("bsm:socket-connected");
   finish([]);
   await vi.advanceTimersByTimeAsync(1);
-  expect(
-    get.mock.calls.filter(([url]) => url === "/api/tasks/list"),
-  ).toHaveLength(2);
+  expect(get.mock.calls.filter(([url]) => url === "list_tasks")).toHaveLength(
+    2,
+  );
   stop();
 });

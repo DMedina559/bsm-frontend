@@ -65,3 +65,15 @@ it("does not mistake the cached pre-save value for a remote conflict", () => {
   rerender({ data: { name: "remote" } });
   expect(result.current.conflicted).toBe(true);
 });
+
+it("does not acknowledge an old save after the configured backend changes", async () => {
+  const { sessionRuntime } = await import("../../../src/app/sessionRuntime");
+  const { result } = renderHook(() =>
+    useEditableDraft("one", { name: "old" }, empty),
+  );
+  act(() => result.current.setValue({ name: "submitted" }));
+  const saved = result.current.markSaved;
+  sessionRuntime.reset();
+  act(() => saved({ name: "submitted" }));
+  expect(result.current.dirty).toBe(true);
+});

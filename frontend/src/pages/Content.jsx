@@ -1,3 +1,5 @@
+import { captureStateRequest } from "../app/applicationState";
+import { trackCommandResult } from "../app/commandTracking";
 import DraftConflictNotice from "../components/DraftConflictNotice";
 import { callOperation } from "../api/operations";
 import { queryKeys } from "../app/queryKeys";
@@ -96,8 +98,20 @@ const Content = () => {
     write.mutateAsync({ id, options: args[0] });
 
   const upload = useResourceMutation(
-    (body, { session }) =>
-      request("/api/content/upload", { method: "POST", body, session }),
+    async (body, { session, signal }) => {
+      const ticket = captureStateRequest(signal);
+      const result = await request("/api/content/upload", {
+        method: "POST",
+        body,
+        session,
+        signal,
+      });
+      return trackCommandResult(result, {
+        ticket,
+        kind: "upload",
+        affectedKeys: [queryKeys.content()],
+      });
+    },
     [queryKeys.content()],
   );
   const actionLoading = write.isPending || upload.isPending;
@@ -526,6 +540,8 @@ const Content = () => {
       const data = await upload.mutateAsync(formData);
       if (data && data.status === "success") {
         addToast("Upload successful.", "success");
+      } else if (data?.task_id) {
+        addToast(data.message || "Upload started.", "info");
       } else {
         addToast(`Upload failed: ${data?.message || "Unknown error"}`, "error");
       }

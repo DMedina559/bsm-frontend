@@ -5,6 +5,7 @@ import { createApplicationMetricsModule } from "./applicationMetrics.js";
 import { createApplicationStateModule } from "./applicationState.js";
 import { createOperationRecoveryModule } from "./operationRecovery.js";
 import { createWebSocketManagerModule } from "./webSocketManager.js";
+import { createResourceRefresh } from "./resourceRefresh.js";
 import { createDraftRegistryModule } from "./draftRegistry.js";
 import { queryKeys, resourceInvalidation } from "./queryKeys.js";
 import { mutationResources, lifecycleEvents } from "./coreEvents.js";
@@ -27,8 +28,16 @@ export function createApplicationRuntime({
     logger,
     getBackendIdentity,
   });
+  const refresh = createResourceRefresh({
+    ...state,
+    queryClient,
+    resourceInvalidation,
+    scheduler,
+    logger,
+  });
   const operations = createOperationCoordinatorModule({
     ...state,
+    ...refresh,
     queryClient,
     queryKeys,
     resourceInvalidation,
@@ -38,6 +47,7 @@ export function createApplicationRuntime({
     ...state,
     ...operations,
     ...metrics,
+    ...refresh,
     queryClient,
     queryKeys,
     resourceInvalidation,
@@ -100,6 +110,7 @@ export function createApplicationRuntime({
   return {
     reset,
     start,
+    ...refresh,
     dispose: reset,
     ...session,
     ...state,

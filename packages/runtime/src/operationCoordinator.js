@@ -7,6 +7,12 @@ export function createOperationCoordinatorModule({
   queryClient,
   queryKeys,
   resourceInvalidation,
+  refreshResources = (keys) =>
+    Promise.all(
+      keys.map((queryKey) =>
+        queryClient.invalidateQueries(resourceInvalidation(queryKey)),
+      ),
+    ),
 }) {
   /**
    * Tracks operation progress independently from page lifecycles.
@@ -133,7 +139,12 @@ export function createOperationCoordinatorModule({
           terminal: terminalTaskStatus(acceptedStatus),
         });
         if (!previous.terminal && terminalTaskStatus(acceptedStatus)) {
-          const keys = [queryKeys.tasks()];
+          const keys = [
+            queryKeys.tasks(),
+            ...(Array.isArray(previous.affectedKeys)
+              ? previous.affectedKeys
+              : []),
+          ];
           const kind = previous.kind ?? "background";
           const name = previous.serverName;
           if (/install|start|stop|restart|update|delete|background/.test(kind))
@@ -151,18 +162,17 @@ export function createOperationCoordinatorModule({
           if (name && /start|stop|restart|update/.test(kind))
             keys.push(queryKeys.serverMonitor(name));
           if (/scan|players/.test(kind)) keys.push(queryKeys.globalPlayers());
-          keys.forEach((queryKey) => {
-            void queryClient.invalidateQueries(resourceInvalidation(queryKey));
-          });
+          void refreshResources(keys);
         }
         notify();
         return true;
       },
       acknowledge(id) {
         const operation = operations.get(String(id));
-        if (!operation || operation.acknowledged) return;
+        if (!operation || operation.acknowledged) return false;
         operations.set(String(id), { ...operation, acknowledged: true });
         notify();
+        return true;
       },
       remove(id) {
         const removed = operations.delete(String(id));

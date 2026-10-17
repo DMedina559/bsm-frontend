@@ -688,7 +688,7 @@ it("cancels an older settings read before refreshing after a mutation", async ()
     revision: 1,
     data: { key: "value", result: { status: "success" } },
   });
-  expect(requestSignal.aborted).toBe(true);
+  await vi.waitFor(() => expect(requestSignal.aborted).toBe(true));
   finish({ settings: { value: "obsolete" } });
   await pending;
   await vi.waitFor(() =>

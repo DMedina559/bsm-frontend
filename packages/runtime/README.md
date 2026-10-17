@@ -23,6 +23,13 @@ The cache must implement `cancelQueries`, `invalidateQueries`, `removeQueries`,
 `resetQueries`, `setQueriesData`, and `fetchQuery` with TanStack QueryClient-compatible behavior.
 Use a separate cache for each runtime that must be isolated.
 
+`runtime.refreshResources(queryKeys, afterCancel?)` batches duplicate resource
+refreshes within a scheduling cycle. It cancels obsolete reads before refetching;
+an optional callback can restore accepted event patches after cancellation.
+Session, backend and epoch tickets guard both queued work and continuations.
+The application reconciler and operation completion share this refresh policy.
+The host decides which active resources need reconnect/fallback refreshes.
+
 The frontend composes individual module factories through its
 [`src/app` adapters](../../frontend/src/app). Pure query keys, event mappings,
 and diagnostic validators are available through separate package exports.
@@ -114,6 +121,10 @@ and session cleanup using an injected platform and scheduler.
 Unavailable tasks have a local `availability` state. A 404 stops polling without
 fabricating a backend revision or replacing the last authoritative snapshot.
 Discovery after reconnect can restore availability from the backend.
+
+Package algorithm tests use Vitest with injected cache, command and platform
+boundaries. Native Node lifecycle tests also run against installed archives.
+Frontend tests retain real query-cache/provider integration and browser behavior.
 
 Shared JavaScript implementations are checked against typed dependency and
 factory return contracts by root `npm run check:implementations`. Consumer types

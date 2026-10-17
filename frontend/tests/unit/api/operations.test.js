@@ -6,7 +6,7 @@ import {
 } from "../../../src/api/operations";
 import { request } from "../../../src/api/transport";
 vi.mock("../../../src/api/transport", () => ({ request: vi.fn() }));
-beforeEach(() => request.mockReset());
+beforeEach(() => request.mockReset().mockResolvedValue({}));
 it("encodes generated paths and rejects missing or unknown parameters", () => {
   expect(
     resolveOperationUrl("get_properties", {

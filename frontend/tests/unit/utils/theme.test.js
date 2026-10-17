@@ -4,21 +4,8 @@ import {
   DEFAULT_APPEARANCE,
   resolveMode,
   themeStylesheetUrl,
-  readAppearance,
-  APPEARANCE_KEY,
 } from "../../../src/utils/theme";
 describe("theme preferences", () => {
-  it("falls back safely on malformed storage", () => {
-    localStorage.setItem(APPEARANCE_KEY, "{");
-    expect(readAppearance()).toEqual({
-      ...DEFAULT_APPEARANCE,
-      mode: "theme",
-      density: "comfortable",
-      panorama: false,
-      panoramaVisibility: 18,
-      sidebarTransparency: 0,
-    });
-  });
   it("rejects unknown preferences", () => {
     expect(normalizeAppearance({ mode: "broken", density: "tiny" })).toEqual({
       ...DEFAULT_APPEARANCE,

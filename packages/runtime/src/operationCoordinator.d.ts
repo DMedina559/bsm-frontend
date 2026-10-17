@@ -21,6 +21,9 @@ export function createOperationCoordinatorModule(
     StateModule,
     "createStateReconciler" | "stateReconciler" | "terminalTaskStatus"
   > & {
+    refreshResources?: (
+      keys: import("./contracts.js").QueryKey[],
+    ) => Promise<unknown>;
     queryClient: QueryClient;
     queryKeys: typeof queryKeys;
     resourceInvalidation: typeof resourceInvalidation;

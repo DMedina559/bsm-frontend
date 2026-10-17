@@ -1,5 +1,6 @@
 import type {
   QueryClient,
+  QueryKey,
   CallOperation,
   RuntimePlatform,
   RuntimeScheduler,
@@ -25,6 +26,10 @@ export interface RuntimeOptions {
   logger?: Logger;
 }
 export type ApplicationRuntime = {
+  refreshResources(
+    keys: QueryKey[],
+    afterCancel?: () => void,
+  ): Promise<unknown[]>;
   reset(): number;
   dispose(): number;
   start(options: {

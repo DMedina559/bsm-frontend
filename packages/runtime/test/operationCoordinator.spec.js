@@ -1,6 +1,12 @@
-import { queryClient } from "../../../src/app/queryClient";
-import { describe, expect, it, vi } from "vitest";
-import { createOperationCoordinator } from "../../../src/app/operationCoordinator";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createFixture } from "./fixture.js";
+let fixture, queryClient;
+const createOperationCoordinator = () =>
+  fixture.runtime.createOperationCoordinator();
+beforeEach(() => {
+  fixture = createFixture();
+  queryClient = fixture.queryClient;
+});
 
 describe("operation coordinator", () => {
   it("reconciles registered task updates and terminal states", () => {
@@ -91,7 +97,7 @@ it("notifies other subscribers when a listener throws", () => {
   log.mockRestore();
 });
 
-it("backup completion only invalidates task and backup resources", () => {
+it("backup completion only invalidates task and backup resources", async () => {
   const invalidate = vi
     .spyOn(queryClient, "invalidateQueries")
     .mockResolvedValue();
@@ -105,14 +111,16 @@ it("backup completion only invalidates task and backup resources", () => {
     type: "task_update",
     data: { id: "backup", status: "completed" },
   });
-  expect(invalidate.mock.calls.map(([options]) => options.queryKey)).toEqual([
-    ["tasks"],
-    ["servers", "alpha", "backups"],
-  ]);
+  await vi.waitFor(() =>
+    expect(invalidate.mock.calls.map(([options]) => options.queryKey)).toEqual([
+      ["tasks"],
+      ["servers", "alpha", "backups"],
+    ]),
+  );
   invalidate.mockRestore();
 });
 
-it("refreshes installed addons after background addon completion", () => {
+it("refreshes installed addons after background addon completion", async () => {
   const invalidate = vi
     .spyOn(queryClient, "invalidateQueries")
     .mockResolvedValue();
@@ -126,8 +134,10 @@ it("refreshes installed addons after background addon completion", () => {
     type: "task_update",
     data: { id: "addon", status: "completed" },
   });
-  expect(
-    invalidate.mock.calls.map(([options]) => options.queryKey),
-  ).toContainEqual(["servers", "alpha", "addons"]);
+  await vi.waitFor(() =>
+    expect(
+      invalidate.mock.calls.map(([options]) => options.queryKey),
+    ).toContainEqual(["servers", "alpha", "addons"]),
+  );
   invalidate.mockRestore();
 });

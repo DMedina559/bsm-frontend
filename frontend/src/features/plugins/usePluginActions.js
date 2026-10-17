@@ -1,3 +1,5 @@
+import { captureStateRequest } from "../../app/applicationState";
+import { trackCommandResult } from "../../app/commandTracking";
 import { request, downloadFile } from "../../api/transport";
 import { useScopedMutation } from "../../app/publicRequests";
 import { useToast } from "../../contexts/ToastContext";
@@ -32,6 +34,7 @@ export function usePluginActions({
         });
         body = form;
       }
+      const ticket = captureStateRequest(signal);
       const result = await request(action.endpoint, {
         method: "POST",
         body,
@@ -39,7 +42,14 @@ export function usePluginActions({
         session,
       });
       assertCurrent();
-      if (result?.status !== "success")
+      trackCommandResult(result, {
+        ticket,
+        kind: "plugin",
+        serverName: action.payload?.server_name,
+        affectedKeys:
+          action.refresh && query.canRefresh ? [query.queryKey] : [],
+      });
+      if (result?.status !== "success" && !result?.task_id)
         throw new Error(result?.message || "Action failed");
       if (action.refresh && query.canRefresh) await query.refetch();
       assertCurrent();
@@ -52,7 +62,11 @@ export function usePluginActions({
       try {
         const result = await write.mutateAsync(action);
         if (action.type === "api_call") {
-          addToast(result?.message || "Action successful", "success");
+          addToast(
+            result?.message ||
+              (result?.task_id ? "Action started" : "Action successful"),
+            result?.task_id ? "info" : "success",
+          );
           if (action.closeModal) setActiveModalId(null);
         }
       } catch (error) {

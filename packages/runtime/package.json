@@ -65,7 +65,7 @@
   },
   "scripts": {
     "build": "node ../../scripts/build-package.mjs",
-    "test": "npm run build && node ../../scripts/test-packages.mjs runtime",
+    "test": "npm run build && node ../../scripts/test-packages.mjs runtime && vitest run",
     "lint": "eslint src test",
     "prepack": "npm run build",
     "check": "npm run build && npm run lint && npm run typecheck && npm test",

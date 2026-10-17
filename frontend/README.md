@@ -19,8 +19,9 @@ Open the URL printed by Vite, including `/app/`. The backend proxy defaults to
 proxy target, then restart Vite. The browser's connection settings can also select
 a remote backend. An HTTPS page requires an HTTPS backend.
 
-Installation prepares shared library output. If you edit a library while Vite is
-running, run `npm run build:packages` to refresh the imported modules.
+Installation prepares shared library output. `npm run dev` watches shared library
+source and refreshes the imported modules. If you run Vite separately, also run
+`npm run dev:packages` or rebuild libraries with `npm run build:packages`.
 
 ## Production builds
 
@@ -59,7 +60,10 @@ assets resolve against the frontend; custom theme endpoints use the backend.
 | `frontend/tests/`          | Unit tests, browser scenarios, fixtures, and type checks                           |
 
 Providers own startup and cleanup; pages and hooks consume the application
-instance. Shared packages must not import React, DOM APIs, browser storage, or
+instance. Core commands use the generated operation IDs; the command adapter
+attaches task kind and server context without interpreting URL fragments. The
+WebSocket provider passes this caller explicitly to `application.start()` before
+starting recovery. Shared packages must not import React, DOM APIs, browser storage, or
 frontend code. Application source must not import test helpers or test frameworks.
 
 ## Appearance and preferences
@@ -77,7 +81,18 @@ import/export and CSS export from Appearance.
 
 The notification bell retains up to 100 messages for seven days per signed-in
 account and backend. Guest history stays in memory. Clear history removes retained
-messages. Preferences use memory when persistent storage is unavailable.
+messages. Preferences use memory when persistent storage is unavailable. Application
+preferences share one store and the version/validation definitions in
+`src/app/preferenceDefinitions.js`. Selected server, appearance, palettes, fleet
+sorting, metric units and sidebar collapse are scoped by backend and account.
+Legacy unscoped preferences migrate only for embedded default connections;
+remote connections do not inherit ambiguous values. Logging overrides remain
+device settings; the hidden-navigation flag lasts for the browser session.
+Credentials belong to the separate connection adapter.
+
+Server snapshots, tasks, metrics and drafts are not persisted as browser truth.
+Background refreshes preserve dirty forms and display conflicts. Session changes
+invalidate pending saves and clear application-owned drafts and operations.
 
 Public themes and manifest icons are loaded dynamically. Keep the bundled
 `public/image/panorama.png`: the backend uses it as its default panorama response,
@@ -188,5 +203,8 @@ infer compatibility from unrelated frontend and backend version numbers.
 The `application` instance in `src/app/application.js` owns the runtime and cache
 lifecycle. Thin module adapters preserve convenient imports for React hooks.
 Use `application.reset()` at session boundaries and `application.dispose()` when
-the application ends. Package source behavior belongs in `packages/*/test/`;
+the application ends. Reconnect/fallback recovery refreshes active resources in the current session,
+coalescing duplicate requests and pausing periodic resource work while hidden or
+offline. Task recovery has its own owner; diagnostics intervals remain opt-in.
+Package source behavior belongs in `packages/*/test/`;
 browser-specific adapters and React integration remain in frontend tests.
