@@ -1,20 +1,23 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { resolveReleaseTag } from "../release-version.mjs";
-test("SDK tags determine version and safe npm distribution channels", () => {
-  assert.deepEqual(resolveReleaseTag("api-client", "api-client-v1.2.3"), {
-    version: "1.2.3",
-    distTag: "latest",
+const libraries = ["api-client", "runtime", "storage"];
+for (const product of libraries) {
+  test(`${product} tags determine version and safe npm distribution channels`, () => {
+    assert.deepEqual(resolveReleaseTag(product, `${product}-v1.2.3`), {
+      version: "1.2.3",
+      distTag: "latest",
+    });
+    assert.deepEqual(resolveReleaseTag(product, `${product}-v1.3.0-beta.1`), {
+      version: "1.3.0-beta.1",
+      distTag: "next",
+    });
+    assert.equal(
+      resolveReleaseTag(product, `${product}-v1.2.3`, true).distTag,
+      "next",
+    );
   });
-  assert.deepEqual(
-    resolveReleaseTag("api-client", "api-client-v1.3.0-beta.1"),
-    { version: "1.3.0-beta.1", distTag: "next" },
-  );
-  assert.equal(
-    resolveReleaseTag("api-client", "api-client-v1.2.3", true).distTag,
-    "next",
-  );
-});
+}
 test("frontend tags share one Python and npm release with ecosystem-appropriate spelling", () => {
   assert.deepEqual(resolveReleaseTag("frontend", "frontend-1.3.0b7"), {
     version: "1.3.0b7",
@@ -31,20 +34,31 @@ test("frontend tags share one Python and npm release with ecosystem-appropriate 
   );
 });
 test("invalid, ambiguous and cross-product tags are rejected", () => {
-  for (const tag of [
-    "frontend-1.3.0b7",
-    "api-client-v01.2.3",
-    "api-client-v1.2.3b4",
-    "api-client-v1.2.3-beta.01",
-    "api-client-v1.2.3-",
-    "api-client-v1.2.3; echo bad",
-  ])
-    assert.throws(() => resolveReleaseTag("api-client", tag));
+  for (const product of libraries) {
+    for (const tag of [
+      "frontend-1.3.0b7",
+      `${product}-v01.2.3`,
+      `${product}-v1.2.3b4`,
+      `${product}-v1.2.3-beta.01`,
+      `${product}-v1.2.3-`,
+      `${product}-v1.2.3; echo bad`,
+      ...libraries
+        .filter((other) => other !== product)
+        .map((other) => `${other}-v1.2.3`),
+    ])
+      assert.throws(() => resolveReleaseTag(product, tag));
+  }
   for (const tag of [
     "1.3.0b7",
     "frontend-v1.3.0",
     "frontend-1.3.0b07",
-    "api-client-v1.3.0",
+    ...libraries.map((product) => `${product}-v1.3.0`),
   ])
     assert.throws(() => resolveReleaseTag("frontend", tag));
+});
+test("unknown products cannot select a library publication", () => {
+  assert.throws(
+    () => resolveReleaseTag("unknown", "runtime-v1.2.3"),
+    /Unknown release product/,
+  );
 });

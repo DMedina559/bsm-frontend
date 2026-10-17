@@ -1,8 +1,12 @@
 # BSM application runtime
 
-A private workspace package for session cancellation, HTTP/WebSocket state
+A reusable package for session cancellation, HTTP/WebSocket state
 reconciliation, metrics, draft tracking, operation coordination, and recovery.
 It imports neither React nor a query-cache implementation.
+
+```sh
+npm install @bedrock-server-manager/runtime
+```
 
 ## Integration
 
@@ -31,7 +35,7 @@ The application reconciler and operation completion share this refresh policy.
 The host decides which active resources need reconnect/fallback refreshes.
 
 The frontend composes individual module factories through its
-[`src/app` adapters](../../frontend/src/app). Pure query keys, event mappings,
+`frontend/src/app` adapters. Pure query keys, event mappings,
 and diagnostic validators are available through separate package exports.
 
 ## Platform adapter
@@ -47,8 +51,8 @@ and diagnostic validators are available through separate package exports.
 | `removeEventListener(type, callback)` | Remove a registered listener                          |
 
 Lifecycle events are `online`, `offline`, `visibilitychange`, and
-`bsm:socket-connected`. The frontend's
-[`browserPlatform`](../../frontend/src/app/browserPlatform.js) is a concrete adapter.
+`bsm:socket-connected`. The frontend's `frontend/src/app/browserPlatform.js`
+is a concrete adapter.
 The package itself does not read browser globals. It uses standard `AbortController`,
 `AbortSignal.any`, and `DOMException` APIs for cancellation.
 
@@ -64,7 +68,7 @@ exports declare their module factories and dependency contracts.
 
 ## Session ownership and cleanup
 
-The session module can be used independently within the workspace:
+The session module can also be used independently:
 
 ```js
 import { createSessionRuntimeModule } from "@bedrock-server-manager/runtime/sessionRuntime";
@@ -108,8 +112,9 @@ npm run check --workspace=@bedrock-server-manager/runtime
 ```
 
 Installation prepares `dist/`; rebuild it after editing package source. `npm pack`
-builds the package for isolated consumer checks. This package is private and has
-no registry publication workflow.
+builds the package for isolated consumer checks. GitHub releases tagged
+`runtime-v<SemVer>` publish this package independently; prereleases use npm's
+`next` distribution tag.
 
 `npm run packages:check` from the root packs and installs all shared packages in
 an isolated project. It checks runtime exports against their declarations,

@@ -1,9 +1,9 @@
 /** Release tags identify products; registry versions never include the prefix. */
 export function resolveReleaseTag(product, tag, prerelease = false) {
-  if (product === "api-client") {
-    const match = /^api-client-v(\d+\.\d+\.\d+)(?:-([0-9A-Za-z.-]+))?$/.exec(
-      tag,
-    );
+  if (["api-client", "runtime", "storage"].includes(product)) {
+    const prefix = `${product}-v`;
+    const version = tag.startsWith(prefix) ? tag.slice(prefix.length) : "";
+    const match = /^(\d+\.\d+\.\d+)(?:-([0-9A-Za-z.-]+))?$/.exec(version);
     if (
       !match ||
       match[1]
@@ -17,9 +17,9 @@ export function resolveReleaseTag(product, tag, prerelease = false) {
             (/^\d+$/.test(part) && part.length > 1 && part.startsWith("0")),
         )
     )
-      throw new Error("Expected a canonical api-client-v<SemVer> release tag.");
+      throw new Error(`Expected a canonical ${product}-v<SemVer> release tag.`);
     return {
-      version: tag.slice("api-client-v".length),
+      version,
       distTag: match[2] || prerelease ? "next" : "latest",
     };
   }

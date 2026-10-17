@@ -83,7 +83,10 @@ try {
         "utf8",
       ),
     );
-    if (manifest.private !== (name !== "api-client"))
+    if (
+      manifest.private !== false ||
+      manifest.publishConfig?.access !== "public"
+    )
       throw new Error(`Unexpected publishing boundary: ${manifest.name}`);
     for (const [subpath, target] of Object.entries(manifest.exports)) {
       const implementation =

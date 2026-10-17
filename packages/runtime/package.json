@@ -1,8 +1,9 @@
 {
   "name": "@bedrock-server-manager/runtime",
   "version": "0.1.0",
+  "description": "Bedrock Server Manager application state, session, and WebSocket coordination",
   "type": "module",
-  "private": true,
+  "private": false,
   "files": [
     "dist",
     "README.md"
@@ -63,13 +64,20 @@
     "url": "https://github.com/DMedina559/bsm-frontend.git",
     "directory": "packages/runtime"
   },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "build": "node ../../scripts/build-package.mjs",
     "test": "npm run build && node ../../scripts/test-packages.mjs runtime && vitest run",
     "lint": "eslint src test",
     "prepack": "npm run build",
     "check": "npm run build && npm run lint && npm run typecheck && npm test",
-    "typecheck": "tsc --noEmit --strict --module NodeNext --moduleResolution NodeNext test/consumer.mts"
+    "typecheck": "tsc --noEmit --strict --module NodeNext --moduleResolution NodeNext test/consumer.mts",
+    "prepublishOnly": "npm run check"
   },
-  "types": "./dist/index.d.ts"
+  "types": "./dist/index.d.ts",
+  "publishConfig": {
+    "access": "public"
+  }
 }

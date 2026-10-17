@@ -1,8 +1,12 @@
 # BSM preference storage
 
-A private workspace package for validated, versioned preferences. Persistence and
+A reusable package for validated, versioned preferences. Persistence and
 change notifications are injected; the package does not use browser globals.
 It does not manage credentials.
+
+```sh
+npm install @bedrock-server-manager/storage
+```
 
 ## Basic usage
 
@@ -38,8 +42,8 @@ consistent key construction. Empty identities do not produce preference keys.
 | `events`  | Optional `addEventListener("storage", callback)` and matching `removeEventListener` |
 
 Stored values use a JSON envelope containing `version` and `value`. The frontend
-supplies browser persistence through its
-[`preferenceStore` adapter](../../frontend/src/app/preferenceStore.js).
+supplies browser persistence through its `frontend/src/app/preferenceStore.js`
+adapter.
 If storage is omitted or a persistence operation fails, values fall back to
 memory within that store instance. They do not survive creating a new instance.
 
@@ -76,5 +80,6 @@ npm run check --workspace=@bedrock-server-manager/storage
 ```
 
 Installation prepares `dist/`; rebuild it after changing source. The package owns
-its tests, lint, and consumer type checks. It is private and has no registry
-publication workflow.
+its tests, lint, and consumer type checks. GitHub releases tagged
+`storage-v<SemVer>` publish this package independently; prereleases use npm's
+`next` distribution tag.

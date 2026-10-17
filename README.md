@@ -36,8 +36,8 @@ root lockfile with the manifest changes.
 | ----------------------------------------------------- | ----------------------------------------------------------- | --------------------------- |
 | [frontend/](frontend/README.md)                       | React interface and browser adapters                        | Static web application      |
 | [packages/api-client/](packages/api-client/README.md) | Typed operations, HTTP transport, schema discovery          | Publishable npm SDK         |
-| [packages/runtime/](packages/runtime/README.md)       | Session, state, metrics, operation, and socket coordination | Private workspace           |
-| [packages/storage/](packages/storage/README.md)       | Validated, versioned preferences                            | Private workspace           |
+| [packages/runtime/](packages/runtime/README.md)       | Session, state, metrics, operation, and socket coordination | Publishable npm library     |
+| [packages/storage/](packages/storage/README.md)       | Validated, versioned preferences                            | Publishable npm library     |
 | [packages/frontend/](packages/frontend/README.md)     | Static npm distribution manifest and hosting guide          | Publishable frontend assets |
 | [python/](python/README.md)                           | Python wrapper, packaging configuration, and tests          | PyPI distribution           |
 | scripts/                                              | Shared build and validation commands                        | Repository tooling          |
@@ -111,12 +111,14 @@ backend until requests are sent.
 
 ## Releases
 
-The SDK and frontend/Python distribution have independent release versions.
-The root workspace, runtime, and storage packages are private.
+The SDK, runtime, storage, and frontend/Python distribution have independent
+release versions. The root workspace and source web application stay private.
 
 | Release         | GitHub release tag                               | Workflow                 | Required publishing setup                                                         |
 | --------------- | ------------------------------------------------ | ------------------------ | --------------------------------------------------------------------------------- |
 | API client      | `api-client-v<SDK version>`                      | `publish-api-client.yml` | npm trusted publishing through the `npm-release` environment |
+| Runtime         | `runtime-v<SemVer>`                            | `publish-packages.yml`   | npm trusted publishing through the `npm-release` environment |
+| Storage         | `storage-v<SemVer>`                            | `publish-packages.yml`   | npm trusted publishing through the `npm-release` environment |
 | Frontend assets | `frontend-<version>`, such as `frontend-1.3.0b8` | `publish.yml`            | PyPI trusted publisher (`release`) and npm trusted publisher (`npm-release`)            |
 
 For an SDK release, publish a GitHub release tagged `api-client-v0.1.1`, for example.
@@ -128,6 +130,10 @@ For a beta, use a tag such as `api-client-v0.2.0-beta.1` and mark the GitHub rel
 as a prerelease. SemVer prereleases always publish to npm's `next` tag, even if
 the GitHub prerelease checkbox is omitted; stable releases use `latest` unless
 explicitly marked as GitHub prereleases.
+
+Runtime and storage follow the same tag-derived versioning and npm channel rules,
+using tags such as `runtime-v0.1.0-beta.1` and `storage-v0.1.0-beta.1`.
+Each release validates and publishes only its selected library.
 
 Frontend releases run shared validation, then publish the verified Python and
 npm archives without rebuilding. `frontend-1.3.0b8` produces Python version
