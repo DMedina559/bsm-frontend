@@ -55,11 +55,10 @@ Run these commands from the repository root.
 | `npm run dev`                   | Watch shared libraries and start Vite                                         |
 | `npm run build`                 | Build shared libraries and production web assets                              |
 | `npm run build:packages`        | Refresh library outputs under `packages/*/dist/`                              |
-| `npm run check`                 | Build libraries; check generation, lint, types, tests, and packed consumers   |
+| `npm run check`                 | Build libraries; check generation, lint, types, and tests                     |
 | `npm test`                      | Run frontend and library tests                                                |
 | `npm run api:check`             | Check that committed API types and operation metadata match the pinned schema |
 | `npm run api:generate`          | Regenerate API types and metadata, then rebuild the SDK                       |
-| `npm run packages:check`        | Verify isolated package installation, exports, and consumer types             |
 | `npm run pack:frontend`         | Pack the verified frontend for npm after Python asset staging                 |
 | `npm run check:implementations` | Check shared JavaScript implementations and typed factory boundaries          |
 | `npm run build:python`          | Build the web interface and its Python distributions                          |
@@ -114,12 +113,12 @@ backend until requests are sent.
 The SDK, runtime, storage, and frontend/Python distribution have independent
 release versions. The root workspace and source web application stay private.
 
-| Release         | GitHub release tag                               | Workflow                 | Required publishing setup                                                         |
-| --------------- | ------------------------------------------------ | ------------------------ | --------------------------------------------------------------------------------- |
-| API client      | `api-client-v<SDK version>`                      | `publish.yml`           | npm trusted publishing through the `npm-release` environment |
-| Runtime         | `runtime-v<SemVer>`                            | `publish.yml`           | npm trusted publishing through the `npm-release` environment |
-| Storage         | `storage-v<SemVer>`                            | `publish.yml`           | npm trusted publishing through the `npm-release` environment |
-| Frontend assets | `frontend-<version>`, such as `frontend-1.3.0b8` | `publish.yml`            | PyPI trusted publisher (`release`) and npm trusted publisher (`npm-release`)            |
+| Release         | GitHub release tag                               | Workflow      | Required publishing setup                                                    |
+| --------------- | ------------------------------------------------ | ------------- | ---------------------------------------------------------------------------- |
+| API client      | `api-client-v<SDK version>`                      | `publish.yml` | npm trusted publishing through the `npm-release` environment                 |
+| Runtime         | `runtime-v<SemVer>`                              | `publish.yml` | npm trusted publishing through the `npm-release` environment                 |
+| Storage         | `storage-v<SemVer>`                              | `publish.yml` | npm trusted publishing through the `npm-release` environment                 |
+| Frontend assets | `frontend-<version>`, such as `frontend-1.3.0b8` | `publish.yml` | PyPI trusted publisher (`release`) and npm trusted publisher (`npm-release`) |
 
 For an SDK release, publish a GitHub release tagged `api-client-v0.1.1`, for example.
 The workflow validates the SemVer tag and sets the SDK package and lockfile

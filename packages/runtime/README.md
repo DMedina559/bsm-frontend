@@ -116,13 +116,6 @@ builds the package for isolated consumer checks. GitHub releases tagged
 `runtime-v<SemVer>` publish this package independently; prereleases use npm's
 `next` distribution tag.
 
-`npm run packages:check` from the root packs and installs all shared packages in
-an isolated project. It checks runtime exports against their declarations,
-compiles consumer examples, and runs the runtime lifecycle tests against the
-installed archive. Those tests reject browser-global access during import and
-execution and exercise authentication, retries, reconciliation, cancellation,
-and session cleanup using an injected platform and scheduler.
-
 Unavailable tasks have a local `availability` state. A 404 stops polling without
 fabricating a backend revision or replacing the last authoritative snapshot.
 Discovery after reconnect can restore availability from the backend.

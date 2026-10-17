@@ -101,7 +101,6 @@ Run these commands from the repository root:
 ```sh
 npm run build --workspace=@bedrock-server-manager/api-client
 npm run check --workspace=@bedrock-server-manager/api-client
-npm run packages:check -- api-client
 ```
 
 The workspace owns `api:generate`, `api:check`, `lint`, `test`, and `typecheck`.

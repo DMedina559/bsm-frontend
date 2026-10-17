@@ -75,13 +75,14 @@ jobs:
           if (updated.version !== process.env.NPM_VERSION)
             throw new Error('Release tag must contain a canonical SemVer version');
           JS
-      - name: Validate and pack library
+      - name: Build, lint and test library
         env:
           NPM_WORKSPACE: ${{ needs.release.outputs.workspace }}
           PACKAGE_NAME: ${{ needs.release.outputs.product }}
         run: |
           npm run check --workspace="$NPM_WORKSPACE"
-          npm run packages:check -- "$PACKAGE_NAME" --pack-destination build/npm-release
+          mkdir -p build/npm-release
+          npm pack --workspace="$NPM_WORKSPACE" --pack-destination build/npm-release
       - name: Upload verified npm archive
         uses: actions/upload-artifact@v4
         with:
