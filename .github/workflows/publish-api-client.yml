@@ -20,9 +20,10 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
-          cache: npm
-          cache-dependency-path: package-lock.json
           registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - name: Install npm for trusted publishing
+        run: npm install --global npm@11.21.0
       - name: Install workspace dependencies
         run: npm ci
       - name: Set SDK version from release tag
@@ -54,6 +55,5 @@ jobs:
           npm run packages:check -- api-client
       - name: Publish API client
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_DIST_TAG: ${{ steps.version.outputs.dist-tag }}
         run: npm publish --workspace=@bedrock-server-manager/api-client --access public --provenance --tag "$NPM_DIST_TAG"

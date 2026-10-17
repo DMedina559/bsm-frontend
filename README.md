@@ -116,8 +116,8 @@ The root workspace, runtime, and storage packages are private.
 
 | Release         | GitHub release tag                               | Workflow                 | Required publishing setup                                                         |
 | --------------- | ------------------------------------------------ | ------------------------ | --------------------------------------------------------------------------------- |
-| API client      | `api-client-v<SDK version>`                      | `publish-api-client.yml` | `npm-release` environment and its `NPM_TOKEN` secret with access to the npm scope |
-| Frontend assets | `frontend-<version>`, such as `frontend-1.3.0b8` | `publish.yml`            | PyPI trusted publisher (`release`) and npm credentials (`npm-release`)            |
+| API client      | `api-client-v<SDK version>`                      | `publish-api-client.yml` | npm trusted publishing through the `npm-release` environment |
+| Frontend assets | `frontend-<version>`, such as `frontend-1.3.0b8` | `publish.yml`            | PyPI trusted publisher (`release`) and npm trusted publisher (`npm-release`)            |
 
 For an SDK release, publish a GitHub release tagged `api-client-v0.1.1`, for example.
 The workflow validates the SemVer tag and sets the SDK package and lockfile
