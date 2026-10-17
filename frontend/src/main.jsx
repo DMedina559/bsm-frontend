@@ -3,11 +3,10 @@ import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import "./styles/index.css";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { getApiProxyBasePath } from "./utils/basePath";
+import { getAppBasePath } from "./utils/basePath";
 
 // Dynamically determine the router basename
-const baseProxyPath = getApiProxyBasePath();
-const routerBasename = baseProxyPath ? `${baseProxyPath}/app` : "/app";
+const routerBasename = getAppBasePath();
 
 const router = createBrowserRouter([{ path: "*", element: <App /> }], {
   basename: routerBasename,

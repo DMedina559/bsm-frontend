@@ -1,18 +1,13 @@
+import { isGeneratedApiCall } from "./api-call-sites.mjs";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-const require = createRequire(
-  new URL("../frontend/package.json", import.meta.url),
-);
+const require = createRequire(new URL("../package.json", import.meta.url));
 const ts = require("typescript");
 process.chdir(fileURLToPath(new URL("../frontend", import.meta.url)));
 
 // Validate generated-client call signatures in the JS/JSX application.
-const roots = ts.sys.readDirectory(
-  "src",
-  [".js", ".jsx"],
-  ["**/*.test.*", "**/test/**"],
-);
+const roots = ts.sys.readDirectory("src", [".js", ".jsx"]);
 const application = new Set(roots.map((file) => path.resolve(file)));
 const program = ts.createProgram(roots, {
   allowJs: true,
@@ -26,6 +21,7 @@ const program = ts.createProgram(roots, {
   moduleResolution: ts.ModuleResolutionKind.Bundler,
   target: ts.ScriptTarget.ES2022,
 });
+const checker = program.getTypeChecker();
 const spans = new Map();
 let calls = 0;
 for (const source of program.getSourceFiles()) {
@@ -34,9 +30,7 @@ for (const source of program.getSourceFiles()) {
   const visit = (node) => {
     if (
       ts.isCallExpression(node) &&
-      ["callOperation", "resolveOperationUrl", "writeOperation"].includes(
-        node.expression.getText(source),
-      )
+      isGeneratedApiCall(node, checker, source)
     ) {
       ranges.push([node.getStart(source), node.end]);
       calls++;

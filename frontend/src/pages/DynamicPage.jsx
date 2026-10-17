@@ -24,11 +24,7 @@ export default function DynamicPage({ schemaJson }) {
     setFormState({});
     setActiveModalId(null);
   }, [query.scope, schemaJson]);
-  const socketData = usePluginSubscriptions(
-    query.schema,
-    selectedServer,
-    query.scope,
-  );
+  usePluginSubscriptions(query.schema, selectedServer, query.scope);
   const handleAction = usePluginActions({
     scope: query.scope,
     formState,
@@ -50,9 +46,9 @@ export default function DynamicPage({ schemaJson }) {
   return (
     <div className="dynamic-page-wrapper">
       <PluginRenderer
+        key={query.scope}
         schema={query.schema}
         selectedServer={selectedServer}
-        socketData={socketData}
         formState={formState}
         handleAction={handleAction}
         handleInputChange={handleInputChange}

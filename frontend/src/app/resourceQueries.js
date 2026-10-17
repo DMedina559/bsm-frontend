@@ -1,3 +1,4 @@
+import { application } from "./application";
 import {
   validateDiagnosticSnapshot,
   validateDiagnosticHistory,
@@ -201,6 +202,11 @@ const resources = {
       settings_schema: data?.settings_schema ?? null,
     }),
   },
+  pluginPages: {
+    key: queryKeys.pluginPages,
+    load: (_target, options) => callOperation("get_plugin_pages", options),
+    select: (data) => array(data?.pages, "plugin pages"),
+  },
   plugins: {
     key: queryKeys.plugins,
     load: (_target, options) => callOperation("list_plugins", { ...options }),
@@ -282,7 +288,13 @@ export function useResourceQuery(resource, target, options = {}) {
     queryFn: async ({ signal }) => {
       const startedAt = captureStateRequest(signal);
       const data = await definition.load(target, { signal });
-      if (diagnosticResources.has(resource)) definition.select(data);
+      try {
+        definition.select(data);
+      } catch (cause) {
+        const error = new Error(cause.message, { cause });
+        error.name = "InvalidResponseError";
+        throw error;
+      }
       return reconcileResourceSnapshot(
         resource,
         target,
@@ -337,6 +349,10 @@ export function useResourceMutation(mutationFn, affectedKeys) {
           throw new DOMException("Session changed", "AbortError");
       };
       assertCurrent();
+      if (navigator.onLine === false)
+        throw new Error(
+          "Reconnect before making changes. Requests are not queued.",
+        );
       const result = await job.run(job.variables, {
         session: job.session,
         signal: job.session.signal,
@@ -352,6 +368,11 @@ export function useResourceMutation(mutationFn, affectedKeys) {
         job.session.backend !== getBackendIdentity()
       )
         return;
+      if (job.keys.length)
+        application.diagnostics.record("refresh-request", {
+          reason: "command-settled",
+          count: job.keys.length,
+        });
       await Promise.all(
         job.keys.map((queryKey) =>
           client.invalidateQueries(resourceInvalidation(queryKey)),
@@ -366,14 +387,35 @@ export function useResourceMutation(mutationFn, affectedKeys) {
     keys: affectedKeys,
     run: mutationFn,
   });
+  const callbacks = (options, pending) =>
+    Object.fromEntries(
+      Object.entries(options ?? {}).map(([name, callback]) => [
+        name,
+        typeof callback !== "function"
+          ? callback
+          : (...args) => {
+              if (
+                !pending.session.signal.aborted &&
+                sessionRuntime.isCurrent(pending.session) &&
+                pending.session.backend === getBackendIdentity()
+              )
+                return callback(...args);
+            },
+      ]),
+    );
   return {
     ...mutation,
     isPending: pendingVariables.length > 0,
     pendingVariables,
     data: mutation.variables?.scope === scope ? mutation.data : undefined,
     error: mutation.variables?.scope === scope ? mutation.error : null,
-    mutate: (variables, options) => mutation.mutate(job(variables), options),
-    mutateAsync: (variables, options) =>
-      mutation.mutateAsync(job(variables), options),
+    mutate: (variables, options) => {
+      const pending = job(variables);
+      return mutation.mutate(pending, callbacks(options, pending));
+    },
+    mutateAsync: (variables, options) => {
+      const pending = job(variables);
+      return mutation.mutateAsync(pending, callbacks(options, pending));
+    },
   };
 }

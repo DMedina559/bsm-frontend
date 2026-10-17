@@ -8,7 +8,7 @@ import React, {
   useState,
 } from "react";
 import { X, Info, CircleCheck, TriangleAlert } from "lucide-react";
-import { getApiProxyBasePath } from "../utils/basePath";
+import { getConnectionIdentity } from "../app/connection";
 import { useAuth } from "./AuthContext";
 import {
   readHistory,
@@ -22,14 +22,7 @@ export const useToast = () => useContext(ToastContext);
 export const ToastProvider = ({ children }) => {
   const { user } = useAuth() || {};
   const generation = sessionRuntime.capture().generation;
-  let backend = "";
-  try {
-    backend =
-      localStorage.getItem("api_base_url") ||
-      window.location.origin + getApiProxyBasePath();
-  } catch {
-    /* Memory history still works. */
-  }
+  const backend = getConnectionIdentity();
   const scope = user?.username
     ? `bsm.notifications.v4:${JSON.stringify([backend, user.username])}`
     : null;

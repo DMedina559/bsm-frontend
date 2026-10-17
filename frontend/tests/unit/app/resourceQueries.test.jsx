@@ -1,0 +1,325 @@
+import { fixtureResponse } from "../../support/fixtures";
+import React from "react";
+import { renderHook, waitFor, act } from "@testing-library/react";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { beforeEach, expect, it, vi } from "vitest";
+import { queryClient } from "../../../src/app/queryClient";
+import {
+  useResourceQuery,
+  useResourceMutation,
+} from "../../../src/app/resourceQueries";
+import { queryKeys } from "../../../src/app/queryKeys";
+import { get } from "../../support/httpFixtures";
+const auth = vi.hoisted(() => ({ user: null, sessionGeneration: 1 }));
+vi.mock("../../../src/contexts/AuthContext", () => ({ useAuth: () => auth }));
+vi.mock("../../../src/api/transport", async (importOriginal) => {
+  const { createHttpTransport, configureHttpFixtures } =
+    await import("../../support/httpFixtures");
+  const fixtures = { get: vi.fn(), request: vi.fn() };
+  configureHttpFixtures(fixtures);
+  return createHttpTransport(await importOriginal());
+});
+const wrapper = ({ children }) => (
+  <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+);
+beforeEach(() => {
+  queryClient.clear();
+  get.mockReset();
+  auth.user = null;
+  auth.sessionGeneration = 1;
+});
+it("cannot enable an authenticated resource while anonymous", async () => {
+  renderHook(() => useResourceQuery("plugins", undefined, { enabled: true }), {
+    wrapper,
+  });
+  await act(async () => {});
+  expect(get).not.toHaveBeenCalled();
+});
+it("isolates delayed resource results across session generations", async () => {
+  let finish;
+  auth.user = { username: "first" };
+  get.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const { result, rerender } = renderHook(() => useResourceQuery("users"), {
+    wrapper,
+  });
+  auth.user = { username: "second" };
+  auth.sessionGeneration++;
+  get.mockResolvedValue([{ username: "second" }]);
+  rerender();
+  await waitFor(() => expect(result.current.data?.[0].username).toBe("second"));
+  await act(async () => finish([{ username: "first" }]));
+  expect(result.current.data[0].username).toBe("second");
+});
+it("invalidates affected resources after a successful mutation", async () => {
+  auth.user = { username: "admin" };
+  get.mockResolvedValue([{ username: "before" }]);
+  const mutate = vi.fn(async () => {
+    get.mockResolvedValue([{ username: "after" }]);
+  });
+  const { result } = renderHook(
+    () => ({
+      query: useResourceQuery("users"),
+      write: useResourceMutation(mutate, [queryKeys.users()]),
+    }),
+    { wrapper },
+  );
+  await waitFor(() =>
+    expect(result.current.query.data?.[0].username).toBe("before"),
+  );
+  await act(async () => {
+    await result.current.write.mutateAsync();
+  });
+  await waitFor(() =>
+    expect(result.current.query.data?.[0].username).toBe("after"),
+  );
+});
+it.each([
+  "tasks",
+  "content",
+  "downloads",
+  "settings",
+  "plugins",
+  "globalPlayers",
+])(
+  "surfaces malformed %s responses instead of an empty resource",
+  async (resource) => {
+    auth.user = { username: "admin" };
+    get.mockResolvedValue({ unexpected: true });
+    const { result } = renderHook(() => useResourceQuery(resource, "worlds"), {
+      wrapper,
+    });
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.error.message).toContain("Invalid");
+  },
+);
+it("cancels a multi-step mutation after account switch and resets pending state for the new scope", async () => {
+  const { sessionRuntime } = await import("../../../src/app/sessionRuntime");
+  auth.user = { username: "first" };
+  let finish;
+  const second = vi.fn();
+  const first = new Promise((resolve) => {
+    finish = resolve;
+  });
+  const { result, rerender } = renderHook(
+    () =>
+      useResourceMutation(
+        async (_variables, context) => {
+          await first;
+          context.assertCurrent();
+          second();
+        },
+        [queryKeys.settings()],
+      ),
+    { wrapper },
+  );
+  let promise;
+  act(() => {
+    promise = result.current.mutateAsync({});
+  });
+  const assertion = expect(promise).rejects.toMatchObject({
+    name: "AbortError",
+  });
+  await waitFor(() => expect(result.current.isPending).toBe(true));
+  sessionRuntime.reset();
+  auth.user = { username: "second" };
+  auth.sessionGeneration++;
+  rerender();
+  expect(result.current.isPending).toBe(false);
+  await act(async () => {
+    finish();
+    await assertion;
+  });
+  expect(second).not.toHaveBeenCalled();
+});
+
+it.each([
+  [{}, []],
+  [{ world_backups: ["world.zip"] }, ["world.zip"]],
+])(
+  "reads typed backup responses with omitted empty categories",
+  async (backups, world) => {
+    auth.user = { username: "admin" };
+    get.mockResolvedValue({ status: "success", backups });
+    const { result } = renderHook(() => useResourceQuery("backups", "test"), {
+      wrapper,
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual({
+      world,
+      properties: [],
+      allowlist: [],
+      permissions: [],
+    });
+  },
+);
+
+it.each([
+  { unexpected: true },
+  { backups: [] },
+  { backups: { world_backups: null } },
+])("rejects malformed backup responses", async (response) => {
+  auth.user = { username: "admin" };
+  get.mockResolvedValue(response);
+  const { result } = renderHook(() => useResourceQuery("backups", "test"), {
+    wrapper,
+  });
+  await waitFor(() => expect(result.current.isError).toBe(true));
+  expect(result.current.error.message).toContain("Invalid");
+});
+
+it.each([
+  ["globalPlayers", undefined, "/api/players/get", ["Steve", "Alex"]],
+  ["audit", undefined, "/audit-log/list", ["server.start"]],
+  ["tasks", undefined, "/api/tasks/list", []],
+  [
+    "serverSettings",
+    "Survival",
+    "/api/server/Survival/settings/get",
+    "running",
+  ],
+  [
+    "access",
+    ["Survival", "allowlist"],
+    "/api/server/Survival/allowlist/get",
+    ["Steve"],
+  ],
+  [
+    "access",
+    ["Survival", "permissions"],
+    "/api/server/Survival/permissions/get",
+    ["Steve"],
+  ],
+  ["access", ["Survival", "bans"], "/api/server/Survival/bans/get", []],
+  [
+    "content",
+    "worlds",
+    "/api/content/worlds",
+    ["Survival.mcworld", "Creative.mcworld"],
+  ],
+  ["content", "addons", "/api/content/addons", ["Resources.mcpack"]],
+  ["downloads", undefined, "/api/downloads/list", []],
+  ["monitor", "Survival", "/api/server/Survival/process_info", 123],
+  [
+    "plugins",
+    undefined,
+    "/api/plugins",
+    ["backup_scheduler", "content_uploader_plugin"],
+  ],
+  ["users", undefined, "/api/users/list", ["admin", "moderator"]],
+  [
+    "backups",
+    "Survival",
+    "/api/server/Survival/backup/list/all",
+    ["2026-10-05-world.zip"],
+  ],
+  ["settings", undefined, "/api/settings/get", 11325],
+  ["properties", "Survival", "/api/server/Survival/properties/get", "20"],
+  ["installedAddons", "Survival", "/api/server/Survival/addons", []],
+])(
+  "reads the backend payload for %s (%s)",
+  async (resource, target, url, expected) => {
+    auth.user = { username: "admin" };
+    get.mockImplementation((value) =>
+      Promise.resolve(fixtureResponse(new URL(value, "http://bsm.test"))),
+    );
+    const { result } = renderHook(() => useResourceQuery(resource, target), {
+      wrapper,
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(get).toHaveBeenCalledWith(
+      url,
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+    const data = result.current.data;
+    const projected =
+      {
+        serverSettings: () => data.server_info.status,
+        settings: () => data.web.port,
+        properties: () => data.properties["max-players"],
+        monitor: () => data.pid,
+        backups: () => data.world,
+        installedAddons: () => data.behavior_packs,
+      }[resource]?.() ??
+      data.map((item) => item.name ?? item.username ?? item.action);
+    expect(projected).toEqual(expected);
+  },
+);
+it("accepts the stopped process response", async () => {
+  auth.user = { username: "admin" };
+  get.mockResolvedValue({ status: "success", process_info: null });
+  const { result } = renderHook(() => useResourceQuery("monitor", "Survival"), {
+    wrapper,
+  });
+  await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  expect(result.current.data).toBeNull();
+});
+
+it.each(["operation_incomplete", "validation_error"])(
+  "refreshes resources only for errors that report applied work: %s",
+  async (code) => {
+    auth.user = { username: "admin" };
+    get.mockResolvedValue([{ username: "before" }]);
+    const mutate = vi.fn(async () => {
+      get.mockResolvedValue([{ username: "after" }]);
+      throw Object.assign(new Error("Operation failed"), { code });
+    });
+    const { result } = renderHook(
+      () => ({
+        query: useResourceQuery("users"),
+        write: useResourceMutation(mutate, [queryKeys.users()]),
+      }),
+      { wrapper },
+    );
+    await waitFor(() =>
+      expect(result.current.query.data?.[0].username).toBe("before"),
+    );
+    await act(async () => {
+      await expect(result.current.write.mutateAsync()).rejects.toThrow(
+        "Operation failed",
+      );
+    });
+    await waitFor(() =>
+      expect(result.current.query.data[0].username).toBe(
+        code === "operation_incomplete" ? "after" : "before",
+      ),
+    );
+  },
+);
+
+it("does not request administrator diagnostics for a regular account", async () => {
+  auth.user = { username: "viewer", role: "user" };
+  renderHook(
+    () => useResourceQuery("diagnostics", undefined, { enabled: true }),
+    { wrapper },
+  );
+  await act(async () => {});
+  expect(get).not.toHaveBeenCalled();
+});
+
+it("rejects offline writes immediately and never replays them when connectivity returns", async () => {
+  auth.user = { username: "admin" };
+  const online = vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
+  const run = vi.fn();
+  const { result } = renderHook(() => useResourceMutation(run, []), {
+    wrapper,
+  });
+  try {
+    await act(async () => {
+      await expect(
+        result.current.mutateAsync({ value: "edit" }),
+      ).rejects.toThrow("Requests are not queued");
+    });
+    expect(run).not.toHaveBeenCalled();
+    online.mockReturnValue(true);
+    window.dispatchEvent(new Event("online"));
+    await act(async () => {});
+    expect(run).not.toHaveBeenCalled();
+  } finally {
+    online.mockRestore();
+  }
+});

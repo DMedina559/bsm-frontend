@@ -21,7 +21,7 @@ export const settingGroupHelp = {
   paths: "Directories used for servers, backups, downloads, and extensions.",
   retention: "Previous files to keep. Zero disables automatic cleanup.",
   monitoring: "Metrics interval changes apply on the next monitoring cycle.",
-  web: "Listener and authentication settings. Listener changes require a restart.",
+  web: "Listener, proxy, CORS, and authentication settings. Listener, proxy, and CORS changes require a web server restart.",
   lifecycle:
     "Limits for startup and cleanup. Request draining changes require a web server restart.",
   server_info:
@@ -30,6 +30,11 @@ export const settingGroupHelp = {
   custom: "Additional settings used by your extensions.",
 };
 const fields = {
+  "web.cors_origins": {
+    label: "Allowed CORS origins",
+    description:
+      "Origins such as https://dashboard.example.com, without URL paths. Leave empty to disable cross-origin access. * allows all origins. Requires a web server restart.",
+  },
   "monitoring.app_metrics_interval_sec": {
     ...number(
       "Application and system metrics sampling.",

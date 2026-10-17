@@ -1,49 +1,13 @@
+import { getApiBaseUrl } from "./connection";
+import { preferenceStore } from "./preferenceStore";
+import { legacyPreferenceKeys as legacy } from "./preferenceDefinitions";
 import {
   getPreferenceIdentity,
   migrateAccountPreference,
 } from "./backendIdentity";
-import { validMetricUnits } from "../utils/metricUnits";
 import { normalizeAppearance } from "../utils/theme";
-import { validatePalette } from "../utils/palettes";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { createPreferenceStore } from "./preferenceStore";
-const definitions = {
-  metricUnits: { validate: validMetricUnits },
-  appearance: {
-    validate: (value) =>
-      value &&
-      JSON.stringify(normalizeAppearance(value)) === JSON.stringify(value),
-  },
-  palettes: {
-    validate: (value) => {
-      try {
-        return (
-          Array.isArray(value?.palettes) &&
-          value.palettes.length <= 30 &&
-          value.palettes.every((palette) => Boolean(validatePalette(palette)))
-        );
-      } catch {
-        return false;
-      }
-    },
-  },
-  overviewLayout: {
-    validate: (value) => ["grid", "compact", "list"].includes(value),
-  },
-  serverSort: {
-    validate: (value) =>
-      ["name", "status", "version", "players"].includes(value?.key) &&
-      ["asc", "desc"].includes(value?.direction),
-  },
-};
-export const preferenceStore = createPreferenceStore(undefined, definitions);
-const legacy = {
-  appearance: "bsm.appearance.v4",
-  palettes: "bsm.palettes.v4",
-  overviewLayout: "bsm.overview-layout.v1",
-  serverSort: "bsm.fleet-sort.v4",
-};
 export function usePreference(name, fallback) {
   const { user } = useAuth();
   const identity = getPreferenceIdentity(user);
@@ -60,7 +24,7 @@ export function usePreference(name, fallback) {
     migrateAccountPreference(preferenceStore, user, name);
     if (identity !== null && legacy[name]) {
       try {
-        const old = localStorage.getItem(legacy[name]);
+        const old = getApiBaseUrl() ? null : localStorage.getItem(legacy[name]);
         const missing = Symbol("missing");
         if (
           old !== null &&

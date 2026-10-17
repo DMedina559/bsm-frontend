@@ -8,7 +8,6 @@ import { logger } from "../../utils/logger";
 export default function PluginRenderer({
   schema,
   selectedServer,
-  socketData,
   formState,
   handleAction,
   handleInputChange,
@@ -44,8 +43,7 @@ export default function PluginRenderer({
     // Inject Socket Data if needed
     if (props.socketTopic) {
       const topic = props.socketTopic.replace("{server}", selectedServer || "");
-      const latestMsg = socketData[topic];
-      props.latestSocketMessage = latestMsg;
+      props.socketTopic = topic;
     }
 
     // Wrapper for Chart to handle internal state for history

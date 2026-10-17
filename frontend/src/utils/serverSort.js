@@ -27,14 +27,3 @@ export function sortServers(servers, key = "name", direction = "asc") {
     return sign * result || collator.compare(a.name || "", b.name || "");
   });
 }
-export function readServerSort() {
-  try {
-    const value = JSON.parse(localStorage.getItem("bsm.fleet-sort.v4"));
-    return {
-      key: Object.hasOwn(SERVER_SORTS, value?.key) ? value.key : "name",
-      direction: value?.direction === "desc" ? "desc" : "asc",
-    };
-  } catch {
-    return { key: "name", direction: "asc" };
-  }
-}

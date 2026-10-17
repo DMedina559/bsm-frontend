@@ -1,17 +1,24 @@
+import { getAppConfig } from "../app/config";
 /**
  * @fileoverview Utility for determining dynamic base path
  */
 
 /**
  * Gets the base path for API requests when running behind a dynamic proxy (e.g. Home Assistant Ingress)
- * It calculates the path prefix by removing /app/ and everything after it from the current path.
+ * Reads the backend-provided runtime prefix, falling back to pathname detection
+ * for standalone hosting.
  *
  * @returns {string} The base path prefix (e.g. '/api/hassio_ingress/xyz') or empty string
  */
 export const getApiProxyBasePath = () => {
+  if (getAppConfig().mode === "standalone") return "";
   if (typeof window === "undefined" || !window.location) {
     return "";
   }
+
+  const runtimePrefix =
+    document.getElementById("app-asset-base")?.dataset.apiBase;
+  if (runtimePrefix !== undefined) return runtimePrefix;
 
   const path = window.location.pathname;
   if (
@@ -22,7 +29,8 @@ export const getApiProxyBasePath = () => {
   ) {
     return "";
   }
-  const appIndex = path.search(/\/app(?:\/|$)/);
+  const appMatches = [...path.matchAll(/\/app(?=\/|$)/g)];
+  const appIndex = appMatches.at(-1)?.index ?? -1;
 
   if (appIndex > 0) {
     return path
@@ -42,10 +50,20 @@ export const getApiProxyBasePath = () => {
   return "";
 };
 
+export function getAppBasePath() {
+  const config = getAppConfig();
+  if (globalThis.BSM_CONFIG?.appBase || config.mode === "standalone")
+    return config.appBase;
+  return `${getApiProxyBasePath()}/app`;
+}
+
 /** Resolve bundled assets on the frontend origin, preserving ingress prefixes. */
 export function resolveAppAssetUrl(path) {
   const origin = window.location.origin;
-  const target = new URL(path, `${origin}${getApiProxyBasePath()}/app/`);
+  const target = new URL(
+    path,
+    `${origin}${getAppBasePath().replace(/\/+$/, "")}/`,
+  );
   if (
     !["http:", "https:"].includes(target.protocol) ||
     target.origin !== origin ||

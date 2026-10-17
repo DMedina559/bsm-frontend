@@ -17,15 +17,19 @@ export default defineConfig(({ mode }) => {
     ? target.replace("https", "wss")
     : target.replace("http", "ws");
 
-  let appVersion = packageJson.version || "unknown";
+  let appVersion =
+    process.env.BSM_FRONTEND_VERSION || packageJson.version || "unknown";
   try {
-    const gitVersion = execSync("git describe --tags --always", {
-      stdio: "pipe",
-    })
+    const gitVersion = execSync(
+      'git describe --tags --always --match "frontend-[0-9]*" --match "[0-9]*" --match "v[0-9]*"',
+      {
+        stdio: "pipe",
+      },
+    )
       .toString()
       .trim();
-    if (gitVersion) {
-      appVersion = gitVersion;
+    if (gitVersion && !process.env.BSM_FRONTEND_VERSION) {
+      appVersion = gitVersion.replace(/^frontend-/, "");
     }
   } catch {
     console.warn(
@@ -54,7 +58,7 @@ export default defineConfig(({ mode }) => {
     },
     base: mode === "development" ? "/app/" : "./",
     build: {
-      outDir: "../src/bsm_frontend/static",
+      outDir: "dist",
       emptyOutDir: true,
     },
     server: {
@@ -73,10 +77,10 @@ export default defineConfig(({ mode }) => {
       },
     },
     test: {
-      include: ["src/**/*.test.{js,jsx}"],
+      include: ["tests/unit/**/*.test.{js,jsx}"],
       globals: true,
       environment: "jsdom",
-      setupFiles: "./src/test/setup.js",
+      setupFiles: "./tests/support/setup.js",
     },
   };
 });

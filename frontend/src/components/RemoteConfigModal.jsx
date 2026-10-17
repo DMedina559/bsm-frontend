@@ -1,5 +1,10 @@
+import { localSettings, sessionSettings } from "../app/browserStorage";
 import React, { useState } from "react";
-import { getApiBaseUrl, setApiBaseUrl } from "../api/transport";
+import {
+  getApiBaseUrl,
+  setApiBaseUrl,
+  validateBackendUrl,
+} from "../api/transport";
 import Modal from "./Modal";
 import { useDialog } from "../contexts/DialogContext";
 const RemoteConfigModal = ({ isOpen, onClose }) => {
@@ -12,9 +17,9 @@ const RemoteConfigModal = ({ isOpen, onClose }) => {
   const apply = (value) => {
     setApiBaseUrl(value);
     // A different backend must not receive the previous backend's bearer token.
-    localStorage.removeItem("access_token");
-    sessionStorage.removeItem("access_token");
-    localStorage.removeItem("selectedServer");
+    localSettings.removeItem("access_token");
+    sessionSettings.removeItem("access_token");
+    localSettings.removeItem("selectedServer");
     setIsSaving(true);
     window.location.reload();
   };
@@ -24,25 +29,18 @@ const RemoteConfigModal = ({ isOpen, onClose }) => {
     const value = remoteUrl.trim();
     if (value) {
       try {
-        const url = new URL(value);
-        if (
-          !["http:", "https:"].includes(url.protocol) ||
-          url.username ||
-          url.password ||
-          url.search ||
-          url.hash
-        )
-          throw new Error();
-        apply(value.replace(/\/+$/, ""));
-      } catch {
-        setError(
-          "Enter an HTTP or HTTPS URL without credentials, a query, or a fragment.",
-        );
+        apply(validateBackendUrl(value));
+      } catch (error) {
+        setError(error.message || "Invalid backend URL.");
       }
     } else apply("");
   };
   const handleReset = async () => {
-    if (await confirmAction("Reset to the local backend and sign in again?"))
+    if (
+      await confirmAction(
+        "Reset to the configured default backend and sign in again?",
+      )
+    )
       apply("");
   };
   return (
@@ -85,7 +83,7 @@ const RemoteConfigModal = ({ isOpen, onClose }) => {
             onClick={handleReset}
             disabled={isSaving}
           >
-            Reset to local
+            Reset to default
           </button>
           <button
             type="submit"

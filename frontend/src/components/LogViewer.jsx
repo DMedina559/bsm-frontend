@@ -2,6 +2,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { callOperation } from "../api/operations";
 import { useAuth } from "../contexts/AuthContext";
 import { useWebSocket } from "../contexts/WebSocketContext";
+import { logWindow, MAX_LOG_BYTES } from "../utils/logWindow";
 
 const EMPTY = { data: "", start: 0, end: 0, file_id: null, has_more: false };
 
@@ -32,6 +33,8 @@ export default function LogViewer({
     const controller = new AbortController();
     let initialized = false;
     const pending = [];
+    let pendingBytes = 0;
+    let resyncPending = false;
     current.current = EMPTY;
     follow.current = true;
     anchor.current = null;
@@ -39,9 +42,10 @@ export default function LogViewer({
     setLoading(false);
     setFollowing(true);
     setError("");
-    const commit = (value) => {
-      current.current = value;
-      setPage(value);
+    const commit = (value, older = false) => {
+      const window = logWindow(value, older);
+      current.current = window;
+      setPage(window);
     };
     const append = (message) => {
       if (
@@ -52,6 +56,8 @@ export default function LogViewer({
       )
         return;
       const previous = current.current;
+      // An older window stays in place until the user asks to follow live.
+      if (previous.tailOmitted) return;
       if (
         !initialized ||
         (busy.current &&
@@ -60,7 +66,15 @@ export default function LogViewer({
             message.end < previous.end ||
             message.start > previous.end))
       ) {
-        pending.push(message);
+        const size = new TextEncoder().encode(message.data || "").length;
+        if (pendingBytes + size > MAX_LOG_BYTES) {
+          pending.length = 0;
+          pendingBytes = 0;
+          resyncPending = true;
+        } else {
+          pending.push(message);
+          pendingBytes += size;
+        }
         return;
       }
       if (
@@ -72,7 +86,12 @@ export default function LogViewer({
       }
       // Older backends still supply live text but have no history metadata.
       if (message.start === undefined) {
-        commit({ ...previous, data: previous.data + (message.data || "") });
+        const data = message.data || "";
+        commit({
+          ...previous,
+          data: previous.data + data,
+          end: previous.end + new TextEncoder().encode(data).length,
+        });
         return;
       }
       if (message.end <= previous.end) return;
@@ -116,12 +135,15 @@ export default function LogViewer({
               top: element.scrollTop,
               height: element.scrollHeight,
             };
-          commit({
-            ...current.current,
-            data: result.data + current.current.data,
-            start: result.start,
-            has_more: result.has_more,
-          });
+          commit(
+            {
+              ...current.current,
+              data: result.data + current.current.data,
+              start: result.start,
+              has_more: result.has_more,
+            },
+            true,
+          );
         } else {
           commit(result);
           initialized = true;
@@ -139,7 +161,14 @@ export default function LogViewer({
         if (active) {
           busy.current = false;
           setLoading(false);
-          if (initialized) pending.splice(0).forEach(append);
+          if (initialized) {
+            pendingBytes = 0;
+            if (resyncPending) {
+              resyncPending = false;
+              pending.length = 0;
+              void fetchPage();
+            } else pending.splice(0).forEach(append);
+          }
         }
       }
     };
@@ -180,6 +209,7 @@ export default function LogViewer({
   const onScroll = () => {
     const element = container.current;
     const atBottom =
+      !current.current.tailOmitted &&
       element.scrollHeight - element.scrollTop - element.clientHeight < 40;
     follow.current = atBottom;
     setFollowing(atBottom);
@@ -220,13 +250,14 @@ export default function LogViewer({
         >
           Reload log
         </button>
-        {!following && (
+        {(!following || page.tailOmitted) && (
           <button
             type="button"
             onClick={() => {
               follow.current = true;
               setFollowing(true);
-              if (container.current)
+              if (current.current.tailOmitted) void loadOlder.current?.();
+              else if (container.current)
                 container.current.scrollTop = container.current.scrollHeight;
             }}
           >
@@ -234,6 +265,11 @@ export default function LogViewer({
           </button>
         )}
         {loading && <span role="status">Loading logs...</span>}
+        {page.tailOmitted && (
+          <span role="status">
+            Viewing older entries. Follow live to return to current output.
+          </span>
+        )}
         {error && <span role="alert">{error}</span>}
       </div>
       <div

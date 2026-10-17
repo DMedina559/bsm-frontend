@@ -1,7 +1,9 @@
-import { coreEventTopics } from "../app/coreEvents";
-import { queryClient } from "../app/queryClient";
+import { createSharedSocketManager } from "../app/sharedSocketManager";
 import { getPreferenceIdentity } from "../app/backendIdentity";
-import { startOperationRecovery } from "../app/operationRecovery";
+import { coreEventTopics } from "../app/coreEvents";
+import { startResourceRecovery } from "../app/resourceRecovery";
+import { application } from "../app/application";
+import { callOperation } from "../api/operations";
 import { reconcileSocketMessage } from "../app/applicationState";
 import { operationCoordinator } from "../app/operationCoordinator";
 import React, {
@@ -32,7 +34,9 @@ export const WebSocketProvider = ({ children }) => {
   const [listeners] = useState(() => new Set());
   const [connectionState, setConnectionState] = useState("disconnected");
   const [manager] = useState(() =>
-    createWebSocketManager({
+    createSharedSocketManager({
+      createManager: createWebSocketManager,
+      runtime: application,
       onState: (state) => {
         setIsConnected(state.isConnected);
         setIsFallback(state.isFallback);
@@ -52,28 +56,30 @@ export const WebSocketProvider = ({ children }) => {
   );
   useEffect(() => {
     setIsFallback(false);
-    return manager.start(identity);
-  }, [identity, sessionGeneration, manager]);
+    const owner = application.start({
+      callOperation,
+      identity: resourceIdentity,
+      generation: sessionGeneration ?? 0,
+      manager,
+    });
+    return owner.stop;
+  }, [resourceIdentity, sessionGeneration, manager]);
   const { subscribe, unsubscribe, sendMessage, reconnect } = manager;
-  useEffect(() => {
-    if (resourceIdentity === null) return;
-    return startOperationRecovery(resourceIdentity, sessionGeneration ?? 0);
-  }, [resourceIdentity, sessionGeneration]);
   useEffect(() => {
     if (identity === null) return;
     coreEventTopics.forEach(subscribe);
     return () => coreEventTopics.forEach(unsubscribe);
   }, [identity, subscribe, unsubscribe]);
-  useEffect(() => {
-    if (identity !== null && isConnected) void queryClient.invalidateQueries();
-  }, [identity, isConnected]);
-  useEffect(() => {
-    if (identity === null || !isFallback) return;
-    const timer = setInterval(() => {
-      void queryClient.invalidateQueries({ refetchType: "active" });
-    }, 60_000);
-    return () => clearInterval(timer);
-  }, [identity, isFallback]);
+  useEffect(
+    () =>
+      startResourceRecovery({
+        identity: resourceIdentity,
+        generation: sessionGeneration ?? 0,
+        connected: isConnected,
+        fallback: isFallback,
+      }),
+    [resourceIdentity, sessionGeneration, isConnected, isFallback],
+  );
   // Backend task topics replay the latest task snapshot upon subscription.
   // Keep subscriptions tied to registered operations, including after reconnect.
   useEffect(() => {

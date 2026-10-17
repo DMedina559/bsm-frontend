@@ -1,5 +1,5 @@
 import React from "react";
-import { getApiProxyBasePath } from "../utils/basePath";
+import { resolveAppAssetUrl } from "../utils/basePath";
 export default function AuthBrand() {
   return (
     <div className="auth-brand">
@@ -7,7 +7,7 @@ export default function AuthBrand() {
         <strong>Bedrock Server Manager</strong>
       </div>
       <img
-        src={`${getApiProxyBasePath()}/app/image/icon/web-app-manifest-512x512.png`}
+        src={resolveAppAssetUrl("image/icon/web-app-manifest-512x512.png")}
         alt="Bedrock Server Manager"
       />
     </div>

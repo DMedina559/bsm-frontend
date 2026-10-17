@@ -7,7 +7,7 @@ import {
   Copy,
   ExternalLink,
 } from "lucide-react";
-import { isSafeUrl } from "../../../utils/urlValidation";
+import { resolvePluginUrl } from "../../../utils/pluginUrl";
 import { logger } from "../../../utils/logger";
 import { PluginIcon } from "./icons";
 export const displayComponents = {
@@ -67,7 +67,7 @@ export const displayComponents = {
   },
   Image: ({ src, alt, width, height, className = "" }) => (
     <img
-      src={src}
+      src={resolvePluginUrl(src) || undefined}
       alt={alt}
       width={width}
       height={height}
@@ -75,7 +75,7 @@ export const displayComponents = {
     />
   ),
   iframe: ({ src, title, height = "400px", className = "" }) => {
-    if (!isSafeUrl(src)) {
+    if (!resolvePluginUrl(src)) {
       logger.warn(`[DynamicPage] Blocked unsafe iframe src`, {
         src,
       });
@@ -98,7 +98,7 @@ export const displayComponents = {
     }
     return (
       <iframe
-        src={src}
+        src={resolvePluginUrl(src) || undefined}
         title={title || "Plugin content"}
         height={height}
         className={`dynamic-iframe ${className}`}
@@ -120,7 +120,7 @@ export const displayComponents = {
         : null;
     return (
       <a
-        href={href}
+        href={resolvePluginUrl(href, { navigation: true }) || undefined}
         target={target}
         className={`action-link ${className}`}
         style={{

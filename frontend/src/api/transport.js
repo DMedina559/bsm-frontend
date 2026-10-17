@@ -1,99 +1,24 @@
+import { createHttpTransport } from "@bedrock-server-manager/api-client/transport";
+export { ApiError } from "@bedrock-server-manager/api-client/transport";
+import { ApiError } from "@bedrock-server-manager/api-client/transport";
 import { stateReconciler } from "../app/stateReconciler";
 import { getBackendIdentity } from "../app/backendIdentity";
-import { operationCoordinator } from "../app/operationCoordinator";
 /**
  * @fileoverview Core API client for making HTTP requests.
  * Handles fetch logic, headers, authentication, and response parsing.
  */
 import { sessionRuntime } from "../app/sessionRuntime";
-import { getApiProxyBasePath, serializeHttpUrl } from "../utils/basePath";
 
 import { logger } from "../utils/logger";
 
-export class ApiError extends Error {
-  constructor(message, status, data) {
-    super(message);
-    this.name = "ApiError";
-    this.status = status;
-    this.data = data;
-    this.code = data?.error?.code ?? null;
-    this.details = data?.error?.details ?? null;
-    this.operationResult = this.details?.result ?? null;
-    this.committed = this.operationResult?.committed === true;
-    if (this.committed)
-      this.message +=
-        " The change was saved, but follow-up work failed. Refresh before trying again.";
-    this.category =
-      this.code === "operation_incomplete"
-        ? "incomplete"
-        : status === 503
-          ? "unavailable"
-          : status === 401
-            ? "unauthorized"
-            : status === 403
-              ? "forbidden"
-              : status === 409
-                ? "conflict"
-                : status === 422
-                  ? "validation"
-                  : status === 0
-                    ? "network"
-                    : "server";
-  }
-}
-
-/**
- * Gets the configured API base URL from localStorage.
- * @returns {string} The base URL (e.g. "http://localhost:11325") or empty string.
- */
-export function getApiBaseUrl() {
-  return localStorage.getItem("api_base_url") || "";
-}
-
-/**
- * Sets the API base URL.
- * @param {string} url - The base URL to set.
- */
-export function setApiBaseUrl(url) {
-  if (!url) {
-    localStorage.removeItem("api_base_url");
-  } else {
-    // Ensure no trailing slash
-    localStorage.setItem("api_base_url", url.replace(/\/$/, ""));
-  }
-}
-
-/** Resolve API/download URLs against the configured backend, preserving ingress prefixes. */
-export function resolveApiUrl(url) {
-  if (typeof url !== "string" || !url.trim())
-    throw new ApiError("Missing API URL", 0, null);
-  const base = getApiBaseUrl() || getApiProxyBasePath();
-  const finalUrl =
-    url.startsWith("/") && !url.startsWith("//") && base
-      ? `${base}${url}`
-      : url;
-  const backend = new URL(
-    base || window.location.origin,
-    window.location.origin,
-  );
-  const target = new URL(finalUrl, window.location.origin);
-  if (
-    !["http:", "https:"].includes(target.protocol) ||
-    target.origin !== backend.origin ||
-    target.username ||
-    target.password
-  ) {
-    throw new ApiError(
-      "API requests must target the configured backend.",
-      0,
-      null,
-    );
-  }
-  return serializeHttpUrl(
-    target,
-    finalUrl.startsWith("/") && !finalUrl.startsWith("//"),
-  );
-}
+import { getToken, resolveApiUrl } from "../app/connection";
+export {
+  getApiBaseUrl,
+  setApiBaseUrl,
+  validateBackendUrl,
+  resolveApiUrl,
+  resolveWebSocketUrl,
+} from "../app/connection";
 
 /**
  * Sends an HTTP request to the API.
@@ -103,235 +28,36 @@ export function resolveApiUrl(url) {
  * @returns {Promise<any>} Resolves with the response data (JSON or null for 204).
  * @throws {ApiError} If the response status is not 2xx.
  */
-export async function request(url, options = {}) {
-  const {
-    method = "GET",
-    body,
-    headers = {},
-    timeout = 30000,
-    responseType = "json",
-    session = sessionRuntime.capture(),
-    ...restOptions
-  } = options;
-  const timeoutSignal = AbortSignal.timeout(timeout);
-  const signal = AbortSignal.any([
-    session.signal,
-    timeoutSignal,
-    ...(restOptions.signal ? [restOptions.signal] : []),
-  ]);
-  const stateTicket = stateReconciler.capture(signal);
-  const assertCurrent = () => {
-    if (
-      !sessionRuntime.isCurrent(session) ||
-      !stateReconciler.current(stateTicket) ||
-      (session.backend && session.backend !== getBackendIdentity())
-    ) {
-      throw new DOMException("Session changed", "AbortError");
-    }
-    signal.throwIfAborted();
-  };
-
-  assertCurrent();
-  const defaultHeaders = {
-    Accept: responseType === "blob" ? "*/*" : "application/json",
-  };
-
-  const config = {
-    method: method.toUpperCase(),
-    headers: { ...defaultHeaders, ...headers },
-    ...restOptions,
-    signal,
-  };
-
-  const token =
-    sessionStorage.getItem("access_token") ||
-    localStorage.getItem("access_token");
-  if (token) {
-    config.headers["Authorization"] = `Bearer ${token}`;
-  }
-
-  if (body !== undefined) {
-    const raw =
-      body instanceof FormData ||
-      body instanceof URLSearchParams ||
-      body instanceof Blob ||
-      body instanceof ArrayBuffer ||
-      ArrayBuffer.isView(body);
-    const contentType = config.headers["Content-Type"];
-    if (
-      !raw &&
-      typeof body !== "string" &&
-      (!contentType || contentType.includes("application/json"))
-    ) {
-      config.headers["Content-Type"] = contentType || "application/json";
-      config.body = JSON.stringify(body);
-    } else config.body = body;
-  }
-
-  try {
-    const finalUrl = resolveApiUrl(url);
-
-    logger.debug(`[API] Request: ${config.method} ${finalUrl}`, {
-      method: config.method,
-      url: finalUrl,
-      headers: {
-        ...config.headers,
-        Authorization: token ? "[redacted]" : undefined,
-      },
-    });
-
-    const response = await fetch(finalUrl, config);
-    assertCurrent();
-
-    if (response.status === 204) {
-      logger.debug(`[API] Response (No Content)`, {
-        status: response.status,
-        url: finalUrl,
-      });
-      return null;
-    }
-
-    const contentType = response.headers.get("content-type");
-    let data;
-
-    if (response.ok && responseType === "blob") {
-      if (contentType?.includes("text/html"))
-        throw new ApiError("Session expired (Redirected to App)", 401, null);
-      data = await response.blob();
-    } else if (contentType && contentType.includes("application/json")) {
-      try {
-        data = await response.json();
-      } catch (err) {
-        // Fallback if JSON parsing fails but header said JSON
-        logger.error(`[API] Error: Invalid JSON response`, {
-          url: finalUrl,
-          status: response.status,
-          error: err,
-        });
-        throw new ApiError(
-          "Invalid JSON response from server",
-          response.status,
-          null,
-        );
-      }
-    } else {
-      // If not JSON, treat as text (could be HTML error page, plain text, etc.)
-      const text = await response.text();
-
-      // If we expected JSON (based on Accept header) but got HTML (e.g. 404 page, 500 error page, or Login page redirect)
-      // we should probably treat it as an error unless the caller explicitly handles it.
-      if (!response.ok) {
-        logger.error(`[API] Error: Non-JSON response`, {
-          url: finalUrl,
-          status: response.status,
-          responseType: "text",
-        });
-        throw new ApiError(
-          `Request failed with status ${response.status} (Non-JSON response)`,
-          response.status,
-          text,
-        );
-      }
-
-      // If success (200) but HTML (e.g. redirected to login page without 401), this is tricky.
-      // Legacy behavior might just return the text.
-      // But usually our API should return JSON.
-      data = text;
-
-      // Check if it looks like the login page (common issue when session expires and backend redirects instead of 401)
+const transport = createHttpTransport({
+  resolveApiUrl,
+  logger,
+  captureSession: () => sessionRuntime.capture(),
+  getToken,
+  prepareRequest: ({ session, signal }) => {
+    const stateTicket = stateReconciler.capture(signal);
+    return () => {
       if (
-        typeof text === "string" &&
-        text.toLowerCase().includes("<!doctype html>")
-      ) {
-        logger.warn(`[API] Detected HTML redirect, forcing 401 error`, {
-          url: finalUrl,
-        });
-        // Force a 401 style error so AuthContext can handle logout
-        throw new ApiError("Session expired (Redirected to App)", 401, null);
-      }
-    }
-
-    assertCurrent();
-    if (!response.ok) {
-      let errorMessage = `Request failed with status ${response.status}`;
-      if (typeof data?.error?.message === "string") {
-        errorMessage = data.error.message;
-      } else if (typeof data === "object" && data !== null && data.message) {
-        errorMessage = data.message;
-      } else if (typeof data === "object" && data !== null && data.detail) {
-        // FastAPI often returns 'detail'
-        errorMessage = Array.isArray(data.detail)
-          ? data.detail
-              .map(
-                (issue) =>
-                  `${issue.loc?.join(".") || "Request"}: ${issue.msg || "Invalid value"}`,
-              )
-              .join("; ")
-          : String(data.detail);
-      } else if (typeof data === "string" && data.length > 0) {
-        errorMessage = data.substring(0, 200);
-      }
-
-      logger.error(`[API] Error: Request failed`, {
-        url: finalUrl,
-        status: response.status,
-        message: errorMessage,
-        responseType: typeof data,
-      });
-      throw new ApiError(errorMessage, response.status, data);
-    }
-
-    // Legacy API sometimes returns { status: "error", message: "..." } even with 200 OK
-    if (
-      data &&
-      typeof data === "object" &&
-      data.status &&
-      data.status === "error"
-    ) {
-      logger.error(`[API] Error: Application error in 200 OK`, {
-        url: finalUrl,
-        message: data.message,
-        responseType: typeof data,
-      });
-      throw new ApiError(
-        data.message || "Application error",
-        response.status,
-        data,
-      );
-    }
-
-    logger.debug(`[API] Response`, {
-      url: finalUrl,
-      status: response.status,
-      responseType: typeof data,
-    });
-    if (config.method !== "GET" && data?.task_id) {
-      const server = url.match(/\/api\/server\/([^/]+)/)?.[1];
-      operationCoordinator.register({
-        id: data.task_id,
-        kind: url.split("/").filter(Boolean).slice(-2).join(":"),
-        serverName:
-          body?.server_name ?? (server ? decodeURIComponent(server) : null),
-        status: "pending",
-      });
-    }
-    return data;
-  } catch (error) {
-    if (error.name === "AbortError" || error.name === "TimeoutError")
-      throw error;
-    if (error instanceof ApiError) {
-      throw error;
-    }
-    // Network errors
-    logger.error(`[API] Network Error`, {
-      url: url,
-      message: error.message,
-      error: error,
-    });
-    throw new ApiError(error.message, 0, null);
-  }
+        !sessionRuntime.isCurrent(session) ||
+        !stateReconciler.current(stateTicket) ||
+        (session.backend && session.backend !== getBackendIdentity())
+      )
+        throw new DOMException("Session changed", "AbortError");
+      signal.throwIfAborted();
+    };
+  },
+});
+export function request(url, options = {}) {
+  if (
+    navigator.onLine === false &&
+    !["GET", "HEAD", "OPTIONS"].includes(
+      (options.method ?? "GET").toUpperCase(),
+    )
+  )
+    return Promise.reject(
+      new Error("Reconnect before making changes. Requests are not queued."),
+    );
+  return transport.request(url, options);
 }
-
 /** Binary responses share authentication, cancellation, timeouts and API errors. */
 export function getBlob(url, options = {}) {
   return request(url, { ...options, method: "GET", responseType: "blob" });

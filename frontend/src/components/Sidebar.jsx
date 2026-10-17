@@ -1,11 +1,12 @@
-import { callOperation } from "../api/operations";
-import React, { useEffect, useState } from "react";
+import { sessionSettings } from "../app/browserStorage";
+import { useResourceQuery } from "../app/resourceQueries";
+import { usePreference } from "../app/usePreference";
+import React, { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useServer } from "../contexts/ServerContext";
 import { useToast } from "../contexts/ToastContext";
-import { getApiProxyBasePath } from "../utils/basePath";
-import { logger } from "../utils/logger";
+import { resolveAppAssetUrl } from "../utils/basePath";
 import {
   LayoutDashboard,
   Users,
@@ -40,47 +41,18 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
     refreshServers,
     loading,
   } = useServer();
-  const [pluginPages, setPluginPages] = useState([]);
-  const [isCollapsed, setIsCollapsed] = useState(
-    () => localStorage.getItem("sidebarCollapsed") === "true",
+  const pluginQuery = useResourceQuery("pluginPages");
+  const infoQuery = useResourceQuery("applicationInfo");
+  const pluginPages = pluginQuery.data ?? [];
+  const [isCollapsed, setIsCollapsed] = usePreference(
+    "sidebarCollapsed",
+    false,
   );
-  const [appVersion, setAppVersion] = useState("Unknown");
-  const [splashText, setSplashText] = useState("");
+  const appVersion = infoQuery.data?.app_version || "Unknown";
+  const splashText = infoQuery.data?.splash_text || "";
   const [query, setQuery] = useState("");
   const effectiveCollapsed = isCollapsed && !mobileOpen;
-  useEffect(() => {
-    let active = true;
-    callOperation("get_system_info")
-      .then((data) => {
-        if (!active) return;
-        setAppVersion(data?.info?.app_version || "Unknown");
-        setSplashText(data?.info?.splash_text || data?.data?.splash_text || "");
-      })
-      .catch((error) =>
-        logger.warn("[Sidebar] Unable to load application info", {
-          error,
-        }),
-      );
-    callOperation("get_plugin_pages")
-      .then((data) => {
-        if (active && data?.status === "success" && Array.isArray(data.pages))
-          setPluginPages(data.pages);
-      })
-      .catch((error) =>
-        logger.warn("[Sidebar] Unable to load plugin pages", {
-          error,
-        }),
-      );
-    return () => {
-      active = false;
-    };
-  }, []);
-  const toggleSidebar = () => {
-    setIsCollapsed((previous) => {
-      localStorage.setItem("sidebarCollapsed", String(!previous));
-      return !previous;
-    });
-  };
+  const toggleSidebar = () => setIsCollapsed(!isCollapsed);
   const handleNavClick = () => {
     if (mobileOpen) setMobileOpen?.(false);
   };
@@ -174,7 +146,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
           label: "Settings",
           icon: Settings,
         },
-        ...(sessionStorage.getItem("show_hidden_flag") === "true"
+        ...(sessionSettings.getItem("show_hidden_flag") === "true"
           ? [
               {
                 path: "/playground",
@@ -233,7 +205,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
       <header className="sidebar-header">
         <img
           className="sidebar-brand-icon"
-          src={`${getApiProxyBasePath()}/app/image/icon/web-app-manifest-512x512.png`}
+          src={resolveAppAssetUrl("image/icon/web-app-manifest-512x512.png")}
           alt="Bedrock Server Manager"
         />
         {!effectiveCollapsed && (

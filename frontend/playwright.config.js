@@ -1,8 +1,12 @@
 /* global process */
 import { defineConfig } from "@playwright/test";
 export default defineConfig({
-  testDir: "./e2e",
+  testDir: "./tests/e2e",
   fullyParallel: true,
+  projects: ["chromium", "firefox", "webkit"].map((browserName) => ({
+    name: browserName,
+    use: { browserName },
+  })),
   use: {
     baseURL: "http://127.0.0.1:4173/app/",
     trace: "retain-on-failure",
@@ -20,7 +24,7 @@ export default defineConfig({
       : {},
   },
   webServer: {
-    command: "npm run dev -- --host 127.0.0.1 --port 4173",
+    command: "node tests/support/productionServer.mjs",
     url: "http://127.0.0.1:4173/app/",
     reuseExistingServer: false,
   },
