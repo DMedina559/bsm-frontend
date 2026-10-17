@@ -4,6 +4,7 @@ export function createStateReconcilerModule({
   logger,
   sessionRuntime,
   getBackendIdentity,
+  diagnostics,
 }) {
   const terminalTaskStatus = (status) =>
     [
@@ -47,6 +48,21 @@ export function createStateReconcilerModule({
     const tickets = new WeakMap();
     const epochListeners = new Set();
     const records = new Map();
+    const compactable = new Set();
+    const observers = new Set();
+    const observe = (record) => {
+      for (const listener of observers) {
+        try {
+          listener(record);
+        } catch {
+          /* An observer cannot interrupt acceptance. */
+        }
+      }
+    };
+    const reject = (reason, previous = {}) => {
+      diagnostics?.record("rejected", { reason });
+      return { accepted: false, ...previous };
+    };
     const cachedQueries = new Set();
     const seen = new Set();
     const taskPayloads = new Set();
@@ -67,8 +83,40 @@ export function createStateReconcilerModule({
         };
         record.payloadReleased = true;
         taskPayloads.delete(name);
+        compactable.add(name);
       }
     };
+    // Preserve ordering records, task identity/status and epoch tombstones. Only
+    // disposable payloads are compacted; no replay window is weakened by age.
+    const compact = () => {
+      let compacted = 0;
+      for (const name of compactable) {
+        const record = records.get(name);
+        if (!record) continue;
+        if (record.key[0] === "event" && record.value !== null) {
+          record.value = null;
+          compacted += 1;
+        }
+        if (
+          record.key[0] === "task" &&
+          !taskPayloads.has(name) &&
+          (terminalTaskStatus(record.value.status) ||
+            record.value.status === "unknown")
+        ) {
+          record.value = {
+            id: record.value.id,
+            task_id: record.value.task_id,
+            status: record.value.status,
+          };
+          record.payloadReleased = true;
+          compacted += 1;
+        }
+      }
+      compactable.clear();
+      if (compacted) diagnostics?.record("compacted", { count: compacted });
+      return { records: records.size, payloads: taskPayloads.size, compacted };
+    };
+    let acceptedCount = 0;
     const keyOf = (key) => JSON.stringify(key);
     const current = (ticket) =>
       !ticket ||
@@ -105,6 +153,7 @@ export function createStateReconcilerModule({
           retiredEpochs.add(previous);
           epochGeneration += 1;
           records.clear();
+          compactable.clear();
           cachedQueries.clear();
           taskPayloads.clear();
           seen.clear();
@@ -139,7 +188,7 @@ export function createStateReconcilerModule({
       if (!current(ticket)) {
         if (source === "http")
           throw new DOMException("Session changed", "AbortError");
-        return { accepted: false };
+        return reject("retired-context");
       }
       const hasRevision = Number.isSafeInteger(revision) && revision > 0;
       if (
@@ -150,17 +199,17 @@ export function createStateReconcilerModule({
       ) {
         if (source === "http")
           throw new Error("Invalid backend state revision");
-        return { accepted: false };
+        return reject("invalid-revision");
       }
       if (!observeEpoch(incomingEpoch, ticket, source))
-        return { accepted: false };
+        return reject("retired-epoch");
       const name = keyOf(key);
       const previous = records.get(name);
       const id = typeof eventId === "string" ? `${name}:${eventId}` : null;
-      if (id && seen.has(id)) return { accepted: false, ...previous };
+      if (id && seen.has(id)) return reject("duplicate-event", previous);
       if (previous) {
         if (Number.isFinite(previous.revision) && !hasRevision)
-          return { accepted: false, ...previous };
+          return reject("missing-revision", previous);
         // Only a full HTTP task snapshot may reload a released payload at the
         // same revision. It cannot alter task identity or terminal status.
         if (
@@ -179,8 +228,7 @@ export function createStateReconcilerModule({
         ) {
           previous.value = {
             ...previous.value,
-            result: value.result,
-            error: value.error,
+            ...value,
           };
           previous.payloadReleased = false;
           taskPayloads.add(name);
@@ -188,6 +236,7 @@ export function createStateReconcilerModule({
             releaseTaskPayload(
               JSON.parse(taskPayloads.values().next().value)[1],
             );
+          observe({ ...previous, source });
           return { accepted: true, ...previous };
         }
         if (
@@ -195,7 +244,7 @@ export function createStateReconcilerModule({
           Number.isFinite(previous.revision) &&
           revision <= previous.revision
         )
-          return { accepted: false, ...previous };
+          return reject("stale-revision", previous);
         // A comparable newer backend revision can supersede local arrival order.
         // Without it, a response cannot replace an event received after it began,
         // or a response belonging to a later HTTP request.
@@ -210,7 +259,7 @@ export function createStateReconcilerModule({
           ((previous.source === "event" && previous.clock > ticket.clock) ||
             previous.requestClock > ticket.clock)
         )
-          return { accepted: false, ...previous };
+          return reject("stale-response", previous);
         if (
           transition &&
           !transition(
@@ -221,7 +270,7 @@ export function createStateReconcilerModule({
               revision > previous.revision,
           )
         )
-          return { accepted: false, ...previous };
+          return reject("invalid-transition", previous);
       }
       const record = {
         key,
@@ -234,6 +283,7 @@ export function createStateReconcilerModule({
       };
       records.delete(name);
       records.set(name, record);
+      if (key[0] === "event") compactable.add(name);
       if (
         key[0] === "task" &&
         (terminalTaskStatus(value.status) || value.status === "unknown")
@@ -258,9 +308,17 @@ export function createStateReconcilerModule({
         seen.add(id);
         if (seen.size > 1000) seen.delete(seen.values().next().value);
       }
-      return { accepted: true, ...record };
+      const acceptedValue = record.value;
+      observe(record);
+      if (++acceptedCount % 250 === 0) compact();
+      return { accepted: true, ...record, value: acceptedValue };
     };
     return {
+      compact,
+      onObservation(listener) {
+        observers.add(listener);
+        return () => observers.delete(listener);
+      },
       capture,
       current,
       onEpochChange(listener) {
@@ -273,16 +331,19 @@ export function createStateReconcilerModule({
         [...records.values()].filter((record) => record.key[0] === prefix),
       releaseTaskPayload,
       forget: (key) => {
+        compactable.delete(keyOf(key));
         taskPayloads.delete(keyOf(key));
         cachedQueries.delete(keyOf(key));
         return records.delete(keyOf(key));
       },
       clear() {
+        acceptedCount = 0;
         clock = 0;
         epoch = null;
         epochGeneration += 1;
         retiredEpochs.clear();
         records.clear();
+        compactable.clear();
         cachedQueries.clear();
         taskPayloads.clear();
         seen.clear();
@@ -296,7 +357,7 @@ export function createStateReconcilerModule({
             epoch: options?.epoch ?? data?.epoch,
           })
         )
-          return { accepted: false };
+          return reject("invalid-task");
         return accept(["task", String(id)], data, {
           ...options,
           transition: (previous, next, newerRevision) => {

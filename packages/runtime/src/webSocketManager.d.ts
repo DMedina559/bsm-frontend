@@ -15,6 +15,7 @@ export function createWebSocketManagerModule(dependencies: {
   stateReconciler: StateReconciler;
   resolveWebSocketUrl(): string;
   logger: Logger;
+  diagnostics?: import("./index.js").RuntimeDiagnostics;
   sessionRuntime: SessionRuntime;
   platform: RuntimePlatform;
   scheduler?: RuntimeScheduler;

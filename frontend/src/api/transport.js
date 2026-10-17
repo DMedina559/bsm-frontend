@@ -28,7 +28,7 @@ export {
  * @returns {Promise<any>} Resolves with the response data (JSON or null for 204).
  * @throws {ApiError} If the response status is not 2xx.
  */
-export const { request } = createHttpTransport({
+const transport = createHttpTransport({
   resolveApiUrl,
   logger,
   captureSession: () => sessionRuntime.capture(),
@@ -46,6 +46,18 @@ export const { request } = createHttpTransport({
     };
   },
 });
+export function request(url, options = {}) {
+  if (
+    navigator.onLine === false &&
+    !["GET", "HEAD", "OPTIONS"].includes(
+      (options.method ?? "GET").toUpperCase(),
+    )
+  )
+    return Promise.reject(
+      new Error("Reconnect before making changes. Requests are not queued."),
+    );
+  return transport.request(url, options);
+}
 /** Binary responses share authentication, cancellation, timeouts and API errors. */
 export function getBlob(url, options = {}) {
   return request(url, { ...options, method: "GET", responseType: "blob" });

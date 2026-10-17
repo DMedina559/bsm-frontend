@@ -65,7 +65,11 @@ const Content = () => {
       addonsQuery.data === undefined ? undefined : addonOrder(addonsQuery.data),
     [addonsQuery.data],
   );
-  const addonDraft = useEditableDraft(selectedServer, savedOrder, EMPTY_ADDONS);
+  const addonDraft = useEditableDraft(
+    `addon-order:${selectedServer}`,
+    savedOrder,
+    EMPTY_ADDONS,
+  );
   const orderChanged = addonDraft.dirty;
   const installedAddons = Object.fromEntries(
     Object.entries(liveAddons).map(([key, packs]) => {

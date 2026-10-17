@@ -1,3 +1,4 @@
+import { useStableCallback } from "../app/useStableCallback";
 import { callOperation } from "../api/operations";
 import { useResourceMutation } from "../app/resourceQueries";
 import { queryKeys } from "../app/queryKeys";
@@ -5,7 +6,7 @@ import { usePreference } from "../app/usePreference";
 import "./Overview.css";
 import ApplicationHealth from "../components/metrics/ApplicationHealth";
 import ApplicationMetricsSummary from "../components/metrics/ApplicationMetricsSummary";
-import ServerCard from "../components/server/ServerCard";
+import { ConnectedServerCard as ServerCard } from "../components/server/ServerCard";
 import OverviewFleetMetrics from "./OverviewFleetMetrics";
 import { useDialog } from "../contexts/DialogContext";
 import React, { useState } from "react";
@@ -27,8 +28,14 @@ const LAYOUTS = [
 
 const Overview = () => {
   const { confirmAction, promptAction } = useDialog();
-  const { servers, setSelectedServer, refreshServers, loading, error } =
-    useServer();
+  const {
+    servers,
+    setSelectedServer,
+    refreshServers,
+    loading,
+    error,
+    offlineSnapshot,
+  } = useServer();
   const { user } = useAuth();
   const { addToast } = useToast();
   const { isConnected, reconnect } = useWebSocket();
@@ -55,11 +62,13 @@ const Overview = () => {
       (variables) => variables?.options?.path?.server_name === name,
     );
 
-  const handleServerClick = (serverName, path = "/monitor") => {
-    setSelectedServer(serverName);
-    navigate(path);
-  };
-  const handleRefresh = async () => {
+  const handleServerClick = useStableCallback(
+    (serverName, path = "/monitor") => {
+      setSelectedServer(serverName);
+      navigate(path);
+    },
+  );
+  const handleRefresh = useStableCallback(async () => {
     if (refreshing) return;
     setRefreshing(true);
     logger.debug("[Overview] Manually refreshing server list");
@@ -77,45 +86,50 @@ const Overview = () => {
     } finally {
       setRefreshing(false);
     }
-  };
-  /** @param {import("react").MouseEvent} e @param {string} serverName @param {"start" | "stop" | "restart"} action */
-  const handleAction = async (e, serverName, action) => {
-    // Prevent click from bubbling up to the card click handler
-    e.stopPropagation();
-
-    // Trigger WS reconnect if disconnected, regardless of action outcome
-    if (!isConnected) {
-      reconnect();
-    }
-    if (isServerPending(serverName)) return;
-    logger.info("[Overview] Sending server action", {
-      server: serverName,
+  });
+  const handleAction = useStableCallback(
+    /** @param {import("react").MouseEvent} e @param {string} serverName @param {"start" | "stop" | "restart"} action */ async (
+      e,
+      serverName,
       action,
-    });
-    addToast(`Requesting ${action} for ${serverName}...`, "info");
-    try {
-      const response = await writeOperation(
-        /** @type {const} */ ({
-          start: "start_server",
-          stop: "stop_server",
-          restart: "restart_server",
-        })[action],
-        { path: { server_name: serverName } },
-      );
-      addToast(
-        response?.message || `Server action completed for ${serverName}.`,
-        "success",
-      );
-    } catch (error) {
-      logger.error("[Overview] Failed to send server action", {
-        error,
+    ) => {
+      // Prevent click from bubbling up to the card click handler
+      e.stopPropagation();
+
+      // Trigger WS reconnect if disconnected, regardless of action outcome
+      if (!isConnected) {
+        reconnect();
+      }
+      if (isServerPending(serverName)) return;
+      logger.info("[Overview] Sending server action", {
         server: serverName,
         action,
       });
-      addToast(error.message || `Failed to ${action} server.`, "error");
-    }
-  };
-  const handleUpdate = async (e, serverName) => {
+      addToast(`Requesting ${action} for ${serverName}...`, "info");
+      try {
+        const response = await writeOperation(
+          /** @type {const} */ ({
+            start: "start_server",
+            stop: "stop_server",
+            restart: "restart_server",
+          })[action],
+          { path: { server_name: serverName } },
+        );
+        addToast(
+          response?.message || `Server action completed for ${serverName}.`,
+          "success",
+        );
+      } catch (error) {
+        logger.error("[Overview] Failed to send server action", {
+          error,
+          server: serverName,
+          action,
+        });
+        addToast(error.message || `Failed to ${action} server.`, "error");
+      }
+    },
+  );
+  const handleUpdate = useStableCallback(async (e, serverName) => {
     e.stopPropagation();
 
     // Trigger WS reconnect if disconnected
@@ -144,8 +158,8 @@ const Overview = () => {
       });
       addToast(error.message || `Failed to update ${serverName}.`, "error");
     }
-  };
-  const handleSendCommand = async (e, serverName) => {
+  });
+  const handleSendCommand = useStableCallback(async (e, serverName) => {
     e.stopPropagation();
     e.preventDefault();
 
@@ -180,7 +194,7 @@ const Overview = () => {
         "error",
       );
     }
-  };
+  });
   const unavailable = (loading || error) && servers.length === 0;
   return (
     <div className="container workspace-overview">
@@ -301,9 +315,9 @@ const Overview = () => {
           {sortedServers.map((server) => (
             <ServerCard
               key={server.name}
-              server={server}
+              serverName={server.name}
               isAdmin={user?.role === "admin"}
-              busy={isServerPending(server.name)}
+              busy={Boolean(offlineSnapshot) || isServerPending(server.name)}
               onOpen={handleServerClick}
               onAction={handleAction}
               onUpdate={handleUpdate}

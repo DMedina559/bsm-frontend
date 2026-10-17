@@ -1,3 +1,4 @@
+import { application } from "./application";
 import {
   validateDiagnosticSnapshot,
   validateDiagnosticHistory,
@@ -348,6 +349,10 @@ export function useResourceMutation(mutationFn, affectedKeys) {
           throw new DOMException("Session changed", "AbortError");
       };
       assertCurrent();
+      if (navigator.onLine === false)
+        throw new Error(
+          "Reconnect before making changes. Requests are not queued.",
+        );
       const result = await job.run(job.variables, {
         session: job.session,
         signal: job.session.signal,
@@ -363,6 +368,11 @@ export function useResourceMutation(mutationFn, affectedKeys) {
         job.session.backend !== getBackendIdentity()
       )
         return;
+      if (job.keys.length)
+        application.diagnostics.record("refresh-request", {
+          reason: "command-settled",
+          count: job.keys.length,
+        });
       await Promise.all(
         job.keys.map((queryKey) =>
           client.invalidateQueries(resourceInvalidation(queryKey)),

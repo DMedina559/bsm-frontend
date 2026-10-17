@@ -13,6 +13,7 @@ export function createApplicationStateModule(
     MetricsModule,
     "reconcileMetricsSnapshot" | "reconcileMetricsEvent"
   > & {
+    diagnostics?: import("./index.js").RuntimeDiagnostics;
     mutationResources: typeof mutationResources;
     lifecycleEvents: typeof lifecycleEvents;
     refreshResources?: (

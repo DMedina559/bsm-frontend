@@ -92,7 +92,11 @@ const ServerProperties = () => {
         : undefined,
     [resourceQuery.data],
   );
-  const draft = useEditableDraft(selectedServer, draftData, EMPTY_PROPERTIES);
+  const draft = useEditableDraft(
+    `server-properties:${selectedServer ?? ""}`,
+    draftData,
+    EMPTY_PROPERTIES,
+  );
   const {
     value: properties,
     setValue: setProperties,

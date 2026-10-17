@@ -539,3 +539,199 @@ test("non-administrators cannot open diagnostics or fetch its endpoints", async 
   await expect(page.getByRole("tab", { name: "Diagnostics" })).toHaveCount(0);
   expect(calls).toBe(0);
 });
+
+test("tabs share one socket, receive the same accepted update and take over after the owner closes", async ({
+  context,
+  page,
+}) => {
+  const state = await backend(context);
+  await login(page, "alice");
+  await expect.poll(() => state.sockets.length).toBe(1);
+  const second = await context.newPage();
+  await login(second, "alice");
+  await expect(second.getByLabel("WebSocket health")).toHaveText("Live");
+  expect(state.sockets.length).toBe(1);
+  state.sockets[0].send(
+    JSON.stringify({
+      type: "event",
+      topic: "event:after_server_status_change",
+      epoch: "shared",
+      revision: 1,
+      data: {
+        result: {
+          server_name: "alice-server",
+          status: "success",
+          new_status: "RUNNING",
+        },
+      },
+    }),
+  );
+  await expect(
+    page.getByRole("button", { name: "Stop alice-server", exact: true }),
+  ).toBeVisible();
+  await expect(
+    second.getByRole("button", { name: "Stop alice-server", exact: true }),
+  ).toBeVisible();
+  await page.close();
+  await expect.poll(() => state.sockets.length).toBe(2);
+  await expect(second.getByLabel("WebSocket health")).toHaveText("Live");
+});
+
+test("shows a dated read-only cached fleet and never queues offline changes", async ({
+  context,
+  page,
+}) => {
+  await backend(context);
+  await login(page, "alice");
+  await expect
+    .poll(() =>
+      page.evaluate(async () => {
+        const db = await new Promise((resolve) => {
+          const request = indexedDB.open("bsm-view-state", 1);
+          request.onsuccess = () => resolve(request.result);
+        });
+        return new Promise((resolve) => {
+          const request = db
+            .transaction("records")
+            .objectStore("records")
+            .getAll();
+          request.onsuccess = () => {
+            db.close();
+            resolve(request.result.some((record) => record.kind === "offline"));
+          };
+        });
+      }),
+    )
+    .toBe(true);
+  await context.setOffline(true);
+  await page.getByRole("button", { name: "Refresh", exact: true }).click();
+  await expect(
+    page.getByText(/Viewing a stale fleet snapshot from/),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Start alice-server", exact: true }),
+  ).toBeDisabled();
+  await context.setOffline(false);
+  await expect(
+    page.getByText(/Viewing a stale fleet snapshot from/),
+  ).not.toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Start alice-server", exact: true }),
+  ).toBeEnabled();
+});
+
+test("restores opt-in drafts after reload without persisting secrets or writing automatically", async ({
+  context,
+  page,
+}) => {
+  await backend(context);
+  let saved = 0;
+  await context.route("**/api/settings/**", async (route) => {
+    if (route.request().method() !== "GET") saved++;
+    await route.fulfill({
+      json: {
+        settings: {
+          monitoring: { app_metrics_interval_sec: 3 },
+          web: { jwt_secret_key: "private-secret" },
+        },
+      },
+    });
+  });
+  await login(page, "alice");
+  await page.goto("account");
+  await page.getByLabel("Recover unsaved settings and properties").check();
+  await page.goto("bsm-settings");
+  await page
+    .getByLabel("Application metrics interval", { exact: true })
+    .fill("12");
+  await page
+    .getByLabel("jwt secret key", { exact: true })
+    .fill("changed-secret");
+  await expect
+    .poll(() =>
+      page.evaluate(async () => {
+        const db = await new Promise((resolve) => {
+          const request = indexedDB.open("bsm-view-state", 1);
+          request.onsuccess = () => resolve(request.result);
+        });
+        return new Promise((resolve) => {
+          const request = db
+            .transaction("records")
+            .objectStore("records")
+            .getAll();
+          request.onsuccess = () => {
+            db.close();
+            resolve(
+              JSON.stringify(
+                request.result.filter((record) => record.kind === "draft"),
+              ),
+            );
+          };
+        });
+      }),
+    )
+    .toContain('"value":12');
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "Restore edits", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByLabel("Application metrics interval", { exact: true }),
+  ).toHaveValue("3");
+  await page
+    .getByRole("button", { name: "Restore edits", exact: true })
+    .click();
+  await expect(
+    page.getByLabel("Application metrics interval", { exact: true }),
+  ).toHaveValue("12");
+  await expect(page.getByLabel("jwt secret key", { exact: true })).toHaveValue(
+    "private-secret",
+  );
+  expect(saved).toBe(0);
+});
+
+test("administrators can inspect bounded frontend rejection diagnostics without payloads", async ({
+  context,
+  page,
+}) => {
+  const state = await backend(context);
+  await login(page, "alice");
+  await page.goto("application-monitor");
+  await page.getByRole("tab", { name: "Diagnostics", exact: true }).click();
+  await page.getByText("Frontend runtime diagnostics", { exact: true }).click();
+  await page
+    .getByLabel("Record frontend observations", { exact: true })
+    .check();
+  await expect(page.getByLabel("WebSocket health")).toHaveText("Live");
+  state.sockets.at(-1).send(
+    JSON.stringify({
+      type: "task_update",
+      data: {
+        id: "private-identity",
+        status: "invalid",
+        token: "never-display",
+      },
+    }),
+  );
+  await expect(
+    page.getByRole("cell", { name: "invalid-task", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("never-display", { exact: false }),
+  ).not.toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    )
+    .toBe(true);
+  await page
+    .getByRole("button", { name: "Clear observations", exact: true })
+    .click();
+  await expect(
+    page.getByText("No observations recorded.", { exact: true }),
+  ).toBeVisible();
+});

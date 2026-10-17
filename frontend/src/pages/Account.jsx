@@ -1,3 +1,4 @@
+import RecoverySettings from "../components/RecoverySettings";
 import "../styles/appearance.css";
 import { usePreference } from "../app/usePreference";
 import { DEFAULT_METRIC_UNITS } from "../utils/metricUnits";
@@ -110,6 +111,7 @@ const Account = ({ appearanceOnly = false }) => {
             <p className="workspace-eyebrow">YOUR WORKSPACE</p>
           )}
           <h1>{appearanceOnly ? "Appearance" : "My Account"}</h1>
+          {!appearanceOnly && <RecoverySettings />}
           {appearanceOnly && (
             <p className="appearance-description">
               Make your workspace feel right. Changes apply as you choose them.

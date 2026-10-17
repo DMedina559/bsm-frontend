@@ -1,3 +1,4 @@
+import { useOnline } from "../app/useOnline";
 import BackendCompatibility from "../components/BackendCompatibility";
 import OperationsStatus from "../components/OperationsStatus";
 import React, { useEffect, useRef, useState } from "react";
@@ -29,7 +30,8 @@ const Layout = () => {
   }, []);
   const { pathname } = useLocation();
   const { user } = useAuth();
-  const { selectedServer } = useServer();
+  const { selectedServer, offlineSnapshot } = useServer();
+  const online = useOnline();
   const { isConnected, isFallback } = useWebSocket();
   const [group, title, description] = PAGE_INFO[pathname] || [
     "Workspace",
@@ -130,6 +132,14 @@ const Layout = () => {
                   {selectedServer || "No server selected"}
                 </span>
               )}
+            </div>
+          )}
+          {(!online || offlineSnapshot) && (
+            <div className="message-box message-info" role="status">
+              {offlineSnapshot
+                ? `Viewing a stale fleet snapshot from ${new Date(offlineSnapshot.savedAt).toLocaleString()}.`
+                : "You are offline. Displayed information may be out of date."}{" "}
+              Changes require a connection; requests are never queued for later.
             </div>
           )}
           <BackendCompatibility />

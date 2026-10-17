@@ -23,7 +23,7 @@ const ServerConfig = () => {
   const { selectedServer } = useServer();
   const resourceQuery = useResourceQuery("serverSettings", selectedServer);
   const draft = useEditableDraft(
-    selectedServer,
+    `server-settings:${selectedServer ?? ""}`,
     resourceQuery.data,
     EMPTY_SETTINGS,
   );

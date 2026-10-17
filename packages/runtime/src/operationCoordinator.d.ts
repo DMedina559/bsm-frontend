@@ -21,6 +21,7 @@ export function createOperationCoordinatorModule(
     StateModule,
     "createStateReconciler" | "stateReconciler" | "terminalTaskStatus"
   > & {
+    diagnostics?: import("./index.js").RuntimeDiagnostics;
     refreshResources?: (
       keys: import("./contracts.js").QueryKey[],
     ) => Promise<unknown>;

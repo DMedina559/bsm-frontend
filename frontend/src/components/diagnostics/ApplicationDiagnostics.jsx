@@ -1,3 +1,4 @@
+import RuntimeDiagnostics from "./RuntimeDiagnostics";
 import { useEffect, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { RefreshCw, Download } from "lucide-react";
@@ -111,6 +112,7 @@ export default function ApplicationDiagnostics() {
   };
   return (
     <div className="diagnostics-view">
+      <RuntimeDiagnostics />
       <div className="application-monitor-heading">
         <div>
           <h2 className="monitor-view-title">Diagnostics</h2>

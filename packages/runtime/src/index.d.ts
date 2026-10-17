@@ -25,7 +25,31 @@ export interface RuntimeOptions {
   scheduler?: RuntimeScheduler;
   logger?: Logger;
 }
+export interface RuntimeDiagnosticEvent {
+  at: number;
+  type: string;
+  reason?: string;
+  family?: string;
+  count?: number;
+}
+export interface RuntimeDiagnostics {
+  getSnapshot(): {
+    enabled: boolean;
+    events: RuntimeDiagnosticEvent[];
+    subscriptions: number;
+    references: number;
+  };
+  subscribe(listener: () => void): () => void;
+  setEnabled(enabled: boolean): void;
+  record(
+    type: string,
+    details?: { reason?: string; family?: string; count?: number },
+  ): void;
+  subscriptions(count: number, references: number): void;
+  clear(): void;
+}
 export type ApplicationRuntime = {
+  diagnostics: RuntimeDiagnostics;
   refreshResources(
     keys: QueryKey[],
     afterCancel?: () => void,

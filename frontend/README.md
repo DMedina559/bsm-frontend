@@ -208,3 +208,49 @@ coalescing duplicate requests and pausing periodic resource work while hidden or
 offline. Task recovery has its own owner; diagnostics intervals remain opt-in.
 Package source behavior belongs in `packages/*/test/`;
 browser-specific adapters and React integration remain in frontend tests.
+
+## Browser recovery and shared sessions
+
+Basic fleet snapshots use the disposable IndexedDB `bsm-view-state` database.
+Records are versioned, scoped to the backend (including ingress prefix) and
+account, expire after 24 hours, and contain only name, status, version and player
+count. Player identities, credentials and configuration are excluded. A network
+failure can display a dated, explicitly stale snapshot; it never enters runtime
+reconciliation as a backend observation. Reconnecting refreshes it from HTTP.
+The application shell and an authenticated in-memory session must already be
+available; this feature does not bypass sign-in or install an offline shell.
+Mutations are rejected while offline and are never queued for later replay.
+
+**Account → Browser recovery** offers opt-in recovery of recognized global/server
+settings and structured server properties. IndexedDB stores only safe changed
+fields and their field baselines, for up to seven days. Restoring is explicit and
+rebases those fields on fresh backend data; changed baselines show a conflict
+notice. Secrets, unknown/custom fields, plugin settings, raw files and addon order
+are excluded. Saving, discarding or disabling recovery removes saved edits. The
+same account controls can clear cached views and saved edits. Both record types
+share a 100-record cap and a 256 KB per-record limit. Unsupported schemas are
+removed; disabled/failed storage falls back to ordinary in-memory editing.
+
+When Web Locks and BroadcastChannel are available, tabs for the same backend and
+account share one authenticated socket and one task discovery/polling owner.
+The browser releases ownership when the owner closes; waiting tabs take over.
+`pagehide` releases ownership and `pageshow` re-enters the election. Each tab
+announces its topics and pending task metadata, and the owner retains their union.
+Leaving or expired peers release their topics. Accepted HTTP task snapshots and
+live frames pass through each tab's normal reconciliation gates. Credentials and
+HTTP writes are never broadcast. Each view still owns its HTTP resource reads and
+visibility-aware resource refreshes. Browsers that cannot coordinate use independent
+sockets and recovery. Custom low-level socket sends are owner-only; application
+commands use the generated HTTP client.
+
+Overview cards observe a single fleet entry with a query selector and use stable
+event callbacks. Structural sharing keeps unrelated cards from rendering when
+another server changes; the fleet query remains the only request owner.
+
+The administrator diagnostics screen includes opt-in frontend observations:
+rejection reasons, refresh families, ownership changes, compaction counts and
+subscription/reference counts. Only 200 payload-free observations are retained
+in memory; reset clears them. Long-session compaction runs every 250 accepted
+observations, drops expendable event payloads, and reduces old terminal tasks to
+identity/status. Revisions, arrival clocks, epoch tombstones and task terminal
+watermarks remain until session/epoch reset, preserving replay protection.

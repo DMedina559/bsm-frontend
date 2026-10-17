@@ -11,7 +11,11 @@ const independentlyScheduled = new Set([
   "diagnostic-runs",
   "diagnostic-trace",
 ]);
-export function refreshActiveResources(identity, generation) {
+export function refreshActiveResources(
+  identity,
+  generation,
+  reason = "resource-recovery",
+) {
   const keys = queryClient
     .getQueryCache()
     .findAll({ type: "active" })
@@ -25,6 +29,11 @@ export function refreshActiveResources(identity, generation) {
       );
     })
     .map((query) => query.queryKey);
+  if (keys.length)
+    application.diagnostics.record("refresh-request", {
+      reason,
+      count: keys.length,
+    });
   return application.refreshResources(keys);
 }
 /** A single visibility-aware resource recovery owner for the mounted session. */
@@ -36,22 +45,27 @@ export function startResourceRecovery({
 }) {
   if (identity === null) return () => {};
   const session = application.sessionRuntime.capture();
-  const refresh = () => {
+  const refresh = (reason) => {
     if (
       application.sessionRuntime.isCurrent(session) &&
       browserPlatform.isOnline() &&
       browserPlatform.isVisible()
     )
-      void refreshActiveResources(identity, generation);
+      void refreshActiveResources(identity, generation, reason);
   };
-  if (connected || fallback) refresh();
-  const timer = fallback ? setInterval(refresh, 60_000) : null;
-  browserPlatform.addEventListener("online", refresh);
-  browserPlatform.addEventListener("visibilitychange", refresh);
+  if (connected || fallback)
+    refresh(connected ? "socket-connected" : "http-fallback");
+  const online = () => refresh("online");
+  const visible = () => refresh("visible");
+  const timer = fallback
+    ? setInterval(() => refresh("fallback-interval"), 60_000)
+    : null;
+  browserPlatform.addEventListener("online", online);
+  browserPlatform.addEventListener("visibilitychange", visible);
   const stop = () => {
     clearInterval(timer);
-    browserPlatform.removeEventListener("online", refresh);
-    browserPlatform.removeEventListener("visibilitychange", refresh);
+    browserPlatform.removeEventListener("online", online);
+    browserPlatform.removeEventListener("visibilitychange", visible);
   };
   const removeReset = application.sessionRuntime.onReset(stop);
   return () => {

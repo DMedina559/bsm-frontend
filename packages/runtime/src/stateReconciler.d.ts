@@ -16,6 +16,7 @@ export interface StateModule {
 }
 export function createStateReconcilerModule(dependencies: {
   logger: Logger;
+  diagnostics?: import("./index.js").RuntimeDiagnostics;
   sessionRuntime: SessionRuntime;
   getBackendIdentity(): string;
 }): StateModule;

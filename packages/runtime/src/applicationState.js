@@ -1,6 +1,7 @@
 /** @param {Parameters<typeof import("./applicationState.d.ts").createApplicationStateModule>[0]} dependencies
  * @returns {ReturnType<typeof import("./applicationState.d.ts").createApplicationStateModule>} */
 export function createApplicationStateModule({
+  diagnostics,
   reconcileMetricsSnapshot,
   reconcileMetricsEvent,
   mutationResources,
@@ -21,6 +22,13 @@ export function createApplicationStateModule({
       }),
     ),
 }) {
+  const recover = (keys, afterCancel = undefined) => {
+    diagnostics?.record("refresh-request", {
+      reason: "backend-event",
+      count: keys.length,
+    });
+    return refreshResources(keys, afterCancel);
+  };
   stateReconciler.onEpochChange(() => {
     operationCoordinator.clear();
     // Reset cached data as well as watermarks; mounted queries refetch immediately.
@@ -101,20 +109,27 @@ export function createApplicationStateModule({
     return rebaseFleet(selected.value, selected.requestClock);
   }
   function rebaseFleet(data, requestClock) {
+    const newer = (record, server) => {
+      const revision = server.revision ?? data.revision;
+      return (
+        record &&
+        (record.clock > requestClock ||
+          (Number.isFinite(record.revision) &&
+            (!Number.isFinite(revision) || record.revision > revision)))
+      );
+    };
     return {
       ...data,
       servers: data.servers
         .filter((server) => {
           const membership = stateReconciler.read(["membership", server.name]);
-          return !(
-            membership?.clock > requestClock && membership.value === false
-          );
+          return !(newer(membership, server) && membership.value === false);
         })
         .map((server) => {
           let next = server;
           for (const field of ["players", "status"]) {
             const update = stateReconciler.read([field, server.name]);
-            if (update && update.clock > requestClock)
+            if (newer(update, server))
               next = {
                 ...next,
                 .../** @type {Record<string, unknown>} */ (update.value),
@@ -179,7 +194,7 @@ export function createApplicationStateModule({
   };
   const refreshFleet = () => {
     const ticket = captureStateRequest();
-    void refreshResources([queryKeys.servers()], () => {
+    void recover([queryKeys.servers()], () => {
       if (!stateReconciler.current(ticket)) return;
       queryClient.setQueriesData(
         resourceInvalidation(queryKeys.servers()),
@@ -391,9 +406,9 @@ export function createApplicationStateModule({
           message.topic,
         )
       )
-        void refreshResources([queryKeys.server(name)]);
+        void recover([queryKeys.server(name)]);
       if (message.topic !== "event:after_delete_server_data")
-        void refreshResources([queryKeys.serverMonitor(name)]);
+        void recover([queryKeys.serverMonitor(name)]);
     }
     if (
       [
@@ -402,8 +417,8 @@ export function createApplicationStateModule({
         "event:after_delete_server_data",
       ].includes(message.topic)
     )
-      void refreshResources([queryKeys.pluginSettings()]);
-    void refreshResources([queryKeys.audit()]);
+      void recover([queryKeys.pluginSettings()]);
+    void recover([queryKeys.audit()]);
     refreshFleet();
     return true;
   }
@@ -459,7 +474,7 @@ export function createApplicationStateModule({
         if (payload?.result?.status && payload.result.status !== "success")
           return true;
         if (!payload || payload.result?.status !== "success") {
-          void refreshResources(resources(payload?.server_name));
+          void recover(resources(payload?.server_name));
           return false;
         }
         const name = payload.server_name ?? payload.result.server_name;
@@ -475,7 +490,7 @@ export function createApplicationStateModule({
         );
         if (!accepted.accepted) return false;
         const keys = [...resources(name), queryKeys.audit()];
-        void refreshResources(keys);
+        void recover(keys);
       }
     }
     return true;

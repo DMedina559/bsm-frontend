@@ -130,3 +130,24 @@ Shared JavaScript implementations are checked against typed dependency and
 factory return contracts by root `npm run check:implementations`. Consumer types
 are also compiled from installed archives. Dynamic backend payloads remain
 validated at reconciliation boundaries.
+
+A supplied manager can implement `subscribeOwnership(listener)`, immediately
+reporting whether this runtime owns task recovery and notifying on changes.
+`start()` starts discovery/polling only for the owner and aborts it on ownership
+loss. Ordinary managers omit this method and keep the existing independent
+behavior. Cross-tab transport and IndexedDB remain frontend browser adapters.
+
+`runtime.diagnostics` exposes `getSnapshot`, `subscribe`, `setEnabled`, `clear`,
+and payload-free `record`/`subscriptions` methods. Recording is opt-in, capped at
+200 observations and cleared at session reset. Policy labels identify rejection
+and refresh causes without storing query keys, values, URLs or identities.
+
+`stateReconciler.onObservation(listener)` observes accepted records; its cleanup
+removes the listener. Browser adapters can share accepted task reads without
+bypassing reconciliation in receiving runtimes. `stateReconciler.compact()`
+releases obsolete payloads and returns record/payload/compaction counts. Automatic
+compaction runs every 250 accepted observations. It preserves ordering clocks,
+revisions, terminal identities/status, resource membership tombstones and retired
+epochs. Small replay watermarks intentionally grow with unique resource/task IDs
+until reset; compaction bounds large payload retention rather than weakening
+correctness with an arbitrary watermark eviction limit.

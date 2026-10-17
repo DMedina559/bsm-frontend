@@ -300,3 +300,26 @@ it("does not request administrator diagnostics for a regular account", async () 
   await act(async () => {});
   expect(get).not.toHaveBeenCalled();
 });
+
+it("rejects offline writes immediately and never replays them when connectivity returns", async () => {
+  auth.user = { username: "admin" };
+  const online = vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
+  const run = vi.fn();
+  const { result } = renderHook(() => useResourceMutation(run, []), {
+    wrapper,
+  });
+  try {
+    await act(async () => {
+      await expect(
+        result.current.mutateAsync({ value: "edit" }),
+      ).rejects.toThrow("Requests are not queued");
+    });
+    expect(run).not.toHaveBeenCalled();
+    online.mockReturnValue(true);
+    window.dispatchEvent(new Event("online"));
+    await act(async () => {});
+    expect(run).not.toHaveBeenCalled();
+  } finally {
+    online.mockRestore();
+  }
+});

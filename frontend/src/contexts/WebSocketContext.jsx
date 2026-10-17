@@ -1,3 +1,4 @@
+import { createSharedSocketManager } from "../app/sharedSocketManager";
 import { getPreferenceIdentity } from "../app/backendIdentity";
 import { coreEventTopics } from "../app/coreEvents";
 import { startResourceRecovery } from "../app/resourceRecovery";
@@ -33,7 +34,9 @@ export const WebSocketProvider = ({ children }) => {
   const [listeners] = useState(() => new Set());
   const [connectionState, setConnectionState] = useState("disconnected");
   const [manager] = useState(() =>
-    createWebSocketManager({
+    createSharedSocketManager({
+      createManager: createWebSocketManager,
+      runtime: application,
       onState: (state) => {
         setIsConnected(state.isConnected);
         setIsFallback(state.isFallback);

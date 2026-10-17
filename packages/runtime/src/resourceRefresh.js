@@ -1,13 +1,14 @@
 import { defaultScheduler } from "./scheduler.js";
 
 /** Coalesce recovery without allowing queued work to cross a session/epoch. */
-/** @param {{ queryClient: import("./contracts.js").QueryClient, stateReconciler: import("./contracts.js").StateReconciler, resourceInvalidation: typeof import("./queryKeys.js").resourceInvalidation, scheduler?: import("./contracts.js").RuntimeScheduler, logger: import("./contracts.js").Logger }} dependencies */
+/** @param {{ queryClient: import("./contracts.js").QueryClient, stateReconciler: import("./contracts.js").StateReconciler, resourceInvalidation: typeof import("./queryKeys.js").resourceInvalidation, scheduler?: import("./contracts.js").RuntimeScheduler, logger: import("./contracts.js").Logger, diagnostics?: import("./index.js").RuntimeDiagnostics }} dependencies */
 export function createResourceRefresh({
   queryClient,
   stateReconciler,
   resourceInvalidation,
   scheduler = defaultScheduler,
   logger,
+  diagnostics,
 }) {
   const pending = new Map();
   let scheduled = false;
@@ -39,6 +40,19 @@ export function createResourceRefresh({
               void (async () => {
                 try {
                   if (!stateReconciler.current(entry.ticket)) return;
+                  diagnostics?.record("refresh", {
+                    family: [
+                      "servers",
+                      "monitor",
+                      "tasks",
+                      "content",
+                      "application-health",
+                      "application-metrics",
+                    ].includes(String(entry.key[0]))
+                      ? String(entry.key[0])
+                      : "other",
+                    reason: "recovery-or-event",
+                  });
                   const filter = resourceInvalidation(entry.key);
                   await queryClient.cancelQueries(filter);
                   if (!stateReconciler.current(entry.ticket)) return;

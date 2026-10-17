@@ -60,6 +60,8 @@ export interface EpochChange {
   ticket?: StateTicket;
 }
 export interface StateReconciler {
+  compact(): { records: number; payloads: number; compacted: number };
+  onObservation(listener: (record: StateRecord) => void): Cleanup;
   capture(signal?: AbortSignal): StateTicket;
   current(ticket?: StateTicket | null): boolean;
   onEpochChange(listener: (change: EpochChange) => void): Cleanup;
@@ -187,6 +189,7 @@ export interface ConnectionState {
     | "failed";
 }
 export interface WebSocketManager {
+  subscribeOwnership?(listener: (leader: boolean) => void): Cleanup;
   subscribe(topic: string): void;
   unsubscribe(topic: string): void;
   sendMessage(message: unknown): void;

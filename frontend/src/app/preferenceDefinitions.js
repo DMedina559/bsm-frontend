@@ -3,6 +3,10 @@ import { normalizeAppearance } from "../utils/theme";
 import { validatePalette } from "../utils/palettes";
 
 export const preferenceDefinitions = {
+  draftRecovery: {
+    version: 1,
+    validate: (value) => typeof value === "boolean",
+  },
   selectedServer: {
     version: 1,
     validate: (value) => typeof value === "string" && value.length > 0,

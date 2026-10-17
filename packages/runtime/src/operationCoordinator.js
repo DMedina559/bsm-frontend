@@ -1,6 +1,7 @@
 /** @param {Parameters<typeof import("./operationCoordinator.d.ts").createOperationCoordinatorModule>[0]} dependencies
  * @returns {ReturnType<typeof import("./operationCoordinator.d.ts").createOperationCoordinatorModule>} */
 export function createOperationCoordinatorModule({
+  diagnostics,
   createStateReconciler,
   stateReconciler,
   terminalTaskStatus,
@@ -162,6 +163,10 @@ export function createOperationCoordinatorModule({
           if (name && /start|stop|restart|update/.test(kind))
             keys.push(queryKeys.serverMonitor(name));
           if (/scan|players/.test(kind)) keys.push(queryKeys.globalPlayers());
+          diagnostics?.record("refresh-request", {
+            reason: "task-terminal",
+            count: keys.length,
+          });
           void refreshResources(keys);
         }
         notify();

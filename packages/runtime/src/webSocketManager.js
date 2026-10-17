@@ -8,6 +8,7 @@ export function createWebSocketManagerModule({
   logger,
   sessionRuntime,
   platform,
+  diagnostics,
   scheduler = defaultScheduler,
 }) {
   function createWebSocketManager({ onMessage, onState }) {
@@ -136,6 +137,7 @@ export function createWebSocketManagerModule({
             )
               onMessage(message, session);
           } catch (error) {
+            diagnostics?.record("rejected", { reason: "malformed-frame" });
             logger.warn("[WebSocket] Invalid message", { error });
           }
         };
@@ -164,9 +166,18 @@ export function createWebSocketManagerModule({
       if (authenticatedRef.current && socketRef.current?.readyState === 1)
         socketRef.current.send(JSON.stringify(message));
     };
+    const reportSubscriptions = () =>
+      diagnostics?.subscriptions(
+        subscriptions.current.size,
+        [...subscriptions.current.values()].reduce(
+          (sum, count) => sum + count,
+          0,
+        ),
+      );
     const subscribe = (topic) => {
       const count = subscriptions.current.get(topic) || 0;
       subscriptions.current.set(topic, count + 1);
+      reportSubscriptions();
       if (count === 0) sendMessage({ action: "subscribe", topic });
     };
     const unsubscribe = (topic) => {
@@ -175,6 +186,7 @@ export function createWebSocketManagerModule({
         subscriptions.current.delete(topic);
         if (count) sendMessage({ action: "unsubscribe", topic });
       } else subscriptions.current.set(topic, count - 1);
+      reportSubscriptions();
     };
 
     connectRef.current = connect;

@@ -13,6 +13,6 @@ export const queryClient = new QueryClient({
         (!error?.status || error.status >= 500),
       refetchOnWindowFocus: true,
     },
-    mutations: { retry: false },
+    mutations: { retry: false, networkMode: "always" },
   },
 });

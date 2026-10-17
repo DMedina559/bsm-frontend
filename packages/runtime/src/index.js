@@ -1,3 +1,4 @@
+import { createRuntimeDiagnostics } from "./runtimeDiagnostics.js";
 import { createSessionRuntimeModule } from "./sessionRuntime.js";
 import { createStateReconcilerModule } from "./stateReconciler.js";
 import { createOperationCoordinatorModule } from "./operationCoordinator.js";
@@ -22,9 +23,15 @@ export function createApplicationRuntime({
   scheduler,
   logger = { debug() {}, warn() {}, error() {} },
 }) {
+  const diagnostics = createRuntimeDiagnostics();
   const session = createSessionRuntimeModule();
+  session.sessionRuntime.onReset(() => {
+    diagnostics.clear();
+    diagnostics.subscriptions(0, 0);
+  });
   const state = createStateReconcilerModule({
     ...session,
+    diagnostics,
     logger,
     getBackendIdentity,
   });
@@ -32,10 +39,12 @@ export function createApplicationRuntime({
     ...state,
     queryClient,
     resourceInvalidation,
+    diagnostics,
     scheduler,
     logger,
   });
   const operations = createOperationCoordinatorModule({
+    diagnostics,
     ...state,
     ...refresh,
     queryClient,
@@ -44,6 +53,7 @@ export function createApplicationRuntime({
   });
   const metrics = createApplicationMetricsModule(state);
   const application = createApplicationStateModule({
+    diagnostics,
     ...state,
     ...operations,
     ...metrics,
@@ -70,6 +80,7 @@ export function createApplicationRuntime({
     ...state,
     logger,
     resolveWebSocketUrl,
+    diagnostics,
     platform,
     scheduler,
   });
@@ -93,14 +104,22 @@ export function createApplicationRuntime({
   }) => {
     stopActive();
     const stopSocket = manager.start(identity);
-    const stopRecovery =
-      identity === null
-        ? () => {}
-        : recovery.startOperationRecovery(identity, generation);
+    let stopRecovery = () => {};
+    const ownership = (leader) => {
+      stopRecovery();
+      stopRecovery =
+        leader && identity !== null
+          ? recovery.startOperationRecovery(identity, generation)
+          : () => {};
+    };
+    const stopOwnership = manager.subscribeOwnership
+      ? manager.subscribeOwnership(ownership)
+      : (ownership(true), () => {});
     let stopped = false;
     const stop = () => {
       if (stopped) return;
       stopped = true;
+      stopOwnership();
       stopSocket();
       stopRecovery();
     };
@@ -109,6 +128,7 @@ export function createApplicationRuntime({
   };
   return {
     reset,
+    diagnostics,
     start,
     ...refresh,
     dispose: reset,

@@ -1,3 +1,5 @@
+import { cacheFleet, readOfflineFleet } from "../app/offlineFleet";
+import { stateReconciler } from "../app/stateReconciler";
 import { callOperation } from "../api/operations";
 import {
   getPreferenceIdentity,
@@ -75,10 +77,24 @@ export const ServerProvider = ({ children }) => {
       ...queryKeys.servers(),
       { identity, generation: sessionGeneration ?? 0 },
     ],
+    networkMode: "always",
     queryFn: async ({ signal }) => {
-      const revisionAtStart = captureStateRequest(signal);
-      const data = await loadServers({ signal });
-      return reconcileServerSnapshot(data, revisionAtStart);
+      const ticket = captureStateRequest(signal);
+      try {
+        if (navigator.onLine === false) throw new TypeError("Browser offline");
+        const data = await loadServers({ signal });
+        const accepted = reconcileServerSnapshot(data, ticket);
+        void cacheFleet(identity, accepted);
+        return accepted;
+      } catch (error) {
+        if (!stateReconciler.current(ticket))
+          throw new DOMException("Session changed", "AbortError");
+        if (error instanceof TypeError || error?.category === "network") {
+          const cached = await readOfflineFleet(identity);
+          if (stateReconciler.current(ticket) && cached) return cached;
+        }
+        throw error;
+      }
     },
     enabled: identity !== null,
     staleTime: 15_000,
@@ -120,7 +136,7 @@ export const ServerProvider = ({ children }) => {
   const refreshServers = useCallback(async () => {
     logger.debug("[ServerContext] Refreshing servers");
     const result = await refetch();
-    return result.isSuccess;
+    return result.isSuccess && !result.data?.offline;
   }, [refetch]);
 
   const currentSelection =
@@ -128,6 +144,7 @@ export const ServerProvider = ({ children }) => {
   const value = useMemo(
     () => ({
       servers,
+      offlineSnapshot: serverQuery.data?.offline ?? null,
       selectedServer: currentSelection,
       setSelectedServer,
       loading: identity !== null && serverQuery.isPending,
@@ -141,6 +158,7 @@ export const ServerProvider = ({ children }) => {
       identity,
       serverQuery.isPending,
       serverQuery.error,
+      serverQuery.data?.offline,
       refreshServers,
     ],
   );
