@@ -6,16 +6,13 @@ const source = JSON.parse(
   ),
 );
 if (
-  !/^[\w.-]+\/[\w.-]+$/.test(source.repository) ||
+  source.repository !== "DMedina559/bedrock-server-manager" ||
   !/^[a-f0-9]{40}$/.test(source.ref)
 )
   throw new Error(
-    "The supported backend must identify a repository and immutable commit.",
+    "The supported backend must identify DMedina559/bedrock-server-manager and an immutable commit.",
   );
-const override = process.env.BSM_BACKEND_REF;
-const ref = !override || override === "pinned" ? source.ref : override;
-if (!/^[\w./-]+$/.test(ref)) throw new Error("Invalid backend ref.");
-const output = `repository=${source.repository}\nref=${ref}\n`;
+const output = `revision=${source.ref}\n`;
 if (process.env.GITHUB_OUTPUT)
   appendFileSync(process.env.GITHUB_OUTPUT, output);
 else process.stdout.write(output);
