@@ -13,9 +13,11 @@ export function createSharedSocketManager({
   now = Date.now,
   setInterval: interval = setInterval,
   clearInterval: clear = clearInterval,
-  id = globalThis.crypto.randomUUID(),
+  id,
 }) {
   if (!locks?.request || !Channel) return createManager({ onMessage, onState });
+  id ??= globalThis.crypto?.randomUUID?.();
+  if (!id) return createManager({ onMessage, onState });
   let leader = false;
   let active = false;
   let channel;

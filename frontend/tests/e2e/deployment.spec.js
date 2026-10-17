@@ -113,3 +113,43 @@ test("production backend enforces HTTP and WebSocket origins", async ({
   });
   expect(status).toBe(403);
 });
+
+test("production login opens and reloads on a non-secure HTTP origin", async ({
+  page,
+}) => {
+  // Loopback URLs are secure contexts and would hide missing browser capabilities.
+  const origin = "http://bsm.test";
+  const errors = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.route(`${origin}/**`, async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === "/api/setup/status")
+      return route.fulfill({ json: { needs_setup: false } });
+    if (url.pathname === "/api/account")
+      return route.fulfill({ status: 401, json: { detail: "Sign in" } });
+    const response = await route.fetch({
+      url: `http://127.0.0.1:4173${url.pathname}${url.search}`,
+    });
+    return route.fulfill({ response });
+  });
+  await page.goto(`${origin}/app/login`);
+  expect(
+    await page.evaluate(() => ({
+      secure: isSecureContext,
+      locks: typeof navigator.locks,
+      uuid: typeof crypto.randomUUID,
+    })),
+  ).toEqual({ secure: false, locks: "undefined", uuid: "undefined" });
+  await expect(
+    page.getByRole("button", { name: "Sign In", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".auth-brand img")).toHaveJSProperty(
+    "naturalWidth",
+    512,
+  );
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "Sign In", exact: true }),
+  ).toBeVisible();
+  expect(errors).toEqual([]);
+});

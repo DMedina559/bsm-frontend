@@ -237,3 +237,30 @@ it("uses the independent manager when browser coordination is unavailable", () =
     }),
   ).toBe(manager);
 });
+
+it.each([
+  { locks: null, Channel: null },
+  { locks: { request: vi.fn() }, Channel: vi.fn() },
+])(
+  "uses an independent manager without secure-context crypto APIs: %j",
+  (capabilities) => {
+    const manager = {};
+    const onMessage = vi.fn();
+    const onState = vi.fn();
+    const createManager = vi.fn(() => manager);
+    vi.stubGlobal("crypto", {});
+    try {
+      expect(
+        createSharedSocketManager({
+          createManager,
+          onMessage,
+          onState,
+          ...capabilities,
+        }),
+      ).toBe(manager);
+      expect(createManager).toHaveBeenCalledWith({ onMessage, onState });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  },
+);
