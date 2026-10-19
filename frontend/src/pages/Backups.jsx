@@ -30,6 +30,8 @@ const unlockOperations = new Set([
   "plan_snapshot_restore",
   "restore_server_snapshot",
   "export_decrypted_snapshot",
+  "manage_server_snapshot",
+  "prepare_backup_copy",
 ]);
 
 function saveBlob(blob, filename) {
@@ -53,11 +55,20 @@ export default function Backups() {
 }
 
 function ServerBackups() {
-  const { selectedServer } = useServer();
+  const { selectedServer, setSelectedServer, refreshServers } = useServer();
   const { user, sessionGeneration } = useAuth();
   const { confirmAction } = useDialog();
   const { addToast } = useToast();
   const snapshots = useResourceQuery("snapshots", selectedServer);
+  const health = useResourceQuery("backupHealth", selectedServer);
+  const [policy, setPolicy] = useState(null);
+  const [copyName, setCopyName] = useState("");
+  const [copyVersion, setCopyVersion] = useState("LATEST");
+  const [port, setPort] = useState(19134);
+  const [portv6, setPortv6] = useState(19135);
+  const [destination, setDestination] = useState("");
+  const [destinationPath, setDestinationPath] = useState("");
+  const [transferring, setTransferring] = useState(false);
   const legacy = useResourceQuery("backups", selectedServer);
   const recovery = useResourceQuery("backupRecovery", selectedServer);
   const [encryption, setEncryption] = useState("default");
@@ -205,21 +216,65 @@ function ServerBackups() {
       reset();
     }
   };
+  const transferProgress = (verb) => (loaded, total) =>
+    setProgress(
+      `${verb}: ${(loaded / 1048576).toFixed(1)} MB${total ? ` of ${(total / 1048576).toFixed(1)} MB` : ""}`,
+    );
+  const manage = async (item, action, extra = {}) => {
+    const result = await perform("manage_server_snapshot", {
+      path: { ...path, backup_id: item.backup_id },
+      body: { action, ...extra },
+    });
+    if (result) {
+      await snapshots.refetch();
+      await health.refetch();
+      addToast("Backup operation completed.", "success");
+    }
+  };
   const download = async (item) => {
+    let writable;
+    if (window.showSaveFilePicker) {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: item.filename,
+          types: [
+            {
+              description: "BSM backup",
+              accept: { "application/octet-stream": [".bsmbackup"] },
+            },
+          ],
+        });
+        writable = await handle.createWritable();
+      } catch (error) {
+        if (error.name !== "AbortError") addToast(error.message, "error");
+        return;
+      }
+    }
+    setTransferring(true);
     const blob = await perform(
       "download_server_snapshot",
-      { path: { ...path, backup_id: item.backup_id }, responseType: "blob" },
+      {
+        path: { ...path, backup_id: item.backup_id },
+        responseType: "blob",
+        downloadTo: writable,
+        onDownloadProgress: transferProgress("Downloading"),
+      },
       false,
     );
+    setTransferring(false);
     if (blob) saveBlob(blob, item.filename);
+    else if (writable) await writable.abort().catch(() => {});
   };
   const upload = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    setTransferring(true);
     const result = await perform("import_server_snapshot", {
       path,
       body: { file },
+      onUploadProgress: transferProgress("Uploading"),
     });
+    setTransferring(false);
     if (result) {
       secret.current = "";
       if (input.current) input.current.value = "";
@@ -277,6 +332,185 @@ function ServerBackups() {
         </div>
       </div>
       <QueryStatus query={snapshots} />
+      <QueryStatus query={health} />
+      {health.data && (
+        <section
+          className="card"
+          style={{ padding: "1rem", marginBottom: "1rem" }}
+          aria-label="Backup health"
+        >
+          <p>
+            {health.data.count} archives ·{" "}
+            {(health.data.total_bytes / 1048576).toFixed(1)} MB ·{" "}
+            {health.data.failed_count} failed verification ·{" "}
+            {health.data.destination_failures} destination copies need attention
+          </p>
+          <p>
+            Last backup:{" "}
+            {health.data.last_success_at
+              ? new Date(health.data.last_success_at).toLocaleString()
+              : "Never"}
+            . Last verified:{" "}
+            {health.data.last_verified_at
+              ? new Date(health.data.last_verified_at).toLocaleString()
+              : "Never"}
+            .
+          </p>
+          {!!health.data.missing_key_ids?.length && (
+            <p role="alert">
+              Recovery keys are missing for{" "}
+              {health.data.missing_key_ids.join(", ")}. Use their emergency
+              kits.
+            </p>
+          )}
+          {!!health.data.older_key_ids?.length && (
+            <p>
+              Older backups still require {health.data.older_key_ids.length}{" "}
+              previous encryption keys. Keep their emergency kits.
+            </p>
+          )}
+          {health.data.last_error && (
+            <p role="alert">{health.data.last_error}</p>
+          )}
+        </section>
+      )}
+      {user?.role === "admin" && (
+        <details>
+          <summary>Backup policy and destinations</summary>
+          <button
+            className="action-button secondary"
+            disabled={busy}
+            onClick={async () => {
+              const result = await perform("get_settings");
+              if (result?.settings) setPolicy(result.settings.backups);
+            }}
+          >
+            Load current policy
+          </button>
+          {policy && (
+            <form
+              onSubmit={async (event) => {
+                event.preventDefault();
+                if (
+                  await perform("set_setting", {
+                    body: { key: "backups", value: policy },
+                  })
+                ) {
+                  addToast("Backup policy saved.", "success");
+                  await health.refetch();
+                }
+              }}
+            >
+              {[
+                [
+                  "verification_interval_hours",
+                  "Verify every (hours; 0 disables periodic checks)",
+                ],
+                ["safety_window_hours", "Protect safety backups for (hours)"],
+                ["keep_daily", "Daily recovery points"],
+                ["keep_weekly", "Weekly recovery points"],
+                ["keep_monthly", "Monthly recovery points"],
+                ["storage_budget_bytes", "Storage budget (bytes; 0 disables)"],
+              ].map(([key, label]) => (
+                <label key={key} style={{ display: "block" }}>
+                  {label}
+                  <input
+                    type="number"
+                    min={key === "safety_window_hours" ? 1 : 0}
+                    value={policy[key] ?? 0}
+                    onChange={(event) =>
+                      setPolicy({
+                        ...policy,
+                        [key]: Number(event.target.value),
+                      })
+                    }
+                  />
+                </label>
+              ))}
+              <p>
+                Pins, protected safety backups, and the last verified recovery
+                point can exceed the storage budget. A retention count of zero
+                disables pruning.
+              </p>
+              <h3>Off-machine destinations</h3>
+              <p>
+                Use an existing directory, such as mounted NAS storage. Copies
+                keep the archive’s encryption and are not pruned with local
+                backups.
+              </p>
+              {Object.entries(policy.destinations ?? {}).map(
+                ([name, config]) => (
+                  <p key={name}>
+                    {name}: {config.path}{" "}
+                    {config.enabled ? "(enabled)" : "(disabled)"}{" "}
+                    <button
+                      type="button"
+                      className="action-button secondary"
+                      onClick={() =>
+                        setPolicy({
+                          ...policy,
+                          destinations: {
+                            ...policy.destinations,
+                            [name]: { ...config, enabled: !config.enabled },
+                          },
+                        })
+                      }
+                    >
+                      {config.enabled ? "Disable" : "Enable"}
+                    </button>{" "}
+                    <button
+                      type="button"
+                      className="action-button secondary"
+                      onClick={() => {
+                        const entries = { ...policy.destinations };
+                        delete entries[name];
+                        setPolicy({ ...policy, destinations: entries });
+                      }}
+                    >
+                      Remove destination
+                    </button>
+                  </p>
+                ),
+              )}
+              <label>
+                Destination name
+                <input
+                  value={destination}
+                  onChange={(event) => setDestination(event.target.value)}
+                />
+              </label>
+              <label>
+                Directory on the BSM host
+                <input
+                  value={destinationPath}
+                  onChange={(event) => setDestinationPath(event.target.value)}
+                />
+              </label>
+              <button
+                type="button"
+                className="action-button secondary"
+                disabled={!destination || !destinationPath}
+                onClick={() => {
+                  setPolicy({
+                    ...policy,
+                    destinations: {
+                      ...policy.destinations,
+                      [destination]: { path: destinationPath, enabled: true },
+                    },
+                  });
+                  setDestination("");
+                  setDestinationPath("");
+                }}
+              >
+                Add destination
+              </button>
+              <button className="action-button" disabled={busy}>
+                Save policy
+              </button>
+            </form>
+          )}
+        </details>
+      )}
       <QueryStatus query={recovery} />
       {recovery.data?.active && (
         <section className="message-warning">
@@ -352,6 +586,17 @@ function ServerBackups() {
         </details>
       </section>
       {progress && <p role="status">{progress}</p>}
+      {transferring && (
+        <button
+          className="action-button secondary"
+          onClick={() => {
+            scope.current.abort();
+            scope.current = new AbortController();
+          }}
+        >
+          Cancel transfer
+        </button>
+      )}
       <div style={{ overflowX: "auto" }}>
         <table className="table">
           <thead>
@@ -370,7 +615,32 @@ function ServerBackups() {
                   {item.error && <p role="alert">{item.error}</p>}
                 </td>
                 <td>{(item.size / 1048576).toFixed(1)} MB</td>
-                <td>{item.encrypted ? "Encrypted" : "Unencrypted"}</td>
+                <td>
+                  {item.encrypted ? "Encrypted" : "Unencrypted"}
+                  <br />
+                  {item.verification?.status ?? "unverified"}
+                  {item.verification?.verified_at && (
+                    <span>
+                      {" "}
+                      ·{" "}
+                      {new Date(item.verification.verified_at).toLocaleString()}
+                    </span>
+                  )}
+                  {item.pinned && <span> · Pinned</span>}
+                  {item.protected_until && (
+                    <span>
+                      {" "}
+                      · Protected until{" "}
+                      {new Date(item.protected_until).toLocaleString()}
+                    </span>
+                  )}
+                  {Object.entries(item.copies ?? {}).map(([name, copy]) => (
+                    <p key={name}>
+                      {name}: {copy.status}
+                      {copy.error ? ` — ${copy.error}` : ""}
+                    </p>
+                  ))}
+                </td>
                 <td>
                   <button
                     className="action-button secondary"
@@ -388,6 +658,20 @@ function ServerBackups() {
                     }}
                   >
                     <RotateCcw size={14} /> Inspect / restore
+                  </button>{" "}
+                  <button
+                    className="action-button secondary"
+                    disabled={busy}
+                    onClick={() => manage(item, "verify")}
+                  >
+                    Verify
+                  </button>{" "}
+                  <button
+                    className="action-button secondary"
+                    disabled={busy}
+                    onClick={() => manage(item, item.pinned ? "unpin" : "pin")}
+                  >
+                    {item.pinned ? "Unpin" : "Pin"}
                   </button>
                 </td>
               </tr>
@@ -524,6 +808,49 @@ function ServerBackups() {
               ) : (
                 <>
                   <h3>Replace on {selectedServer}</h3>
+                  <p>
+                    A protected safety backup will be created before any files
+                    are replaced.
+                  </p>
+                  <p>
+                    {Object.entries(plan.change_counts ?? {})
+                      .map(([action, count]) => `${count} ${action}`)
+                      .join(" · ")}
+                  </p>
+                  <details>
+                    <summary>File changes</summary>
+                    <ul>
+                      {(plan.changes ?? []).map((change) => (
+                        <li key={`${change.component}:${change.path}`}>
+                          {change.action}: {change.path}
+                        </li>
+                      ))}
+                    </ul>
+                    {plan.changes_truncated && (
+                      <p>
+                        Showing the first 1,000 changes. Totals include all
+                        files.
+                      </p>
+                    )}
+                  </details>
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Setting</th>
+                        <th>Current</th>
+                        <th>Backup</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(plan.setting_changes ?? []).map((change) => (
+                        <tr key={`${change.component}:${change.key}`}>
+                          <td>{change.key}</td>
+                          <td>{change.before ?? "Absent"}</td>
+                          <td>{change.after ?? "Absent"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                   <ul>
                     {Object.entries(plan.destinations).map(
                       ([name, destination]) => (
@@ -581,6 +908,8 @@ function ServerBackups() {
                     ) {
                       const blob = await perform(
                         "export_decrypted_snapshot",
+                        "manage_server_snapshot",
+                        "prepare_backup_copy",
                         { path: archivePath, body: {}, responseType: "blob" },
                         false,
                       );
@@ -592,6 +921,112 @@ function ServerBackups() {
                 </button>
               )}
             </>
+          )}
+          <details>
+            <summary>Recovery key and destinations</summary>
+            <label>
+              Emergency-kit recovery key
+              <input
+                type="password"
+                autoComplete="off"
+                onChange={(event) => {
+                  secret.current = event.target.value;
+                }}
+              />
+            </label>
+            <button
+              className="action-button secondary"
+              disabled={busy || !selected.encrypted}
+              onClick={() => manage(selected, "test_key")}
+            >
+              Test recovery key
+            </button>
+            <label>
+              Destination name
+              <input
+                value={destination}
+                onChange={(event) => setDestination(event.target.value)}
+              />
+            </label>
+            <button
+              className="action-button secondary"
+              disabled={busy || !destination}
+              onClick={() => manage(selected, "copy", { destination })}
+            >
+              Copy / retry destination
+            </button>
+          </details>
+          {user?.role === "admin" && (
+            <details>
+              <summary>Restore as a new server</summary>
+              <p>
+                Install a stopped server, remap its ports, then review and
+                restore the prepared archive on that server. Autostart stays
+                disabled.
+              </p>
+              <label>
+                New server name
+                <input
+                  value={copyName}
+                  onChange={(event) => setCopyName(event.target.value)}
+                />
+              </label>
+              <label>
+                Bedrock version
+                <input
+                  value={copyVersion}
+                  onChange={(event) => setCopyVersion(event.target.value)}
+                />
+              </label>
+              <label>
+                IPv4 port
+                <input
+                  type="number"
+                  min="1"
+                  max="65535"
+                  value={port}
+                  onChange={(event) => setPort(Number(event.target.value))}
+                />
+              </label>
+              <label>
+                IPv6 port
+                <input
+                  type="number"
+                  min="1"
+                  max="65535"
+                  value={portv6}
+                  onChange={(event) => setPortv6(Number(event.target.value))}
+                />
+              </label>
+              <button
+                className="action-button"
+                disabled={busy || !copyName}
+                onClick={async () => {
+                  if (
+                    !(await confirmAction(
+                      `Install a stopped server named ${copyName} for this backup?`,
+                    ))
+                  )
+                    return;
+                  const result = await perform("prepare_backup_copy", {
+                    path: archivePath,
+                    body: {
+                      target_server: copyName,
+                      target_version: copyVersion,
+                      server_port: port,
+                      server_portv6: portv6,
+                    },
+                  });
+                  if (result) {
+                    addToast(result.message, "success");
+                    await refreshServers?.();
+                    await setSelectedServer(result.server_name);
+                  }
+                }}
+              >
+                Prepare new server
+              </button>
+            </details>
           )}
           {progress && <p role="status">{progress}</p>}
         </Modal>

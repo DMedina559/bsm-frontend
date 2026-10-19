@@ -223,6 +223,15 @@ const resources = {
       return data;
     },
   },
+  backupHealth: {
+    key: (name) => [...queryKeys.serverBackups(name), "health"],
+    load: (name, options) =>
+      callOperation("get_backup_health", {
+        path: { server_name: name },
+        ...options,
+      }),
+    select: (data) => object(data?.health, "backup health"),
+  },
   backupRecovery: {
     key: (name) => [...queryKeys.serverBackups(name), "recovery"],
     load: (name, options) =>
@@ -333,6 +342,7 @@ export function useResourceQuery(resource, target, options = {}) {
         resource === "backups" ||
         resource === "snapshots" ||
         resource === "backupRecovery" ||
+        resource === "backupHealth" ||
         resource === "properties" ||
         resource === "rawProperties" ||
         resource === "monitor" ||

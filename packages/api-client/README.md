@@ -143,3 +143,11 @@ Request timeouts and cancellation cover asynchronous credentials and response
 body decoding. Header names are case insensitive. The default URL resolver
 rejects traversal and requests outside the configured backend's origin and path
 prefix. A custom resolver remains responsible for its own destination policy.
+
+Archive transfers support native browser progress through `onUploadProgress`
+(multipart XMLHttpRequest) and `onDownloadProgress`. For large downloads, pass a
+`WritableStream<Uint8Array>` as `downloadTo` with `responseType: "blob"`; the
+transport writes with backpressure, closes on success, and aborts partial output
+on cancellation or failure. Without a destination it returns a Blob. These
+options share the normal bearer authentication, backend URL resolution, session
+guards, and abort signals. A timeout of zero disables only the deadline.

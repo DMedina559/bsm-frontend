@@ -726,6 +726,20 @@
     "bodyTypes": ["application/json"],
     "responseType": "json"
   },
+  "get_backup_health": {
+    "method": "GET",
+    "path": "/api/server/{server_name}/backups/health",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
   "import_server_snapshot": {
     "method": "POST",
     "path": "/api/server/{server_name}/backups/import",
@@ -839,9 +853,47 @@
     "bodyTypes": ["application/json"],
     "responseType": "json"
   },
+  "manage_server_snapshot": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/backups/{backup_id}/manage",
+    "parameters": [
+      {
+        "name": "backup_id",
+        "in": "path",
+        "required": true
+      },
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
+  },
   "plan_snapshot_restore": {
     "method": "POST",
     "path": "/api/server/{server_name}/backups/{backup_id}/plan",
+    "parameters": [
+      {
+        "name": "backup_id",
+        "in": "path",
+        "required": true
+      },
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
+  },
+  "prepare_backup_copy": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/backups/{backup_id}/prepare-copy",
     "parameters": [
       {
         "name": "backup_id",

@@ -37,6 +37,22 @@ const results = {
       destinations: { script_config: "config" },
       warnings: ["Replaces secrets"],
       required_bytes: 1024,
+      change_counts: { added: 1, replaced: 2, removed: 3 },
+      changes: [
+        {
+          component: "script_config",
+          path: "config/permissions.json",
+          action: "replaced",
+        },
+      ],
+      setting_changes: [
+        {
+          component: "server.properties",
+          key: "difficulty",
+          before: "easy",
+          after: "hard",
+        },
+      ],
     },
   },
   restore: { status: "success", result: { committed: true } },
@@ -114,6 +130,11 @@ describe("Backups", () => {
     fireEvent.click(screen.getByLabelText("BSM server settings"));
     fireEvent.click(screen.getByRole("button", { name: "Review restore" }));
     expect(await screen.findByText("Replaces secrets")).toBeInTheDocument();
+    expect(screen.getByText(/A protected safety backup/)).toBeInTheDocument();
+    expect(
+      screen.getByText("1 added · 2 replaced · 3 removed"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("difficulty")).toBeInTheDocument();
     fireEvent.click(
       screen.getByRole("button", { name: "Restore selected components" }),
     );

@@ -42,6 +42,60 @@ function abortable(value, signal) {
   });
 }
 
+/** Upload through the browser's multipart engine while retaining request cancellation. */
+function uploadRequest(url, config, onProgress, signal) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    const cleanup = () => signal.removeEventListener("abort", cancel);
+    const cancel = () => {
+      xhr.abort();
+      cleanup();
+      reject(signal.reason);
+    };
+    xhr.open(config.method, url);
+    xhr.responseType = "blob";
+    xhr.withCredentials = config.credentials === "include";
+    Object.entries(config.headers).forEach(([key, value]) =>
+      xhr.setRequestHeader(key, value),
+    );
+    xhr.upload.onprogress = (event) => {
+      if (!signal.aborted)
+        onProgress(event.loaded, event.lengthComputable ? event.total : null);
+    };
+    xhr.onerror = () => {
+      cleanup();
+      reject(new TypeError("Upload connection failed"));
+    };
+    xhr.onabort = () => {
+      cleanup();
+      reject(signal.reason ?? new DOMException("Cancelled", "AbortError"));
+    };
+    xhr.onload = () => {
+      cleanup();
+      const headers = new Headers();
+      xhr
+        .getAllResponseHeaders()
+        .trim()
+        .split(/[\r\n]+/)
+        .filter(Boolean)
+        .forEach((line) => {
+          const index = line.indexOf(":");
+          if (index > 0)
+            headers.append(line.slice(0, index), line.slice(index + 1).trim());
+        });
+      resolve(
+        new Response(xhr.status === 204 ? null : xhr.response, {
+          status: xhr.status,
+          headers,
+        }),
+      );
+    };
+    signal.addEventListener("abort", cancel, { once: true });
+    if (signal.aborted) cancel();
+    else xhr.send(config.body);
+  });
+}
+
 /** @param {Parameters<typeof import("./transport.d.ts").createHttpTransport>[0]} dependencies
  * @returns {ReturnType<typeof import("./transport.d.ts").createHttpTransport>} */
 export function createHttpTransport({
@@ -65,6 +119,9 @@ export function createHttpTransport({
       timeout = 30000,
       responseType = "json",
       session = captureSession(),
+      onUploadProgress,
+      onDownloadProgress,
+      downloadTo,
       ...restOptions
     } = options;
     const signal = AbortSignal.any([
@@ -150,7 +207,10 @@ export function createHttpTransport({
         },
       });
 
-      const response = await fetcher(finalUrl, config);
+      const response =
+        onUploadProgress && typeof XMLHttpRequest !== "undefined"
+          ? await uploadRequest(finalUrl, config, onUploadProgress, signal)
+          : await fetcher(finalUrl, config);
       assertCurrent();
 
       if (response.status === 204) {
@@ -167,7 +227,45 @@ export function createHttpTransport({
       if (response.ok && responseType === "blob") {
         if (contentType?.includes("text/html"))
           throw new ApiError("Session expired (Redirected to App)", 401, null);
-        data = await response.blob();
+        if (downloadTo || onDownloadProgress) {
+          if (!response.body)
+            throw new ApiError(
+              "Download body is unavailable",
+              response.status,
+              null,
+            );
+          const reader = response.body.getReader();
+          const writer = downloadTo?.getWriter();
+          const chunks = [];
+          let loaded = 0;
+          const total = Number(response.headers.get("content-length")) || null;
+          try {
+            for (;;) {
+              assertCurrent();
+              const { done, value } = await reader.read();
+              if (done) break;
+              assertCurrent();
+              if (writer) await writer.write(value);
+              else chunks.push(value);
+              loaded += value.byteLength;
+              onDownloadProgress?.(loaded, total);
+            }
+            assertCurrent();
+            if (writer) await writer.close();
+            data = writer
+              ? null
+              : new Blob(chunks, {
+                  type: contentType ?? "application/octet-stream",
+                });
+          } catch (error) {
+            await reader.cancel(error).catch(() => {});
+            await writer?.abort(error).catch(() => {});
+            throw error;
+          } finally {
+            reader.releaseLock();
+            writer?.releaseLock();
+          }
+        } else data = await response.blob();
       } else if (contentType && contentType.includes("application/json")) {
         try {
           data = await response.json();

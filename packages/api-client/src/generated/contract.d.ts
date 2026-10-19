@@ -1071,6 +1071,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/server/{server_name}/backups/health": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Backup Health
+     * @description Read backup verification, storage and key health.
+     */
+    get: operations["get_backup_health"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/server/{server_name}/backups/import": {
     parameters: {
       query?: never;
@@ -1197,6 +1217,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/server/{server_name}/backups/{backup_id}/manage": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Manage Snapshot
+     * @description Verify, pin, retry a destination copy, or test an emergency recovery key.
+     */
+    post: operations["manage_server_snapshot"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/server/{server_name}/backups/{backup_id}/plan": {
     parameters: {
       query?: never;
@@ -1211,6 +1251,26 @@ export interface paths {
      * @description Prepare a reviewed selection without stopping the Minecraft server.
      */
     post: operations["plan_snapshot_restore"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/server/{server_name}/backups/{backup_id}/prepare-copy": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Prepare Backup Copy
+     * @description Prepare a stopped new server; review its component restore separately.
+     */
+    post: operations["prepare_backup_copy"];
     delete?: never;
     options?: never;
     head?: never;
@@ -2350,6 +2410,18 @@ export interface components {
        */
       file_to_backup?: string | null;
     };
+    /** BackupCopy */
+    BackupCopy: {
+      /** Completed At */
+      completed_at?: string | null;
+      /** Error */
+      error?: string | null;
+      /**
+       * Status
+       * @enum {string}
+       */
+      status: "pending" | "completed" | "failed";
+    };
     /** BackupFile */
     BackupFile: {
       /**
@@ -2378,6 +2450,54 @@ export interface components {
         | {
             [key: string]: string[];
           };
+      /** Message */
+      message?: string | null;
+      /**
+       * Status
+       * @default success
+       * @constant
+       */
+      status?: "success";
+    };
+    /** BackupHealth */
+    BackupHealth: {
+      /** Count */
+      count: number;
+      /**
+       * Destination Failures
+       * @default 0
+       */
+      destination_failures?: number;
+      /**
+       * Failed Count
+       * @default 0
+       */
+      failed_count?: number;
+      /** Last Error */
+      last_error?: string | null;
+      /** Last Failure At */
+      last_failure_at?: string | null;
+      /** Last Success At */
+      last_success_at?: string | null;
+      /** Last Verified At */
+      last_verified_at?: string | null;
+      /** Missing Key Ids */
+      missing_key_ids?: string[];
+      /** Older Key Ids */
+      older_key_ids?: string[];
+      /** Total Bytes */
+      total_bytes: number;
+      /**
+       * Unverified Count
+       * @default 0
+       */
+      unverified_count?: number;
+      /** Verification Interval Hours */
+      verification_interval_hours: number;
+    };
+    /** BackupHealthResponse */
+    BackupHealthResponse: {
+      health: components["schemas"]["BackupHealth"];
       /** Message */
       message?: string | null;
       /**
@@ -2443,7 +2563,7 @@ export interface components {
        * @default manual
        * @enum {string}
        */
-      reason?: "manual" | "pre_start" | "pre_update";
+      reason?: "manual" | "pre_start" | "pre_update" | "pre_restore";
       /** Source Server */
       source_server: string;
       /** Source World */
@@ -2455,6 +2575,10 @@ export interface components {
     BackupSummary: {
       /** Backup Id */
       backup_id: string;
+      /** Copies */
+      copies?: {
+        [key: string]: components["schemas"]["BackupCopy"];
+      };
       /** Encrypted */
       encrypted: boolean;
       /** Error */
@@ -2464,8 +2588,53 @@ export interface components {
       /** Key Id */
       key_id?: string | null;
       manifest?: components["schemas"]["BackupManifest"] | null;
+      /**
+       * Pinned
+       * @default false
+       */
+      pinned?: boolean;
+      /** Protected Until */
+      protected_until?: string | null;
+      /** Purpose */
+      purpose?: string | null;
       /** Size */
       size: number;
+      verification?: components["schemas"]["BackupVerification"];
+    };
+    /** BackupVerification */
+    BackupVerification: {
+      /** Error */
+      error?: string | null;
+      /**
+       * Status
+       * @default unverified
+       * @enum {string}
+       */
+      status?: "unverified" | "verified" | "failed";
+      /** Verified At */
+      verified_at?: string | null;
+    };
+    /** BackupsDiagnostics */
+    BackupsDiagnostics: {
+      /** Archives */
+      archives: number;
+      /** Destination Failures */
+      destination_failures: number;
+      /** Failed */
+      failed: number;
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      kind: "backups";
+      /** Missing Keys */
+      missing_keys: number;
+      /** Servers */
+      servers: number;
+      /** Total Bytes */
+      total_bytes: number;
+      /** Without Backup */
+      without_backup: number;
     };
     /** BanAddRequest */
     BanAddRequest: {
@@ -2895,6 +3064,7 @@ export interface components {
             | components["schemas"]["ProcessesDiagnostics"]
             | components["schemas"]["MetricsDiagnostics"]
             | components["schemas"]["PluginValues"]
+            | components["schemas"]["BackupsDiagnostics"]
           )
         | null;
       /**
@@ -4644,6 +4814,22 @@ export interface components {
       /** Reason */
       reason: string;
     };
+    /** SnapshotCopyPayload */
+    SnapshotCopyPayload: {
+      /** Recovery Key */
+      recovery_key?: string | null;
+      /** Server Port */
+      server_port: number;
+      /** Server Portv6 */
+      server_portv6: number;
+      /** Target Server */
+      target_server: string;
+      /**
+       * Target Version
+       * @default LATEST
+       */
+      target_version?: string;
+    };
     /** SnapshotCreatePayload */
     SnapshotCreatePayload: {
       /** Encrypted */
@@ -4651,6 +4837,18 @@ export interface components {
     };
     /** SnapshotInspectPayload */
     SnapshotInspectPayload: {
+      /** Recovery Key */
+      recovery_key?: string | null;
+    };
+    /** SnapshotManagePayload */
+    SnapshotManagePayload: {
+      /**
+       * Action
+       * @enum {string}
+       */
+      action: "verify" | "pin" | "unpin" | "copy" | "test_key";
+      /** Destination */
+      destination?: string | null;
       /** Recovery Key */
       recovery_key?: string | null;
     };
@@ -10668,6 +10866,100 @@ export interface operations {
       };
     };
   };
+  get_backup_health: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        server_name: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BackupHealthResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
   import_server_snapshot: {
     parameters: {
       query?: never;
@@ -11341,6 +11633,105 @@ export interface operations {
       };
     };
   };
+  manage_server_snapshot: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        backup_id: string;
+        server_name: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SnapshotManagePayload"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskAcceptedResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
   plan_snapshot_restore: {
     parameters: {
       query?: never;
@@ -11354,6 +11745,105 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": components["schemas"]["SnapshotPlanPayload"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskAcceptedResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  prepare_backup_copy: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        backup_id: string;
+        server_name: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SnapshotCopyPayload"];
       };
     };
     responses: {

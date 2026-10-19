@@ -169,3 +169,117 @@ test("zero timeout allows archive transfers while retaining cancellation", async
     { name: "AbortError" },
   );
 });
+
+test("native archive downloads stream to disk with progress without a Blob", async () => {
+  const writes = [];
+  const progress = [];
+  let closed = false;
+  const destination = new WritableStream({
+    write(chunk) {
+      writes.push(...chunk);
+    },
+    close() {
+      closed = true;
+    },
+  });
+  const client = transport(
+    async () =>
+      new Response(new Uint8Array([1, 2, 3]), {
+        headers: {
+          "content-type": "application/octet-stream",
+          "content-length": "3",
+        },
+      }),
+  );
+  const result = await client.request("/api/archive", {
+    responseType: "blob",
+    downloadTo: destination,
+    onDownloadProgress: (loaded, total) => progress.push([loaded, total]),
+  });
+  assert.equal(result, null);
+  assert.deepEqual(writes, [1, 2, 3]);
+  assert.equal(closed, true);
+  assert.deepEqual(progress.at(-1), [3, 3]);
+});
+
+test("cancelled downloads abort partial destination files", async () => {
+  const controller = new AbortController();
+  let aborted = false;
+  const destination = new WritableStream({
+    write() {
+      controller.abort();
+    },
+    abort() {
+      aborted = true;
+    },
+  });
+  const client = transport(async () => new Response(new Uint8Array([1, 2, 3])));
+  await assert.rejects(
+    client.request("/api/archive", {
+      responseType: "blob",
+      downloadTo: destination,
+      signal: controller.signal,
+    }),
+    { name: "AbortError" },
+  );
+  assert.equal(aborted, true);
+});
+
+test("multipart uploads use native progress and retain authorization and cancellation", async () => {
+  const original = globalThis.XMLHttpRequest;
+  let request;
+  class FakeXHR {
+    upload = {};
+    headers = {};
+    status = 200;
+    response = new Blob(['{"ok":true}']);
+    open(method, url) {
+      this.method = method;
+      this.url = url;
+      request = this;
+    }
+    setRequestHeader(key, value) {
+      this.headers[key] = value;
+    }
+    getAllResponseHeaders() {
+      return "content-type: application/json\r\n";
+    }
+    send(body) {
+      this.body = body;
+      this.upload.onprogress({
+        loaded: 100,
+        total: 100,
+        lengthComputable: true,
+      });
+      queueMicrotask(() => this.onload());
+    }
+    abort() {
+      this.onabort?.();
+    }
+  }
+  globalThis.XMLHttpRequest = FakeXHR;
+  try {
+    const progress = [];
+    const client = transport(
+      () => {
+        throw new Error("must use native upload");
+      },
+      { getToken: () => "credential" },
+    );
+    const form = new FormData();
+    form.append("file", new Blob(["archive"]), "backup.bsmbackup");
+    assert.deepEqual(
+      await client.request("/api/import", {
+        method: "POST",
+        body: form,
+        onUploadProgress: (loaded) => progress.push(loaded),
+      }),
+      { ok: true },
+    );
+    assert.equal(request.body, form);
+    assert.equal(request.headers.Authorization, "Bearer credential");
+    assert.deepEqual(progress, [100]);
+  } finally {
+    globalThis.XMLHttpRequest = original;
+  }
+});
