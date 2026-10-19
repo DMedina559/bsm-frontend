@@ -223,6 +223,24 @@ const resources = {
       return data;
     },
   },
+  backupRecovery: {
+    key: (name) => [...queryKeys.serverBackups(name), "recovery"],
+    load: (name, options) =>
+      callOperation("get_restore_recovery", {
+        path: { server_name: name },
+        ...options,
+      }),
+    select: (data) => object(data?.recovery, "restore recovery"),
+  },
+  snapshots: {
+    key: (name) => [...queryKeys.serverBackups(name), "snapshots"],
+    load: (name, options) =>
+      callOperation("list_server_snapshots", {
+        path: { server_name: name },
+        ...options,
+      }),
+    select: (data) => array(data?.backups, "server snapshots"),
+  },
   backups: {
     key: queryKeys.serverBackups,
     load: (name, options) =>
@@ -313,6 +331,8 @@ export function useResourceQuery(resource, target, options = {}) {
       identity !== null &&
       (!(
         resource === "backups" ||
+        resource === "snapshots" ||
+        resource === "backupRecovery" ||
         resource === "properties" ||
         resource === "rawProperties" ||
         resource === "monitor" ||

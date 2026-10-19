@@ -1,6 +1,7 @@
 export interface RequestOptions extends Omit<RequestInit, "body" | "headers"> {
   body?: unknown;
   headers?: Record<string, string>;
+  /** Milliseconds; zero disables the deadline while preserving cancellation. */
   timeout?: number;
   responseType?: "json" | "blob";
   session?: { signal: AbortSignal; generation?: number; backend?: string };

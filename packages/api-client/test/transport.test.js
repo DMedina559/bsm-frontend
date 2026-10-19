@@ -152,3 +152,20 @@ test("backend URLs retain their path boundary, including encoded traversal and a
     "https://bsm.example/ingress/one/api/account",
   );
 });
+
+test("zero timeout allows archive transfers while retaining cancellation", async () => {
+  const client = transport(async (_url, { signal }) => {
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    assert.equal(signal.aborted, false);
+    return Response.json({ complete: true });
+  });
+  assert.deepEqual(await client.request("/api/archive", { timeout: 0 }), {
+    complete: true,
+  });
+  const controller = new AbortController();
+  controller.abort();
+  await assert.rejects(
+    client.request("/api/archive", { timeout: 0, signal: controller.signal }),
+    { name: "AbortError" },
+  );
+});

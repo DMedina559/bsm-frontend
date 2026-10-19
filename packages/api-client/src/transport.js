@@ -67,10 +67,9 @@ export function createHttpTransport({
       session = captureSession(),
       ...restOptions
     } = options;
-    const timeoutSignal = AbortSignal.timeout(timeout);
     const signal = AbortSignal.any([
       session.signal,
-      timeoutSignal,
+      ...(timeout === 0 ? [] : [AbortSignal.timeout(timeout)]),
       ...(restOptions.signal ? [restOptions.signal] : []),
     ]);
     const assertCurrent = prepareRequest({ session, signal });

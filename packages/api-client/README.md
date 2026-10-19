@@ -62,7 +62,7 @@ console.log(result.properties);
 ```
 
 Call `controller.abort()` to cancel pending work. Timeouts default to 30 seconds.
-Abort and timeout errors propagate separately from `ApiError`.
+Abort and timeout errors propagate separately from `ApiError`. Set `timeout: 0` for long archive transfers without a deadline; session and explicit cancellation still apply.
 
 The transport encodes JSON, form, and multipart bodies according to the operation
 metadata. `responseType: "blob"` requests a binary response. Saving or sharing the
