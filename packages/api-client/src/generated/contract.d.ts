@@ -1177,6 +1177,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/server/{server_name}/backups/report": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Download Recovery Report
+     * @description Download a redacted JSON recovery report.
+     */
+    get: operations["download_backup_recovery_report"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/server/{server_name}/backups/{backup_id}/download": {
     parameters: {
       query?: never;
@@ -4465,6 +4485,160 @@ export interface components {
        */
       window_seconds?: 300;
     };
+    /** RecoveryReport */
+    RecoveryReport: {
+      /** Archive Count */
+      archive_count: number;
+      /** Archives */
+      archives: components["schemas"]["RecoveryReportArchive"][];
+      /** Archives Omitted */
+      archives_omitted: number;
+      /** Destination Failures */
+      destination_failures: number;
+      /** Generated At */
+      generated_at: string;
+      last_drill?: components["schemas"]["RecoveryReportDrill"] | null;
+      last_restore?: components["schemas"]["RecoveryReportOutcome"] | null;
+      last_review?: components["schemas"]["RecoveryReportReview"] | null;
+      /** Missing Key Count */
+      missing_key_count: number;
+      /**
+       * Readiness
+       * @enum {string}
+       */
+      readiness: "ready" | "attention" | "unavailable";
+      /** Recovery Pending */
+      recovery_pending: boolean;
+      /**
+       * Report Version
+       * @default 1
+       * @constant
+       */
+      report_version?: 1;
+    };
+    /** RecoveryReportArchive */
+    RecoveryReportArchive: {
+      /** Archive Reference */
+      archive_reference: string;
+      /** Copies Completed */
+      copies_completed: number;
+      /** Copies Failed */
+      copies_failed: number;
+      /** Encrypted */
+      encrypted: boolean;
+      /** Key Available */
+      key_available: boolean;
+      /**
+       * Verification Status
+       * @enum {string}
+       */
+      verification_status: "unverified" | "verified" | "failed";
+      /** Verified At */
+      verified_at?: string | null;
+    };
+    /** RecoveryReportDrill */
+    RecoveryReportDrill: {
+      /** Archive Reference */
+      archive_reference: string;
+      /** Checked At */
+      checked_at?: string | null;
+      /**
+       * Checked Files
+       * @default 0
+       */
+      checked_files?: number;
+      /**
+       * Status
+       * @enum {string}
+       */
+      status: "passed" | "failed" | "running";
+    };
+    /** RecoveryReportOutcome */
+    RecoveryReportOutcome: {
+      /** Archive Reference */
+      archive_reference: string;
+      /**
+       * Cleanup Needed
+       * @default false
+       */
+      cleanup_needed?: boolean;
+      /** Committed */
+      committed?: boolean | null;
+      /** Components */
+      components: (
+        | "world"
+        | "server.properties"
+        | "allowlist.json"
+        | "permissions.json"
+        | "script_config"
+        | "bsm_settings"
+        | "behavior_packs"
+        | "resource_packs"
+        | "development_behavior_packs"
+        | "development_resource_packs"
+      )[];
+      /** Recorded At */
+      recorded_at: string;
+      /**
+       * Restart Failed
+       * @default false
+       */
+      restart_failed?: boolean;
+      /**
+       * Restarted
+       * @default false
+       */
+      restarted?: boolean;
+      /**
+       * Status
+       * @enum {string}
+       */
+      status: "completed" | "failed" | "cancelled";
+    };
+    /** RecoveryReportResponse */
+    RecoveryReportResponse: {
+      /** Message */
+      message?: string | null;
+      report: components["schemas"]["RecoveryReport"];
+      /**
+       * Status
+       * @default success
+       * @constant
+       */
+      status?: "success";
+    };
+    /** RecoveryReportReview */
+    RecoveryReportReview: {
+      /** Archive Reference */
+      archive_reference: string;
+      /** Change Counts */
+      change_counts: {
+        [key: string]: number;
+      };
+      /** Checked Files */
+      checked_files: number;
+      /** Components */
+      components: (
+        | "world"
+        | "server.properties"
+        | "allowlist.json"
+        | "permissions.json"
+        | "script_config"
+        | "bsm_settings"
+        | "behavior_packs"
+        | "resource_packs"
+        | "development_behavior_packs"
+        | "development_resource_packs"
+      )[];
+      /** Dry Run */
+      dry_run: boolean;
+      /** Recorded At */
+      recorded_at: string;
+      /** Sufficient Space */
+      sufficient_space: boolean;
+      /** Volumes */
+      volumes: components["schemas"]["RestoreVolume"][];
+    };
     /** RegistrationResponse */
     RegistrationResponse: {
       /** Message */
@@ -4609,6 +4783,17 @@ export interface components {
       committed?: boolean | null;
       /** Error */
       error?: string | null;
+    };
+    /** RestoreVolume */
+    RestoreVolume: {
+      /** Available Bytes */
+      available_bytes: number;
+      /** Required Bytes */
+      required_bytes: number;
+      /** Roles */
+      roles: string[];
+      /** Sufficient */
+      sufficient: boolean;
     };
     /** RuntimeDiagnostics */
     RuntimeDiagnostics: {
@@ -11483,6 +11668,100 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["TaskAcceptedResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  download_backup_recovery_report: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        server_name: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RecoveryReportResponse"];
         };
       };
       /** @description Bad Request */

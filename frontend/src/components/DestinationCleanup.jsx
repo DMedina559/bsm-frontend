@@ -7,8 +7,8 @@ import { useDialog } from "../contexts/DialogContext";
 import { useToast } from "../contexts/ToastContext";
 
 export default function DestinationCleanup(props) {
-  const { sessionGeneration, loading } = useAuth();
-  if (loading) return null;
+  const { sessionGeneration, loading, user } = useAuth();
+  if (loading || !user) return null;
   return (
     <Cleanup
       key={`${sessionGeneration}:${props.serverName}:${props.destination}`}

@@ -5138,6 +5138,348 @@
         "title": "RecentDiagnosticWindow",
         "type": "object"
       },
+      "RecoveryReport": {
+        "additionalProperties": false,
+        "properties": {
+          "archive_count": {
+            "title": "Archive Count",
+            "type": "integer"
+          },
+          "archives": {
+            "items": {
+              "$ref": "#/components/schemas/RecoveryReportArchive"
+            },
+            "title": "Archives",
+            "type": "array"
+          },
+          "archives_omitted": {
+            "title": "Archives Omitted",
+            "type": "integer"
+          },
+          "destination_failures": {
+            "title": "Destination Failures",
+            "type": "integer"
+          },
+          "generated_at": {
+            "title": "Generated At",
+            "type": "string"
+          },
+          "last_drill": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecoveryReportDrill"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "last_restore": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecoveryReportOutcome"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "last_review": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecoveryReportReview"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "missing_key_count": {
+            "title": "Missing Key Count",
+            "type": "integer"
+          },
+          "readiness": {
+            "enum": ["ready", "attention", "unavailable"],
+            "title": "Readiness",
+            "type": "string"
+          },
+          "recovery_pending": {
+            "title": "Recovery Pending",
+            "type": "boolean"
+          },
+          "report_version": {
+            "const": 1,
+            "default": 1,
+            "title": "Report Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "generated_at",
+          "readiness",
+          "archive_count",
+          "archives_omitted",
+          "missing_key_count",
+          "destination_failures",
+          "recovery_pending",
+          "archives"
+        ],
+        "title": "RecoveryReport",
+        "type": "object"
+      },
+      "RecoveryReportArchive": {
+        "additionalProperties": false,
+        "properties": {
+          "archive_reference": {
+            "title": "Archive Reference",
+            "type": "string"
+          },
+          "copies_completed": {
+            "title": "Copies Completed",
+            "type": "integer"
+          },
+          "copies_failed": {
+            "title": "Copies Failed",
+            "type": "integer"
+          },
+          "encrypted": {
+            "title": "Encrypted",
+            "type": "boolean"
+          },
+          "key_available": {
+            "title": "Key Available",
+            "type": "boolean"
+          },
+          "verification_status": {
+            "enum": ["unverified", "verified", "failed"],
+            "title": "Verification Status",
+            "type": "string"
+          },
+          "verified_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verified At"
+          }
+        },
+        "required": [
+          "archive_reference",
+          "encrypted",
+          "key_available",
+          "verification_status",
+          "copies_completed",
+          "copies_failed"
+        ],
+        "title": "RecoveryReportArchive",
+        "type": "object"
+      },
+      "RecoveryReportDrill": {
+        "additionalProperties": false,
+        "properties": {
+          "archive_reference": {
+            "title": "Archive Reference",
+            "type": "string"
+          },
+          "checked_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checked At"
+          },
+          "checked_files": {
+            "default": 0,
+            "title": "Checked Files",
+            "type": "integer"
+          },
+          "status": {
+            "enum": ["passed", "failed", "running"],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["archive_reference", "status"],
+        "title": "RecoveryReportDrill",
+        "type": "object"
+      },
+      "RecoveryReportOutcome": {
+        "additionalProperties": false,
+        "properties": {
+          "archive_reference": {
+            "title": "Archive Reference",
+            "type": "string"
+          },
+          "cleanup_needed": {
+            "default": false,
+            "title": "Cleanup Needed",
+            "type": "boolean"
+          },
+          "committed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Committed"
+          },
+          "components": {
+            "items": {
+              "enum": [
+                "world",
+                "server.properties",
+                "allowlist.json",
+                "permissions.json",
+                "script_config",
+                "bsm_settings",
+                "behavior_packs",
+                "resource_packs",
+                "development_behavior_packs",
+                "development_resource_packs"
+              ],
+              "type": "string"
+            },
+            "title": "Components",
+            "type": "array"
+          },
+          "recorded_at": {
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "restart_failed": {
+            "default": false,
+            "title": "Restart Failed",
+            "type": "boolean"
+          },
+          "restarted": {
+            "default": false,
+            "title": "Restarted",
+            "type": "boolean"
+          },
+          "status": {
+            "enum": ["completed", "failed", "cancelled"],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "recorded_at",
+          "archive_reference",
+          "status",
+          "components"
+        ],
+        "title": "RecoveryReportOutcome",
+        "type": "object"
+      },
+      "RecoveryReportResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "report": {
+            "$ref": "#/components/schemas/RecoveryReport"
+          },
+          "status": {
+            "const": "success",
+            "default": "success",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["report"],
+        "title": "RecoveryReportResponse",
+        "type": "object"
+      },
+      "RecoveryReportReview": {
+        "additionalProperties": false,
+        "properties": {
+          "archive_reference": {
+            "title": "Archive Reference",
+            "type": "string"
+          },
+          "change_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Change Counts",
+            "type": "object"
+          },
+          "checked_files": {
+            "title": "Checked Files",
+            "type": "integer"
+          },
+          "components": {
+            "items": {
+              "enum": [
+                "world",
+                "server.properties",
+                "allowlist.json",
+                "permissions.json",
+                "script_config",
+                "bsm_settings",
+                "behavior_packs",
+                "resource_packs",
+                "development_behavior_packs",
+                "development_resource_packs"
+              ],
+              "type": "string"
+            },
+            "title": "Components",
+            "type": "array"
+          },
+          "dry_run": {
+            "title": "Dry Run",
+            "type": "boolean"
+          },
+          "recorded_at": {
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "sufficient_space": {
+            "title": "Sufficient Space",
+            "type": "boolean"
+          },
+          "volumes": {
+            "items": {
+              "$ref": "#/components/schemas/RestoreVolume"
+            },
+            "title": "Volumes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "recorded_at",
+          "archive_reference",
+          "components",
+          "dry_run",
+          "checked_files",
+          "change_counts",
+          "sufficient_space",
+          "volumes"
+        ],
+        "title": "RecoveryReportReview",
+        "type": "object"
+      },
       "RegistrationResponse": {
         "additionalProperties": false,
         "properties": {
@@ -5415,6 +5757,38 @@
         },
         "required": ["active"],
         "title": "RestoreRecoveryState",
+        "type": "object"
+      },
+      "RestoreVolume": {
+        "additionalProperties": false,
+        "properties": {
+          "available_bytes": {
+            "title": "Available Bytes",
+            "type": "integer"
+          },
+          "required_bytes": {
+            "title": "Required Bytes",
+            "type": "integer"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Roles",
+            "type": "array"
+          },
+          "sufficient": {
+            "title": "Sufficient",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "roles",
+          "required_bytes",
+          "available_bytes",
+          "sufficient"
+        ],
+        "title": "RestoreVolume",
         "type": "object"
       },
       "RuntimeDiagnostics": {
@@ -15134,6 +15508,126 @@
           }
         ],
         "summary": "Retry Recovery",
+        "tags": ["Backup & Restore"]
+      }
+    },
+    "/api/server/{server_name}/backups/report": {
+      "get": {
+        "description": "Download a redacted JSON recovery report.",
+        "operationId": "download_backup_recovery_report",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "server_name",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "The name of the server",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoveryReportResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Download Recovery Report",
         "tags": ["Backup & Restore"]
       }
     },

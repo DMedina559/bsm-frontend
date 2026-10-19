@@ -815,6 +815,20 @@
     "bodyTypes": [],
     "responseType": "json"
   },
+  "download_backup_recovery_report": {
+    "method": "GET",
+    "path": "/api/server/{server_name}/backups/report",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
   "download_server_snapshot": {
     "method": "GET",
     "path": "/api/server/{server_name}/backups/{backup_id}/download",

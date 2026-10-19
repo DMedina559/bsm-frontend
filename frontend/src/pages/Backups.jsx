@@ -327,6 +327,20 @@ function ServerBackups() {
           <button
             className="action-button secondary"
             disabled={busy}
+            onClick={async () => {
+              const report = await perform(
+                "download_backup_recovery_report",
+                { path, responseType: "blob" },
+                false,
+              );
+              if (report) saveBlob(report, "bsm-recovery-report.json");
+            }}
+          >
+            <Download size={16} /> Recovery report
+          </button>
+          <button
+            className="action-button secondary"
+            disabled={busy}
             onClick={() => snapshots.refetch()}
           >
             <RefreshCw size={16} /> Refresh
@@ -348,7 +362,7 @@ function ServerBackups() {
           {user?.role === "admin" && (
             <Link
               className="action-button secondary"
-              to="/app/bsm-settings?tab=backups"
+              to="/bsm-settings?tab=backups"
             >
               Backup settings
             </Link>
@@ -372,10 +386,7 @@ function ServerBackups() {
                 /destination|external|key|scheduled/.test(
                   reason.toLowerCase(),
                 ) ? (
-                  <Link to="/app/bsm-settings?tab=backups">
-                    {" "}
-                    Review settings
-                  </Link>
+                  <Link to="/bsm-settings?tab=backups"> Review settings</Link>
                 ) : /verification/.test(reason.toLowerCase()) ? (
                   <button
                     className="action-button secondary"
