@@ -815,6 +815,25 @@
     "bodyTypes": [],
     "responseType": "blob"
   },
+  "dry_run_server_restore": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/backups/{backup_id}/dry-run",
+    "parameters": [
+      {
+        "name": "backup_id",
+        "in": "path",
+        "required": true
+      },
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
+  },
   "export_decrypted_snapshot": {
     "method": "POST",
     "path": "/api/server/{server_name}/backups/{backup_id}/export",

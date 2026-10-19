@@ -1177,6 +1177,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/server/{server_name}/backups/{backup_id}/dry-run": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Dry Run Restore
+     * @description Validate an isolated restore without stopping or modifying the server.
+     */
+    post: operations["dry_run_server_restore"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/server/{server_name}/backups/{backup_id}/export": {
     parameters: {
       query?: never;
@@ -2412,10 +2432,17 @@ export interface components {
     };
     /** BackupCopy */
     BackupCopy: {
+      /**
+       * Attempts
+       * @default 0
+       */
+      attempts?: number;
       /** Completed At */
       completed_at?: string | null;
       /** Error */
       error?: string | null;
+      /** Next Retry At */
+      next_retry_at?: string | null;
       /**
        * Status
        * @enum {string}
@@ -2434,7 +2461,11 @@ export interface components {
         | "allowlist.json"
         | "permissions.json"
         | "script_config"
-        | "bsm_settings";
+        | "bsm_settings"
+        | "behavior_packs"
+        | "resource_packs"
+        | "development_behavior_packs"
+        | "development_resource_packs";
       /** Path */
       path: string;
       /** Sha256 */
@@ -2485,6 +2516,10 @@ export interface components {
       missing_key_ids?: string[];
       /** Older Key Ids */
       older_key_ids?: string[];
+      /** Schedule */
+      schedule?: {
+        [key: string]: components["schemas"]["JsonValue"];
+      } | null;
       /** Total Bytes */
       total_bytes: number;
       /**
@@ -2563,7 +2598,8 @@ export interface components {
        * @default manual
        * @enum {string}
        */
-      reason?: "manual" | "pre_start" | "pre_update" | "pre_restore";
+      reason?:
+        "manual" | "pre_start" | "pre_update" | "pre_restore" | "scheduled";
       /** Source Server */
       source_server: string;
       /** Source World */
@@ -2587,7 +2623,23 @@ export interface components {
       filename: string;
       /** Key Id */
       key_id?: string | null;
+      /**
+       * Label
+       * @default
+       */
+      label?: string;
       manifest?: components["schemas"]["BackupManifest"] | null;
+      /**
+       * Notes
+       * @default
+       */
+      notes?: string;
+      /**
+       * Origin
+       * @default captured
+       * @enum {string}
+       */
+      origin?: "captured" | "imported";
       /**
        * Pinned
        * @default false
@@ -4834,6 +4886,8 @@ export interface components {
     SnapshotCreatePayload: {
       /** Encrypted */
       encrypted?: boolean | null;
+      /** Include Packs */
+      include_packs?: boolean | null;
     };
     /** SnapshotInspectPayload */
     SnapshotInspectPayload: {
@@ -4846,9 +4900,13 @@ export interface components {
        * Action
        * @enum {string}
        */
-      action: "verify" | "pin" | "unpin" | "copy" | "test_key";
+      action: "verify" | "pin" | "unpin" | "copy" | "test_key" | "annotate";
       /** Destination */
       destination?: string | null;
+      /** Label */
+      label?: string | null;
+      /** Notes */
+      notes?: string | null;
       /** Recovery Key */
       recovery_key?: string | null;
     };
@@ -4862,6 +4920,10 @@ export interface components {
         | "permissions.json"
         | "script_config"
         | "bsm_settings"
+        | "behavior_packs"
+        | "resource_packs"
+        | "development_behavior_packs"
+        | "development_resource_packs"
       )[];
       /** Recovery Key */
       recovery_key?: string | null;
@@ -4876,6 +4938,10 @@ export interface components {
         | "permissions.json"
         | "script_config"
         | "bsm_settings"
+        | "behavior_packs"
+        | "resource_packs"
+        | "development_behavior_packs"
+        | "development_resource_packs"
       )[];
       /** Recovery Key */
       recovery_key?: string | null;
@@ -11359,6 +11425,105 @@ export interface operations {
         };
         content: {
           "application/octet-stream": string;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  dry_run_server_restore: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        backup_id: string;
+        server_name: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SnapshotPlanPayload"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskAcceptedResponse"];
         };
       };
       /** @description Bad Request */

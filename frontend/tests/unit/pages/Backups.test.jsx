@@ -55,6 +55,17 @@ const results = {
       ],
     },
   },
+  dry_run: {
+    plan: {
+      token: "dry-reviewed",
+      destinations: { world: "worlds/test" },
+      warnings: [],
+      required_bytes: 1024,
+      sufficient_space: true,
+      dry_run: true,
+      checked_files: 4,
+    },
+  },
   restore: { status: "success", result: { committed: true } },
 };
 
@@ -92,11 +103,13 @@ describe("Backups", () => {
         status: "accepted",
         task_id: url.endsWith("/inspect")
           ? "inspect"
-          : url.endsWith("/plan")
-            ? "plan"
-            : url.endsWith("/restore")
-              ? "restore"
-              : "create",
+          : url.endsWith("/dry-run")
+            ? "dry_run"
+            : url.endsWith("/plan")
+              ? "plan"
+              : url.endsWith("/restore")
+                ? "restore"
+                : "create",
       }),
     );
   });
@@ -116,6 +129,7 @@ describe("Backups", () => {
     await waitFor(() =>
       expect(api.post).toHaveBeenCalledWith("/api/server/TestServer/backups", {
         encrypted: true,
+        include_packs: null,
       }),
     );
   });
@@ -147,6 +161,22 @@ describe("Backups", () => {
           token: "reviewed",
         }),
       ),
+    );
+  });
+
+  it("runs an isolated dry run before replacement", async () => {
+    render(<Backups />);
+    await screen.findByText("snapshot.bsmbackup");
+    fireEvent.click(screen.getByRole("button", { name: /Inspect \/ restore/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Unlock and inspect" }));
+    await screen.findByText("Components to restore");
+    fireEvent.click(screen.getByRole("button", { name: "Run dry run" }));
+    expect(
+      await screen.findByText(/Dry run: 4 selected files/),
+    ).toBeInTheDocument();
+    expect(api.post).not.toHaveBeenCalledWith(
+      expect.stringMatching(/\/restore$/),
+      expect.anything(),
     );
   });
 });

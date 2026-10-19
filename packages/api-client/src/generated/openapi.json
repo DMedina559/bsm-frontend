@@ -606,6 +606,11 @@
       "BackupCopy": {
         "additionalProperties": false,
         "properties": {
+          "attempts": {
+            "default": 0,
+            "title": "Attempts",
+            "type": "integer"
+          },
           "completed_at": {
             "anyOf": [
               {
@@ -627,6 +632,17 @@
               }
             ],
             "title": "Error"
+          },
+          "next_retry_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Retry At"
           },
           "status": {
             "enum": [
@@ -654,7 +670,11 @@
               "allowlist.json",
               "permissions.json",
               "script_config",
-              "bsm_settings"
+              "bsm_settings",
+              "behavior_packs",
+              "resource_packs",
+              "development_behavior_packs",
+              "development_resource_packs"
             ],
             "title": "Component",
             "type": "string"
@@ -805,6 +825,20 @@
             "title": "Older Key Ids",
             "type": "array"
           },
+          "schedule": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JsonValue"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schedule"
+          },
           "total_bytes": {
             "title": "Total Bytes",
             "type": "integer"
@@ -906,7 +940,11 @@
                 "allowlist.json",
                 "permissions.json",
                 "script_config",
-                "bsm_settings"
+                "bsm_settings",
+                "behavior_packs",
+                "resource_packs",
+                "development_behavior_packs",
+                "development_resource_packs"
               ]
             },
             "title": "Components",
@@ -949,7 +987,8 @@
               "manual",
               "pre_start",
               "pre_update",
-              "pre_restore"
+              "pre_restore",
+              "scheduled"
             ],
             "title": "Reason",
             "type": "string"
@@ -1030,6 +1069,11 @@
             ],
             "title": "Key Id"
           },
+          "label": {
+            "default": "",
+            "title": "Label",
+            "type": "string"
+          },
           "manifest": {
             "anyOf": [
               {
@@ -1039,6 +1083,20 @@
                 "type": "null"
               }
             ]
+          },
+          "notes": {
+            "default": "",
+            "title": "Notes",
+            "type": "string"
+          },
+          "origin": {
+            "default": "captured",
+            "enum": [
+              "captured",
+              "imported"
+            ],
+            "title": "Origin",
+            "type": "string"
           },
           "pinned": {
             "default": false,
@@ -6633,6 +6691,17 @@
               }
             ],
             "title": "Encrypted"
+          },
+          "include_packs": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Include Packs"
           }
         },
         "title": "SnapshotCreatePayload",
@@ -6667,7 +6736,8 @@
               "pin",
               "unpin",
               "copy",
-              "test_key"
+              "test_key",
+              "annotate"
             ],
             "title": "Action",
             "type": "string"
@@ -6682,6 +6752,30 @@
               }
             ],
             "title": "Destination"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
           },
           "recovery_key": {
             "anyOf": [
@@ -6714,7 +6808,11 @@
                 "allowlist.json",
                 "permissions.json",
                 "script_config",
-                "bsm_settings"
+                "bsm_settings",
+                "behavior_packs",
+                "resource_packs",
+                "development_behavior_packs",
+                "development_resource_packs"
               ],
               "type": "string"
             },
@@ -6752,7 +6850,11 @@
                 "allowlist.json",
                 "permissions.json",
                 "script_config",
-                "bsm_settings"
+                "bsm_settings",
+                "behavior_packs",
+                "resource_packs",
+                "development_behavior_packs",
+                "development_resource_packs"
               ],
               "type": "string"
             },
@@ -15687,6 +15789,147 @@
           }
         ],
         "summary": "Download Snapshot",
+        "tags": [
+          "Backup & Restore"
+        ]
+      }
+    },
+    "/api/server/{server_name}/backups/{backup_id}/dry-run": {
+      "post": {
+        "description": "Validate an isolated restore without stopping or modifying the server.",
+        "operationId": "dry_run_server_restore",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "backup_id",
+            "required": true,
+            "schema": {
+              "title": "Backup Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "server_name",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "The name of the server",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SnapshotPlanPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskAcceptedResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Dry Run Restore",
         "tags": [
           "Backup & Restore"
         ]
