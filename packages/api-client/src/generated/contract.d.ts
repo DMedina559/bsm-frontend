@@ -1004,6 +1004,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/server/{server_name}/backup-destinations/{destination}/cleanup": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Cleanup Destination
+     * @description Preview external cleanup; a reviewed token explicitly authorizes deletion.
+     */
+    post: operations["cleanup_backup_destination"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/server/{server_name}/backup/action": {
     parameters: {
       query?: never;
@@ -2447,7 +2467,7 @@ export interface components {
        * Status
        * @enum {string}
        */
-      status: "pending" | "completed" | "failed";
+      status: "pending" | "completed" | "failed" | "pruned";
     };
     /** BackupFile */
     BackupFile: {
@@ -2492,6 +2512,10 @@ export interface components {
     };
     /** BackupHealth */
     BackupHealth: {
+      /** Alerts */
+      alerts?: {
+        [key: string]: components["schemas"]["JsonValue"];
+      }[];
       /** Count */
       count: number;
       /**
@@ -2499,6 +2523,14 @@ export interface components {
        * @default 0
        */
       destination_failures?: number;
+      /** Destinations */
+      destinations?: {
+        [key: string]: components["schemas"]["JsonValue"];
+      };
+      /** Drill */
+      drill?: {
+        [key: string]: components["schemas"]["JsonValue"];
+      } | null;
       /**
        * Failed Count
        * @default 0
@@ -2516,6 +2548,16 @@ export interface components {
       missing_key_ids?: string[];
       /** Older Key Ids */
       older_key_ids?: string[];
+      /**
+       * Readiness
+       * @default unavailable
+       * @enum {string}
+       */
+      readiness?: "ready" | "attention" | "unavailable";
+      /** Readiness Reasons */
+      readiness_reasons?: string[];
+      /** Recovery Backup Id */
+      recovery_backup_id?: string | null;
       /** Schedule */
       schedule?: {
         [key: string]: components["schemas"]["JsonValue"];
@@ -2615,6 +2657,12 @@ export interface components {
       copies?: {
         [key: string]: components["schemas"]["BackupCopy"];
       };
+      /** Created At */
+      created_at?: string | null;
+      /** Drill */
+      drill?: {
+        [key: string]: components["schemas"]["JsonValue"];
+      } | null;
       /** Encrypted */
       encrypted: boolean;
       /** Error */
@@ -2911,6 +2959,11 @@ export interface components {
        * @enum {string}
        */
       status: "success" | "skipped" | "partial";
+    };
+    /** DestinationCleanupPayload */
+    DestinationCleanupPayload: {
+      /** Token */
+      token?: string | null;
     };
     /** DiagnosticChange */
     DiagnosticChange: {
@@ -4900,7 +4953,8 @@ export interface components {
        * Action
        * @enum {string}
        */
-      action: "verify" | "pin" | "unpin" | "copy" | "test_key" | "annotate";
+      action:
+        "verify" | "pin" | "unpin" | "copy" | "test_key" | "annotate" | "drill";
       /** Destination */
       destination?: string | null;
       /** Label */
@@ -10471,6 +10525,105 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["RemoveFromAllowlistResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  cleanup_backup_destination: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        destination: string;
+        server_name: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["DestinationCleanupPayload"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskAcceptedResponse"];
         };
       };
       /** @description Bad Request */

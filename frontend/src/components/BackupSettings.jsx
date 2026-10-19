@@ -1,3 +1,4 @@
+import DestinationCleanup from "./DestinationCleanup";
 import React, { useState } from "react";
 import { useServer } from "../contexts/ServerContext";
 import BackupKeys from "./BackupKeys";
@@ -70,6 +71,36 @@ export default function BackupSettings({
               </small>
             </label>
           )}
+          {[
+            [
+              "readiness_max_age_hours",
+              "Readiness: maximum backup age (hours)",
+              48,
+              1,
+            ],
+            [
+              "recovery_drill_interval_hours",
+              "Isolated recovery drill interval (hours; 0 disables)",
+              168,
+              0,
+            ],
+          ].map(([key, label, fallback, min]) => (
+            <label key={key}>
+              {label}
+              <input
+                className="form-input"
+                type="number"
+                min={min}
+                max={8760}
+                step={1}
+                required
+                value={policy[key] ?? fallback}
+                onChange={(event) =>
+                  setPolicy({ ...policy, [key]: Number(event.target.value) })
+                }
+              />
+            </label>
+          ))}
           {[
             [
               "verification_interval_hours",
@@ -184,8 +215,23 @@ export default function BackupSettings({
             Use an existing directory, such as mounted NAS storage. Copies keep
             the archive’s encryption and are not pruned with local backups.
           </p>
+          <label>
+            Server for external cleanup
+            <select
+              className="form-input"
+              value={serverName}
+              onChange={(event) => setServerName(event.target.value)}
+            >
+              <option value="">Choose a server</option>
+              {serverNames.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </label>
           {Object.entries(policy.destinations ?? {}).map(([name, config]) => (
-            <p key={name}>
+            <section key={name} className="backup-destination-policy">
               {name}: {config.path}{" "}
               {config.enabled ? "(enabled)" : "(disabled)"}{" "}
               <button
@@ -214,7 +260,61 @@ export default function BackupSettings({
               >
                 Remove destination
               </button>
-            </p>
+              <div className="settings-grid">
+                {[
+                  [
+                    "keep_count",
+                    "External copies to retain (0 disables count pruning)",
+                    0,
+                  ],
+                  [
+                    "storage_budget_bytes",
+                    "External storage budget (GiB; 0 disables)",
+                    0,
+                  ],
+                  [
+                    "min_free_bytes",
+                    "Free-space warning threshold (GiB)",
+                    1073741824,
+                  ],
+                ].map(([key, label, fallback]) => (
+                  <label key={key}>
+                    {label}
+                    <input
+                      className="form-input"
+                      type="number"
+                      min={0}
+                      step={key === "keep_count" ? 1 : "any"}
+                      required
+                      value={
+                        (config[key] ?? fallback) /
+                        (key === "keep_count" ? 1 : 1073741824)
+                      }
+                      onChange={(event) =>
+                        setPolicy({
+                          ...policy,
+                          destinations: {
+                            ...policy.destinations,
+                            [name]: {
+                              ...config,
+                              [key]: Math.round(
+                                Number(event.target.value) *
+                                  (key === "keep_count" ? 1 : 1073741824),
+                              ),
+                            },
+                          },
+                        })
+                      }
+                    />
+                  </label>
+                ))}
+              </div>
+              <DestinationCleanup
+                key={`${serverName}:${name}:${config.path}`}
+                serverName={serverName}
+                destination={name}
+              />
+            </section>
           ))}
           <label>
             Destination name

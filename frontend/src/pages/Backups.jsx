@@ -163,18 +163,25 @@ function ServerBackups() {
     }
   };
   const path = selectedServer ? { server_name: selectedServer } : {};
-  const visibleSnapshots = (snapshots.data ?? []).filter(
-    (item) =>
-      (filter === "all" ||
-        item.purpose === filter ||
-        item.origin === filter ||
-        (filter === "pinned" && item.pinned) ||
-        (filter === "failed" &&
-          (item.error || item.verification?.status === "failed"))) &&
-      `${item.filename} ${item.label ?? ""} ${item.notes ?? ""}`
-        .toLowerCase()
-        .includes(search.toLowerCase()),
-  );
+  const visibleSnapshots = (snapshots.data ?? [])
+    .filter(
+      (item) =>
+        (filter === "all" ||
+          item.purpose === filter ||
+          item.origin === filter ||
+          (filter === "pinned" && item.pinned) ||
+          (filter === "failed" &&
+            (item.error || item.verification?.status === "failed"))) &&
+        `${item.filename} ${item.label ?? ""} ${item.notes ?? ""}`
+          .toLowerCase()
+          .includes(search.toLowerCase()),
+    )
+    .sort(
+      (a, b) =>
+        (Date.parse(b.created_at ?? "") || 0) -
+          (Date.parse(a.created_at ?? "") || 0) ||
+        b.filename.localeCompare(a.filename),
+    );
   const archivePath = selected
     ? { ...path, backup_id: selected.backup_id }
     : path;
@@ -356,6 +363,55 @@ function ServerBackups() {
           style={{ padding: "1rem", marginBottom: "1rem" }}
           aria-label="Backup health"
         >
+          <h2>Recovery readiness: {health.data.readiness ?? "Checking"}</h2>
+          <ul>
+            {(health.data.readiness_reasons ?? []).map((reason) => (
+              <li key={reason}>
+                {reason}
+                {user?.role === "admin" &&
+                /destination|external|key|scheduled/.test(
+                  reason.toLowerCase(),
+                ) ? (
+                  <Link to="/app/bsm-settings?tab=backups">
+                    {" "}
+                    Review settings
+                  </Link>
+                ) : /verification/.test(reason.toLowerCase()) ? (
+                  <button
+                    className="action-button secondary"
+                    onClick={() => setFilter("failed")}
+                  >
+                    Show affected archives
+                  </button>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+          {health.data.recovery_backup_id && (
+            <p>
+              Latest usable recovery point:{" "}
+              <code>{health.data.recovery_backup_id}</code>
+            </p>
+          )}
+          {health.data.drill && (
+            <p>
+              Last isolated drill: {health.data.drill.status} ·{" "}
+              {new Date(health.data.drill.checked_at).toLocaleString()} ·{" "}
+              {health.data.drill.checked_files ?? 0} files checked
+            </p>
+          )}
+          {Object.entries(health.data.destinations ?? {}).map(
+            ([name, destination]) => (
+              <p key={name}>
+                {name}:{" "}
+                {!destination.enabled
+                  ? "Disabled"
+                  : !destination.available
+                    ? "Unavailable"
+                    : `${(destination.available_bytes / 1073741824).toFixed(1)} GiB free${destination.low_space ? " — low space" : ""}`}
+              </p>
+            ),
+          )}
           <dl className="backup-stats">
             <div>
               <dt>Recovery points</dt>
@@ -567,90 +623,133 @@ function ServerBackups() {
             </tr>
           </thead>
           <tbody>
-            {visibleSnapshots.map((item) => (
-              <tr key={item.backup_id}>
-                <td>
-                  <strong>
-                    {item.label ||
-                      (item.created_at
-                        ? new Date(item.created_at).toLocaleString()
-                        : "Server backup")}
-                  </strong>
-                  <small className="archive-filename" title={item.filename}>
-                    {item.filename}
-                  </small>
+            {visibleSnapshots.map((item, index) => (
+              <React.Fragment key={item.backup_id}>
+                {(index === 0 ||
+                  new Date(item.created_at ?? 0).toLocaleDateString() !==
+                    new Date(
+                      visibleSnapshots[index - 1].created_at ?? 0,
+                    ).toLocaleDateString()) && (
+                  <tr className="backup-date-group">
+                    <th colSpan={4} scope="colgroup">
+                      {item.created_at
+                        ? new Date(item.created_at).toLocaleDateString(
+                            undefined,
+                            {
+                              weekday: "long",
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            },
+                          )
+                        : "Date unavailable"}
+                    </th>
+                  </tr>
+                )}
+                <tr>
+                  <td>
+                    <strong>
+                      {item.label ||
+                        (item.created_at
+                          ? new Date(item.created_at).toLocaleString()
+                          : "Server backup")}
+                    </strong>
+                    <small className="archive-filename" title={item.filename}>
+                      {item.filename}
+                    </small>
 
-                  {item.notes && <p>{item.notes}</p>}
-                  <small>
-                    {item.origin === "imported"
-                      ? "Imported"
-                      : (item.purpose ?? "Archive")}
-                  </small>
-                  {item.error && <p role="alert">{item.error}</p>}
-                </td>
-                <td>{(item.size / 1048576).toFixed(1)} MB</td>
-                <td>
-                  {item.encrypted ? "Encrypted" : "Unencrypted"}
-                  <br />
-                  {item.verification?.status ?? "unverified"}
-                  {item.verification?.verified_at && (
-                    <span>
-                      {" "}
-                      ·{" "}
-                      {new Date(item.verification.verified_at).toLocaleString()}
-                    </span>
-                  )}
-                  {item.pinned && <span> · Pinned</span>}
-                  {item.protected_until && (
-                    <span>
-                      {" "}
-                      · Protected until{" "}
-                      {new Date(item.protected_until).toLocaleString()}
-                    </span>
-                  )}
-                  {Object.entries(item.copies ?? {}).map(([name, copy]) => (
-                    <p key={name}>
-                      {name}: {copy.status}
-                      {copy.error ? ` — ${copy.error}` : ""}
-                    </p>
-                  ))}
-                </td>
-                <td>
-                  <button
-                    className="action-button secondary"
-                    disabled={busy}
-                    onClick={() => download(item)}
-                  >
-                    <Download size={14} /> Download
-                  </button>{" "}
-                  <button
-                    className="action-button"
-                    disabled={busy || !!item.error}
-                    onClick={() => {
-                      reset();
-                      setSelected(item);
-                      setLabel(item.label ?? "");
-                      setNotes(item.notes ?? "");
-                    }}
-                  >
-                    <RotateCcw size={14} /> Inspect / restore
-                  </button>{" "}
-                  <button
-                    className="action-button secondary"
-                    disabled={busy}
-                    onClick={() => manage(item, "verify")}
-                  >
-                    Verify
-                  </button>{" "}
-                  <button
-                    className="action-button secondary"
-                    disabled={busy}
-                    onClick={() => manage(item, item.pinned ? "unpin" : "pin")}
-                  >
-                    {item.pinned ? "Unpin" : "Pin"}
-                  </button>
-                </td>
-              </tr>
+                    {item.notes && <p>{item.notes}</p>}
+                    {item.drill && (
+                      <small>Recovery drill: {item.drill.status}</small>
+                    )}
+                    <small>
+                      {item.origin === "imported"
+                        ? "Imported"
+                        : ({
+                            manual: "Manual backup",
+                            scheduled: "Scheduled backup",
+                            pre_update: "Before update",
+                            pre_start: "Before start",
+                            pre_restore: "Restore safety backup",
+                          }[item.purpose] ?? "Archive")}
+                    </small>
+                    {item.error && <p role="alert">{item.error}</p>}
+                  </td>
+                  <td>{(item.size / 1048576).toFixed(1)} MB</td>
+                  <td>
+                    {item.encrypted ? "Encrypted" : "Unencrypted"}
+                    <br />
+                    {item.verification?.status ?? "unverified"}
+                    {item.verification?.verified_at && (
+                      <span>
+                        {" "}
+                        ·{" "}
+                        {new Date(
+                          item.verification.verified_at,
+                        ).toLocaleString()}
+                      </span>
+                    )}
+                    {item.pinned && <span> · Pinned</span>}
+                    {item.protected_until && (
+                      <span>
+                        {" "}
+                        · Protected until{" "}
+                        {new Date(item.protected_until).toLocaleString()}
+                      </span>
+                    )}
+                    {Object.entries(item.copies ?? {}).map(([name, copy]) => (
+                      <p key={name}>
+                        {name}: {copy.status}
+                        {copy.error ? ` — ${copy.error}` : ""}
+                      </p>
+                    ))}
+                  </td>
+                  <td>
+                    <button
+                      className="action-button secondary"
+                      disabled={busy}
+                      onClick={() => download(item)}
+                    >
+                      <Download size={14} /> Download
+                    </button>{" "}
+                    <button
+                      className="action-button"
+                      disabled={busy || !!item.error}
+                      onClick={() => {
+                        reset();
+                        setSelected(item);
+                        setLabel(item.label ?? "");
+                        setNotes(item.notes ?? "");
+                      }}
+                    >
+                      <RotateCcw size={14} /> Inspect / restore
+                    </button>{" "}
+                    <button
+                      className="action-button secondary"
+                      disabled={busy}
+                      onClick={() => manage(item, "verify")}
+                    >
+                      Verify
+                    </button>
+                    <button
+                      className="action-button secondary"
+                      disabled={busy || !!item.error}
+                      onClick={() => manage(item, "drill")}
+                    >
+                      Recovery drill
+                    </button>{" "}
+                    <button
+                      className="action-button secondary"
+                      disabled={busy}
+                      onClick={() =>
+                        manage(item, item.pinned ? "unpin" : "pin")
+                      }
+                    >
+                      {item.pinned ? "Unpin" : "Pin"}
+                    </button>
+                  </td>
+                </tr>
+              </React.Fragment>
             ))}
             {visibleSnapshots.length === 0 && (
               <tr>
@@ -865,6 +964,20 @@ function ServerBackups() {
                         ))}
                       </tbody>
                     </table>
+                  )}
+                  {components.some((component) =>
+                    [
+                      "script_config",
+                      "bsm_settings",
+                      "permissions.json",
+                      "allowlist.json",
+                    ].includes(component),
+                  ) && (
+                    <p className="message-warning" role="note">
+                      This selection may replace script secrets, module
+                      permissions, player access, or custom settings. Sensitive
+                      values are hidden.
+                    </p>
                   )}
                   <p>
                     A protected safety backup will be created before any files

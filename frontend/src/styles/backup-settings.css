@@ -210,3 +210,28 @@
     width: 100%;
   }
 }
+.backup-settings .backup-destination-policy {
+  grid-column: 1 / -1;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  overflow-wrap: anywhere;
+}
+.backup-destination-policy .settings-grid {
+  margin: 1rem 0;
+}
+.destination-cleanup {
+  margin-top: 1rem;
+}
+.destination-cleanup ul {
+  max-height: 15rem;
+  overflow: auto;
+  overflow-wrap: anywhere;
+}
+.backup-date-group th {
+  text-align: left;
+  padding: 1rem 0.75rem 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-color-secondary);
+  border-bottom: 1px solid var(--border-color);
+}

@@ -1,5 +1,5 @@
 {
-  "schemaHash": "1a1dec315d06a2fb0d29c7648e5cb32919aa486646d2020a3381f1c68a67b75c",
+  "schemaHash": "f3ab403d8a094fc15546b848e940a8803dce59c2f78e3bf7eae18ddac1180249",
   "openapiVersion": "3.1.0",
   "title": "Bedrock Server Manager",
   "source": "DMedina559/bedrock-server-manager: bedrock_server_manager.web.contract",
@@ -8,6 +8,7 @@
     "add_players",
     "add_server_ban",
     "change_password",
+    "cleanup_backup_destination",
     "compare_diagnostic_snapshots",
     "create_backup",
     "create_first_user",

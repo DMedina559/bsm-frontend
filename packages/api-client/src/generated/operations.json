@@ -665,6 +665,25 @@
     "bodyTypes": ["application/json"],
     "responseType": "json"
   },
+  "cleanup_backup_destination": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/backup-destinations/{destination}/cleanup",
+    "parameters": [
+      {
+        "name": "destination",
+        "in": "path",
+        "required": true
+      },
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
+  },
   "create_backup": {
     "method": "POST",
     "path": "/api/server/{server_name}/backup/action",

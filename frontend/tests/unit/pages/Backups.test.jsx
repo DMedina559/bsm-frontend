@@ -179,4 +179,40 @@ describe("Backups", () => {
       expect.anything(),
     );
   });
+  it("groups history by capture date and orders it independently of filenames", async () => {
+    api.get.mockImplementation((url) =>
+      Promise.resolve(
+        url.endsWith("/backups")
+          ? {
+              backups: [
+                {
+                  ...archive,
+                  backup_id: "z-old.bsmbackup",
+                  filename: "z-old.bsmbackup",
+                  created_at: "2026-10-01T12:00:00Z",
+                },
+                {
+                  ...archive,
+                  backup_id: "a-new.bsmbackup",
+                  filename: "a-new.bsmbackup",
+                  created_at: "2026-10-19T12:00:00Z",
+                },
+              ],
+            }
+          : url.endsWith("/backups/recovery")
+            ? { recovery: { active: false } }
+            : url.includes("/backup/list/all")
+              ? { backups: {} }
+              : {},
+      ),
+    );
+    const { container } = render(<Backups />);
+    await screen.findByText("a-new.bsmbackup");
+    expect(
+      [...container.querySelectorAll(".archive-filename")].map(
+        (element) => element.textContent,
+      ),
+    ).toEqual(["a-new.bsmbackup", "z-old.bsmbackup"]);
+    expect(container.querySelectorAll(".backup-date-group")).toHaveLength(2);
+  });
 });
