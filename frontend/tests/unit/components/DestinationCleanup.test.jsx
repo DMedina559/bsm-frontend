@@ -38,7 +38,9 @@ describe("Destination cleanup", () => {
     fireEvent.click(
       await screen.findByRole("button", { name: "Preview external cleanup" }),
     );
-    await screen.findByText("old.bsmbackup");
+    // The authenticated preview crosses the HTTP mutation and task-status poll.
+    // Allow busy CI workers to finish both before asserting the review result.
+    await screen.findByText("old.bsmbackup", {}, { timeout: 10000 });
     expect(api.post).toHaveBeenCalledWith(
       "/api/server/test/backup-destinations/nas/cleanup",
       { token: null },
