@@ -160,3 +160,20 @@ pre.monitor-output {
     padding: calc(16px * var(--bsm-spacing-scale));
   }
 }
+.runtime-recording-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bsm-space-2);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: var(--bsm-space-1) var(--bsm-space-3);
+  font-size: var(--bsm-small-size);
+  color: var(--bsm-warning);
+}
+.runtime-recording-indicator::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}

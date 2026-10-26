@@ -287,3 +287,25 @@ Use the shared `header`, `card`, `settings-panel`, `form-input`, `action-button`
 and status classes. Theme colors come from semantic `--bsm-*` tokens, and geometry
 uses spacing, radius, and density tokens. Page styles should extend those rules
 without redefining common control heights or introducing undefined variables.
+
+### Frontend runtime diagnostics
+
+Open Application monitor → Diagnostics → Frontend runtime to record the browser's
+safe runtime observations. Recording and persistence are both off by default.
+Pausing keeps the current journal; Clear history removes it. Enable Keep history
+across reloads to retain up to 1,000 observations for seven days, scoped to the
+current backend and account. Disabling persistence removes the saved copy while
+keeping the current in-memory view. If browser storage is unavailable, recording
+continues in memory and the view reports the storage failure.
+
+A workspace indicator links back to the recording controls. Filters, 50-row
+pagination and an observation modal keep the journal readable. Download JSON
+exports safe metadata, with current/previous-session labels. Older observations
+never contribute to the live subscription/reference counters. Observation types,
+policy reasons and resource families use fixed allowlists; request bodies,
+credentials, account identities, resource names and payload values are excluded.
+Local history is a bounded, best-effort support journal, not an audit log.
+
+The selected monitor view and diagnostics category are reflected in the URL so
+links and reloads open the same category. Frontend history remains available even
+when the backend diagnostics endpoint is unavailable.

@@ -1,3 +1,4 @@
+import { MemoryRouter } from "react-router-dom";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { expect, it, vi } from "vitest";
 import ApplicationMonitor from "../../../src/pages/ApplicationMonitor";
@@ -27,7 +28,11 @@ vi.mock("../../../src/app/useApplicationMetrics", () => ({
   useApplicationMetrics: () => query,
 }));
 it("renders application metrics and separates unavailable process readings from zero", () => {
-  render(<ApplicationMonitor />);
+  render(
+    <MemoryRouter>
+      <ApplicationMonitor />
+    </MemoryRouter>,
+  );
   expect(
     screen.getByRole("heading", { name: "Application monitor" }),
   ).toBeInTheDocument();
@@ -46,13 +51,21 @@ it("renders application metrics and separates unavailable process readings from 
 });
 
 it("freezes displayed observations while paused and resumes current data", () => {
-  const view = render(<ApplicationMonitor />);
+  const view = render(
+    <MemoryRouter>
+      <ApplicationMonitor />
+    </MemoryRouter>,
+  );
   fireEvent.click(screen.getByRole("button", { name: "Pause updates" }));
   query.data = {
     ...query.data,
     latest: { ...query.data.latest, app_cpu_percent: 400 },
   };
-  view.rerender(<ApplicationMonitor />);
+  view.rerender(
+    <MemoryRouter>
+      <ApplicationMonitor />
+    </MemoryRouter>,
+  );
   expect(screen.getByText("250.0%")).toBeInTheDocument();
   expect(screen.queryByText("400.0%")).not.toBeInTheDocument();
   expect(

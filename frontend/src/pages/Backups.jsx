@@ -76,7 +76,10 @@ function ServerBackups() {
   const [port, setPort] = useState(19134);
   const [portv6, setPortv6] = useState(19135);
   const [transferring, setTransferring] = useState(false);
-  const legacy = useResourceQuery("backups", selectedServer);
+  const [legacyExpanded, setLegacyExpanded] = useState(false);
+  const legacy = useResourceQuery("backups", selectedServer, {
+    enabled: legacyExpanded,
+  });
   const recovery = useResourceQuery("backupRecovery", selectedServer);
   const [encryption, setEncryption] = useState("default");
   const [packs, setPacks] = useState("default");
@@ -323,13 +326,19 @@ function ServerBackups() {
   return (
     <div className="container backups-page">
       <div className="header">
-        <h1>
-          <Archive size={24} /> Backups: {selectedServer}
-        </h1>
+        <div>
+          <h1>
+            <Archive size={24} /> Backups: {selectedServer}
+          </h1>
+          <p className="backup-page-subtitle">
+            Create, inspect and restore recovery points.
+          </p>
+        </div>
         <div className="button-group">
           <button
             className="action-button secondary"
             disabled={busy}
+            aria-label="Recovery report"
             onClick={async () => {
               const report = await perform(
                 "download_backup_recovery_report",
@@ -339,7 +348,7 @@ function ServerBackups() {
               if (report) saveBlob(report, "bsm-recovery-report.json");
             }}
           >
-            <Download size={16} /> Recovery report
+            <Download size={16} /> Report
           </button>
           <button
             className="action-button secondary"
@@ -351,6 +360,7 @@ function ServerBackups() {
           <button
             className="action-button secondary"
             disabled={busy}
+            aria-label="Prune old"
             onClick={async () => {
               if (
                 await confirmAction(
@@ -360,233 +370,243 @@ function ServerBackups() {
                 await perform("prune_backups", { path });
             }}
           >
-            <Trash2 size={16} /> Prune old
+            <Trash2 size={16} /> Prune
           </button>
           {user?.role === "admin" && (
             <Link
               className="action-button secondary"
               to="/bsm-settings?tab=backups"
+              aria-label="Backup settings"
             >
-              Backup settings
+              Settings
             </Link>
           )}
         </div>
       </div>
       <QueryStatus query={snapshots} />
       <QueryStatus query={health} />
-      {health.data && (
-        <section
-          className="card"
-          style={{ padding: "1rem", marginBottom: "1rem" }}
-          aria-label="Backup health"
-        >
-          <h2>Recovery readiness: {health.data.readiness ?? "Checking"}</h2>
-          <ul>
-            {(health.data.readiness_reasons ?? []).map((reason) => (
-              <li key={reason}>
-                {reason}
-                {user?.role === "admin" &&
-                /destination|external|key|scheduled/.test(
-                  reason.toLowerCase(),
-                ) ? (
-                  <Link to="/bsm-settings?tab=backups"> Review settings</Link>
-                ) : /verification/.test(reason.toLowerCase()) ? (
-                  <button
-                    className="action-button secondary"
-                    onClick={() => setFilter("failed")}
-                  >
-                    Show affected archives
-                  </button>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-          {health.data.recovery_backup_id && (
-            <p>
-              Latest usable recovery point:{" "}
-              <code>{health.data.recovery_backup_id}</code>
-            </p>
-          )}
-          {health.data.drill && (
-            <p>
-              Last isolated drill: {health.data.drill.status} ·{" "}
-              {<Timestamp value={health.data.drill.checked_at} />} ·{" "}
-              {health.data.drill.checked_files ?? 0} files checked
-            </p>
-          )}
-          {Object.entries(health.data.destinations ?? {}).map(
-            ([name, destination]) => (
-              <p key={name}>
-                {name}:{" "}
-                {!destination.enabled
-                  ? "Disabled"
-                  : !destination.available
-                    ? "Unavailable"
-                    : `${(destination.available_bytes / 1073741824).toFixed(1)} GiB free${destination.low_space ? " — low space" : ""}`}
-              </p>
-            ),
-          )}
-          <dl className="backup-stats">
-            <div>
-              <dt>Recovery points</dt>
-              <dd>{health.data.count}</dd>
+      <div className="backup-overview-grid">
+        {health.data && (
+          <section className="card backup-health" aria-label="Backup health">
+            <div className="backup-section-heading">
+              <h2>Recovery readiness</h2>
+              <span className="backup-readiness">
+                {health.data.readiness ?? "Checking"}
+              </span>
             </div>
-            <div>
-              <dt>Storage used</dt>
-              <dd>{(health.data.total_bytes / 1048576).toFixed(1)} MB</dd>
-            </div>
-            <div>
-              <dt>Last backup</dt>
-              <dd>
-                {health.data.last_success_at ? (
-                  <Timestamp value={health.data.last_success_at} />
-                ) : (
-                  "Never"
-                )}
-              </dd>
-            </div>
-            <div>
-              <dt>Last verified</dt>
-              <dd>
-                {health.data.last_verified_at ? (
-                  <Timestamp value={health.data.last_verified_at} />
-                ) : (
-                  "Never"
-                )}
-              </dd>
-            </div>
-          </dl>
-          {(health.data.failed_count > 0 ||
-            health.data.destination_failures > 0) && (
-            <p className="message-warning" role="alert">
-              {health.data.failed_count} failed verification ·{" "}
-              {health.data.destination_failures} destination copies need
-              attention
-            </p>
-          )}
-          {!!health.data.missing_key_ids?.length && (
-            <p role="alert">
-              Recovery keys are missing for{" "}
-              {health.data.missing_key_ids.join(", ")}. Use their emergency
-              kits.
-            </p>
-          )}
-          {!!health.data.older_key_ids?.length && (
-            <p>
-              Older backups still require {health.data.older_key_ids.length}{" "}
-              previous encryption keys. Keep their emergency kits.
-            </p>
-          )}
-          {health.data.schedule && (
-            <p>
-              Schedule: {health.data.schedule.enabled ? "Enabled" : "Paused"}.
-              Next run:{" "}
-              {health.data.schedule.next_run_at ? (
-                <Timestamp value={health.data.schedule.next_run_at} />
-              ) : (
-                "None"
+            <ul>
+              {(health.data.readiness_reasons ?? []).map((reason) => (
+                <li key={reason}>
+                  {reason}
+                  {user?.role === "admin" &&
+                  /destination|external|key|scheduled/.test(
+                    reason.toLowerCase(),
+                  ) ? (
+                    <Link to="/bsm-settings?tab=backups"> Review settings</Link>
+                  ) : /verification/.test(reason.toLowerCase()) ? (
+                    <button
+                      className="action-button secondary"
+                      onClick={() => setFilter("failed")}
+                    >
+                      Show affected archives
+                    </button>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+            <dl className="backup-stats">
+              <div>
+                <dt>Recovery points</dt>
+                <dd>{health.data.count}</dd>
+              </div>
+              <div>
+                <dt>Storage used</dt>
+                <dd>{(health.data.total_bytes / 1048576).toFixed(1)} MB</dd>
+              </div>
+              <div>
+                <dt>Last backup</dt>
+                <dd>
+                  {health.data.last_success_at ? (
+                    <Timestamp value={health.data.last_success_at} />
+                  ) : (
+                    "Never"
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt>Last verified</dt>
+                <dd>
+                  {health.data.last_verified_at ? (
+                    <Timestamp value={health.data.last_verified_at} />
+                  ) : (
+                    "Never"
+                  )}
+                </dd>
+              </div>
+            </dl>
+            <details className="backup-health-details">
+              <summary>Recovery and destination details</summary>
+              {health.data.recovery_backup_id && (
+                <p>
+                  Latest usable recovery point:{" "}
+                  <code>{health.data.recovery_backup_id}</code>
+                </p>
               )}
-              . Last result: {health.data.schedule.last_status ?? "Not run"}.{" "}
-              {health.data.schedule.last_error ?? ""}
+              {health.data.drill && (
+                <p>
+                  Last isolated drill: {health.data.drill.status} ·{" "}
+                  {<Timestamp value={health.data.drill.checked_at} />} ·{" "}
+                  {health.data.drill.checked_files ?? 0} files checked
+                </p>
+              )}
+              {Object.entries(health.data.destinations ?? {}).map(
+                ([name, destination]) => (
+                  <p key={name}>
+                    {name}:{" "}
+                    {!destination.enabled
+                      ? "Disabled"
+                      : !destination.available
+                        ? "Unavailable"
+                        : `${(destination.available_bytes / 1073741824).toFixed(1)} GiB free${destination.low_space ? " — low space" : ""}`}
+                  </p>
+                ),
+              )}
+            </details>
+            {(health.data.failed_count > 0 ||
+              health.data.destination_failures > 0) && (
+              <p className="message-warning" role="alert">
+                {health.data.failed_count} failed verification ·{" "}
+                {health.data.destination_failures} destination copies need
+                attention
+              </p>
+            )}
+            {!!health.data.missing_key_ids?.length && (
+              <p role="alert">
+                Recovery keys are missing for{" "}
+                {health.data.missing_key_ids.join(", ")}. Use their emergency
+                kits.
+              </p>
+            )}
+            {!!health.data.older_key_ids?.length && (
+              <p>
+                Older backups still require {health.data.older_key_ids.length}{" "}
+                previous encryption keys. Keep their emergency kits.
+              </p>
+            )}
+            {health.data.schedule && (
+              <p>
+                Schedule: {health.data.schedule.enabled ? "Enabled" : "Paused"}.
+                Next run:{" "}
+                {health.data.schedule.next_run_at ? (
+                  <Timestamp value={health.data.schedule.next_run_at} />
+                ) : (
+                  "None"
+                )}
+                . Last result: {health.data.schedule.last_status ?? "Not run"}.{" "}
+                {health.data.schedule.last_error ?? ""}
+              </p>
+            )}
+            {health.data.last_error && (
+              <p role="alert">{health.data.last_error}</p>
+            )}
+          </section>
+        )}
+        <QueryStatus query={recovery} />
+        {recovery.data?.active && (
+          <section className="message-warning">
+            <p>
+              {recovery.data.error ??
+                (recovery.data.committed
+                  ? "Restore committed; cleanup needs attention."
+                  : "An interrupted restore needs recovery before this server can start.")}
             </p>
-          )}
-          {health.data.last_error && (
-            <p role="alert">{health.data.last_error}</p>
-          )}
-        </section>
-      )}
-      <QueryStatus query={recovery} />
-      {recovery.data?.active && (
-        <section className="message-warning">
+            <button
+              className="action-button"
+              disabled={busy}
+              onClick={async () => {
+                if (
+                  await confirmAction(
+                    "Retry restore recovery? Stop the Minecraft server first if rollback is required.",
+                  )
+                ) {
+                  await perform("recover_server_backup", { path });
+                  await recovery.refetch();
+                }
+              }}
+            >
+              Retry recovery
+            </button>
+          </section>
+        )}
+        <section className="card backup-create">
+          <h2>Create backup</h2>
           <p>
-            {recovery.data.error ??
-              (recovery.data.committed
-                ? "Restore committed; cleanup needs attention."
-                : "An interrupted restore needs recovery before this server can start.")}
+            Capture the world, configuration and server settings in one archive.
           </p>
-          <button
-            className="action-button"
-            disabled={busy}
-            onClick={async () => {
-              if (
-                await confirmAction(
-                  "Retry restore recovery? Stop the Minecraft server first if rollback is required.",
-                )
-              ) {
-                await perform("recover_server_backup", { path });
-                await recovery.refetch();
-              }
-            }}
-          >
-            Retry recovery
+          <label>
+            Server-level packs{" "}
+            <select
+              className="form-input"
+              value={packs}
+              disabled={busy}
+              onChange={(event) => setPacks(event.target.value)}
+            >
+              <option value="default">Use configured default</option>
+              <option value="include">Include packs</option>
+              <option value="exclude">Exclude packs</option>
+            </select>
+          </label>{" "}
+          <label>
+            Encryption{" "}
+            <select
+              className="form-input"
+              value={encryption}
+              disabled={busy}
+              onChange={(e) => setEncryption(e.target.value)}
+            >
+              <option value="default">Use configured default</option>
+              <option value="encrypted">Encrypted</option>
+              <option value="plain">Unencrypted</option>
+            </select>
+          </label>{" "}
+          <button className="action-button" disabled={busy} onClick={create}>
+            Create backup
           </button>
-        </section>
-      )}
-      <section className="card backup-create">
-        <h2>Create a recovery point</h2>
-        <p>
-          One archive contains the active world, configuration, script secrets,
-          and BSM server settings.
-        </p>
-        <label>
-          Server-level packs{" "}
-          <select
-            className="form-input"
-            value={packs}
-            disabled={busy}
-            onChange={(event) => setPacks(event.target.value)}
-          >
-            <option value="default">Use configured default</option>
-            <option value="include">Include packs</option>
-            <option value="exclude">Exclude packs</option>
-          </select>
-        </label>{" "}
-        <label>
-          Encryption{" "}
-          <select
-            className="form-input"
-            value={encryption}
-            disabled={busy}
-            onChange={(e) => setEncryption(e.target.value)}
-          >
-            <option value="default">Use configured default</option>
-            <option value="encrypted">Encrypted</option>
-            <option value="plain">Unencrypted</option>
-          </select>
-        </label>{" "}
-        <button className="action-button" disabled={busy} onClick={create}>
-          Create backup
-        </button>
-        <details>
-          <summary>Import a backup</summary>
-          <form onSubmit={(event) => event.preventDefault()}>
+          <details>
+            <summary>Import a backup</summary>
+            <form onSubmit={(event) => event.preventDefault()}>
+              <label>
+                Recovery key (if encrypted){" "}
+                <input
+                  className="form-input"
+                  ref={input}
+                  type="password"
+                  name="recovery_key"
+                  autoComplete="off"
+                  onChange={(e) => {
+                    secret.current = e.target.value;
+                  }}
+                />
+              </label>
+            </form>
             <label>
-              Recovery key (if encrypted){" "}
+              Backup file{" "}
               <input
                 className="form-input"
-                ref={input}
-                type="password"
-                name="recovery_key"
-                autoComplete="off"
-                onChange={(e) => {
-                  secret.current = e.target.value;
-                }}
+                type="file"
+                accept=".bsmbackup,.tar"
+                disabled={busy}
+                onChange={upload}
               />
             </label>
-          </form>
-          <label>
-            Backup file{" "}
-            <input
-              className="form-input"
-              type="file"
-              accept=".bsmbackup,.tar"
-              disabled={busy}
-              onChange={upload}
-            />
-          </label>
-        </details>
-      </section>
-      {progress && <p role="status">{progress}</p>}
+          </details>
+        </section>
+      </div>
+      {progress && (
+        <p role="status" className="message info">
+          {progress}
+        </p>
+      )}
       {transferring && (
         <button
           className="action-button secondary"
@@ -598,14 +618,14 @@ function ServerBackups() {
           Cancel transfer
         </button>
       )}
-      {user?.role === "admin" && (
-        <p>
+      <div className="backup-section-heading backup-history-heading">
+        <h2>Recovery points</h2>
+        {user?.role === "admin" && (
           <Link className="action-button secondary" to="/scheduler">
             Schedules
           </Link>
-        </p>
-      )}
-      <h2>Recovery points</h2>
+        )}
+      </div>
       <div className="button-group backup-filters">
         <label>
           Find backups
@@ -642,7 +662,12 @@ function ServerBackups() {
           </select>
         </label>
       </div>
-      <div style={{ overflowX: "auto" }}>
+      {snapshots.isFetching && snapshots.data !== undefined && (
+        <p className="form-help-text" role="status">
+          Refreshing recovery points… Existing results remain visible.
+        </p>
+      )}
+      <div className="backup-history-table" aria-busy={snapshots.isFetching}>
         <table className="table">
           <thead>
             <tr>
@@ -775,19 +800,34 @@ function ServerBackups() {
             ))}
             {visibleSnapshots.length === 0 && (
               <tr>
-                <td colSpan={4}>No backups match this view.</td>
+                <td colSpan={4} className="backup-list-state">
+                  {snapshots.data === undefined && !snapshots.error ? (
+                    <span role="status">Loading recovery points…</span>
+                  ) : snapshots.error ? (
+                    "Recovery points could not be loaded or refreshed. Retry the request above."
+                  ) : filter !== "all" || search.trim() ? (
+                    "No backups match this view."
+                  ) : (
+                    "No recovery points yet. Create or import a backup to get started."
+                  )}
+                </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
-      <details>
+      <details
+        onToggle={(event) => setLegacyExpanded(event.currentTarget.open)}
+      >
         <summary>Legacy backups</summary>
         <p>
           These files are independent snapshots. Restore each explicitly; they
           do not form one historical backup.
         </p>
         <QueryStatus query={legacy} />
+        {legacyExpanded && legacy.isPending && !legacy.error && (
+          <p role="status">Loading legacy backups…</p>
+        )}
         {Object.entries(legacy.data ?? {}).map(([type, files]) => (
           <section key={type}>
             <h3>{type}</h3>
@@ -821,6 +861,9 @@ function ServerBackups() {
           onClose={reset}
           closeDisabled={busy}
         >
+          <p className="backup-inspector-hint">
+            Inspect this archive, select components, then review a restore plan.
+          </p>
           <dl className="backup-summary">
             <div>
               <dt>Archive</dt>

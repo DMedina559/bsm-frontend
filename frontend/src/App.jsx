@@ -1,3 +1,4 @@
+import RuntimeHistoryProvider from "./contexts/RuntimeHistoryProvider";
 import TimeProvider from "./contexts/TimeProvider";
 import { sessionSettings } from "./app/browserStorage";
 import { application } from "./app/application";
@@ -148,30 +149,32 @@ const App = () => {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <TimeProvider>
-            <ThemeProvider>
-              <ToastProvider>
-                <DialogProvider>
-                  <DraftNavigationGuard />
-                  <WebSocketProvider>
-                    <ServerProvider>
-                      <ErrorBoundary>
-                        <Suspense
-                          fallback={
-                            <div className="app-loading" role="status">
-                              Loading workspace…
-                            </div>
-                          }
-                        >
-                          <AppRoutes />
-                        </Suspense>
-                      </ErrorBoundary>
-                    </ServerProvider>
-                  </WebSocketProvider>
-                </DialogProvider>
-              </ToastProvider>
-            </ThemeProvider>
-          </TimeProvider>
+          <RuntimeHistoryProvider>
+            <TimeProvider>
+              <ThemeProvider>
+                <ToastProvider>
+                  <DialogProvider>
+                    <DraftNavigationGuard />
+                    <WebSocketProvider>
+                      <ServerProvider>
+                        <ErrorBoundary>
+                          <Suspense
+                            fallback={
+                              <div className="app-loading" role="status">
+                                Loading workspace…
+                              </div>
+                            }
+                          >
+                            <AppRoutes />
+                          </Suspense>
+                        </ErrorBoundary>
+                      </ServerProvider>
+                    </WebSocketProvider>
+                  </DialogProvider>
+                </ToastProvider>
+              </ThemeProvider>
+            </TimeProvider>
+          </RuntimeHistoryProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>

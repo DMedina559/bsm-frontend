@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { getPreferenceIdentity } from "../app/backendIdentity";
 import ApplicationMetrics from "../components/metrics/ApplicationMetrics";
@@ -7,7 +7,15 @@ import "../styles/application-monitor.css";
 
 export default function ApplicationMonitor() {
   const { user, sessionGeneration } = useAuth() || {};
-  const [selected, setSelected] = useState("metrics");
+  const [params, setParams] = useSearchParams();
+  const selected =
+    params.get("view") === "diagnostics" ? "diagnostics" : "metrics";
+  const setSelected = (value) =>
+    setParams((previous) => {
+      const next = new URLSearchParams(previous);
+      next.set("view", value);
+      return next;
+    });
   const admin = user?.role === "admin";
   const active = admin ? selected : "metrics";
   const tabs = ["metrics", "diagnostics"];

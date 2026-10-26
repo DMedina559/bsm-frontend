@@ -119,6 +119,63 @@ describe("Backups", () => {
     expect(screen.getByText("Legacy backups")).toBeInTheDocument();
     expect(screen.queryByText("Restore All (Latest)")).not.toBeInTheDocument();
   });
+  it("shows loading until the initial backup request finishes, then shows a true empty state", async () => {
+    const original = api.get.getMockImplementation();
+    let resolve;
+    api.get.mockImplementation((url, options) =>
+      url.endsWith("/backups")
+        ? new Promise((done) => {
+            resolve = done;
+          })
+        : original(url, options),
+    );
+    render(<Backups />);
+    expect(
+      await screen.findByText("Loading recovery points…"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("No backups match this view."),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/No recovery points yet/),
+    ).not.toBeInTheDocument();
+    expect(
+      api.get.mock.calls.some(([url]) => url.includes("/backup/list/all")),
+    ).toBe(false);
+    resolve({ backups: [] });
+    expect(
+      await screen.findByText(/No recovery points yet/),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Loading recovery points…"),
+    ).not.toBeInTheDocument();
+  });
+  it("retains existing archives during a slow refresh", async () => {
+    render(<Backups />);
+    await screen.findByText("snapshot.bsmbackup");
+    const original = api.get.getMockImplementation();
+    let resolve;
+    api.get.mockImplementation((url, options) =>
+      url.endsWith("/backups")
+        ? new Promise((done) => {
+            resolve = done;
+          })
+        : original(url, options),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Refresh", exact: true }),
+    );
+    expect(
+      await screen.findByText(/Refreshing recovery points/),
+    ).toBeInTheDocument();
+    expect(screen.getByText("snapshot.bsmbackup")).toBeInTheDocument();
+    resolve({ backups: [archive] });
+    await waitFor(() =>
+      expect(
+        screen.queryByText(/Refreshing recovery points/),
+      ).not.toBeInTheDocument(),
+    );
+  });
   it("creates one backup using the selected encryption policy", async () => {
     render(<Backups />);
     await screen.findByText("snapshot.bsmbackup");
@@ -249,4 +306,38 @@ describe("Backups", () => {
       expect(input.closest("form")).not.toBeNull();
     }
   });
+});
+
+it("does not report an empty archive list when the initial request fails", async () => {
+  localStorage.setItem("selectedServer", "TestServer");
+  api.request.mockImplementation((url) =>
+    Promise.resolve(
+      url === "/api/account"
+        ? { username: "testuser", role: "admin" }
+        : url === "/api/servers"
+          ? { status: "success", servers: [{ name: "TestServer" }] }
+          : {},
+    ),
+  );
+  api.get.mockImplementation((url) =>
+    url.endsWith("/backups")
+      ? Promise.reject(
+          Object.assign(new Error("Backup listing unavailable"), {
+            status: 400,
+          }),
+        )
+      : Promise.resolve(
+          url.endsWith("/backups/recovery")
+            ? { recovery: { active: false } }
+            : { health: { readiness: "unknown", count: 0, total_bytes: 0 } },
+        ),
+  );
+  render(<Backups />);
+  expect(
+    await screen.findByText(/Recovery points could not be loaded or refreshed/),
+  ).toBeInTheDocument();
+  expect(screen.queryByText(/No recovery points yet/)).not.toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: "Retry", exact: true }),
+  ).toBeInTheDocument();
 });

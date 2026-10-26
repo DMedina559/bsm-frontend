@@ -1,3 +1,4 @@
+import RuntimeRecordingIndicator from "../components/diagnostics/RuntimeRecordingIndicator";
 import { useTimeFormat } from "../app/useTimeFormat";
 import BackupAlerts from "../components/BackupAlerts";
 import { useOnline } from "../app/useOnline";
@@ -113,6 +114,7 @@ const Layout = () => {
               {isConnected ? "Live" : "Offline"}
             </span>
             <OperationsStatus />
+            <RuntimeRecordingIndicator />
             <NotificationHistory />
             <Link className="account-chip" to="/account">
               <span className="avatar">

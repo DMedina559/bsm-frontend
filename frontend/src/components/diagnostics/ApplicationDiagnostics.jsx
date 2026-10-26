@@ -1,3 +1,4 @@
+import { useSearchParams } from "react-router-dom";
 import RuntimeDiagnostics from "./RuntimeDiagnostics";
 import { useEffect, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
@@ -26,8 +27,27 @@ const actions = {
   check_configuration: "Review the application configuration.",
 };
 export default function ApplicationDiagnostics() {
-  const [view, setView] = useState("overview");
-  const [historyVisited, setHistoryVisited] = useState(false);
+  const [params, setParams] = useSearchParams();
+  const categories = [
+    "overview",
+    "subsystems",
+    "activity",
+    "history",
+    "advanced",
+    "frontend",
+  ];
+  const view = categories.includes(params.get("category"))
+    ? params.get("category")
+    : "overview";
+  const setView = (value) =>
+    setParams((previous) => {
+      const next = new URLSearchParams(previous);
+      next.set("category", value);
+      return next;
+    });
+  const [historyVisited, setHistoryVisited] = useState(
+    () => params.get("category") === "history",
+  );
   const [automatic, setAutomatic] = useState(false);
   const [section, setSection] = useState("all");
   const [baseline, setBaseline] = useState(
@@ -44,8 +64,9 @@ export default function ApplicationDiagnostics() {
     return () => controller.current.abort();
   }, []);
   const query = useResourceQuery("diagnostics", undefined, {
+    enabled: view !== "frontend",
     retry: false,
-    refetchInterval: automatic ? 15000 : false,
+    refetchInterval: automatic && view !== "frontend" ? 15000 : false,
     refetchIntervalInBackground: false,
   });
   const trace = useResourceQuery("diagnosticTrace", correlation, {
@@ -119,31 +140,34 @@ export default function ApplicationDiagnostics() {
   };
   return (
     <div className="diagnostics-view">
-      <RuntimeDiagnostics />
       <div className="application-monitor-heading">
         <div>
           <h2 className="monitor-view-title">Diagnostics</h2>
           <p>Runtime observations and retained history</p>
         </div>
-        <div className="diagnostic-actions">
-          <button
-            type="button"
-            className="action-button secondary"
-            disabled={query.isFetching}
-            onClick={() => query.refetch()}
-          >
-            <RefreshCw size={16} aria-hidden="true" /> Refresh observations
-          </button>
-          <button
-            type="button"
-            className="action-button secondary"
-            disabled={report.isPending}
-            onClick={() => report.mutate()}
-          >
-            <Download size={16} aria-hidden="true" />{" "}
-            {report.isPending ? "Preparing report…" : "Download support report"}
-          </button>
-        </div>
+        {view !== "frontend" && (
+          <div className="diagnostic-actions">
+            <button
+              type="button"
+              className="action-button secondary"
+              disabled={query.isFetching}
+              onClick={() => query.refetch()}
+            >
+              <RefreshCw size={16} aria-hidden="true" /> Refresh observations
+            </button>
+            <button
+              type="button"
+              className="action-button secondary"
+              disabled={report.isPending}
+              onClick={() => report.mutate()}
+            >
+              <Download size={16} aria-hidden="true" />{" "}
+              {report.isPending
+                ? "Preparing report…"
+                : "Download support report"}
+            </button>
+          </div>
+        )}
       </div>
       <MonitorNavigation
         label="Diagnostic categories"
@@ -158,26 +182,32 @@ export default function ApplicationDiagnostics() {
           ["activity", "Activity"],
           ["history", "History"],
           ["advanced", "Advanced"],
+          ["frontend", "Frontend runtime"],
         ]}
       />
-      <label className="diagnostic-refresh">
-        <input
-          type="checkbox"
-          checked={automatic}
-          onChange={(e) => setAutomatic(e.target.checked)}
-        />{" "}
-        Auto-refresh every 15 seconds
-      </label>
-      <QueryStatus query={query} />
-      {query.error?.status === 404 && (
-        <p>
-          This backend does not expose diagnostics. Update the backend to use
-          this view.
-        </p>
+      {view === "frontend" && <RuntimeDiagnostics />}
+      {view !== "frontend" && (
+        <>
+          <label className="diagnostic-refresh">
+            <input
+              type="checkbox"
+              checked={automatic}
+              onChange={(e) => setAutomatic(e.target.checked)}
+            />{" "}
+            Auto-refresh every 15 seconds
+          </label>
+          <QueryStatus query={query} />
+          {query.error?.status === 404 && (
+            <p>
+              This backend does not expose diagnostics. Update the backend to
+              use this view.
+            </p>
+          )}
+          {query.isPending && <p role="status">Collecting observations…</p>}
+          {report.error && <p role="alert">{report.error.message}</p>}
+        </>
       )}
-      {query.isPending && <p role="status">Collecting observations…</p>}
-      {report.error && <p role="alert">{report.error.message}</p>}
-      {snapshot && (
+      {snapshot && view !== "frontend" && (
         <>
           <dl className="application-metric-grid diagnostic-summary">
             <div>
