@@ -586,6 +586,13 @@ function ServerBackups() {
           Cancel transfer
         </button>
       )}
+      {user?.role === "admin" && (
+        <p>
+          <Link className="action-button secondary" to="/scheduler">
+            Schedules
+          </Link>
+        </p>
+      )}
       <h2>Recovery points</h2>
       <div className="button-group backup-filters">
         <label>
@@ -733,7 +740,7 @@ function ServerBackups() {
                         setNotes(item.notes ?? "");
                       }}
                     >
-                      <RotateCcw size={14} /> Inspect / restore
+                      <RotateCcw size={14} /> Inspect
                     </button>{" "}
                     <button
                       className="action-button secondary"
@@ -742,22 +749,25 @@ function ServerBackups() {
                     >
                       Verify
                     </button>
-                    <button
-                      className="action-button secondary"
-                      disabled={busy || !!item.error}
-                      onClick={() => manage(item, "drill")}
-                    >
-                      Recovery drill
-                    </button>{" "}
-                    <button
-                      className="action-button secondary"
-                      disabled={busy}
-                      onClick={() =>
-                        manage(item, item.pinned ? "unpin" : "pin")
-                      }
-                    >
-                      {item.pinned ? "Unpin" : "Pin"}
-                    </button>
+                    <details className="backup-more">
+                      <summary>More</summary>
+                      <button
+                        className="action-button secondary"
+                        disabled={busy || !!item.error}
+                        onClick={() => manage(item, "drill")}
+                      >
+                        Recovery drill
+                      </button>{" "}
+                      <button
+                        className="action-button secondary"
+                        disabled={busy}
+                        onClick={() =>
+                          manage(item, item.pinned ? "unpin" : "pin")
+                        }
+                      >
+                        {item.pinned ? "Unpin" : "Pin"}
+                      </button>
+                    </details>
                   </td>
                 </tr>
               </React.Fragment>
@@ -805,10 +815,50 @@ function ServerBackups() {
       </details>
       {selected && (
         <Modal
-          title={`Restore ${selected.filename}`}
+          title="Inspect backup"
+          className="backup-inspector"
           onClose={reset}
           closeDisabled={busy}
         >
+          <dl className="backup-summary">
+            <div>
+              <dt>Archive</dt>
+              <dd>{selected.filename}</dd>
+            </div>
+            <div>
+              <dt>Created</dt>
+              <dd>
+                {selected.created_at
+                  ? new Date(selected.created_at).toLocaleString()
+                  : "Unknown"}
+              </dd>
+            </div>
+            <div>
+              <dt>Size</dt>
+              <dd>{(selected.size / 1048576).toFixed(1)} MB</dd>
+            </div>
+            <div>
+              <dt>Encryption</dt>
+              <dd>{selected.encrypted ? "Encrypted" : "Unencrypted"}</dd>
+            </div>
+            <div>
+              <dt>Verification</dt>
+              <dd>{selected.verification?.status ?? "unverified"}</dd>
+            </div>
+          </dl>
+          <details>
+            <summary>Capture timings</summary>
+            <dl>
+              {Object.entries(selected.stage_durations_ms ?? {}).map(
+                ([stage, duration]) => (
+                  <div key={stage}>
+                    <dt>{stage}</dt>
+                    <dd>{(duration / 1000).toFixed(2)} seconds</dd>
+                  </div>
+                ),
+              )}
+            </dl>
+          </details>
           <details>
             <summary>Label and notes</summary>
             <label>
@@ -837,7 +887,7 @@ function ServerBackups() {
               disabled={busy}
               onClick={() => manage(selected, "annotate", { label, notes })}
             >
-              Save label and notes
+              Save
             </button>
           </details>
           {!manifest ? (
@@ -864,7 +914,7 @@ function ServerBackups() {
                 disabled={busy}
                 onClick={inspect}
               >
-                Unlock and inspect
+                Inspect
               </button>
             </>
           ) : (
@@ -874,6 +924,24 @@ function ServerBackups() {
                 {manifest.source_server}, world {manifest.source_world}. Bedrock{" "}
                 {manifest.bedrock_version}; BSM {manifest.bsm_version}.
               </p>
+              <details>
+                <summary>
+                  File inventory ({manifest.files?.length ?? 0})
+                </summary>
+                {(manifest.files?.length ?? 0) > 500 && (
+                  <p>
+                    Showing the first 500 files. Download the archive for the
+                    complete inventory.
+                  </p>
+                )}
+                <ul>
+                  {(manifest.files ?? []).slice(0, 500).map((file) => (
+                    <li key={file.path}>
+                      {file.path} · {file.size} bytes
+                    </li>
+                  ))}
+                </ul>
+              </details>
               {!plan ? (
                 <>
                   <button
@@ -887,7 +955,7 @@ function ServerBackups() {
                       )
                     }
                   >
-                    Select all available
+                    Select all
                   </button>
                   <fieldset disabled={busy}>
                     <legend>Components to restore</legend>
@@ -928,7 +996,7 @@ function ServerBackups() {
                     disabled={busy || !components.length}
                     onClick={() => review(true)}
                   >
-                    Run dry run
+                    Dry run
                   </button>
                 </>
               ) : (
@@ -1074,7 +1142,7 @@ function ServerBackups() {
                       disabled={busy || plan.sufficient_space === false}
                       onClick={restore}
                     >
-                      Restore selected components
+                      Restore
                     </button>
                   </div>
                 </>
@@ -1091,8 +1159,6 @@ function ServerBackups() {
                     ) {
                       const blob = await perform(
                         "export_decrypted_snapshot",
-                        "manage_server_snapshot",
-                        "prepare_backup_copy",
                         { path: archivePath, body: {}, responseType: "blob" },
                         false,
                       );
@@ -1100,7 +1166,7 @@ function ServerBackups() {
                     }
                   }}
                 >
-                  Export decrypted copy
+                  Export decrypted
                 </button>
               )}
             </>
@@ -1123,7 +1189,7 @@ function ServerBackups() {
               disabled={busy || !selected.encrypted}
               onClick={() => manage(selected, "test_key")}
             >
-              Test recovery key
+              Test key
             </button>
             <label>
               Destination name
@@ -1138,7 +1204,7 @@ function ServerBackups() {
               disabled={busy || !destination}
               onClick={() => manage(selected, "copy", { destination })}
             >
-              Copy / retry destination
+              Copy
             </button>
           </details>
           {user?.role === "admin" && (

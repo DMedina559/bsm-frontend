@@ -11,6 +11,7 @@ import DiagnosticDetails from "./DiagnosticDetails";
 import { dateValue, displayValue, labelFor } from "./format";
 import Status from "./Status";
 import DiagnosticHistory from "./DiagnosticHistory";
+import DiagnosticActivity from "./DiagnosticActivity";
 import DiagnosticSubsystem from "./DiagnosticSubsystem";
 import { subsystemDescriptions } from "./subsystems";
 import MonitorNavigation from "../metrics/MonitorNavigation";
@@ -51,6 +52,10 @@ export default function ApplicationDiagnostics() {
     enabled: view === "history" && !!correlation,
     retry: false,
   });
+  useEffect(() => {
+    if (view === "history" && correlation)
+      traceHeading.current?.focus({ preventScroll: true });
+  }, [view, correlation]);
   const snapshot = query.data;
   const report = useMutation({
     gcTime: 0,
@@ -101,6 +106,8 @@ export default function ApplicationDiagnostics() {
     },
   });
   const inspectTrace = (id) => {
+    setView("history");
+    setHistoryVisited(true);
     setTraceDraft(id);
     traceHeading.current?.scrollIntoView?.({
       block: "start",
@@ -148,6 +155,7 @@ export default function ApplicationDiagnostics() {
         items={[
           ["overview", "Overview"],
           ["subsystems", "Subsystems"],
+          ["activity", "Activity"],
           ["history", "History"],
           ["advanced", "Advanced"],
         ]}
@@ -373,6 +381,9 @@ export default function ApplicationDiagnostics() {
           )}
         </>
       )}
+      {view === "activity" && (
+        <DiagnosticActivity onTrace={inspectTrace} automatic={automatic} />
+      )}
       {historyVisited && (
         <div hidden={view !== "history"}>
           <section
@@ -417,6 +428,12 @@ export default function ApplicationDiagnostics() {
                       {trace.data.events_available
                         ? "available"
                         : "unavailable"}{" "}
+                      · Operations:{" "}
+                      {trace.data.operations_available === undefined
+                        ? "not supported"
+                        : trace.data.operations_available
+                          ? "available"
+                          : "unavailable"}{" "}
                       · Tasks:{" "}
                       {trace.data.tasks_available ? "available" : "unavailable"}{" "}
                       · History:{" "}
@@ -430,6 +447,7 @@ export default function ApplicationDiagnostics() {
                     <DiagnosticDetails
                       value={{
                         events: trace.data.events,
+                        operations: trace.data.operations,
                         tasks: trace.data.tasks,
                         history: trace.data.history,
                       }}

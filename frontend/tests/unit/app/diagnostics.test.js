@@ -30,3 +30,38 @@ it("rejects invalid diagnostic payloads before storing observations", () => {
     }),
   ).not.toThrow();
 });
+
+it("validates global activity and preserves unavailable sources", async () => {
+  const { validateDiagnosticActivity } =
+    await import("../../../src/app/diagnostics");
+  const value = {
+    scope: "application",
+    events: null,
+    operations: {
+      active: [],
+      recent: [
+        {
+          operation_id: "op",
+          name: "server.start",
+          status: "finished",
+          correlation_id: "trace",
+        },
+      ],
+    },
+    subscriptions: { items: [], total: 0 },
+    truncated: true,
+  };
+  expect(validateDiagnosticActivity(value)).toBe(value);
+  expect(() =>
+    validateDiagnosticActivity({
+      ...value,
+      events: { active: [null], recent: [] },
+    }),
+  ).toThrow("Invalid diagnostic activity");
+  expect(() =>
+    validateDiagnosticActivity({
+      ...value,
+      operations: { active: [], recent: ["bad"] },
+    }),
+  ).toThrow("Invalid diagnostic activity");
+});

@@ -9,6 +9,7 @@ import { useToast } from "../contexts/ToastContext";
 import { resolveAppAssetUrl } from "../utils/basePath";
 import {
   LayoutDashboard,
+  CalendarClock,
   Users,
   Settings,
   Database,
@@ -160,6 +161,9 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
     {
       label: "Administration",
       items: [
+        ...(user?.role === "admin"
+          ? [{ path: "/scheduler", label: "Scheduler", icon: CalendarClock }]
+          : []),
         {
           path: "/users",
           label: "Users",

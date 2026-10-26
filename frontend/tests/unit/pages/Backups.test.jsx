@@ -136,8 +136,12 @@ describe("Backups", () => {
   it("inspects contents, disables absent components, and restores a reviewed selection", async () => {
     render(<Backups />);
     await screen.findByText("snapshot.bsmbackup");
-    fireEvent.click(screen.getByRole("button", { name: /Inspect \/ restore/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Unlock and inspect" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Inspect", exact: true }),
+    );
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Inspect", exact: true }).at(-1),
+    );
     expect(await screen.findByLabelText(/Allowlist/)).toBeDisabled();
     fireEvent.click(screen.getByLabelText("World"));
     fireEvent.click(screen.getByLabelText("Server properties"));
@@ -150,7 +154,7 @@ describe("Backups", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("difficulty")).toBeInTheDocument();
     fireEvent.click(
-      screen.getByRole("button", { name: "Restore selected components" }),
+      screen.getByRole("button", { name: "Restore", exact: true }),
     );
     fireEvent.click(await screen.findByRole("button", { name: "Continue" }));
     await waitFor(() =>
@@ -167,10 +171,14 @@ describe("Backups", () => {
   it("runs an isolated dry run before replacement", async () => {
     render(<Backups />);
     await screen.findByText("snapshot.bsmbackup");
-    fireEvent.click(screen.getByRole("button", { name: /Inspect \/ restore/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Unlock and inspect" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Inspect", exact: true }),
+    );
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Inspect", exact: true }).at(-1),
+    );
     await screen.findByText("Components to restore");
-    fireEvent.click(screen.getByRole("button", { name: "Run dry run" }));
+    fireEvent.click(screen.getByRole("button", { name: "Dry run" }));
     expect(
       await screen.findByText(/Dry run: 4 selected files/),
     ).toBeInTheDocument();
@@ -214,5 +222,28 @@ describe("Backups", () => {
       ),
     ).toEqual(["a-new.bsmbackup", "z-old.bsmbackup"]);
     expect(container.querySelectorAll(".backup-date-group")).toHaveLength(2);
+  });
+
+  it("shows a viewport-bounded inspector with a compact summary", async () => {
+    // The workflow tests above exercise selection and restore; this checks the dialog structure.
+    api.get.mockImplementation((url) => {
+      if (url.endsWith("/backups"))
+        return Promise.resolve({ backups: [archive] });
+      if (url.includes("/scheduler/schedules"))
+        return Promise.resolve({
+          schedules: [],
+          task_types: ["backup", "verify"],
+        });
+      return Promise.resolve({});
+    });
+    localStorage.setItem("selectedServer", "TestServer");
+    render(<Backups />);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Inspect", exact: true }),
+    );
+    const dialog = screen.getByRole("dialog", { name: "Inspect backup" });
+    expect(dialog).toHaveClass("backup-inspector");
+    expect(dialog.querySelector(".dialog-body")).toBeInTheDocument();
+    expect(screen.getByText("Capture timings")).toBeInTheDocument();
   });
 });

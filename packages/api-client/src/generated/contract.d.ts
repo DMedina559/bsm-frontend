@@ -183,6 +183,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/diagnostics/activity": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Diagnostic Activity
+     * @description Read global activity, optionally narrowing by event, server, sequence, or correlation.
+     */
+    get: operations["get_diagnostic_activity"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/diagnostics/compare": {
     parameters: {
       query?: never;
@@ -771,6 +791,41 @@ export interface paths {
     /** Shutdown Runtime */
     post: operations["shutdown_web_runtime"];
     delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/scheduler/schedules": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Schedules */
+    get: operations["list_schedules"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/scheduler/schedules/{schedule_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Save Schedule */
+    put: operations["save_schedule"];
+    post?: never;
+    /** Delete Schedule */
+    delete: operations["delete_schedule"];
     options?: never;
     head?: never;
     patch?: never;
@@ -2719,6 +2774,10 @@ export interface components {
       purpose?: string | null;
       /** Size */
       size: number;
+      /** Stage Durations Ms */
+      stage_durations_ms?: {
+        [key: string]: number;
+      };
       verification?: components["schemas"]["BackupVerification"];
     };
     /** BackupVerification */
@@ -2984,6 +3043,28 @@ export interface components {
     DestinationCleanupPayload: {
       /** Token */
       token?: string | null;
+    };
+    /**
+     * DiagnosticActivity
+     * @description Global current-instance metadata; no correlation filter is required.
+     */
+    DiagnosticActivity: {
+      events?: components["schemas"]["EventDiagnostics"] | null;
+      /** Issues */
+      issues?: components["schemas"]["DiagnosticIssue"][];
+      operations?: components["schemas"]["OperationActivity"] | null;
+      /**
+       * Scope
+       * @default application
+       * @constant
+       */
+      scope?: "application";
+      subscriptions?: components["schemas"]["EventSubscriptions"] | null;
+      /**
+       * Truncated
+       * @default false
+       */
+      truncated?: boolean;
     };
     /** DiagnosticChange */
     DiagnosticChange: {
@@ -3285,6 +3366,12 @@ export interface components {
       history: components["schemas"]["DiagnosticHistory"];
       /** Issues */
       issues?: components["schemas"]["DiagnosticIssue"][];
+      operations?: components["schemas"]["OperationActivity"] | null;
+      /**
+       * Operations Available
+       * @default false
+       */
+      operations_available?: boolean;
       /** Tasks */
       tasks: components["schemas"]["TaskDiagnostic"][];
       /** Tasks Available */
@@ -3432,6 +3519,21 @@ export interface components {
         [key: string]: number;
       };
     };
+    /** EventFilter */
+    EventFilter: {
+      /** Correlation Id */
+      correlation_id?: string | null;
+      /** Operation Name */
+      operation_name?: string | null;
+      /** Plugin Name */
+      plugin_name?: string | null;
+      /** Sequence Id */
+      sequence_id?: string | null;
+      /** Server Name */
+      server_name?: string | null;
+      /** Source */
+      source?: string | null;
+    };
     /** EventOptions */
     EventOptions: {
       /**
@@ -3490,11 +3592,25 @@ export interface components {
       listeners_called?: number;
       /** Name */
       name: string;
+      /** Operation Id */
+      operation_id?: string | null;
+      /** Operation Name */
+      operation_name?: string | null;
       /** Parent Event Id */
       parent_event_id?: string | null;
+      /**
+       * Phase
+       * @default custom
+       * @enum {string}
+       */
+      phase?: "before" | "after" | "custom" | "lifecycle";
       /** Rejection Reason */
       rejection_reason?:
         ("recursion" | "depth_limit" | "capacity" | "shutdown") | null;
+      /** Sequence Id */
+      sequence_id?: string | null;
+      /** Server Name */
+      server_name?: string | null;
       /** Source */
       source: string;
       /**
@@ -3506,6 +3622,86 @@ export interface components {
       /** Timestamp */
       timestamp: number;
     };
+    /** EventSubscriptionInfo */
+    EventSubscriptionInfo: {
+      /** Active */
+      active: boolean;
+      /**
+       * After
+       * @default []
+       */
+      after?: string[];
+      /**
+       * Before
+       * @default []
+       */
+      before?: string[];
+      /**
+       * Calls
+       * @default 0
+       */
+      calls?: number;
+      /**
+       * Failures
+       * @default 0
+       */
+      failures?: number;
+      filters?: components["schemas"]["EventFilter"] | null;
+      /**
+       * Kind
+       * @enum {string}
+       */
+      kind: "legacy" | "hook" | "observer";
+      /**
+       * Last Duration Ms
+       * @default 0
+       */
+      last_duration_ms?: number;
+      /** Last Status */
+      last_status?: string | null;
+      /** Listener Id */
+      listener_id: string;
+      /** Name */
+      name: string;
+      /** Once */
+      once: boolean;
+      /** Owner */
+      owner: string;
+      /** Priority */
+      priority: number;
+      /** Subscription Id */
+      subscription_id: string;
+      /**
+       * Timeouts
+       * @default 0
+       */
+      timeouts?: number;
+      /**
+       * Unresolved After
+       * @default []
+       */
+      unresolved_after?: string[];
+      /**
+       * Unresolved Before
+       * @default []
+       */
+      unresolved_before?: string[];
+    };
+    /** EventSubscriptions */
+    EventSubscriptions: {
+      /** Items */
+      items?: components["schemas"]["EventSubscriptionInfo"][];
+      /**
+       * Total
+       * @default 0
+       */
+      total?: number;
+      /**
+       * Truncated
+       * @default false
+       */
+      truncated?: boolean;
+    };
     /** EventsDiagnostics */
     EventsDiagnostics: {
       activity: components["schemas"]["EventDiagnostics"];
@@ -3515,6 +3711,8 @@ export interface components {
        * @enum {string}
        */
       kind: "events";
+      operations?: components["schemas"]["OperationActivity"] | null;
+      subscriptions?: components["schemas"]["EventSubscriptions"];
       /**
        * Truncated
        * @default false
@@ -3850,6 +4048,13 @@ export interface components {
        */
       status?: "success";
     };
+    /** ListSchedulesResponse */
+    ListSchedulesResponse: {
+      /** Schedules */
+      schedules?: components["schemas"]["ScheduleEntry"][];
+      /** Task Types */
+      task_types?: string[];
+    };
     /** ListSnapshotsResponse */
     ListSnapshotsResponse: {
       /** Backups */
@@ -3923,6 +4128,21 @@ export interface components {
        */
       attempts?: number;
       /**
+       * Event Loop Lag Breaches
+       * @default 0
+       */
+      event_loop_lag_breaches?: number;
+      /**
+       * Event Loop Lag Ms
+       * @default 0
+       */
+      event_loop_lag_ms?: number;
+      /**
+       * Event Loop Lag Threshold Ms
+       * @default 100
+       */
+      event_loop_lag_threshold_ms?: number;
+      /**
        * Failures
        * @default 0
        */
@@ -3945,6 +4165,11 @@ export interface components {
        * @default 0
        */
       missed_intervals?: number;
+      /**
+       * Recent Max Event Loop Lag Ms
+       * @default 0
+       */
+      recent_max_event_loop_lag_ms?: number;
       /** Sample Age Seconds */
       sample_age_seconds?: number | null;
       /**
@@ -4000,6 +4225,95 @@ export interface components {
       timestamp: number;
       /** Uptime Seconds */
       uptime_seconds?: number | null;
+    };
+    /**
+     * OperationActivity
+     * @description Bounded, metadata-only global activity; recent results are not durable.
+     */
+    OperationActivity: {
+      /** Active */
+      active?: components["schemas"]["OperationSnapshot"][];
+      /**
+       * Active Operations
+       * @default 0
+       */
+      active_operations?: number;
+      /**
+       * Active Sequences
+       * @default 0
+       */
+      active_sequences?: number;
+      /**
+       * Active Truncated
+       * @default false
+       */
+      active_truncated?: boolean;
+      /**
+       * Completed
+       * @default 0
+       */
+      completed?: number;
+      /**
+       * History Limit
+       * @default 0
+       */
+      history_limit?: number;
+      /** Recent */
+      recent?: components["schemas"]["OperationSnapshot"][];
+      /**
+       * Recent Truncated
+       * @default false
+       */
+      recent_truncated?: boolean;
+    };
+    /**
+     * OperationSnapshot
+     * @description Immutable coordination metadata; response bodies and secrets are excluded.
+     */
+    OperationSnapshot: {
+      /** Correlation Id */
+      correlation_id: string;
+      /** Finished At */
+      finished_at?: number | null;
+      /** Name */
+      name: string;
+      /** Operation Id */
+      operation_id: string;
+      /** Outcome */
+      outcome?: string | null;
+      /**
+       * Owner
+       * @default application
+       */
+      owner?: string;
+      /** Parent Operation Id */
+      parent_operation_id?: string | null;
+      /** Purpose */
+      purpose?: string | null;
+      /** Root Operation Id */
+      root_operation_id: string;
+      /**
+       * Scope
+       * @default []
+       */
+      scope?: string[];
+      /** Sequence Id */
+      sequence_id: string;
+      /** Server Name */
+      server_name?: string | null;
+      /**
+       * Source
+       * @default application
+       */
+      source?: string;
+      /** Started At */
+      started_at: number;
+      /**
+       * Status
+       * @default running
+       * @enum {string}
+       */
+      status?: "running" | "finished" | "failed" | "cancelled";
     };
     /**
      * PermissionsSetPayload
@@ -4798,10 +5112,19 @@ export interface components {
     /** RuntimeDiagnostics */
     RuntimeDiagnostics: {
       /**
+       * Draining Workers
+       * @default 0
+       */
+      draining_workers?: number;
+      /**
        * @description discriminator enum property added by openapi-typescript
        * @enum {string}
        */
       kind: "runtime";
+      /** Oldest Draining Worker Seconds */
+      oldest_draining_worker_seconds?: number | null;
+      /** Pending Lifecycle Stages */
+      pending_lifecycle_stages?: string[];
       /** Phase */
       phase: string;
       /** Pid */
@@ -4809,10 +5132,20 @@ export interface components {
       /** Python Version */
       python_version: string;
       /**
+       * Queued Workers
+       * @default 0
+       */
+      queued_workers?: number;
+      /**
        * Ready
        * @default false
        */
       ready?: boolean;
+      /**
+       * Running Workers
+       * @default 0
+       */
+      running_workers?: number;
       /** Shutdown Reason */
       shutdown_reason?: string | null;
       /** Shutdown Requested */
@@ -4842,6 +5175,74 @@ export interface components {
         ("administrator" | "local_cli" | "service" | "signal") | null;
       /** Shutdown Requested */
       shutdown_requested: boolean;
+    };
+    /** ScheduleEntry */
+    ScheduleEntry: {
+      /**
+       * Attempts
+       * @default 0
+       */
+      attempts?: number;
+      /** Available */
+      available: boolean;
+      configuration: components["schemas"]["ScheduledTask"];
+      /** Last Error */
+      last_error?: string | null;
+      /** Last Status */
+      last_status?: string | null;
+      /** Last Success At */
+      last_success_at?: string | null;
+      /**
+       * Legacy
+       * @default false
+       */
+      legacy?: boolean;
+      /** Next Run At */
+      next_run_at?: string | null;
+      /** Runs */
+      runs?: {
+        [key: string]: components["schemas"]["JsonValue"];
+      }[];
+      /** Schedule Id */
+      schedule_id: string;
+    };
+    /** ScheduledTask */
+    ScheduledTask: {
+      /**
+       * Catch Up
+       * @default true
+       */
+      catch_up?: boolean;
+      /**
+       * Enabled
+       * @default true
+       */
+      enabled?: boolean;
+      /** Options */
+      options?: {
+        [key: string]: components["schemas"]["JsonValue"];
+      };
+      /** Server Name */
+      server_name: string;
+      /**
+       * Stagger Minutes
+       * @default 15
+       */
+      stagger_minutes?: number;
+      /** Task */
+      task: string;
+      /**
+       * Time
+       * @default 03:00
+       */
+      time?: string;
+      /**
+       * Timezone
+       * @default UTC
+       */
+      timezone?: string;
+      /** Weekdays */
+      weekdays?: number[];
     };
     /** SendCommandResponse */
     SendCommandResponse: {
@@ -5347,6 +5748,17 @@ export interface components {
       /** Name */
       name?: string | null;
     };
+    /** SuccessResponse */
+    SuccessResponse: {
+      /** Message */
+      message?: string | null;
+      /**
+       * Status
+       * @default success
+       * @constant
+       */
+      status?: "success";
+    };
     /** TaskAcceptedResponse */
     TaskAcceptedResponse: {
       /** Message */
@@ -5422,6 +5834,8 @@ export interface components {
        * @default 100
        */
       capacity?: number;
+      /** Concurrency Limit */
+      concurrency_limit?: number | null;
       /** Counts By Status */
       counts_by_status: {
         [key: string]: number;
@@ -6592,6 +7006,118 @@ export interface operations {
       };
     };
   };
+  get_diagnostic_activity: {
+    parameters: {
+      query?: {
+        operation_id?: string | null;
+        sequence_id?: string | null;
+        operation_name?: string | null;
+        server_name?: string | null;
+        source?: string | null;
+        phase?: ("before" | "after" | "custom" | "lifecycle") | null;
+        name?: string | null;
+        owner?: string | null;
+        correlation_id?: string | null;
+        status?:
+          | (
+              | "dispatching"
+              | "completed"
+              | "partial"
+              | "cancelled"
+              | "suppressed"
+            )
+          | null;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DiagnosticActivity"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
   compare_diagnostic_snapshots: {
     parameters: {
       query?: never;
@@ -7450,6 +7976,12 @@ export interface operations {
   get_event_activity: {
     parameters: {
       query?: {
+        operation_id?: string | null;
+        sequence_id?: string | null;
+        operation_name?: string | null;
+        server_name?: string | null;
+        source?: string | null;
+        phase?: ("before" | "after" | "custom" | "lifecycle") | null;
         name?: string | null;
         owner?: string | null;
         correlation_id?: string | null;
@@ -9543,6 +10075,292 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["ShutdownResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  list_schedules: {
+    parameters: {
+      query?: {
+        server_name?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ListSchedulesResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  save_schedule: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        schedule_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ScheduledTask"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SuccessResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  delete_schedule: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        schedule_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SuccessResponse"];
         };
       };
       /** @description Bad Request */

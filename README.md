@@ -158,3 +158,26 @@ Report web interface, JavaScript SDK, and packaging issues in
 frontend and backend versions, reproduction steps, and relevant output.
 
 This repository uses the [MIT license](LICENSE).
+
+### Global diagnostic activity
+
+Diagnostics → Activity shows active/recent events and operation outcomes across
+all execution chains, with server/name/owner/sequence/correlation filters, listener
+configuration, and links to correlated traces. Enable automatic refresh to poll
+every 15 seconds while viewing activity. This is bounded metadata, not an unlimited
+event log. Unavailable sources and partial views are labeled explicitly. Global
+activity requires a backend exposing `get_diagnostic_activity`; other diagnostics
+remain usable on older backends. Traces now include operation ancestry and outcomes.
+
+
+### Backup verification and scheduling
+
+The administrator **Scheduler** page manages named backup and verification jobs,
+server selection, timing, weekdays, timezone, catch-up, and recent run outcomes.
+Existing backup schedules remain compatible. Full verification after creation,
+periodic verification, and automatic recovery drills are opt-in on new backend
+installations. Restore always validates integrity. The backup inspector fits the
+viewport, wraps paths, and displays a compact summary and capture timings.
+Start/stop/restart use the existing endpoints and allow long pre-start hooks to
+finish without the client's ordinary 30-second timeout. Explicit caller timeout
+overrides remain supported; server/proxy limits still apply.
