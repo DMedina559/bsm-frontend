@@ -77,3 +77,31 @@ describe("Backup schedules", () => {
     ).toBeInTheDocument();
   });
 });
+
+it("offers Pacific Time as a regional timezone instead of PDT", async () => {
+  api.request.mockImplementation((url) =>
+    Promise.resolve(
+      url === "/api/account" ? { username: "test", role: "admin" } : {},
+    ),
+  );
+  api.get.mockResolvedValue({
+    schedules: [],
+    task_types: ["backup", "verify"],
+    timezones: ["UTC", "America/Los_Angeles"],
+    timezone_database_available: true,
+  });
+  render(<BackupSchedules serverName="alpha" />);
+  fireEvent.click(await screen.findByRole("button", { name: "Add schedule" }));
+  const select = screen.getByRole("combobox", {
+    name: "Timezone",
+    exact: true,
+  });
+  fireEvent.change(select, { target: { value: "America/Los_Angeles" } });
+  expect(select).toHaveValue("America/Los_Angeles");
+  expect(
+    screen.getByRole("option", { name: "Pacific Time (America/Los_Angeles)" }),
+  ).toBeInTheDocument();
+  expect(
+    screen.queryByRole("option", { name: "PDT", exact: true }),
+  ).not.toBeInTheDocument();
+});

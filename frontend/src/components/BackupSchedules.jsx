@@ -5,12 +5,14 @@ import QueryStatus from "./QueryStatus";
 import { useToast } from "../contexts/ToastContext";
 import { useDialog } from "../contexts/DialogContext";
 
-const initial = (serverName) => ({
+const browserTimezone = () =>
+  Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+const initial = (serverName, timezone = browserTimezone()) => ({
   task: "backup",
   server_name: serverName,
   enabled: false,
   time: "03:00",
-  timezone: "UTC",
+  timezone,
   weekdays: [0, 1, 2, 3, 4, 5, 6],
   catch_up: false,
   stagger_minutes: 15,
@@ -25,6 +27,20 @@ export default function BackupSchedules({
   const query = useResourceQuery("schedules", serverName, {
     refetchInterval: 30000,
   });
+  const browserZone = browserTimezone();
+  const zones =
+    query.data?.timezone_database_available === false
+      ? ["UTC", "Etc/UTC"]
+      : [
+          ...new Set([
+            "UTC",
+            ...(query.data?.timezones?.length
+              ? query.data.timezones
+              : (Intl.supportedValuesOf?.("timeZone") ?? [])),
+            browserZone,
+          ]),
+        ].sort();
+  const defaultZone = zones.includes(browserZone) ? browserZone : "UTC";
   const { addToast } = useToast();
   const { confirmAction } = useDialog();
   const [scheduleId, setScheduleId] = useState("");
@@ -66,6 +82,24 @@ export default function BackupSchedules({
         Backup and verification run independently. Automatic verification is off
         until you configure it. New schedules start with their next occurrence.
       </p>
+      <p>
+        Your timezone: {browserZone}. Times stay in the selected timezone; BSM
+        converts each occurrence to UTC and follows daylight-saving changes
+        automatically.
+      </p>
+      {query.data?.host_timezone && (
+        <p>
+          BSM host clock: {query.data.host_timezone}. This does not change
+          schedule times.
+        </p>
+      )}
+      {query.data?.timezone_database_available === false && (
+        <p role="alert">
+          The BSM host is missing timezone data. UTC remains available. Install
+          or repair the tzdata package in BSM’s Python environment to use
+          regional timezones.
+        </p>
+      )}
       <QueryStatus query={query} />
       {(query.data?.schedules ?? []).map((entry) => (
         <article key={entry.schedule_id}>
@@ -76,7 +110,10 @@ export default function BackupSchedules({
           <p>
             {entry.configuration.time} {entry.configuration.timezone} · Next:{" "}
             {entry.next_run_at
-              ? new Date(entry.next_run_at).toLocaleString()
+              ? new Date(entry.next_run_at).toLocaleString(undefined, {
+                  timeZone: entry.configuration.timezone,
+                  timeZoneName: "short",
+                })
               : "None"}{" "}
             · Last: {entry.last_status ?? "Not run"}
           </p>
@@ -130,7 +167,7 @@ export default function BackupSchedules({
           onClick={() => {
             setScheduleId("");
             setExisting(false);
-            setConfig(initial(serverName || defaultServer || ""));
+            setConfig(initial(serverName || defaultServer || "", defaultZone));
             setEditing(true);
           }}
         >
@@ -140,6 +177,13 @@ export default function BackupSchedules({
         <form
           onSubmit={async (event) => {
             event.preventDefault();
+            if (!zones.includes(config.timezone)) {
+              addToast(
+                "This timezone is unavailable on the BSM host. Choose UTC or repair the host timezone data.",
+                "error",
+              );
+              return;
+            }
             const identifier = existing
               ? scheduleId
               : scheduleId.trim().replace(/\s+/g, "-");
@@ -244,7 +288,7 @@ export default function BackupSchedules({
                 </select>
               </div>
               <label>
-                Time
+                Time in selected timezone
                 <input
                   className="form-input"
                   type="time"
@@ -253,15 +297,28 @@ export default function BackupSchedules({
                   onChange={(event) => change("time", event.target.value)}
                 />
               </label>
-              <label>
-                Timezone
-                <input
+              <div>
+                <label htmlFor={`${fieldId}-timezone`}>Timezone</label>
+                <select
+                  id={`${fieldId}-timezone`}
                   className="form-input"
                   required
                   value={config.timezone}
                   onChange={(event) => change("timezone", event.target.value)}
-                />
-              </label>
+                >
+                  {[...new Set([...zones, config.timezone])].map((zone) => (
+                    <option
+                      key={zone}
+                      value={zone}
+                      disabled={!zones.includes(zone)}
+                    >
+                      {zone === "America/Los_Angeles"
+                        ? "Pacific Time (America/Los_Angeles)"
+                        : zone.replaceAll("_", " ")}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <label>
                 Stagger (minutes)
                 <input

@@ -4050,10 +4050,21 @@ export interface components {
     };
     /** ListSchedulesResponse */
     ListSchedulesResponse: {
+      /** Host Timezone */
+      host_timezone?: string | null;
       /** Schedules */
       schedules?: components["schemas"]["ScheduleEntry"][];
+      /** Server Time */
+      server_time?: string | null;
       /** Task Types */
       task_types?: string[];
+      /**
+       * Timezone Database Available
+       * @default true
+       */
+      timezone_database_available?: boolean;
+      /** Timezones */
+      timezones?: string[];
     };
     /** ListSnapshotsResponse */
     ListSnapshotsResponse: {

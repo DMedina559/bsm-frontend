@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import DestinationCleanup from "./DestinationCleanup";
 import React, { useState } from "react";
 import { useServer } from "../contexts/ServerContext";
@@ -29,7 +28,7 @@ export default function BackupSettings({
       <h2>Backup policy</h2>
       <p className="form-help-text">
         Defaults apply across your servers. Save Changes applies policy, and
-        destination edits. Schedules are saved separately.
+        destination edits.
       </p>
       <fieldset className="backup-policy-section">
         <legend>Defaults and retention</legend>
@@ -199,14 +198,6 @@ export default function BackupSettings({
             Include server-level packs by default
           </label>
         </div>
-      </fieldset>
-      <fieldset className="backup-policy-section">
-        <legend>Schedules</legend>
-        <p>
-          Manage backup and verification jobs on the{" "}
-          <Link to="/scheduler">Scheduler</Link> page. Existing schedules and
-          run history are retained.
-        </p>
       </fieldset>
       <fieldset className="backup-policy-section">
         <legend>Off-machine destinations</legend>

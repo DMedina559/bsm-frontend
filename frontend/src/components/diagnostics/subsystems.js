@@ -1,4 +1,6 @@
 export const subsystemDescriptions = {
+  scheduler:
+    "Scheduler runtime, enabled jobs, task availability, and timezone data.",
   runtime: "Application lifecycle and readiness",
   events: "Event dispatch, listeners and worker capacity",
   state: "Registered resources and changes awaiting persistence",
