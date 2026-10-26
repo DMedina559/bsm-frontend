@@ -1,6 +1,7 @@
 import { application } from "./application";
 import {
   validateDiagnosticSnapshot,
+  validateDiagnosticActivity,
   validateDiagnosticHistory,
   validateDiagnosticRuns,
   validateDiagnosticTrace,
@@ -33,11 +34,18 @@ const object = (value, resource) => {
 };
 const diagnosticResources = new Set([
   "diagnostics",
+  "diagnosticActivity",
   "diagnosticHistory",
   "diagnosticRuns",
   "diagnosticTrace",
 ]);
 const resources = {
+  diagnosticActivity: {
+    key: queryKeys.diagnosticActivity,
+    load: (filters, options) =>
+      callOperation("get_diagnostic_activity", { query: filters, ...options }),
+    select: validateDiagnosticActivity,
+  },
   diagnostics: {
     key: queryKeys.diagnostics,
     load: (_target, options) =>

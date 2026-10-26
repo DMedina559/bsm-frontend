@@ -4,6 +4,7 @@ export const queryKeys: Readonly<{
   applicationHealth(): QueryKey;
   applicationMetrics(): QueryKey;
   diagnostics(): QueryKey;
+  diagnosticActivity(filters: unknown): QueryKey;
   diagnosticHistory(filters: unknown): QueryKey;
   diagnosticRuns(): QueryKey;
   diagnosticTrace(correlation: string): QueryKey;

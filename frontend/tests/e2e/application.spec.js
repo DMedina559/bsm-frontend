@@ -825,3 +825,94 @@ test("saving one server setting sends only that writable field", async ({
       },
     ]);
 });
+
+test("administrators inspect global activity and follow operation traces", async ({
+  context,
+  page,
+}, testInfo) => {
+  await backend(context);
+  const operation = {
+    operation_id: "operation",
+    sequence_id: "sequence",
+    root_operation_id: "root",
+    parent_operation_id: "root",
+    correlation_id: "activity-trace",
+    name: "server.start",
+    server_name: "alpha",
+    status: "finished",
+    outcome: "started",
+  };
+  const requests = [];
+  await context.route("**/api/diagnostics**", async (route) => {
+    const url = new URL(route.request().url());
+    let data = diagnosticsSnapshot();
+    if (url.pathname.endsWith("/activity")) {
+      requests.push(url);
+      data = {
+        scope: "application",
+        events: { active: [], recent: [] },
+        operations: { active: [], recent: [operation] },
+        subscriptions: {
+          total: 1,
+          items: [
+            {
+              listener_id: "plugin:listener",
+              owner: "plugin:example",
+              name: "before_server_start",
+              priority: 100,
+              unresolved_after: ["other:missing"],
+            },
+          ],
+        },
+        truncated: true,
+      };
+    } else if (url.pathname.includes("/trace/"))
+      data = {
+        events: null,
+        events_available: false,
+        operations: { active: [], recent: [operation] },
+        operations_available: true,
+        tasks: [],
+        tasks_available: true,
+        history: { available: true, records: [] },
+        issues: [],
+      };
+    else if (url.pathname.endsWith("/history"))
+      data = { available: true, records: [], truncated: false };
+    else if (url.pathname.endsWith("/runs"))
+      data = { available: true, runs: [], truncated: false };
+    await route.fulfill({ json: data });
+  });
+  await login(page, "alice");
+  await page.goto("application-monitor");
+  await page.getByRole("tab", { name: "Diagnostics" }).click();
+  await page.getByRole("button", { name: "Activity", exact: true }).click();
+  await expect(page.getByText("server.start · alpha · finished")).toBeVisible();
+  await expect(page.getByText(/This view is partial/)).toBeVisible();
+  await page.getByLabel("Server", { exact: true }).fill("alpha");
+  await page.getByRole("button", { name: "Apply filters" }).click();
+  await expect
+    .poll(() => requests.at(-1)?.searchParams.get("server_name"))
+    .toBe("alpha");
+  await page.getByText("server.start · alpha · finished").click();
+  await expect(page.getByText("started", { exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    )
+    .toBe(true);
+  await page.screenshot({
+    path: testInfo.outputPath("global-activity-mobile.png"),
+    fullPage: true,
+  });
+  await page
+    .getByRole("button", { name: "Inspect trace", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Correlated trace" }),
+  ).toBeFocused();
+  await expect(page.getByText(/Operations: available/)).toBeVisible();
+});

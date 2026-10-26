@@ -4,6 +4,7 @@ export const queryKeys = Object.freeze({
   applicationHealth: () => ["application-health"],
   applicationMetrics: () => ["application-metrics"],
   diagnostics: () => ["diagnostics"],
+  diagnosticActivity: (filters) => ["diagnostic-activity", filters],
   diagnosticHistory: (filters) => ["diagnostic-history", filters],
   diagnosticRuns: () => ["diagnostic-runs"],
   diagnosticTrace: (correlation) => ["diagnostic-trace", correlation],
