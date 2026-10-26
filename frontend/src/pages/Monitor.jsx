@@ -416,7 +416,7 @@ const Monitor = () => {
                   color: "var(--text-color-secondary)",
                 }}
               >
-                Waiting for resource data...
+                Waiting for resource data…
               </div>
             )}
           </div>
@@ -438,7 +438,7 @@ const Monitor = () => {
             label="Server log output"
             style={{
               height: "360px",
-              fontSize: "0.85rem",
+              fontSize: "var(--bsm-small-size)",
               borderRadius: "8px",
             }}
           />

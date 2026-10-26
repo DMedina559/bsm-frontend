@@ -409,7 +409,7 @@ export default function BackupSchedules({
                 occurrence to UTC automatically.
               </p>
               <p>
-                Automatic verification stays off until you add a verification
+                Enable verification in backup policy or add a verification
                 schedule.
               </p>
             </details>

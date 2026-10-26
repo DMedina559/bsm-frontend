@@ -301,7 +301,21 @@ describe("Backups", () => {
     const dialog = screen.getByRole("dialog", { name: "Inspect backup" });
     expect(dialog).toHaveClass("backup-inspector");
     expect(dialog.querySelector(".dialog-body")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: "Details", exact: true }));
+    expect(
+      screen.getByRole("tabpanel", { name: "Details", exact: true }),
+    ).toBeVisible();
     expect(screen.getByText("Capture timings")).toBeInTheDocument();
+    expect(screen.getByLabelText("Notes", { exact: true })).toHaveClass(
+      "form-input",
+    );
+    fireEvent.keyDown(
+      screen.getByRole("tab", { name: "Details", exact: true }),
+      { key: "Home" },
+    );
+    expect(
+      screen.getByRole("tab", { name: "Restore options", exact: true }),
+    ).toHaveAttribute("aria-selected", "true");
     for (const input of document.querySelectorAll('input[type="password"]')) {
       expect(input.closest("form")).not.toBeNull();
     }

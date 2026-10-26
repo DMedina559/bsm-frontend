@@ -73,7 +73,7 @@ const Playground = () => {
           style={{
             width: "100%",
             height: "300px",
-            fontFamily: "monospace",
+            fontFamily: "var(--bsm-mono)",
             padding: "calc(10px * var(--bsm-spacing-scale))",
             background: "var(--input-bg, #222)",
             color: "var(--text-color, #eee)",

@@ -273,14 +273,6 @@
 .backup-summary dt {
   font-weight: 600;
 }
-.backup-more {
-  display: inline-block;
-  vertical-align: top;
-}
-.backup-more summary {
-  cursor: pointer;
-  padding: 0.5rem;
-}
 .backup-schedules {
   padding: 1rem;
   margin: 1rem 0;
@@ -571,4 +563,128 @@
   padding: var(--bsm-space-5);
   text-align: center;
   color: var(--bsm-muted);
+}
+
+.backup-inspector.dialog-panel {
+  width: min(960px, calc(100vw - 2rem));
+  height: min(800px, calc(100dvh - 2rem));
+}
+.backup-inspector .dialog-header {
+  padding: var(--bsm-space-4) var(--bsm-space-5);
+}
+.backup-inspector .backup-summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: var(--bsm-space-4);
+  margin: 0 0 var(--bsm-space-4);
+  border: 1px solid var(--border-color);
+  border-radius: var(--bsm-radius-md);
+  background: var(--bsm-surface-raised);
+}
+.backup-inspector .backup-summary > div:first-child {
+  grid-column: 1 / -1;
+}
+.backup-inspector .backup-summary dt {
+  color: var(--bsm-muted);
+  font-size: var(--bsm-small-size);
+  font-weight: 500;
+}
+.backup-inspector .backup-summary dd {
+  font-size: var(--bsm-small-size);
+}
+.backup-inspector .backup-summary > div:first-child dd {
+  font-family: var(--bsm-mono);
+}
+.backup-inspector-tabs {
+  display: flex;
+  gap: var(--bsm-space-2);
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: var(--bsm-space-4);
+}
+.backup-inspector-tabs button {
+  padding: var(--bsm-space-2) var(--bsm-space-3);
+  min-height: 44px;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--bsm-muted);
+  font: inherit;
+  cursor: pointer;
+}
+.backup-inspector-tabs button[aria-selected="true"] {
+  color: var(--bsm-text);
+  border-bottom-color: var(--bsm-accent);
+}
+.backup-inspector-tabs button:focus-visible {
+  outline: 2px solid var(--bsm-focus);
+  outline-offset: -2px;
+}
+.backup-inspector [role="tabpanel"] > details {
+  padding: var(--bsm-space-4);
+  margin-bottom: var(--bsm-space-3);
+  border: 1px solid var(--border-color);
+  border-radius: var(--bsm-radius-md);
+}
+.backup-inspector details summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.backup-inspector details[open] summary {
+  margin-bottom: var(--bsm-space-3);
+}
+.backup-inspector label:has(:not([type="checkbox"]).form-input) {
+  display: grid;
+  gap: var(--bsm-space-2);
+}
+.backup-inspector .backup-timings {
+  display: grid;
+  gap: var(--bsm-space-3);
+}
+.backup-inspector .backup-timings > div {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--bsm-space-2);
+}
+.backup-inspector .backup-timings dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.backup-restore-steps {
+  display: flex;
+  gap: var(--bsm-space-3);
+  list-style: none;
+  padding: 0;
+  margin-bottom: var(--bsm-space-4);
+  counter-reset: restore-step;
+  flex-wrap: wrap;
+}
+.backup-restore-steps li {
+  counter-increment: restore-step;
+  font-size: var(--bsm-small-size);
+  color: var(--bsm-muted);
+}
+.backup-restore-steps li::before {
+  content: counter(restore-step);
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-right: var(--bsm-space-2);
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+}
+.backup-restore-steps li[aria-current="step"] {
+  color: var(--bsm-text);
+}
+.backup-restore-steps li[aria-current="step"]::before {
+  color: var(--bsm-accent);
+  border-color: var(--bsm-accent);
+}
+@media (max-width: 600px) {
+  .backup-inspector .backup-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .backup-inspector-tabs {
+    gap: 0;
+  }
 }

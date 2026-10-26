@@ -309,3 +309,11 @@ Local history is a bounded, best-effort support journal, not an audit log.
 The selected monitor view and diagnostics category are reflected in the URL so
 links and reloads open the same category. Frontend history remains available even
 when the backend diagnostics endpoint is unavailable.
+
+The backup inspector separates restore selection, archive details, and management
+actions. Per-archive secondary actions use a keyboard-accessible three-dot menu
+rendered outside the scrolling table. Byte displays use the account's unit and
+precision preference. Page descriptions are owned by `utils/navigation.js`;
+Scheduler and Application monitor use the same navigation metadata as other pages.
+Plugin component styles are scoped to plugin views and plugin dialogs so opening
+a plugin cannot change native account badges, forms, or other page styles.

@@ -23,7 +23,11 @@ export default function ApplicationMonitor() {
     <div className="container application-monitor">
       <header className="monitor-page-heading">
         <h1>Application monitor</h1>
-        <p>Performance and system health</p>
+        <p>
+          {admin
+            ? "Application health, metrics and diagnostics."
+            : "Application and server process metrics."}
+        </p>
       </header>
       {admin && (
         <div className="monitor-tabs" role="tablist" aria-label="Metrics views">

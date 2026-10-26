@@ -138,14 +138,7 @@ const BSMSettings = () => {
     <div className="container">
       <DraftConflictNotice draft={draft} />
       <QueryStatus query={resourceQuery} />
-      <div
-        className="header"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+      <div className="header">
         <h1>Global Settings</h1>
         <button
           className="action-button secondary"
@@ -227,7 +220,7 @@ const BSMSettings = () => {
             padding: "calc(40px * var(--bsm-spacing-scale))",
           }}
         >
-          <div className="spinner"></div> Loading settings...
+          <div className="spinner"></div> Loading settings…
         </div>
       ) : (
         <form

@@ -188,14 +188,7 @@ const ServerConfig = () => {
     <div className="container">
       <QueryStatus query={resourceQuery} />
       <DraftConflictNotice draft={draft} />
-      <div
-        className="header"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+      <div className="header">
         <h1>Server Settings: {selectedServer}</h1>
         <div
           style={{
@@ -261,12 +254,13 @@ const ServerConfig = () => {
       )}
       {loading && Object.keys(settings).length === 0 ? (
         <div
+          role="status"
           style={{
             textAlign: "center",
             padding: "calc(20px * var(--bsm-spacing-scale))",
           }}
         >
-          Loading settings...
+          Loading settings…
         </div>
       ) : (
         <div

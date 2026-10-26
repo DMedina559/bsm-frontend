@@ -27,8 +27,7 @@ export default function BackupSettings({
     <section className="backup-settings">
       <h2>Backup policy</h2>
       <p className="form-help-text">
-        Defaults apply across your servers. Save Changes applies policy, and
-        destination edits.
+        Save changes to apply backup policy and destination settings.
       </p>
       <fieldset className="backup-policy-section">
         <legend>Defaults and retention</legend>

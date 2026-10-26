@@ -365,6 +365,7 @@ export default function ApplicationDiagnostics() {
               <label className="diagnostic-section-picker">
                 Subsystem
                 <select
+                  className="form-input"
                   value={section}
                   onChange={(e) => setSection(e.target.value)}
                 >
@@ -434,6 +435,7 @@ export default function ApplicationDiagnostics() {
               <label>
                 Trace correlation ID
                 <input
+                  className="form-input"
                   value={traceDraft}
                   maxLength={160}
                   onChange={(e) => setTraceDraft(e.target.value)}

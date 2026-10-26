@@ -45,7 +45,7 @@ const PrivateRoute = ({ children }) => {
   const location = useLocation();
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div role="status">Loading…</div>;
   }
 
   if (needsSetup) {
@@ -63,7 +63,7 @@ const AppRoutes = () => {
   const { needsSetup, loading } = useAuth();
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div role="status">Loading…</div>;
   }
 
   return (

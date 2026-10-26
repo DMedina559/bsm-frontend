@@ -259,14 +259,7 @@ const AccessControl = () => {
   return (
     <div className="container">
       <QueryStatus query={resourceQuery} />
-      <div
-        className="header"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+      <div className="header">
         <h1>Access Control: {selectedServer}</h1>
         <div
           style={{
@@ -284,7 +277,7 @@ const AccessControl = () => {
                 style={{
                   padding:
                     "calc(4px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
-                  fontSize: "0.85em",
+                  fontSize: "var(--bsm-small-size)",
                   display: "flex",
                   alignItems: "center",
                   gap: "calc(5px * var(--bsm-spacing-scale))",
@@ -301,7 +294,7 @@ const AccessControl = () => {
                 style={{
                   padding:
                     "calc(4px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
-                  fontSize: "0.85em",
+                  fontSize: "var(--bsm-small-size)",
                   display: "flex",
                   alignItems: "center",
                   gap: "calc(5px * var(--bsm-spacing-scale))",
@@ -318,7 +311,7 @@ const AccessControl = () => {
                 style={{
                   padding:
                     "calc(4px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
-                  fontSize: "0.85em",
+                  fontSize: "var(--bsm-small-size)",
                   display: "flex",
                   alignItems: "center",
                   gap: "calc(5px * var(--bsm-spacing-scale))",
@@ -415,7 +408,7 @@ const AccessControl = () => {
             alignItems: "flex-end",
             marginBottom: "calc(20px * var(--bsm-spacing-scale))",
             flexWrap: "wrap",
-            background: "rgba(0,0,0,0.1)",
+            background: "var(--bsm-surface-raised)",
             padding: "calc(15px * var(--bsm-spacing-scale))",
             borderRadius: "5px",
           }}
@@ -577,7 +570,7 @@ const AccessControl = () => {
                 />
                 <span
                   style={{
-                    fontSize: "0.9em",
+                    fontSize: "var(--bsm-small-size)",
                   }}
                 >
                   Ignore Player Limit
@@ -591,7 +584,7 @@ const AccessControl = () => {
             className="action-button"
             disabled={loading || actionLoading || !playerName}
             style={{
-              height: "38px",
+              height: "var(--bsm-control-height)",
             }}
           >
             <Plus
@@ -662,7 +655,7 @@ const AccessControl = () => {
                           <span
                             className="mono-text"
                             style={{
-                              fontSize: "0.85em",
+                              fontSize: "var(--bsm-small-size)",
                               color: "var(--text-color-secondary)",
                             }}
                           >
@@ -677,7 +670,7 @@ const AccessControl = () => {
                             <span
                               className="badge badge-success"
                               style={{
-                                fontSize: "0.8em",
+                                fontSize: "var(--bsm-small-size)",
                               }}
                             >
                               Bypasses Limit
@@ -686,7 +679,7 @@ const AccessControl = () => {
                             <span
                               style={{
                                 color: "var(--text-color-secondary)",
-                                fontSize: "0.8em",
+                                fontSize: "var(--bsm-small-size)",
                               }}
                             >
                               -
@@ -711,7 +704,7 @@ const AccessControl = () => {
                             style={{
                               padding:
                                 "calc(4px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
-                              fontSize: "0.9em",
+                              fontSize: "var(--bsm-small-size)",
                             }}
                           >
                             <option value="visitor">Visitor</option>
@@ -828,10 +821,10 @@ const AccessControl = () => {
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "center",
-                        background: "rgba(0,0,0,0.2)",
+                        background: "var(--bsm-surface-raised)",
                         padding: "calc(10px * var(--bsm-spacing-scale))",
                         borderRadius: "4px",
-                        border: "1px solid rgba(255,255,255,0.05)",
+                        border: "1px solid var(--border-color)",
                       }}
                     >
                       <span
@@ -862,7 +855,7 @@ const AccessControl = () => {
                           style={{
                             padding:
                               "calc(4px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
-                            fontSize: "0.85em",
+                            fontSize: "var(--bsm-small-size)",
                             width: "150px",
                           }}
                         />
@@ -873,7 +866,7 @@ const AccessControl = () => {
                           style={{
                             padding:
                               "calc(4px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
-                            fontSize: "0.85em",
+                            fontSize: "var(--bsm-small-size)",
                           }}
                           type="button"
                         >

@@ -430,6 +430,7 @@ const Account = ({ appearanceOnly = false }) => {
             aria-busy={passwordSaving}
           >
             <input
+              className="form-input"
               type="text"
               name="username"
               value={user?.username || ""}

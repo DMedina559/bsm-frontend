@@ -148,8 +148,8 @@ export default function ApplicationMetrics() {
         ))}
       </dl>
       <p className="monitor-muted">
-        CPU, memory and uptime describe the BSM application process. A dash
-        means no measurement was reported; it does not mean zero.
+        Application, host and server measurements stay separate. A dash means no
+        measurement was reported.
       </p>
       <MonitorNavigation
         label="Metric categories"

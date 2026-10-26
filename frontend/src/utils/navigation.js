@@ -1,23 +1,24 @@
 export const PAGE_INFO = {
-  "/": [
-    "Fleet",
-    "Overview",
-    "A live view of the servers available to your account.",
-  ],
+  "/": ["Fleet", "Overview", "View server status and run common actions."],
   "/application-monitor": [
     "Global",
-    "Metrics",
-    "Inspect application, host, and Bedrock process performance.",
+    "Application monitor",
+    "Monitor application health, performance and diagnostics.",
   ],
   "/monitor": [
     "Selected server",
     "Monitor",
-    "Inspect activity, resource usage, and the server console.",
+    "Monitor server status, resources and logs.",
   ],
   "/backups": [
     "Selected server",
     "Backups",
     "Create recovery points and restore server data.",
+  ],
+  "/scheduler": [
+    "Global",
+    "Scheduler",
+    "Schedule backups and verification across servers.",
   ],
   "/server-properties": [
     "Selected server",
@@ -27,7 +28,7 @@ export const PAGE_INFO = {
   "/server-config": [
     "Selected server",
     "Settings",
-    "Manage lifecycle, automation, and server settings.",
+    "Configure server startup, updates and settings.",
   ],
   "/access-control": [
     "Selected server",
@@ -37,7 +38,7 @@ export const PAGE_INFO = {
   "/online-players": [
     "Selected server",
     "Online players",
-    "Inspect and manage current player sessions.",
+    "View, transfer and moderate online players.",
   ],
   "/content": [
     "Selected server",
@@ -52,12 +53,12 @@ export const PAGE_INFO = {
   "/plugins": [
     "Plugins",
     "Plugins",
-    "Manage installed plugins and their runtime status.",
+    "Enable, disable and inspect installed plugins.",
   ],
   "/bsm-settings": [
     "Global",
     "Global Settings",
-    "Configure shared settings for the manager.",
+    "Configure manager, backup, storage and web defaults.",
   ],
   "/users": ["Administration", "Users", "Manage accounts and invitations."],
   "/global-players": [
@@ -68,7 +69,7 @@ export const PAGE_INFO = {
   "/audit-log": [
     "Administration",
     "Logs & tasks",
-    "Review activity and background operations.",
+    "Review audit records, task results and application logs.",
   ],
   "/account": ["Workspace", "Account", "Manage your profile and password."],
   "/appearance": [

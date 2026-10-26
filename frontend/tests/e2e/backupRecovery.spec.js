@@ -163,6 +163,18 @@ test("backup inspection fits a mobile viewport and wraps long names", async ({
     }),
   );
   await page.goto("backups");
+  const more = page.getByRole("button", { name: /^More options for/ });
+  await more.click();
+  const menu = page.getByRole("menu");
+  await expect(
+    menu.getByRole("menuitem", { name: "Pin", exact: true }),
+  ).toBeVisible();
+  const menuBounds = await menu.boundingBox();
+  expect(menuBounds.x).toBeGreaterThanOrEqual(0);
+  expect(menuBounds.x + menuBounds.width).toBeLessThanOrEqual(390);
+  await page.keyboard.press("Escape");
+  await expect(menu).not.toBeVisible();
+  await expect(more).toBeFocused();
   await page.getByRole("button", { name: "Inspect", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Inspect backup" });
   await expect(dialog).toBeVisible();

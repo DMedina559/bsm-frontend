@@ -74,6 +74,7 @@ export default function DiagnosticActivity({ onTrace, automatic = false }) {
           <label key={key}>
             {label}
             <input
+              className="form-input"
               maxLength={160}
               value={draft[key] ?? ""}
               onChange={(event) =>
