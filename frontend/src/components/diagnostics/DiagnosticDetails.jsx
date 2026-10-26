@@ -15,7 +15,10 @@ export default function DiagnosticDetails({
           typeof entry === "object" && entry !== null ? (
             <details key={index}>
               <summary>
-                {entry.name ??
+                {(entry.listener_id
+                  ? `${entry.listener_id} · ${entry.owner}`
+                  : null) ??
+                  entry.name ??
                   entry.server_name ??
                   entry.operation ??
                   entry.id ??

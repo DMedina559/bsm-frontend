@@ -153,3 +153,31 @@ test("health preserves runtime identity and degraded observations with user auth
     );
   }
 });
+
+test("global diagnostic activity serializes cross-chain filters", async () => {
+  const calls = [];
+  const client = createApiClient({
+    request: async (...args) => {
+      calls.push(args);
+      return {
+        scope: "application",
+        events: null,
+        operations: null,
+        subscriptions: null,
+      };
+    },
+  });
+  await client.callOperation("get_diagnostic_activity", {
+    query: {
+      server_name: "alpha beta",
+      sequence_id: "sequence",
+      operation_id: "operation",
+      limit: 5,
+    },
+  });
+  assert.match(calls[0][0], /\/api\/diagnostics\/activity\?/);
+  const url = new URL(calls[0][0], "http://backend");
+  assert.equal(url.searchParams.get("server_name"), "alpha beta");
+  assert.equal(url.searchParams.get("sequence_id"), "sequence");
+  assert.equal(url.searchParams.get("operation_id"), "operation");
+});

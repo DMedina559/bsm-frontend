@@ -17,7 +17,7 @@ on:
       - ".github/workflows/build-test.yml"
       - ".github/workflows/publish.yml"
   push:
-    branches: [dev, main, feat/unified-server-backups]
+    branches: [dev, main, feat/unified-server-backups, feat/event-activity-diagnostics]
     paths:
       - "README.md"
       - "LICENSE"

@@ -158,3 +158,13 @@ Report web interface, JavaScript SDK, and packaging issues in
 frontend and backend versions, reproduction steps, and relevant output.
 
 This repository uses the [MIT license](LICENSE).
+
+### Global diagnostic activity
+
+Diagnostics → Activity shows active/recent events and operation outcomes across
+all execution chains, with server/name/owner/sequence/correlation filters, listener
+configuration, and links to correlated traces. Enable automatic refresh to poll
+every 15 seconds while viewing activity. This is bounded metadata, not an unlimited
+event log. Unavailable sources and partial views are labeled explicitly. Global
+activity requires a backend exposing `get_diagnostic_activity`; other diagnostics
+remain usable on older backends. Traces now include operation ancestry and outcomes.
