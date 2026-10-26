@@ -1,3 +1,6 @@
+import { browserTimezone } from "../utils/time";
+import { useTimeFormat } from "../app/useTimeFormat";
+import Timestamp from "./Timestamp";
 import React, { useId, useState } from "react";
 import { callOperation } from "../api/operations";
 import { useResourceQuery } from "../app/resourceQueries";
@@ -5,9 +8,7 @@ import QueryStatus from "./QueryStatus";
 import { useToast } from "../contexts/ToastContext";
 import { useDialog } from "../contexts/DialogContext";
 
-const browserTimezone = () =>
-  Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-const initial = (serverName, timezone = browserTimezone()) => ({
+const initial = (serverName, timezone = "UTC") => ({
   task: "backup",
   server_name: serverName,
   enabled: false,
@@ -23,6 +24,7 @@ export default function BackupSchedules({
   defaultServer,
   serverNames = [],
 }) {
+  const { applicationTimezone } = useTimeFormat();
   const fieldId = useId();
   const query = useResourceQuery("schedules", serverName, {
     refetchInterval: 30000,
@@ -40,7 +42,9 @@ export default function BackupSchedules({
             browserZone,
           ]),
         ].sort();
-  const defaultZone = zones.includes(browserZone) ? browserZone : "UTC";
+  const defaultZone = zones.includes(applicationTimezone)
+    ? applicationTimezone
+    : "UTC";
   const { addToast } = useToast();
   const { confirmAction } = useDialog();
   const [scheduleId, setScheduleId] = useState("");
@@ -147,12 +151,14 @@ export default function BackupSchedules({
               <div>
                 <dt>Next run</dt>
                 <dd>
-                  {entry.next_run_at
-                    ? new Date(entry.next_run_at).toLocaleString(undefined, {
-                        timeZone: entry.configuration.timezone,
-                        timeZoneName: "short",
-                      })
-                    : "None"}
+                  {entry.next_run_at ? (
+                    <Timestamp
+                      value={entry.next_run_at}
+                      timezone={entry.configuration.timezone}
+                    />
+                  ) : (
+                    "None"
+                  )}
                 </dd>
               </div>
               <div>
@@ -194,7 +200,7 @@ export default function BackupSchedules({
               <ul>
                 {(entry.runs ?? []).map((run) => (
                   <li key={run.run_id}>
-                    {run.started_at} · {run.status}
+                    <Timestamp value={run.started_at} /> · {run.status}
                     {run.error && ` · ${run.error}`}
                     {run.correlation_id && ` · Trace ${run.correlation_id}`}
                   </li>

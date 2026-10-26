@@ -3,6 +3,10 @@ import { normalizeAppearance } from "../utils/theme";
 import { validatePalette } from "../utils/palettes";
 
 export const preferenceDefinitions = {
+  timeDisplay: {
+    version: 1,
+    validate: (value) => ["application", "local", "utc"].includes(value),
+  },
   draftRecovery: {
     version: 1,
     validate: (value) => typeof value === "boolean",

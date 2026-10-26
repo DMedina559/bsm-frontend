@@ -1,3 +1,4 @@
+import { useTimeFormat } from "../app/useTimeFormat";
 import BackupAlerts from "../components/BackupAlerts";
 import { useOnline } from "../app/useOnline";
 import BackendCompatibility from "../components/BackendCompatibility";
@@ -15,6 +16,7 @@ import { PAGE_INFO } from "../utils/navigation";
 import { useFocusTrap } from "../utils/useFocusTrap";
 
 const Layout = () => {
+  const { format } = useTimeFormat();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(
     () => window.matchMedia?.("(max-width: 768px)").matches ?? false,
@@ -139,7 +141,7 @@ const Layout = () => {
           {(!online || offlineSnapshot) && (
             <div className="message-box message-info" role="status">
               {offlineSnapshot
-                ? `Viewing a stale fleet snapshot from ${new Date(offlineSnapshot.savedAt).toLocaleString()}.`
+                ? `Viewing a stale fleet snapshot from ${format(offlineSnapshot.savedAt)}.`
                 : "You are offline. Displayed information may be out of date."}{" "}
               Changes require a connection; requests are never queued for later.
             </div>

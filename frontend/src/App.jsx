@@ -1,3 +1,4 @@
+import TimeProvider from "./contexts/TimeProvider";
 import { sessionSettings } from "./app/browserStorage";
 import { application } from "./app/application";
 import { setApiBaseUrl } from "./app/connection";
@@ -147,28 +148,30 @@ const App = () => {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <ThemeProvider>
-            <ToastProvider>
-              <DialogProvider>
-                <DraftNavigationGuard />
-                <WebSocketProvider>
-                  <ServerProvider>
-                    <ErrorBoundary>
-                      <Suspense
-                        fallback={
-                          <div className="app-loading" role="status">
-                            Loading workspace…
-                          </div>
-                        }
-                      >
-                        <AppRoutes />
-                      </Suspense>
-                    </ErrorBoundary>
-                  </ServerProvider>
-                </WebSocketProvider>
-              </DialogProvider>
-            </ToastProvider>
-          </ThemeProvider>
+          <TimeProvider>
+            <ThemeProvider>
+              <ToastProvider>
+                <DialogProvider>
+                  <DraftNavigationGuard />
+                  <WebSocketProvider>
+                    <ServerProvider>
+                      <ErrorBoundary>
+                        <Suspense
+                          fallback={
+                            <div className="app-loading" role="status">
+                              Loading workspace…
+                            </div>
+                          }
+                        >
+                          <AppRoutes />
+                        </Suspense>
+                      </ErrorBoundary>
+                    </ServerProvider>
+                  </WebSocketProvider>
+                </DialogProvider>
+              </ToastProvider>
+            </ThemeProvider>
+          </TimeProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>

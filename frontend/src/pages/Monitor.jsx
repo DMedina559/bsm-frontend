@@ -1,3 +1,4 @@
+import { useTimeFormat } from "../app/useTimeFormat";
 import { useMetricFormat } from "../app/useMetricFormat";
 import { callOperation } from "../api/operations";
 import LogViewer from "../components/LogViewer";
@@ -30,6 +31,7 @@ import {
 } from "lucide-react";
 import { logger } from "../utils/logger";
 const Monitor = () => {
+  const { format } = useTimeFormat();
   const { memory, number, scale, units } = useMetricFormat();
   const {
     isConnected,
@@ -73,7 +75,7 @@ const Monitor = () => {
       [
         ...previous,
         {
-          time: new Date().toLocaleTimeString(),
+          time: Date.now(),
           cpu: processInfo.cpu_percent || 0,
           memory: processInfo.memory_mb || 0,
         },
@@ -112,7 +114,7 @@ const Monitor = () => {
         if (info) {
           setUsageHistory((prev) => {
             const newPoint = {
-              time: new Date().toLocaleTimeString(),
+              time: Date.now(),
               cpu: info.cpu_percent || 0,
               memory: info.memory_mb || 0,
             };
@@ -369,6 +371,7 @@ const Monitor = () => {
                     width={40}
                   />
                   <Tooltip
+                    labelFormatter={(value) => format(value)}
                     formatter={(value, label) => [
                       label === "CPU %"
                         ? number(value, "%")

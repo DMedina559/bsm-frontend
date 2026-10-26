@@ -18,7 +18,7 @@
 }
 .settings-tabs [aria-selected="true"] {
   border-bottom-color: var(--primary-color, #28b99a);
-  background: var(--card-background);
+  background: var(--bsm-surface);
   font-weight: 600;
 }
 .settings-tabs button:focus-visible {
@@ -65,21 +65,10 @@
   padding: 1rem 0;
   overflow-wrap: anywhere;
 }
-.backups-page .header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
 .backups-page h1 {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-.backups-page .card {
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
 }
 .backup-create {
   padding: 1.25rem;
@@ -351,7 +340,7 @@
 }
 
 .scheduler-page .header {
-  margin-bottom: 1rem;
+  margin-bottom: var(--bsm-space-4);
 }
 .scheduler-overview,
 .schedule-toolbar,
@@ -359,7 +348,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: var(--bsm-space-4);
   flex-wrap: wrap;
 }
 .scheduler-overview > p {
@@ -368,7 +357,7 @@
 .scheduler-overview > label {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--bsm-space-3);
 }
 .scheduler-overview select {
   width: auto;
@@ -382,7 +371,7 @@
   box-shadow: none;
 }
 .schedule-toolbar {
-  margin-bottom: 1rem;
+  margin-bottom: var(--bsm-space-4);
 }
 .schedule-toolbar h2,
 .schedule-toolbar p,
@@ -396,13 +385,13 @@
 .schedule-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
-  gap: 1rem;
+  gap: var(--bsm-space-4);
 }
 .backup-schedules .schedule-list article {
   border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 1rem;
-  background: var(--card-background, transparent);
+  border-radius: var(--bsm-radius-md);
+  padding: var(--bsm-space-4);
+  background: var(--bsm-surface);
 }
 .schedule-status {
   border: 1px solid var(--border-color);
@@ -416,12 +405,12 @@
 .schedule-facts {
   display: grid;
   gap: 0.65rem;
-  margin: 1rem 0;
+  margin: var(--bsm-space-4) 0;
 }
 .schedule-facts > div {
   display: grid;
   grid-template-columns: 5rem 1fr;
-  gap: 0.5rem;
+  gap: var(--bsm-space-2);
 }
 .schedule-facts dt {
   font-size: 0.85rem;
@@ -433,15 +422,15 @@
 }
 .backup-schedules .button-group {
   display: flex;
-  gap: 0.5rem;
-  margin: 0.75rem 0;
+  gap: var(--bsm-space-2);
+  margin: var(--bsm-space-3) 0;
 }
 .backup-schedules .action-button {
   margin: 0;
-  padding: 0.5rem 0.85rem;
+  padding: var(--bsm-space-2) 0.85rem;
 }
 .backup-schedules details {
-  margin-top: 0.75rem;
+  margin-top: var(--bsm-space-3);
   font-size: 0.9rem;
 }
 .backup-schedules summary {
@@ -450,32 +439,32 @@
 .schedule-warning {
   display: grid;
   gap: 0.3rem;
-  padding: 0.85rem 1rem;
-  margin-bottom: 1rem;
+  padding: 0.85rem var(--bsm-space-4);
+  margin-bottom: var(--bsm-space-4);
   border: 1px solid var(--border-color);
   border-left: 3px solid var(--warning-color, #d5a43b);
-  border-radius: 8px;
+  border-radius: var(--bsm-radius-sm);
   font-size: 0.9rem;
 }
 .schedule-empty {
-  padding: 2rem 1rem;
+  padding: 2rem var(--bsm-space-4);
   text-align: center;
   border: 1px dashed var(--border-color);
-  border-radius: 12px;
+  border-radius: var(--bsm-radius-md);
 }
 .backup-schedules form {
-  margin-top: 1rem;
+  margin-top: var(--bsm-space-4);
 }
 .backup-schedules form > fieldset {
-  padding: 1rem;
+  padding: var(--bsm-space-4);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: var(--bsm-radius-md);
 }
 .backup-schedules label {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin: 0.5rem 0;
+  gap: var(--bsm-space-2);
+  margin: var(--bsm-space-2) 0;
 }
 .backup-schedules .settings-grid label {
   display: flex;
@@ -491,8 +480,8 @@
 .schedule-days {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  margin: 1rem 0;
+  gap: var(--bsm-space-3);
+  margin: var(--bsm-space-4) 0;
   border: 0;
   padding: 0;
 }

@@ -1,3 +1,4 @@
+import Timestamp from "../Timestamp";
 import { useSyncExternalStore } from "react";
 import { application } from "../../app/application";
 export default function RuntimeDiagnostics() {
@@ -46,7 +47,7 @@ export default function RuntimeDiagnostics() {
           <tbody>
             {snapshot.events.map((event, index) => (
               <tr key={index}>
-                <td>{new Date(event.at).toLocaleTimeString()}</td>
+                <td>{<Timestamp value={event.at} kind="time" />}</td>
                 <td>{event.type}</td>
                 <td>{event.reason ?? "—"}</td>
                 <td>{event.family ?? "—"}</td>

@@ -1,3 +1,5 @@
+import { useTimeFormat } from "../app/useTimeFormat";
+import Timestamp from "../components/Timestamp";
 import { Link } from "react-router-dom";
 import "../styles/backup-settings.css";
 import React, { useEffect, useRef, useState } from "react";
@@ -55,6 +57,7 @@ export default function Backups() {
 }
 
 function ServerBackups() {
+  const { date } = useTimeFormat();
   const { selectedServer, setSelectedServer, refreshServers } = useServer();
   const { user, sessionGeneration } = useAuth();
   const { confirmAction } = useDialog();
@@ -407,7 +410,7 @@ function ServerBackups() {
           {health.data.drill && (
             <p>
               Last isolated drill: {health.data.drill.status} ·{" "}
-              {new Date(health.data.drill.checked_at).toLocaleString()} ·{" "}
+              {<Timestamp value={health.data.drill.checked_at} />} ·{" "}
               {health.data.drill.checked_files ?? 0} files checked
             </p>
           )}
@@ -435,17 +438,21 @@ function ServerBackups() {
             <div>
               <dt>Last backup</dt>
               <dd>
-                {health.data.last_success_at
-                  ? new Date(health.data.last_success_at).toLocaleString()
-                  : "Never"}
+                {health.data.last_success_at ? (
+                  <Timestamp value={health.data.last_success_at} />
+                ) : (
+                  "Never"
+                )}
               </dd>
             </div>
             <div>
               <dt>Last verified</dt>
               <dd>
-                {health.data.last_verified_at
-                  ? new Date(health.data.last_verified_at).toLocaleString()
-                  : "Never"}
+                {health.data.last_verified_at ? (
+                  <Timestamp value={health.data.last_verified_at} />
+                ) : (
+                  "Never"
+                )}
               </dd>
             </div>
           </dl>
@@ -474,9 +481,11 @@ function ServerBackups() {
             <p>
               Schedule: {health.data.schedule.enabled ? "Enabled" : "Paused"}.
               Next run:{" "}
-              {health.data.schedule.next_run_at
-                ? new Date(health.data.schedule.next_run_at).toLocaleString()
-                : "None"}
+              {health.data.schedule.next_run_at ? (
+                <Timestamp value={health.data.schedule.next_run_at} />
+              ) : (
+                "None"
+              )}
               . Last result: {health.data.schedule.last_status ?? "Not run"}.{" "}
               {health.data.schedule.last_error ?? ""}
             </p>
@@ -647,22 +656,12 @@ function ServerBackups() {
             {visibleSnapshots.map((item, index) => (
               <React.Fragment key={item.backup_id}>
                 {(index === 0 ||
-                  new Date(item.created_at ?? 0).toLocaleDateString() !==
-                    new Date(
-                      visibleSnapshots[index - 1].created_at ?? 0,
-                    ).toLocaleDateString()) && (
+                  date(item.created_at ?? 0) !==
+                    date(visibleSnapshots[index - 1].created_at ?? 0)) && (
                   <tr className="backup-date-group">
                     <th colSpan={4} scope="colgroup">
                       {item.created_at
-                        ? new Date(item.created_at).toLocaleDateString(
-                            undefined,
-                            {
-                              weekday: "long",
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            },
-                          )
+                        ? date(item.created_at)
                         : "Date unavailable"}
                     </th>
                   </tr>
@@ -671,9 +670,11 @@ function ServerBackups() {
                   <td>
                     <strong>
                       {item.label ||
-                        (item.created_at
-                          ? new Date(item.created_at).toLocaleString()
-                          : "Server backup")}
+                        (item.created_at ? (
+                          <Timestamp value={item.created_at} />
+                        ) : (
+                          "Server backup"
+                        ))}
                     </strong>
                     <small className="archive-filename" title={item.filename}>
                       {item.filename}
@@ -704,10 +705,7 @@ function ServerBackups() {
                     {item.verification?.verified_at && (
                       <span>
                         {" "}
-                        ·{" "}
-                        {new Date(
-                          item.verification.verified_at,
-                        ).toLocaleString()}
+                        · {<Timestamp value={item.verification.verified_at} />}
                       </span>
                     )}
                     {item.pinned && <span> · Pinned</span>}
@@ -715,7 +713,7 @@ function ServerBackups() {
                       <span>
                         {" "}
                         · Protected until{" "}
-                        {new Date(item.protected_until).toLocaleString()}
+                        {<Timestamp value={item.protected_until} />}
                       </span>
                     )}
                     {Object.entries(item.copies ?? {}).map(([name, copy]) => (
@@ -831,9 +829,11 @@ function ServerBackups() {
             <div>
               <dt>Created</dt>
               <dd>
-                {selected.created_at
-                  ? new Date(selected.created_at).toLocaleString()
-                  : "Unknown"}
+                {selected.created_at ? (
+                  <Timestamp value={selected.created_at} />
+                ) : (
+                  "Unknown"
+                )}
               </dd>
             </div>
             <div>
@@ -926,7 +926,7 @@ function ServerBackups() {
           ) : (
             <>
               <p>
-                Captured {new Date(manifest.created_at).toLocaleString()} from{" "}
+                Captured {<Timestamp value={manifest.created_at} />} from{" "}
                 {manifest.source_server}, world {manifest.source_world}. Bedrock{" "}
                 {manifest.bedrock_version}; BSM {manifest.bsm_version}.
               </p>

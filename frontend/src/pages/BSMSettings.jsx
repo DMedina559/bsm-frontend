@@ -26,7 +26,7 @@ const BSMSettings = () => {
     ? searchParams.get("tab")
     : "general";
   const tabGroups = {
-    general: ["monitoring", "lifecycle"],
+    general: ["general", "monitoring", "lifecycle"],
     web: ["web"],
     storage: ["paths", "retention"],
     advanced: ["custom", "diagnostics"],
@@ -63,7 +63,7 @@ const BSMSettings = () => {
       }
       return callOperation(id, { ...options, session });
     },
-    [queryKeys.settings()],
+    [queryKeys.settings(), queryKeys.applicationInfo()],
   );
   /** @type {typeof callOperation} */
   const writeOperation = (id, ...args) =>

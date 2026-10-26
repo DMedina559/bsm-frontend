@@ -1,3 +1,4 @@
+import { useTimeFormat } from "../../app/useTimeFormat";
 import { useState } from "react";
 import { useMetricFormat } from "../../app/useMetricFormat";
 import {
@@ -56,6 +57,7 @@ const chartGroups = {
   ],
 };
 export default function ApplicationMetrics() {
+  const { format } = useTimeFormat();
   const [view, setView] = useState("performance");
   const [paused, setPaused] = useState(null);
   const query = useApplicationMetrics(paused === null);
@@ -104,7 +106,7 @@ export default function ApplicationMetrics() {
           </span>
           <span className="monitor-muted">
             {sample
-              ? `Sampled ${new Date(sample.timestamp * 1000).toLocaleTimeString()}`
+              ? `Sampled ${format(sample.timestamp * 1000, { kind: "time" })}`
               : "Waiting for metrics"}
           </span>
         </div>

@@ -1,3 +1,4 @@
+import Timestamp from "../components/Timestamp";
 import { useResourceQuery } from "../app/resourceQueries";
 import React, { useState } from "react";
 import TaskOutcome from "../components/TaskOutcome";
@@ -33,13 +34,7 @@ const AuditLog = () => {
       setLogRefreshKey((key) => key + 1);
     }
   };
-  const formatDate = (dateString) => {
-    try {
-      return new Date(dateString).toLocaleString();
-    } catch {
-      return dateString;
-    }
-  };
+  const formatDate = (value) => <Timestamp value={value} />;
   return (
     <div className="container">
       <div

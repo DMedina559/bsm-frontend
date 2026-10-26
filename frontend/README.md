@@ -270,3 +270,20 @@ in memory; reset clears them. Long-session compaction runs every 250 accepted
 observations, drops expendable event payloads, and reduces old terminal tasks to
 identity/status. Revisions, arrival clocks, epoch tombstones and task terminal
 watermarks remain until session/epoch reset, preserving replay protection.
+
+### Dates, times, and shared styles
+
+Set the application timezone in BSM Settings → General. Account → Appearance →
+Dates and times can display the application timezone, your browser's timezone,
+or UTC. Timestamp details retain the UTC instant and original value. Raw logs
+remain UTC; schedules display their explicit scheduling timezone.
+
+Application code should use `Timestamp` for rendered instants and `useTimeFormat`
+for chart labels and date grouping. Numeric timestamps require explicit seconds
+when they come from metrics or diagnostics. Offset-free historical API timestamps
+are interpreted as UTC. Never convert stored timestamps into formatted strings.
+
+Use the shared `header`, `card`, `settings-panel`, `form-input`, `action-button`,
+and status classes. Theme colors come from semantic `--bsm-*` tokens, and geometry
+uses spacing, radius, and density tokens. Page styles should extend those rules
+without redefining common control heights or introducing undefined variables.
