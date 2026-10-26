@@ -2,7 +2,9 @@ import { useEffect } from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider, Link } from "react-router-dom";
 import { expect, it, vi } from "vitest";
-import DraftNavigationGuard from "../../../src/components/DraftNavigationGuard";
+import DraftNavigationGuard, {
+  isSettingsTabChange,
+} from "../../../src/components/DraftNavigationGuard";
 import { draftRegistry } from "../../../src/app/draftRegistry";
 const confirm = vi.hoisted(() => vi.fn());
 vi.mock("../../../src/contexts/DialogContext", () => ({
@@ -41,4 +43,26 @@ it("protects dirty drafts on internal navigation and browser close", async () =>
   view.unmount();
   expect(draftRegistry.dirty()).toBe(false);
   router.dispose();
+});
+
+it("only exempts known settings tab changes from the draft guard", () => {
+  const current = {
+    pathname: "/bsm-settings",
+    search: "?tab=backups&mode=one",
+  };
+  expect(
+    isSettingsTabChange(current, { ...current, search: "?mode=one&tab=web" }),
+  ).toBe(true);
+  expect(
+    isSettingsTabChange(current, { ...current, search: "?mode=two&tab=web" }),
+  ).toBe(false);
+  expect(
+    isSettingsTabChange(current, {
+      ...current,
+      search: "?tab=unknown&mode=one",
+    }),
+  ).toBe(false);
+  expect(
+    isSettingsTabChange(current, { pathname: "/other", search: "?tab=web" }),
+  ).toBe(false);
 });

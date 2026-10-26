@@ -1,3 +1,4 @@
+import BackupAlerts from "../components/BackupAlerts";
 import { useOnline } from "../app/useOnline";
 import BackendCompatibility from "../components/BackendCompatibility";
 import OperationsStatus from "../components/OperationsStatus";
@@ -56,6 +57,7 @@ const Layout = () => {
 
   return (
     <div className="page-layout">
+      <BackupAlerts />
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
