@@ -1,5 +1,6 @@
 import type { QueryKey, QueryFilters } from "./contracts.js";
 export const queryKeys: Readonly<{
+  schedules(serverName?: string): QueryKey;
   bootstrap(): QueryKey;
   applicationHealth(): QueryKey;
   applicationMetrics(): QueryKey;

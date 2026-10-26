@@ -34,12 +34,22 @@ const object = (value, resource) => {
 };
 const diagnosticResources = new Set([
   "diagnostics",
+  "schedules",
   "diagnosticActivity",
   "diagnosticHistory",
   "diagnosticRuns",
   "diagnosticTrace",
 ]);
 const resources = {
+  schedules: {
+    key: queryKeys.schedules,
+    load: (serverName, options) =>
+      callOperation("list_schedules", {
+        query: { server_name: serverName },
+        ...options,
+      }),
+    select: (data) => object(data, "schedules"),
+  },
   diagnosticActivity: {
     key: queryKeys.diagnosticActivity,
     load: (filters, options) =>

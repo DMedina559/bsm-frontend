@@ -796,6 +796,41 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/scheduler/schedules": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List Schedules */
+    get: operations["list_schedules"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/scheduler/schedules/{schedule_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Save Schedule */
+    put: operations["save_schedule"];
+    post?: never;
+    /** Delete Schedule */
+    delete: operations["delete_schedule"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/server/install": {
     parameters: {
       query?: never;
@@ -2739,6 +2774,10 @@ export interface components {
       purpose?: string | null;
       /** Size */
       size: number;
+      /** Stage Durations Ms */
+      stage_durations_ms?: {
+        [key: string]: number;
+      };
       verification?: components["schemas"]["BackupVerification"];
     };
     /** BackupVerification */
@@ -4009,6 +4048,13 @@ export interface components {
        */
       status?: "success";
     };
+    /** ListSchedulesResponse */
+    ListSchedulesResponse: {
+      /** Schedules */
+      schedules?: components["schemas"]["ScheduleEntry"][];
+      /** Task Types */
+      task_types?: string[];
+    };
     /** ListSnapshotsResponse */
     ListSnapshotsResponse: {
       /** Backups */
@@ -5130,6 +5176,74 @@ export interface components {
       /** Shutdown Requested */
       shutdown_requested: boolean;
     };
+    /** ScheduleEntry */
+    ScheduleEntry: {
+      /**
+       * Attempts
+       * @default 0
+       */
+      attempts?: number;
+      /** Available */
+      available: boolean;
+      configuration: components["schemas"]["ScheduledTask"];
+      /** Last Error */
+      last_error?: string | null;
+      /** Last Status */
+      last_status?: string | null;
+      /** Last Success At */
+      last_success_at?: string | null;
+      /**
+       * Legacy
+       * @default false
+       */
+      legacy?: boolean;
+      /** Next Run At */
+      next_run_at?: string | null;
+      /** Runs */
+      runs?: {
+        [key: string]: components["schemas"]["JsonValue"];
+      }[];
+      /** Schedule Id */
+      schedule_id: string;
+    };
+    /** ScheduledTask */
+    ScheduledTask: {
+      /**
+       * Catch Up
+       * @default true
+       */
+      catch_up?: boolean;
+      /**
+       * Enabled
+       * @default true
+       */
+      enabled?: boolean;
+      /** Options */
+      options?: {
+        [key: string]: components["schemas"]["JsonValue"];
+      };
+      /** Server Name */
+      server_name: string;
+      /**
+       * Stagger Minutes
+       * @default 15
+       */
+      stagger_minutes?: number;
+      /** Task */
+      task: string;
+      /**
+       * Time
+       * @default 03:00
+       */
+      time?: string;
+      /**
+       * Timezone
+       * @default UTC
+       */
+      timezone?: string;
+      /** Weekdays */
+      weekdays?: number[];
+    };
     /** SendCommandResponse */
     SendCommandResponse: {
       /** Message */
@@ -5633,6 +5747,17 @@ export interface components {
       memory_tier?: number | null;
       /** Name */
       name?: string | null;
+    };
+    /** SuccessResponse */
+    SuccessResponse: {
+      /** Message */
+      message?: string | null;
+      /**
+       * Status
+       * @default success
+       * @constant
+       */
+      status?: "success";
     };
     /** TaskAcceptedResponse */
     TaskAcceptedResponse: {
@@ -9950,6 +10075,292 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["ShutdownResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  list_schedules: {
+    parameters: {
+      query?: {
+        server_name?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ListSchedulesResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  save_schedule: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        schedule_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ScheduledTask"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SuccessResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  delete_schedule: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        schedule_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SuccessResponse"];
         };
       };
       /** @description Bad Request */

@@ -140,3 +140,60 @@ test("backup settings remain within a narrow mobile viewport", async ({
     page.getByRole("tab", { name: "Advanced", exact: true }),
   ).toHaveAttribute("aria-selected", "true");
 });
+
+test("backup inspection fits a mobile viewport and wraps long names", async ({
+  page,
+  context,
+}) => {
+  await recoveryBackend(context);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await context.route("**/api/server/*/backups", (route) =>
+    route.fulfill({
+      json: {
+        backups: [
+          {
+            backup_id: "sample.bsmbackup",
+            filename: "very-long-".repeat(30) + ".bsmbackup",
+            size: 1024,
+            encrypted: false,
+            verification: { status: "unverified" },
+          },
+        ],
+      },
+    }),
+  );
+  await page.goto("backups");
+  await page.getByRole("button", { name: "Inspect", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Inspect backup" });
+  await expect(dialog).toBeVisible();
+  const bounds = await dialog.boundingBox();
+  expect(bounds.x).toBeGreaterThanOrEqual(0);
+  expect(bounds.y).toBeGreaterThanOrEqual(0);
+  expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
+  expect(bounds.y + bounds.height).toBeLessThanOrEqual(844);
+  expect(
+    await dialog
+      .locator(".dialog-body")
+      .evaluate((body) => body.scrollWidth <= body.clientWidth + 1),
+  ).toBe(true);
+});
+
+test("scheduler is an administrator page with independent verification jobs", async ({
+  page,
+  context,
+}) => {
+  await recoveryBackend(context);
+  await context.route("**/api/scheduler/schedules*", (route) =>
+    route.fulfill({
+      json: { schedules: [], task_types: ["backup", "verify"] },
+    }),
+  );
+  await page.goto("scheduler");
+  await expect(
+    page.getByRole("heading", { name: "Scheduler", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Add schedule" }).click();
+  await page.getByLabel("Task", { exact: true }).selectOption("verify");
+  await expect(page.getByLabel("Enabled", { exact: true })).not.toBeChecked();
+  await expect(page.getByLabel("Recheck after (hours)")).toBeVisible();
+});

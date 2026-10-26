@@ -20,6 +20,7 @@ import Register from "./pages/Register";
 const ApplicationMonitor = lazy(() => import("./pages/ApplicationMonitor"));
 const Monitor = lazy(() => import("./pages/Monitor"));
 const Overview = lazy(() => import("./pages/Overview"));
+const Scheduler = lazy(() => import("./pages/Scheduler"));
 const Backups = lazy(() => import("./pages/Backups"));
 const ServerProperties = lazy(() => import("./pages/ServerProperties"));
 const BSMSettings = lazy(() => import("./pages/BSMSettings"));
@@ -87,6 +88,7 @@ const AppRoutes = () => {
         <Route path="application-monitor" element={<ApplicationMonitor />} />
         <Route path="monitor" element={<Monitor />} />
         <Route path="backups" element={<Backups />} />
+        <Route path="scheduler" element={<Scheduler />} />
         <Route path="server-properties" element={<ServerProperties />} />
         <Route path="server-config" element={<ServerConfig />} />
         <Route path="access-control" element={<AccessControl />} />

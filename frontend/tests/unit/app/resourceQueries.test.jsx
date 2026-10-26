@@ -291,7 +291,7 @@ it.each(["operation_incomplete", "validation_error"])(
   },
 );
 
-it.each(["diagnostics", "diagnosticActivity"])(
+it.each(["diagnostics", "diagnosticActivity", "schedules"])(
   "does not request administrator %s for a regular account",
   async (resource) => {
     auth.user = { username: "viewer", role: "user" };
