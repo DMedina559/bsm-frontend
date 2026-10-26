@@ -664,6 +664,7 @@ test("restores opt-in drafts after reload without persisting secrets or writing 
   await page
     .getByLabel("Application metrics interval", { exact: true })
     .fill("12");
+  await page.getByRole("tab", { name: "Web & access", exact: true }).click();
   await page
     .getByLabel("jwt secret key", { exact: true })
     .fill("changed-secret");
@@ -696,6 +697,7 @@ test("restores opt-in drafts after reload without persisting secrets or writing 
   await expect(
     page.getByRole("button", { name: "Restore edits", exact: true }),
   ).toBeVisible();
+  await page.getByRole("tab", { name: "General", exact: true }).click();
   await expect(
     page.getByLabel("Application metrics interval", { exact: true }),
   ).toHaveValue("3");
@@ -705,6 +707,7 @@ test("restores opt-in drafts after reload without persisting secrets or writing 
   await expect(
     page.getByLabel("Application metrics interval", { exact: true }),
   ).toHaveValue("12");
+  await page.getByRole("tab", { name: "Web & access", exact: true }).click();
   await expect(page.getByLabel("jwt secret key", { exact: true })).toHaveValue(
     "private-secret",
   );

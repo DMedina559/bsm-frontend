@@ -31,6 +31,36 @@
     "bodyTypes": ["application/json"],
     "responseType": "json"
   },
+  "list_backup_keys": {
+    "method": "GET",
+    "path": "/api/backups/keys",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "rotate_backup_key": {
+    "method": "POST",
+    "path": "/api/backups/keys",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "download_backup_emergency_kit": {
+    "method": "GET",
+    "path": "/api/backups/keys/{key_id}/emergency-kit",
+    "parameters": [
+      {
+        "name": "key_id",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
   "list_available_addons": {
     "method": "GET",
     "path": "/api/content/addons",
@@ -635,6 +665,25 @@
     "bodyTypes": ["application/json"],
     "responseType": "json"
   },
+  "cleanup_backup_destination": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/backup-destinations/{destination}/cleanup",
+    "parameters": [
+      {
+        "name": "destination",
+        "in": "path",
+        "required": true
+      },
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
+  },
   "create_backup": {
     "method": "POST",
     "path": "/api/server/{server_name}/backup/action",
@@ -668,6 +717,62 @@
     "bodyTypes": [],
     "responseType": "json"
   },
+  "list_server_snapshots": {
+    "method": "GET",
+    "path": "/api/server/{server_name}/backups",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "create_server_snapshot": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/backups",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
+  },
+  "get_backup_health": {
+    "method": "GET",
+    "path": "/api/server/{server_name}/backups/health",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "import_server_snapshot": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/backups/import",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["multipart/form-data"],
+    "responseType": "json"
+  },
   "prune_backups": {
     "method": "PUT",
     "path": "/api/server/{server_name}/backups/prune",
@@ -680,6 +785,200 @@
     ],
     "bodyRequired": false,
     "bodyTypes": [],
+    "responseType": "json"
+  },
+  "get_restore_recovery": {
+    "method": "GET",
+    "path": "/api/server/{server_name}/backups/recovery",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "recover_server_backup": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/backups/recovery",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "download_backup_recovery_report": {
+    "method": "GET",
+    "path": "/api/server/{server_name}/backups/report",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "download_server_snapshot": {
+    "method": "GET",
+    "path": "/api/server/{server_name}/backups/{backup_id}/download",
+    "parameters": [
+      {
+        "name": "backup_id",
+        "in": "path",
+        "required": true
+      },
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "blob"
+  },
+  "dry_run_server_restore": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/backups/{backup_id}/dry-run",
+    "parameters": [
+      {
+        "name": "backup_id",
+        "in": "path",
+        "required": true
+      },
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
+  },
+  "export_decrypted_snapshot": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/backups/{backup_id}/export",
+    "parameters": [
+      {
+        "name": "backup_id",
+        "in": "path",
+        "required": true
+      },
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "blob"
+  },
+  "inspect_server_snapshot": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/backups/{backup_id}/inspect",
+    "parameters": [
+      {
+        "name": "backup_id",
+        "in": "path",
+        "required": true
+      },
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
+  },
+  "manage_server_snapshot": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/backups/{backup_id}/manage",
+    "parameters": [
+      {
+        "name": "backup_id",
+        "in": "path",
+        "required": true
+      },
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
+  },
+  "plan_snapshot_restore": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/backups/{backup_id}/plan",
+    "parameters": [
+      {
+        "name": "backup_id",
+        "in": "path",
+        "required": true
+      },
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
+  },
+  "prepare_backup_copy": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/backups/{backup_id}/prepare-copy",
+    "parameters": [
+      {
+        "name": "backup_id",
+        "in": "path",
+        "required": true
+      },
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
+  },
+  "restore_server_snapshot": {
+    "method": "POST",
+    "path": "/api/server/{server_name}/backups/{backup_id}/restore",
+    "parameters": [
+      {
+        "name": "backup_id",
+        "in": "path",
+        "required": true
+      },
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
     "responseType": "json"
   },
   "add_server_ban": {
