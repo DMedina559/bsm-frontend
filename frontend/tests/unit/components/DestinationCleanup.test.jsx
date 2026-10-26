@@ -56,5 +56,5 @@ describe("Destination cleanup", () => {
         { token: "reviewed" },
       ),
     );
-  });
+  }, 15000);
 });

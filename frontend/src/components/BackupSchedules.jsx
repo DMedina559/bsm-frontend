@@ -43,7 +43,17 @@ export default function BackupSchedules({
       addToast("Schedule updated.", "success");
       return true;
     } catch (error) {
-      addToast(error.message, "error");
+      const rejected = error.details?.errors;
+      const fields = Array.isArray(rejected)
+        ? rejected
+            .slice(0, 10)
+            .map(
+              (item) =>
+                `${(item.location ?? []).join(".")}: ${item.code ?? "invalid"}`,
+            )
+            .join("; ")
+        : "";
+      addToast(fields ? `${error.message} ${fields}` : error.message, "error");
       return false;
     } finally {
       setBusy(false);

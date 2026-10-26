@@ -55,4 +55,25 @@ describe("Backup schedules", () => {
       ),
     );
   });
+  it("shows the rejected API field when saving fails validation", async () => {
+    api.put.mockRejectedValue({
+      message: "API data failed validation.",
+      details: {
+        errors: [
+          { location: ["body", "time"], code: "string_pattern_mismatch" },
+        ],
+      },
+    });
+    render(<BackupSchedules serverName="alpha" />);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Add schedule" }),
+    );
+    fireEvent.change(screen.getByLabelText("Name"), {
+      target: { value: "backup-test" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save", exact: true }));
+    expect(
+      await screen.findByText(/body.time: string_pattern_mismatch/),
+    ).toBeInTheDocument();
+  });
 });
