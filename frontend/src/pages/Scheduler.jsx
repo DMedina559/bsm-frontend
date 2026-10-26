@@ -29,20 +29,22 @@ export default function Scheduler() {
           <CalendarClock size={24} /> Scheduler
         </h1>
       </div>
-      <p>Manage scheduled backups and verification across your servers.</p>
-      <label>
-        Show server
-        <select
-          className="form-input"
-          value={filter}
-          onChange={(event) => setFilter(event.target.value)}
-        >
-          <option value="">All servers</option>
-          {names.map((name) => (
-            <option key={name}>{name}</option>
-          ))}
-        </select>
-      </label>
+      <div className="scheduler-overview">
+        <p>Back up and verify your servers automatically.</p>
+        <label>
+          Show server
+          <select
+            className="form-input"
+            value={filter}
+            onChange={(event) => setFilter(event.target.value)}
+          >
+            <option value="">All servers</option>
+            {names.map((name) => (
+              <option key={name}>{name}</option>
+            ))}
+          </select>
+        </label>
+      </div>
       <BackupSchedules
         key={`${sessionGeneration}:${filter}`}
         serverName={filter || undefined}

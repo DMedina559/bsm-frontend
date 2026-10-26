@@ -77,103 +77,143 @@ export default function BackupSchedules({
   };
   return (
     <section className="card backup-schedules" aria-label="Schedules">
-      <h2>Schedules</h2>
-      <p>
-        Backup and verification run independently. Automatic verification is off
-        until you configure it. New schedules start with their next occurrence.
-      </p>
-      <p>
-        Your timezone: {browserZone}. Times stay in the selected timezone; BSM
-        converts each occurrence to UTC and follows daylight-saving changes
-        automatically.
-      </p>
-      {query.data?.host_timezone && (
-        <p>
-          BSM host clock: {query.data.host_timezone}. This does not change
-          schedule times.
-        </p>
-      )}
+      <div className="schedule-toolbar">
+        <div>
+          <h2>Schedules</h2>
+          <p className="schedule-muted">
+            Backups and verification run independently.
+          </p>
+        </div>
+        {!editing && (
+          <button
+            className="action-button"
+            disabled={busy}
+            onClick={() => {
+              setScheduleId("");
+              setExisting(false);
+              setConfig(
+                initial(serverName || defaultServer || "", defaultZone),
+              );
+              setEditing(true);
+            }}
+          >
+            Add schedule
+          </button>
+        )}
+      </div>
       {query.data?.timezone_database_available === false && (
-        <p role="alert">
-          The BSM host is missing timezone data. UTC remains available. Install
-          or repair the tzdata package in BSM’s Python environment to use
-          regional timezones.
-        </p>
+        <div className="schedule-warning" role="alert">
+          <strong>Regional timezones unavailable</strong>
+          <span>
+            UTC remains available. Install or repair tzdata in BSM’s Python
+            environment, then restart BSM.
+          </span>
+        </div>
       )}
       <QueryStatus query={query} />
-      {(query.data?.schedules ?? []).map((entry) => (
-        <article key={entry.schedule_id}>
-          <strong>{entry.schedule_id}</strong> · {entry.configuration.task} ·{" "}
-          {entry.configuration.server_name} ·{" "}
-          {entry.configuration.enabled ? "Enabled" : "Paused"}
-          {!entry.available && " · Handler unavailable"}
-          <p>
-            {entry.configuration.time} {entry.configuration.timezone} · Next:{" "}
-            {entry.next_run_at
-              ? new Date(entry.next_run_at).toLocaleString(undefined, {
-                  timeZone: entry.configuration.timezone,
-                  timeZoneName: "short",
-                })
-              : "None"}{" "}
-            · Last: {entry.last_status ?? "Not run"}
+      <div className="schedule-list">
+        {(query.data?.schedules ?? []).map((entry) => (
+          <article key={entry.schedule_id}>
+            <div className="schedule-entry-header">
+              <div>
+                <h3>{entry.schedule_id}</h3>
+                <span className="schedule-muted">
+                  {entry.configuration.server_name} ·{" "}
+                  {entry.configuration.task === "verify"
+                    ? "Verify backups"
+                    : entry.configuration.task}
+                </span>
+              </div>
+              <span
+                className={`schedule-status ${entry.configuration.enabled && entry.available ? "is-enabled" : ""}`}
+              >
+                {!entry.available
+                  ? "Unavailable"
+                  : entry.configuration.enabled
+                    ? "Enabled"
+                    : "Paused"}
+              </span>
+            </div>
+            <dl className="schedule-facts">
+              <div>
+                <dt>Time</dt>
+                <dd>
+                  {entry.configuration.time}{" "}
+                  <span className="schedule-muted">
+                    {entry.configuration.timezone.replaceAll("_", " ")}
+                  </span>
+                </dd>
+              </div>
+              <div>
+                <dt>Next run</dt>
+                <dd>
+                  {entry.next_run_at
+                    ? new Date(entry.next_run_at).toLocaleString(undefined, {
+                        timeZone: entry.configuration.timezone,
+                        timeZoneName: "short",
+                      })
+                    : "None"}
+                </dd>
+              </div>
+              <div>
+                <dt>Last result</dt>
+                <dd>{entry.last_status ?? "Not run"}</dd>
+              </div>
+            </dl>
+            {entry.last_error && <p role="alert">{entry.last_error}</p>}
+            <div className="button-group">
+              <button
+                className="action-button secondary"
+                disabled={busy}
+                onClick={() => {
+                  setScheduleId(entry.schedule_id);
+                  setExisting(true);
+                  setConfig(entry.configuration);
+                  setEditing(true);
+                }}
+              >
+                Edit
+              </button>
+              <button
+                className="action-button secondary"
+                disabled={busy}
+                onClick={async () => {
+                  if (
+                    await confirmAction(`Remove schedule ${entry.schedule_id}?`)
+                  )
+                    await perform("delete_schedule", {
+                      path: { schedule_id: entry.schedule_id },
+                    });
+                }}
+              >
+                Remove
+              </button>
+            </div>
+            <details>
+              <summary>Recent runs</summary>
+              <ul>
+                {(entry.runs ?? []).map((run) => (
+                  <li key={run.run_id}>
+                    {run.started_at} · {run.status}
+                    {run.error && ` · ${run.error}`}
+                    {run.correlation_id && ` · Trace ${run.correlation_id}`}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          </article>
+        ))}
+      </div>
+      {!editing &&
+        !query.isLoading &&
+        !query.error &&
+        !query.data?.schedules?.length && (
+          <p className="schedule-empty">
+            No schedules yet. Add a backup or verification schedule to get
+            started.
           </p>
-          {entry.last_error && <p role="alert">{entry.last_error}</p>}
-          <div className="button-group">
-            <button
-              className="action-button secondary"
-              disabled={busy}
-              onClick={() => {
-                setScheduleId(entry.schedule_id);
-                setExisting(true);
-                setConfig(entry.configuration);
-                setEditing(true);
-              }}
-            >
-              Edit
-            </button>
-            <button
-              className="action-button secondary"
-              disabled={busy}
-              onClick={async () => {
-                if (
-                  await confirmAction(`Remove schedule ${entry.schedule_id}?`)
-                )
-                  await perform("delete_schedule", {
-                    path: { schedule_id: entry.schedule_id },
-                  });
-              }}
-            >
-              Remove
-            </button>
-          </div>
-          <details>
-            <summary>Recent runs</summary>
-            <ul>
-              {(entry.runs ?? []).map((run) => (
-                <li key={run.run_id}>
-                  {run.started_at} · {run.status}
-                  {run.error && ` · ${run.error}`}
-                  {run.correlation_id && ` · Trace ${run.correlation_id}`}
-                </li>
-              ))}
-            </ul>
-          </details>
-        </article>
-      ))}
-      {!editing ? (
-        <button
-          className="action-button"
-          disabled={busy}
-          onClick={() => {
-            setScheduleId("");
-            setExisting(false);
-            setConfig(initial(serverName || defaultServer || "", defaultZone));
-            setEditing(true);
-          }}
-        >
-          Add schedule
-        </button>
-      ) : (
+        )}
+      {editing && (
         <form
           onSubmit={async (event) => {
             event.preventDefault();
@@ -216,7 +256,7 @@ export default function BackupSchedules({
           }}
         >
           <fieldset disabled={busy}>
-            <legend>Schedule</legend>
+            <legend>{existing ? "Edit schedule" : "New schedule"}</legend>
             <div className="settings-grid">
               <label>
                 Name
@@ -351,7 +391,23 @@ export default function BackupSchedules({
                 </label>
               )}
             </div>
-            <fieldset>
+            <p className="schedule-muted">
+              Times follow the selected timezone, including daylight-saving
+              changes. New schedules begin at their next occurrence.
+            </p>
+            <details className="schedule-help">
+              <summary>Clock information</summary>
+              <p>
+                Your timezone: {browserZone}. BSM host clock:{" "}
+                {query.data?.host_timezone ?? "Unknown"}. BSM converts each
+                occurrence to UTC automatically.
+              </p>
+              <p>
+                Automatic verification stays off until you add a verification
+                schedule.
+              </p>
+            </details>
+            <fieldset className="schedule-days">
               <legend>Days</legend>
               {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(
                 (day, index) => (

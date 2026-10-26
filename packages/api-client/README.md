@@ -126,10 +126,9 @@ and prerelease tags.
 
 ## Contract compatibility
 
-`backend-source.json` pins the supported backend commit used by release validation
-and the packaged application's integration smoke test. Update it alongside reviewed
-contract changes. The separate backend-contract workflow also compares against
-backend `dev` to detect upstream drift.
+CI builds and tests against backend `dev`. Generated SDK types remain bundled
+with this package and are checked for reproducibility in the Lint and Types
+workflow; integration tests exercise the current backend independently.
 
 `@bedrock-server-manager/api-client/metadata` exports `contractMetadata` with the
 canonical schema fingerprint, exporter provenance, and operation IDs.

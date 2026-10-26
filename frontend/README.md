@@ -156,10 +156,10 @@ python -m pip install --force-reinstall --no-deps python/dist/*.whl
 npm run test:e2e:backend --workspace=bsm-frontend
 ```
 
-Use the backend commit in `packages/api-client/backend-source.json`. Set
-`BSM_BACKEND_PYTHON` if that installation uses a different Python executable.
-CI runs this smoke check and compares the supported backend's exported contract
-before publishing frontend distributions.
+Use backend `dev` for integration testing. Set `BSM_BACKEND_PYTHON` if that
+installation uses a different Python executable. CI runs the packaged-app check
+against backend `dev` before publishing frontend distributions. Generated API
+consistency, style and types are checked in the separate Lint and Types workflow.
 
 | Test directory            | Contents                                                    |
 | ------------------------- | ----------------------------------------------------------- |

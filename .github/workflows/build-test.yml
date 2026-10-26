@@ -1,40 +1,15 @@
-name: Build Lint Test
+name: Build and Test
 
 on:
   workflow_dispatch:
   workflow_call:
   pull_request:
-    paths:
-      - "python/**"
-      - "frontend/**"
-      - "packages/**"
-      - "scripts/**"
-      - "package*.json"
-      - "*config.js"
-      - "README.md"
-      - "LICENSE"
-      - ".pre-commit-config.yaml"
-      - ".github/workflows/build-test.yml"
-      - ".github/workflows/publish.yml"
+    branches: [dev]
   push:
-    branches: [dev, main, feat/unified-server-backups, feat/event-activity-diagnostics, chore/backup-start-performance]
-    paths:
-      - "README.md"
-      - "LICENSE"
-      - ".github/workflows/publish.yml"
-      - "python/**"
-      - "frontend/**"
-      - "packages/**"
-      - "package.json"
-      - "package-lock.json"
-      - "eslint.config.js"
-      - "prettier.config.js"
-      - ".pre-commit-config.yaml"
-      - "scripts/**"
-      - ".github/workflows/build-test.yml"
+    branches: [dev]
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: build-test-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -42,7 +17,8 @@ permissions:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
@@ -54,7 +30,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: "22"
+          node-version: "24"
           package-manager-cache: false
 
       - name: Resolve frontend release identity
@@ -74,14 +50,10 @@ jobs:
         with:
           python-version: "3.14"
 
-      - name: Resolve supported backend
-        id: backend-source
-        run: node scripts/backend-source.mjs
-
       - uses: actions/checkout@v7
         with:
           repository: DMedina559/bedrock-server-manager
-          ref: ${{ steps.backend-source.outputs.revision }}
+          ref: dev
           path: backend
           persist-credentials: false
 
@@ -94,13 +66,6 @@ jobs:
         run: |
           npm run build
           node scripts/build-python.mjs
-
-      - name: Lint and type checks
-        run: |
-          npm run api:check
-          npm run lint
-          npm run typecheck
-          python -m bedrock_server_manager.web.contract --check packages/api-client/src/generated/openapi.json
 
       - name: Run tests
         run: npm test
@@ -131,7 +96,8 @@ jobs:
           retention-days: 7
 
   python-tests:
-    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
