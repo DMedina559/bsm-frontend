@@ -29,9 +29,15 @@ describe("Backup schedules", () => {
     fireEvent.change(screen.getByLabelText("Name"), {
       target: { value: "weekly" },
     });
-    fireEvent.change(screen.getByLabelText("Task"), {
-      target: { value: "verify" },
-    });
+    fireEvent.change(
+      screen.getByRole("combobox", { name: "Task", exact: true }),
+      {
+        target: { value: "verify" },
+      },
+    );
+    expect(
+      screen.getByRole("combobox", { name: "Server", exact: true }),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText("Enabled")).not.toBeChecked();
     fireEvent.click(screen.getByRole("button", { name: "Save", exact: true }));
     await waitFor(() =>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useId, useState } from "react";
 import { callOperation } from "../api/operations";
 import { useResourceQuery } from "../app/resourceQueries";
 import QueryStatus from "./QueryStatus";
@@ -21,6 +21,7 @@ export default function BackupSchedules({
   defaultServer,
   serverNames = [],
 }) {
+  const fieldId = useId();
   const query = useResourceQuery("schedules", serverName, {
     refetchInterval: 30000,
   });
@@ -153,9 +154,10 @@ export default function BackupSchedules({
                   onChange={(event) => setScheduleId(event.target.value)}
                 />
               </label>
-              <label>
-                Server
+              <div>
+                <label htmlFor={`${fieldId}-server`}>Server</label>
                 <select
+                  id={`${fieldId}-server`}
                   className="form-input"
                   required
                   value={config.server_name}
@@ -175,10 +177,11 @@ export default function BackupSchedules({
                     <option key={name}>{name}</option>
                   ))}
                 </select>
-              </label>
-              <label>
-                Task
+              </div>
+              <div>
+                <label htmlFor={`${fieldId}-task`}>Task</label>
                 <select
+                  id={`${fieldId}-task`}
                   className="form-input"
                   value={config.task}
                   onChange={(event) =>
@@ -206,7 +209,7 @@ export default function BackupSchedules({
                     </option>
                   ))}
                 </select>
-              </label>
+              </div>
               <label>
                 Time
                 <input
