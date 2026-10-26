@@ -130,9 +130,31 @@ export default function BackupSchedules({
         <form
           onSubmit={async (event) => {
             event.preventDefault();
+            const identifier = existing
+              ? scheduleId
+              : scheduleId.trim().replace(/\s+/g, "-");
+            if (!/^[a-zA-Z0-9_.-]{1,100}$/.test(identifier)) {
+              addToast(
+                "Use letters, numbers, dots, underscores, or hyphens for the schedule name.",
+                "error",
+              );
+              return;
+            }
+            if (
+              !existing &&
+              (query.data?.schedules ?? []).some(
+                (entry) => entry.schedule_id === identifier,
+              )
+            ) {
+              addToast(
+                "A schedule with this ID already exists. Edit it or choose another name.",
+                "error",
+              );
+              return;
+            }
             if (
               await perform("save_schedule", {
-                path: { schedule_id: scheduleId },
+                path: { schedule_id: identifier },
                 body: config,
               })
             )
@@ -149,7 +171,8 @@ export default function BackupSchedules({
                   value={scheduleId}
                   readOnly={existing}
                   required
-                  pattern="[a-zA-Z0-9_.-]{1,100}"
+                  pattern={"[a-zA-Z0-9_.\\- ]{1,100}"}
+                  title="Letters, numbers, dots, underscores, hyphens, and spaces. Spaces become hyphens in the schedule ID."
                   maxLength={100}
                   onChange={(event) => setScheduleId(event.target.value)}
                 />

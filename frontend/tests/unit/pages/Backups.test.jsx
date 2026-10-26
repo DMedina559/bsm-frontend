@@ -245,5 +245,8 @@ describe("Backups", () => {
     expect(dialog).toHaveClass("backup-inspector");
     expect(dialog.querySelector(".dialog-body")).toBeInTheDocument();
     expect(screen.getByText("Capture timings")).toBeInTheDocument();
+    for (const input of document.querySelectorAll('input[type="password"]')) {
+      expect(input.closest("form")).not.toBeNull();
+    }
   });
 });

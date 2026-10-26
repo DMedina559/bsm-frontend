@@ -196,4 +196,25 @@ test("scheduler is an administrator page with independent verification jobs", as
   await page.getByLabel("Task", { exact: true }).selectOption("verify");
   await expect(page.getByLabel("Enabled", { exact: true })).not.toBeChecked();
   await expect(page.getByLabel("Recheck after (hours)")).toBeVisible();
+  const name = page.getByLabel("Name", { exact: true });
+  await name.fill("backup schedule test");
+  expect(await name.evaluate((input) => input.checkValidity())).toBe(true);
+  await page.getByLabel("Server", { exact: true }).selectOption({ index: 1 });
+  await context.route(
+    "**/api/scheduler/schedules/backup-schedule-test",
+    (route) => route.fulfill({ json: { status: "success", message: "Saved" } }),
+  );
+  const saved = page.waitForRequest(
+    (request) =>
+      request.method() === "PUT" &&
+      request.url().endsWith("/api/scheduler/schedules/backup-schedule-test"),
+  );
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  expect((await saved).postDataJSON()).toMatchObject({
+    task: "verify",
+    enabled: false,
+  });
+  await expect(
+    page.getByRole("button", { name: "Add schedule" }),
+  ).toBeVisible();
 });

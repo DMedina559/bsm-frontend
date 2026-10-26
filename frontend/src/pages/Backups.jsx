@@ -550,18 +550,21 @@ function ServerBackups() {
         </button>
         <details>
           <summary>Import a backup</summary>
-          <label>
-            Recovery key (if encrypted){" "}
-            <input
-              className="form-input"
-              ref={input}
-              type="password"
-              autoComplete="off"
-              onChange={(e) => {
-                secret.current = e.target.value;
-              }}
-            />
-          </label>
+          <form onSubmit={(event) => event.preventDefault()}>
+            <label>
+              Recovery key (if encrypted){" "}
+              <input
+                className="form-input"
+                ref={input}
+                type="password"
+                name="recovery_key"
+                autoComplete="off"
+                onChange={(e) => {
+                  secret.current = e.target.value;
+                }}
+              />
+            </label>
+          </form>
           <label>
             Backup file{" "}
             <input
@@ -897,17 +900,20 @@ function ServerBackups() {
                 restore.
               </p>
               {selected.encrypted && (
-                <label>
-                  Recovery key (leave blank to use the stored key)
-                  <input
-                    className="form-input"
-                    type="password"
-                    autoComplete="off"
-                    onChange={(e) => {
-                      secret.current = e.target.value;
-                    }}
-                  />
-                </label>
+                <form onSubmit={(event) => event.preventDefault()}>
+                  <label>
+                    Recovery key (leave blank to use the stored key)
+                    <input
+                      className="form-input"
+                      type="password"
+                      name="recovery_key"
+                      autoComplete="off"
+                      onChange={(e) => {
+                        secret.current = e.target.value;
+                      }}
+                    />
+                  </label>
+                </form>
               )}
               <button
                 className="action-button"
@@ -1173,17 +1179,20 @@ function ServerBackups() {
           )}
           <details>
             <summary>Recovery key and destinations</summary>
-            <label>
-              Emergency-kit recovery key
-              <input
-                className="form-input"
-                type="password"
-                autoComplete="off"
-                onChange={(event) => {
-                  secret.current = event.target.value;
-                }}
-              />
-            </label>
+            <form onSubmit={(event) => event.preventDefault()}>
+              <label>
+                Emergency-kit recovery key
+                <input
+                  className="form-input"
+                  type="password"
+                  name="recovery_key"
+                  autoComplete="off"
+                  onChange={(event) => {
+                    secret.current = event.target.value;
+                  }}
+                />
+              </label>
+            </form>
             <button
               className="action-button secondary"
               disabled={busy || !selected.encrypted}

@@ -26,8 +26,12 @@ describe("Backup schedules", () => {
     fireEvent.click(
       await screen.findByRole("button", { name: "Add schedule" }),
     );
+    const name = screen.getByLabelText("Name");
+    const pattern = new RegExp(`^(?:${name.getAttribute("pattern")})$`, "v");
+    expect(pattern.test("backup schedule test")).toBe(true);
+    expect(pattern.test("backup/name")).toBe(false);
     fireEvent.change(screen.getByLabelText("Name"), {
-      target: { value: "weekly" },
+      target: { value: "backup schedule test" },
     });
     fireEvent.change(
       screen.getByRole("combobox", { name: "Task", exact: true }),
@@ -42,7 +46,7 @@ describe("Backup schedules", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save", exact: true }));
     await waitFor(() =>
       expect(api.put).toHaveBeenCalledWith(
-        "/api/scheduler/schedules/weekly",
+        "/api/scheduler/schedules/backup-schedule-test",
         expect.objectContaining({
           task: "verify",
           enabled: false,
