@@ -85,6 +85,70 @@
     "bodyTypes": [],
     "responseType": "json"
   },
+  "get_diagnostic_activity": {
+    "method": "GET",
+    "path": "/api/diagnostics/activity",
+    "parameters": [
+      {
+        "name": "operation_id",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "sequence_id",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "operation_name",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "server_name",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "source",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "phase",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "name",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "owner",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "correlation_id",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "status",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "limit",
+        "in": "query",
+        "required": false
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
   "compare_diagnostic_snapshots": {
     "method": "POST",
     "path": "/api/diagnostics/compare",
@@ -235,6 +299,36 @@
     "method": "GET",
     "path": "/api/events/activity",
     "parameters": [
+      {
+        "name": "operation_id",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "sequence_id",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "operation_name",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "server_name",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "source",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "phase",
+        "in": "query",
+        "required": false
+      },
       {
         "name": "name",
         "in": "query",

@@ -291,15 +291,17 @@ it.each(["operation_incomplete", "validation_error"])(
   },
 );
 
-it("does not request administrator diagnostics for a regular account", async () => {
-  auth.user = { username: "viewer", role: "user" };
-  renderHook(
-    () => useResourceQuery("diagnostics", undefined, { enabled: true }),
-    { wrapper },
-  );
-  await act(async () => {});
-  expect(get).not.toHaveBeenCalled();
-});
+it.each(["diagnostics", "diagnosticActivity"])(
+  "does not request administrator %s for a regular account",
+  async (resource) => {
+    auth.user = { username: "viewer", role: "user" };
+    renderHook(() => useResourceQuery(resource, undefined, { enabled: true }), {
+      wrapper,
+    });
+    await act(async () => {});
+    expect(get).not.toHaveBeenCalled();
+  },
+);
 
 it("rejects offline writes immediately and never replays them when connectivity returns", async () => {
   auth.user = { username: "admin" };

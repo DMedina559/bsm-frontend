@@ -1,5 +1,19 @@
 import { callOperation } from "../../src/api/operations";
 async function contracts() {
+  const globalActivity = await callOperation("get_diagnostic_activity", {
+    query: {
+      server_name: "example",
+      sequence_id: "sequence",
+      operation_id: "operation",
+      limit: 5,
+    },
+  });
+  globalActivity.operations?.recent?.forEach((operation) =>
+    operation.parent_operation_id?.toUpperCase(),
+  );
+  globalActivity.subscriptions?.items?.forEach((listener) =>
+    listener.listener_id.toUpperCase(),
+  );
   const diagnostic = await callOperation("get_application_diagnostics");
   diagnostic.summary.status.toUpperCase();
   await callOperation("get_diagnostic_history", {

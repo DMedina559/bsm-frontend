@@ -28,6 +28,23 @@ vi.mock("../../../../src/api/operations", () => ({
       if (fixtures.failure) throw new Error("Backend unreachable");
       return snapshot();
     }
+    if (id === "get_diagnostic_activity")
+      return {
+        scope: "application",
+        events: {
+          active: [],
+          recent: [
+            {
+              event_id: "global",
+              name: "sample",
+              status: "completed",
+              correlation_id: "global-trace",
+            },
+          ],
+        },
+        operations: { active: [], recent: [] },
+        subscriptions: { total: 0, items: [] },
+      };
     if (id === "get_diagnostic_runs")
       return { available: true, runs: [], truncated: false };
     if (id === "get_diagnostic_history")
@@ -218,4 +235,32 @@ it("drops an in-flight report after the session changes", async () => {
   await act(async () => resolve({ report_id: "old", snapshot: snapshot() }));
   expect(click).not.toHaveBeenCalled();
   click.mockRestore();
+});
+
+it("loads global activity only when visited and navigates to its trace", async () => {
+  mount();
+  await open();
+  expect(fixtures.calls.some(([id]) => id === "get_diagnostic_activity")).toBe(
+    false,
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Activity", exact: true }),
+  );
+  await screen.findByText(/sample · Application · completed/);
+  expect(
+    fixtures.calls.find(([id]) => id === "get_diagnostic_activity")[1].query,
+  ).toEqual({ limit: 100 });
+  fireEvent.click(screen.getAllByRole("button", { name: "Inspect trace" })[0]);
+  await waitFor(() =>
+    expect(
+      fixtures.calls.some(
+        ([id, options]) =>
+          id === "get_diagnostic_trace" &&
+          options.path.correlation_id === "global-trace",
+      ),
+    ).toBe(true),
+  );
+  expect(
+    screen.getByRole("heading", { name: "Correlated trace" }),
+  ).toHaveFocus();
 });

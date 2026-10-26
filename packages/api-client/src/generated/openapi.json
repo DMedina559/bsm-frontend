@@ -1683,6 +1683,63 @@
         "title": "DestinationCleanupPayload",
         "type": "object"
       },
+      "DiagnosticActivity": {
+        "additionalProperties": false,
+        "description": "Global current-instance metadata; no correlation filter is required.",
+        "properties": {
+          "events": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EventDiagnostics"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/DiagnosticIssue"
+            },
+            "maxItems": 3,
+            "title": "Issues",
+            "type": "array"
+          },
+          "operations": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OperationActivity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scope": {
+            "const": "application",
+            "default": "application",
+            "title": "Scope",
+            "type": "string"
+          },
+          "subscriptions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EventSubscriptions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "truncated": {
+            "default": false,
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "title": "DiagnosticActivity",
+        "type": "object"
+      },
       "DiagnosticChange": {
         "additionalProperties": false,
         "properties": {
@@ -2542,9 +2599,24 @@
             "items": {
               "$ref": "#/components/schemas/DiagnosticIssue"
             },
-            "maxItems": 3,
+            "maxItems": 4,
             "title": "Issues",
             "type": "array"
+          },
+          "operations": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OperationActivity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "operations_available": {
+            "default": false,
+            "title": "Operations Available",
+            "type": "boolean"
           },
           "tasks": {
             "items": {
@@ -2802,6 +2874,79 @@
         "title": "EventDiagnostics",
         "type": "object"
       },
+      "EventFilter": {
+        "additionalProperties": false,
+        "properties": {
+          "correlation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correlation Id"
+          },
+          "operation_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operation Name"
+          },
+          "plugin_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plugin Name"
+          },
+          "sequence_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sequence Id"
+          },
+          "server_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Server Name"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          }
+        },
+        "title": "EventFilter",
+        "type": "object"
+      },
       "EventOptions": {
         "additionalProperties": false,
         "properties": {
@@ -2927,6 +3072,28 @@
             "title": "Name",
             "type": "string"
           },
+          "operation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operation Id"
+          },
+          "operation_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operation Name"
+          },
           "parent_event_id": {
             "anyOf": [
               {
@@ -2937,6 +3104,12 @@
               }
             ],
             "title": "Parent Event Id"
+          },
+          "phase": {
+            "default": "custom",
+            "enum": ["before", "after", "custom", "lifecycle"],
+            "title": "Phase",
+            "type": "string"
           },
           "rejection_reason": {
             "anyOf": [
@@ -2949,6 +3122,28 @@
               }
             ],
             "title": "Rejection Reason"
+          },
+          "sequence_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sequence Id"
+          },
+          "server_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Server Name"
           },
           "source": {
             "title": "Source",
@@ -2981,6 +3176,153 @@
         "title": "EventRecord",
         "type": "object"
       },
+      "EventSubscriptionInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "after": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "After",
+            "type": "array"
+          },
+          "before": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Before",
+            "type": "array"
+          },
+          "calls": {
+            "default": 0,
+            "title": "Calls",
+            "type": "integer"
+          },
+          "failures": {
+            "default": 0,
+            "title": "Failures",
+            "type": "integer"
+          },
+          "filters": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EventFilter"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kind": {
+            "enum": ["legacy", "hook", "observer"],
+            "title": "Kind",
+            "type": "string"
+          },
+          "last_duration_ms": {
+            "default": 0,
+            "title": "Last Duration Ms",
+            "type": "number"
+          },
+          "last_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Status"
+          },
+          "listener_id": {
+            "title": "Listener Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "once": {
+            "title": "Once",
+            "type": "boolean"
+          },
+          "owner": {
+            "title": "Owner",
+            "type": "string"
+          },
+          "priority": {
+            "title": "Priority",
+            "type": "integer"
+          },
+          "subscription_id": {
+            "title": "Subscription Id",
+            "type": "string"
+          },
+          "timeouts": {
+            "default": 0,
+            "title": "Timeouts",
+            "type": "integer"
+          },
+          "unresolved_after": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Unresolved After",
+            "type": "array"
+          },
+          "unresolved_before": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Unresolved Before",
+            "type": "array"
+          }
+        },
+        "required": [
+          "subscription_id",
+          "listener_id",
+          "name",
+          "owner",
+          "kind",
+          "priority",
+          "once",
+          "active"
+        ],
+        "title": "EventSubscriptionInfo",
+        "type": "object"
+      },
+      "EventSubscriptions": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/EventSubscriptionInfo"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "default": 0,
+            "title": "Total",
+            "type": "integer"
+          },
+          "truncated": {
+            "default": false,
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "title": "EventSubscriptions",
+        "type": "object"
+      },
       "EventsDiagnostics": {
         "additionalProperties": false,
         "properties": {
@@ -2995,6 +3337,19 @@
             "default": "events",
             "title": "Kind",
             "type": "string"
+          },
+          "operations": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OperationActivity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "subscriptions": {
+            "$ref": "#/components/schemas/EventSubscriptions"
           },
           "truncated": {
             "default": false,
@@ -3857,6 +4212,21 @@
             "title": "Attempts",
             "type": "integer"
           },
+          "event_loop_lag_breaches": {
+            "default": 0,
+            "title": "Event Loop Lag Breaches",
+            "type": "integer"
+          },
+          "event_loop_lag_ms": {
+            "default": 0,
+            "title": "Event Loop Lag Ms",
+            "type": "number"
+          },
+          "event_loop_lag_threshold_ms": {
+            "default": 100,
+            "title": "Event Loop Lag Threshold Ms",
+            "type": "number"
+          },
           "failures": {
             "default": 0,
             "title": "Failures",
@@ -3916,6 +4286,11 @@
             "default": 0,
             "title": "Missed Intervals",
             "type": "integer"
+          },
+          "recent_max_event_loop_lag_ms": {
+            "default": 0,
+            "title": "Recent Max Event Loop Lag Ms",
+            "type": "number"
           },
           "sample_age_seconds": {
             "anyOf": [
@@ -4155,6 +4530,177 @@
           "loop_lag_ms"
         ],
         "title": "MetricsSample",
+        "type": "object"
+      },
+      "OperationActivity": {
+        "additionalProperties": false,
+        "description": "Bounded, metadata-only global activity; recent results are not durable.",
+        "properties": {
+          "active": {
+            "items": {
+              "$ref": "#/components/schemas/OperationSnapshot"
+            },
+            "title": "Active",
+            "type": "array"
+          },
+          "active_operations": {
+            "default": 0,
+            "title": "Active Operations",
+            "type": "integer"
+          },
+          "active_sequences": {
+            "default": 0,
+            "title": "Active Sequences",
+            "type": "integer"
+          },
+          "active_truncated": {
+            "default": false,
+            "title": "Active Truncated",
+            "type": "boolean"
+          },
+          "completed": {
+            "default": 0,
+            "title": "Completed",
+            "type": "integer"
+          },
+          "history_limit": {
+            "default": 0,
+            "title": "History Limit",
+            "type": "integer"
+          },
+          "recent": {
+            "items": {
+              "$ref": "#/components/schemas/OperationSnapshot"
+            },
+            "title": "Recent",
+            "type": "array"
+          },
+          "recent_truncated": {
+            "default": false,
+            "title": "Recent Truncated",
+            "type": "boolean"
+          }
+        },
+        "title": "OperationActivity",
+        "type": "object"
+      },
+      "OperationSnapshot": {
+        "additionalProperties": false,
+        "description": "Immutable coordination metadata; response bodies and secrets are excluded.",
+        "properties": {
+          "correlation_id": {
+            "title": "Correlation Id",
+            "type": "string"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "operation_id": {
+            "title": "Operation Id",
+            "type": "string"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome"
+          },
+          "owner": {
+            "default": "application",
+            "title": "Owner",
+            "type": "string"
+          },
+          "parent_operation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Operation Id"
+          },
+          "purpose": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purpose"
+          },
+          "root_operation_id": {
+            "title": "Root Operation Id",
+            "type": "string"
+          },
+          "scope": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Scope",
+            "type": "array"
+          },
+          "sequence_id": {
+            "title": "Sequence Id",
+            "type": "string"
+          },
+          "server_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Server Name"
+          },
+          "source": {
+            "default": "application",
+            "title": "Source",
+            "type": "string"
+          },
+          "started_at": {
+            "title": "Started At",
+            "type": "number"
+          },
+          "status": {
+            "default": "running",
+            "enum": ["running", "finished", "failed", "cancelled"],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operation_id",
+          "sequence_id",
+          "root_operation_id",
+          "correlation_id",
+          "name",
+          "started_at"
+        ],
+        "title": "OperationSnapshot",
         "type": "object"
       },
       "PermissionsSetPayload": {
@@ -5794,11 +6340,34 @@
       "RuntimeDiagnostics": {
         "additionalProperties": false,
         "properties": {
+          "draining_workers": {
+            "default": 0,
+            "title": "Draining Workers",
+            "type": "integer"
+          },
           "kind": {
             "const": "runtime",
             "default": "runtime",
             "title": "Kind",
             "type": "string"
+          },
+          "oldest_draining_worker_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oldest Draining Worker Seconds"
+          },
+          "pending_lifecycle_stages": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Pending Lifecycle Stages",
+            "type": "array"
           },
           "phase": {
             "title": "Phase",
@@ -5812,10 +6381,20 @@
             "title": "Python Version",
             "type": "string"
           },
+          "queued_workers": {
+            "default": 0,
+            "title": "Queued Workers",
+            "type": "integer"
+          },
           "ready": {
             "default": false,
             "title": "Ready",
             "type": "boolean"
+          },
+          "running_workers": {
+            "default": 0,
+            "title": "Running Workers",
+            "type": "integer"
           },
           "shutdown_reason": {
             "anyOf": [
@@ -7286,6 +7865,17 @@
             "default": 100,
             "title": "Capacity",
             "type": "integer"
+          },
+          "concurrency_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Concurrency Limit"
           },
           "counts_by_status": {
             "additionalProperties": {
@@ -8827,6 +9417,296 @@
         "tags": ["Diagnostics"]
       }
     },
+    "/api/diagnostics/activity": {
+      "get": {
+        "description": "Read global activity, optionally narrowing by event, server, sequence, or correlation.",
+        "operationId": "get_diagnostic_activity",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "operation_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Operation Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sequence_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sequence Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "operation_name",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Operation Name"
+            }
+          },
+          {
+            "in": "query",
+            "name": "server_name",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Server Name"
+            }
+          },
+          {
+            "in": "query",
+            "name": "source",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source"
+            }
+          },
+          {
+            "in": "query",
+            "name": "phase",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": ["before", "after", "custom", "lifecycle"],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Phase"
+            }
+          },
+          {
+            "in": "query",
+            "name": "name",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Name"
+            }
+          },
+          {
+            "in": "query",
+            "name": "owner",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Owner"
+            }
+          },
+          {
+            "in": "query",
+            "name": "correlation_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Correlation Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "dispatching",
+                    "completed",
+                    "partial",
+                    "cancelled",
+                    "suppressed"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiagnosticActivity"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Get Diagnostic Activity",
+        "tags": ["Diagnostics"]
+      }
+    },
     "/api/diagnostics/compare": {
       "post": {
         "description": "Compare supplied metadata; administrator authentication is required.",
@@ -10032,6 +10912,103 @@
       "get": {
         "operationId": "get_event_activity",
         "parameters": [
+          {
+            "in": "query",
+            "name": "operation_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Operation Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sequence_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sequence Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "operation_name",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Operation Name"
+            }
+          },
+          {
+            "in": "query",
+            "name": "server_name",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Server Name"
+            }
+          },
+          {
+            "in": "query",
+            "name": "source",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source"
+            }
+          },
+          {
+            "in": "query",
+            "name": "phase",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": ["before", "after", "custom", "lifecycle"],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Phase"
+            }
+          },
           {
             "in": "query",
             "name": "name",

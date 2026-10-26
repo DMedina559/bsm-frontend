@@ -1,5 +1,5 @@
 {
-  "schemaHash": "1b970b59936b2131191e8acb68561fcbdedfab75256b93bb5fc15917e8c1a29f",
+  "schemaHash": "0832262f432014039eada6e3a6f66f02841b486271cd9eec8efac19d0662e59f",
   "openapiVersion": "3.1.0",
   "title": "Bedrock Server Manager",
   "source": "DMedina559/bedrock-server-manager: bedrock_server_manager.web.contract",
@@ -32,6 +32,7 @@
     "get_application_health",
     "get_application_metrics",
     "get_backup_health",
+    "get_diagnostic_activity",
     "get_diagnostic_history",
     "get_diagnostic_report",
     "get_diagnostic_runs",
