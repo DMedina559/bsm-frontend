@@ -12,8 +12,9 @@ export default function RuntimeRecordingIndicator() {
       className="runtime-recording-indicator"
       to="/application-monitor?view=diagnostics&category=frontend"
       title="Frontend diagnostics recording is enabled"
+      aria-label="Frontend diagnostics recording is enabled"
     >
-      Recording diagnostics
+      <span className="runtime-recording-label">Recording diagnostics</span>
     </Link>
   );
 }

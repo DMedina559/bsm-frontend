@@ -754,6 +754,14 @@ test("administrators can inspect bounded frontend rejection diagnostics without 
     page.getByLabel("Record frontend observations", { exact: true }),
   ).toBeChecked();
   await page.setViewportSize({ width: 390, height: 844 });
+  const recordingControl = page.getByRole("link", {
+    name: "Frontend diagnostics recording is enabled",
+    exact: true,
+  });
+  await expect(recordingControl).toBeVisible();
+  await expect
+    .poll(async () => (await recordingControl.boundingBox())?.width)
+    .toBe(44);
   await expect
     .poll(() =>
       page.evaluate(

@@ -177,3 +177,18 @@ pre.monitor-output {
   border-radius: 50%;
   background: currentColor;
 }
+
+/* Keep the persistent recording control inside the mobile workspace toolbar. */
+@media (max-width: 768px) {
+  .workspace-topbar .runtime-recording-indicator {
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .workspace-topbar .runtime-recording-label {
+    display: none;
+  }
+}
