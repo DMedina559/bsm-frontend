@@ -18,9 +18,12 @@ export default function BackupContents({
     );
   }, [mode, components]);
   return (
-    <fieldset disabled={disabled} className="backup-policy-section">
+    <fieldset
+      disabled={disabled}
+      className="backup-policy-section backup-contents"
+    >
       <legend>Backup contents</legend>
-      <label>
+      <label className="backup-contents-mode">
         Mode
         <select
           className="form-input"
@@ -36,9 +39,9 @@ export default function BackupContents({
         </select>
       </label>
       {mode === "selected" && (
-        <div className="settings-grid">
+        <div className="backup-component-options">
           {Object.entries(backupComponents).map(([key, label], index) => (
-            <label key={key}>
+            <label className="backup-component-choice" key={key}>
               <input
                 ref={index === 0 ? firstChoice : undefined}
                 type="checkbox"
@@ -51,8 +54,8 @@ export default function BackupContents({
                       : components.filter((c) => c !== key),
                   )
                 }
-              />{" "}
-              {label}
+              />
+              <span>{label}</span>
             </label>
           ))}
         </div>
