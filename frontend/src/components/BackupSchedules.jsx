@@ -393,7 +393,6 @@ export default function BackupSchedules({
                       ...config.options,
                       mode: mode === "default" ? null : mode,
                       components: mode === "selected" ? components : null,
-                      include_packs: undefined,
                     })
                   }
                 />

@@ -4554,6 +4554,16 @@ export interface components {
       /** Enabled */
       enabled: boolean;
       /**
+       * Has Global Settings
+       * @default false
+       */
+      has_global_settings?: boolean;
+      /**
+       * Has Server Settings
+       * @default false
+       */
+      has_server_settings?: boolean;
+      /**
        * Has Settings
        * @default false
        */
@@ -4590,6 +4600,14 @@ export interface components {
     };
     /** PluginSettingsPayload */
     PluginSettingsPayload: {
+      /**
+       * Scope
+       * @default plugin
+       * @enum {string}
+       */
+      scope?: "plugin" | "global" | "server";
+      /** Server Name */
+      server_name?: string | null;
       /** Settings */
       settings: {
         [key: string]: components["schemas"]["JsonValue"];
@@ -5581,8 +5599,6 @@ export interface components {
         | null;
       /** Encrypted */
       encrypted?: boolean | null;
-      /** Include Packs */
-      include_packs?: boolean | null;
       /** Mode */
       mode?: ("world" | "selected" | "full") | null;
     };
@@ -9545,7 +9561,10 @@ export interface operations {
   };
   get_plugin_settings: {
     parameters: {
-      query?: never;
+      query?: {
+        scope?: "plugin" | "global" | "server";
+        server_name?: string | null;
+      };
       header?: never;
       path: {
         plugin_name: string;

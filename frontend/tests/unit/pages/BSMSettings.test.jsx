@@ -24,7 +24,6 @@ describe("BSMSettings", () => {
             },
             backups: {
               encryption: false,
-              include_server_packs: true,
               safety_window_hours: 168,
               keep_daily: 0,
               destinations: {},
@@ -135,7 +134,6 @@ describe("BSMSettings", () => {
               settings: {
                 backups: {
                   encryption: false,
-                  include_server_packs: true,
                   safety_window_hours: 168,
                   destinations: {
                     nas: { path: "/mnt/backups", enabled: true },
