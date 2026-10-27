@@ -13,6 +13,11 @@ updates:
     target-branch: "dev"
     schedule:
       interval: "daily"
+    groups:
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
     commit-message:
       prefix: "dep"
 
