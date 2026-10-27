@@ -222,8 +222,8 @@ function ServerBackups() {
       path,
       body: {
         encrypted,
-        mode: backupMode === "default" ? null : backupMode,
-        components: backupMode === "selected" ? backupComponents : null,
+        ...(backupMode === "default" ? {} : { mode: backupMode }),
+        ...(backupMode === "selected" ? { components: backupComponents } : {}),
       },
     });
     if (result) {

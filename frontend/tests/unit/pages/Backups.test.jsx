@@ -186,8 +186,6 @@ describe("Backups", () => {
     await waitFor(() =>
       expect(api.post).toHaveBeenCalledWith("/api/server/TestServer/backups", {
         encrypted: true,
-        mode: null,
-        components: null,
       }),
     );
   });
@@ -202,7 +200,6 @@ describe("Backups", () => {
       expect(api.post).toHaveBeenCalledWith("/api/server/TestServer/backups", {
         encrypted: null,
         mode: "world",
-        components: null,
       }),
     );
   });
