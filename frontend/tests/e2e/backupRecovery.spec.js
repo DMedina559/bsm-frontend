@@ -164,11 +164,17 @@ test("backup inspection fits a mobile viewport and wraps long names", async ({
   );
   await page.goto("backups");
   const more = page.getByRole("button", { name: /^More options for/ });
+  await more.scrollIntoViewIfNeeded();
+  const scrollBeforeOpen = await page.evaluate(() => window.scrollY);
   await more.click();
   const menu = page.getByRole("menu");
   await expect(
     menu.getByRole("menuitem", { name: "Pin", exact: true }),
   ).toBeVisible();
+  // A delayed scroll notification with an unchanged anchor must not dismiss it.
+  await page.evaluate(() => window.dispatchEvent(new Event("scroll")));
+  await expect(menu).toBeVisible();
+  expect(await page.evaluate(() => window.scrollY)).toBe(scrollBeforeOpen);
   const menuBounds = await menu.boundingBox();
   expect(menuBounds.x).toBeGreaterThanOrEqual(0);
   expect(menuBounds.x + menuBounds.width).toBeLessThanOrEqual(390);
