@@ -9,15 +9,17 @@ export default function ActionMenu({ label, items, disabled = false }) {
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const trigger = useRef(null);
   const panel = useRef(null);
+  const anchor = useRef(null);
   const id = useId();
   const close = (focus = false) => {
     setOpen(false);
-    if (focus) trigger.current?.focus();
+    if (focus) trigger.current?.focus({ preventScroll: true });
   };
   useLayoutEffect(() => {
     if (!open) return;
     const rect = trigger.current.getBoundingClientRect();
     const menu = panel.current.getBoundingClientRect();
+    anchor.current = rect;
     setPosition({
       left: Math.max(
         8,
@@ -28,7 +30,9 @@ export default function ActionMenu({ label, items, disabled = false }) {
           ? rect.bottom + 4
           : Math.max(8, rect.top - menu.height - 4),
     });
-    panel.current.querySelector("button:not(:disabled)")?.focus();
+    panel.current
+      .querySelector("button:not(:disabled)")
+      ?.focus({ preventScroll: true });
   }, [open]);
   useEffect(() => {
     if (!open) return;
@@ -46,7 +50,20 @@ export default function ActionMenu({ label, items, disabled = false }) {
       }
     };
     const dismiss = (event) => {
-      if (!panel.current?.contains(event.target)) setOpen(false);
+      if (event.target instanceof Node && panel.current?.contains(event.target))
+        return;
+      const rect = trigger.current?.getBoundingClientRect();
+      // A queued scroll from bringing the trigger into view must not close a
+      // newly opened menu. Dismiss only when its anchor actually moves.
+      if (
+        event.type === "resize" ||
+        !rect ||
+        !anchor.current ||
+        ["top", "left", "right", "bottom"].some(
+          (edge) => Math.abs(rect[edge] - anchor.current[edge]) > 0.5,
+        )
+      )
+        setOpen(false);
     };
     document.addEventListener("pointerdown", outside);
     document.addEventListener("keydown", escape);
