@@ -1,3 +1,4 @@
+import ScopedPluginSettings from "../features/plugins/ScopedPluginSettings";
 import DraftConflictNotice from "../components/DraftConflictNotice";
 import { callOperation } from "../api/operations";
 import { queryKeys } from "../app/queryKeys";
@@ -441,6 +442,7 @@ const ServerConfig = () => {
               </div>
             </fieldset>
           </form>
+          <ScopedPluginSettings scope="server" serverName={selectedServer} />
         </div>
       )}
     </div>
