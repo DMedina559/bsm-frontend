@@ -9,6 +9,11 @@ import { useToast } from "../contexts/ToastContext";
 import { resolveAppAssetUrl } from "../utils/basePath";
 import {
   LayoutDashboard,
+  Activity,
+  Monitor,
+  SlidersHorizontal,
+  Wrench,
+  Puzzle,
   CalendarClock,
   Users,
   Settings,
@@ -73,8 +78,8 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
         },
         {
           path: "/application-monitor",
-          label: "Application monitor",
-          icon: LayoutDashboard,
+          label: "Application Monitor",
+          icon: Activity,
         },
         ...(user?.role === "admin"
           ? [
@@ -88,12 +93,12 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
       ],
     },
     {
-      label: "Selected server",
+      label: "Selected Server",
       items: [
         {
           path: "/monitor",
           label: "Monitor",
-          icon: LayoutDashboard,
+          icon: Monitor,
           server: true,
         },
         {
@@ -105,7 +110,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
         {
           path: "/server-config",
           label: "Settings",
-          icon: Settings,
+          icon: SlidersHorizontal,
           server: true,
         },
         {
@@ -171,7 +176,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
         },
         {
           path: "/audit-log",
-          label: "Logs & tasks",
+          label: "Logs & Tasks",
           icon: ScrollText,
         },
       ],
@@ -180,11 +185,11 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
       label: "Plugins",
       items: [
         { path: "/plugins", label: "Manage", icon: Plug },
-        { path: "/plugin-settings", label: "Settings", icon: Settings },
+        { path: "/plugin-settings", label: "Settings", icon: Wrench },
         ...pluginPages.map((page) => ({
           path: `/plugin-native-view?url=${encodeURIComponent(page.path)}`,
           label: page.name,
-          icon: Plug,
+          icon: Puzzle,
           pluginPath: page.path,
         })),
       ],

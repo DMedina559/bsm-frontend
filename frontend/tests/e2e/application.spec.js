@@ -554,7 +554,7 @@ test("non-administrators cannot open diagnostics or fetch its endpoints", async 
   await login(page, "viewer");
   await page.goto("application-monitor");
   await expect(
-    page.getByRole("heading", { name: "Metrics", exact: true }),
+    page.getByRole("heading", { name: "Application Metrics", exact: true }),
   ).toBeVisible();
   await expect(page.getByRole("tab", { name: "Diagnostics" })).toHaveCount(0);
   expect(calls).toBe(0);

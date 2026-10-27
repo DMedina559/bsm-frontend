@@ -20,11 +20,11 @@ import "../../styles/application-monitor.css";
 const chartGroups = {
   performance: [
     ["Application CPU", [["app_cpu_percent", "CPU"]], "%"],
-    ["Application memory", [["app_ram_mb", "Memory"]], "MB"],
+    ["Application Memory", [["app_ram_mb", "Memory"]], "MB"],
   ],
   host: [
     [
-      "Host utilization",
+      "Host Utilization",
       [
         ["sys_cpu_percent", "CPU"],
         ["sys_ram_percent", "Memory"],
@@ -33,7 +33,7 @@ const chartGroups = {
       true,
     ],
     [
-      "Network throughput",
+      "Network Throughput",
       [
         ["net_tx_kib_s", "Sent"],
         ["net_rx_kib_s", "Received"],
@@ -41,7 +41,7 @@ const chartGroups = {
       "KiB/s",
     ],
     [
-      "Disk throughput",
+      "Disk Throughput",
       [
         ["disk_read_kib_s", "Read"],
         ["disk_write_kib_s", "Written"],
@@ -50,9 +50,9 @@ const chartGroups = {
     ],
   ],
   runtime: [
-    ["Event loop delay", [["loop_lag_ms", "Delay"]], "ms"],
-    ["Background tasks", [["background_task_count", "Tasks"]], "tasks"],
-    ["Async tasks", [["asyncio_task_count", "Tasks"]], "tasks"],
+    ["Event Loop Delay", [["loop_lag_ms", "Delay"]], "ms"],
+    ["Background Tasks", [["background_task_count", "Tasks"]], "tasks"],
+    ["Async Tasks", [["asyncio_task_count", "Tasks"]], "tasks"],
     ["Threads", [["thread_count", "Threads"]], "threads"],
   ],
 };
@@ -70,7 +70,7 @@ export default function ApplicationMetrics() {
     ["Memory", memory(sample?.app_ram_mb), MemoryStick],
     ["Uptime", uptime(sample?.uptime_seconds), Clock],
     [
-      "Collection interval",
+      "Collection Interval",
       Number.isFinite(data?.interval_seconds)
         ? `${data.interval_seconds} seconds`
         : "—",
@@ -79,12 +79,12 @@ export default function ApplicationMetrics() {
   ];
   const details = [
     ["Threads", metric(sample?.thread_count, "", 0)],
-    ["Background tasks", metric(sample?.background_task_count, "", 0)],
-    ["Async tasks", metric(sample?.asyncio_task_count, "", 0)],
-    ["Loop delay", duration(sample?.loop_lag_ms)],
+    ["Background Tasks", metric(sample?.background_task_count, "", 0)],
+    ["Async Tasks", metric(sample?.asyncio_task_count, "", 0)],
+    ["Loop Delay", duration(sample?.loop_lag_ms)],
     ["Host CPU", metric(sample?.sys_cpu_percent, "%")],
     [
-      "Host memory",
+      "Host Memory",
       `${memory(sample?.sys_ram_mb)} / ${memory(sample?.sys_ram_total_mb)}`,
     ],
   ];
@@ -92,7 +92,7 @@ export default function ApplicationMetrics() {
     <div className="application-metrics-view">
       <div className="monitor-live-strip">
         <div>
-          <h2 className="monitor-view-title">Metrics</h2>
+          <h2 className="monitor-view-title">Application Metrics</h2>
           <span className="monitor-live-state">
             <span
               className={`monitor-live-dot${paused ? " is-paused" : ""}`}
@@ -159,7 +159,7 @@ export default function ApplicationMetrics() {
           ["performance", "Application"],
           ["host", "Host"],
           ["runtime", "Runtime"],
-          ["servers", "Bedrock processes"],
+          ["servers", "Bedrock Processes"],
         ]}
       />
       {view !== "servers" && (
@@ -187,7 +187,7 @@ export default function ApplicationMetrics() {
       )}
       {view === "servers" && (
         <section className="monitor-panel application-server-metrics">
-          <h2>Bedrock processes</h2>
+          <h2>Bedrock Processes</h2>
           <p className="monitor-muted">
             Readings are available for observed server processes. Stopped or
             inaccessible processes may have no measurements.
@@ -220,7 +220,7 @@ export default function ApplicationMetrics() {
         </section>
       )}
       <section className="monitor-panel" aria-label="Runtime measurements">
-        <h2>Runtime details</h2>
+        <h2>Runtime Details</h2>
         <dl className="monitor-detail-grid">
           {details.map(([label, value]) => (
             <div key={label}>

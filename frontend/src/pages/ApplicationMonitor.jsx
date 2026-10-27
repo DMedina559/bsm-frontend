@@ -22,7 +22,7 @@ export default function ApplicationMonitor() {
   return (
     <div className="container application-monitor">
       <header className="monitor-page-heading">
-        <h1>Application monitor</h1>
+        <h1>Application Monitor</h1>
         <p>
           {admin
             ? "Application health, metrics and diagnostics."

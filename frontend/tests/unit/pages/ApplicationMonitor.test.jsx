@@ -34,19 +34,19 @@ it("renders application metrics and separates unavailable process readings from 
     </MemoryRouter>,
   );
   expect(
-    screen.getByRole("heading", { name: "Application monitor" }),
+    screen.getByRole("heading", { name: "Application Monitor" }),
   ).toBeInTheDocument();
   expect(screen.getByText("250.0%")).toBeInTheDocument();
   expect(screen.getByText("0.0 ms")).toBeInTheDocument();
   fireEvent.click(
-    screen.getByRole("button", { name: "Bedrock processes", exact: true }),
+    screen.getByRole("button", { name: "Bedrock Processes", exact: true }),
   );
   expect(screen.getByRole("row", { name: /Test/ })).toHaveTextContent(
     "Test———",
   );
   fireEvent.click(screen.getByRole("button", { name: "Host", exact: true }));
   expect(
-    screen.getByRole("region", { name: "Network throughput" }),
+    screen.getByRole("region", { name: "Network Throughput" }),
   ).toBeInTheDocument();
 });
 

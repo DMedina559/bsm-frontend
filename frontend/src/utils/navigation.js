@@ -2,16 +2,16 @@ export const PAGE_INFO = {
   "/": ["Fleet", "Overview", "View server status and run common actions."],
   "/application-monitor": [
     "Global",
-    "Application monitor",
+    "Application Monitor",
     "Monitor application health, performance and diagnostics.",
   ],
   "/monitor": [
-    "Selected server",
+    "Selected Server",
     "Monitor",
     "Monitor server status, resources and logs.",
   ],
   "/backups": [
-    "Selected server",
+    "Selected Server",
     "Backups",
     "Create recovery points and restore server data.",
   ],
@@ -21,27 +21,27 @@ export const PAGE_INFO = {
     "Schedule backups and verification across servers.",
   ],
   "/server-properties": [
-    "Selected server",
+    "Selected Server",
     "Properties",
     "Configure gameplay, networking, and world settings.",
   ],
   "/server-config": [
-    "Selected server",
+    "Selected Server",
     "Settings",
     "Configure server startup, updates and settings.",
   ],
   "/access-control": [
-    "Selected server",
-    "Access control",
+    "Selected Server",
+    "Access Control",
     "Manage your allowlist and player permissions.",
   ],
   "/online-players": [
-    "Selected server",
-    "Online players",
+    "Selected Server",
+    "Online Players",
     "View, transfer and moderate online players.",
   ],
   "/content": [
-    "Selected server",
+    "Selected Server",
     "Content",
     "Manage worlds, resource packs, and behavior packs.",
   ],
@@ -63,12 +63,12 @@ export const PAGE_INFO = {
   "/users": ["Administration", "Users", "Manage accounts and invitations."],
   "/global-players": [
     "Players",
-    "Player database",
+    "Player Database",
     "Known players across your server fleet.",
   ],
   "/audit-log": [
     "Administration",
-    "Logs & tasks",
+    "Logs & Tasks",
     "Review audit records, task results and application logs.",
   ],
   "/account": ["Workspace", "Account", "Manage your profile and password."],
@@ -79,7 +79,7 @@ export const PAGE_INFO = {
   ],
   "/server-install": [
     "Fleet",
-    "Install server",
+    "Install Server",
     "Create a Bedrock server and configure its workspace.",
   ],
   "/playground": ["Global", "Playground", "Preview native plugin components."],

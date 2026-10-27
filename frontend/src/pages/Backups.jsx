@@ -799,7 +799,7 @@ function ServerBackups() {
                       disabled={busy}
                       onClick={() => manage(item, "verify")}
                     >
-                      Verify
+                      <ShieldCheck size={14} aria-hidden="true" /> Verify
                     </button>
                     <ActionMenu
                       label={`More options for ${item.label || item.filename}`}

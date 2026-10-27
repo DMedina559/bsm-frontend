@@ -221,7 +221,7 @@ const Overview = () => {
             to="/application-monitor"
             className="overview-monitor-link"
             aria-label="Open application monitor"
-            title="Application monitor"
+            title="Application Monitor"
           >
             <img
               src={`${getApiProxyBasePath()}/app/image/icon/web-app-manifest-512x512.png`}
