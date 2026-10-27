@@ -54,6 +54,26 @@ export default function BackupSettings({
               encryption.
             </small>
           </label>{" "}
+          {Object.hasOwn(policy, "compression") && (
+            <label>
+              Compression
+              <select
+                className="form-input"
+                value={policy.compression ?? "balanced"}
+                onChange={(event) =>
+                  setPolicy({ ...policy, compression: event.target.value })
+                }
+              >
+                <option value="fast">Fast</option>
+                <option value="balanced">Balanced</option>
+                <option value="small">Small</option>
+              </select>
+              <small className="form-help-text">
+                Fast favors speed; Small favors smaller archives. Balanced is
+                the default.
+              </small>
+            </label>
+          )}
           <label>
             <input
               type="checkbox"

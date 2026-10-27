@@ -23,6 +23,7 @@ describe("BSMSettings", () => {
               port: 19132,
             },
             backups: {
+              compression: "balanced",
               encryption: false,
               safety_window_hours: 168,
               keep_daily: 0,
@@ -108,6 +109,27 @@ describe("BSMSettings", () => {
           body: {
             key: "backups",
             value: expect.objectContaining({ keep_daily: 7 }),
+          },
+        }),
+      ),
+    );
+  });
+  it("saves the selected compression profile with the backup policy", async () => {
+    window.history.replaceState({}, "", "/app/bsm-settings?tab=backups");
+    render(<BSMSettings />);
+    const compression = await screen.findByRole("combobox", {
+      name: /Compression/,
+    });
+    expect(compression).toHaveValue("balanced");
+    fireEvent.change(compression, { target: { value: "fast" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
+    await waitFor(() =>
+      expect(api.request).toHaveBeenCalledWith(
+        "/api/settings/set",
+        expect.objectContaining({
+          body: {
+            key: "backups",
+            value: expect.objectContaining({ compression: "fast" }),
           },
         }),
       ),
