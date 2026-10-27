@@ -1,3 +1,5 @@
+import BackupContents from "./BackupContents";
+import { defaultBackupComponents } from "../utils/backupContents";
 import { browserTimezone } from "../utils/time";
 import { useTimeFormat } from "../app/useTimeFormat";
 import Timestamp from "./Timestamp";
@@ -378,6 +380,24 @@ export default function BackupSchedules({
                   }
                 />
               </label>
+              {config.task === "backup" && (
+                <BackupContents
+                  mode={config.options.mode ?? "default"}
+                  components={
+                    config.options.components ?? defaultBackupComponents
+                  }
+                  allowDefault
+                  disabled={busy}
+                  onChange={(mode, components) =>
+                    change("options", {
+                      ...config.options,
+                      mode: mode === "default" ? null : mode,
+                      components: mode === "selected" ? components : null,
+                      include_packs: undefined,
+                    })
+                  }
+                />
+              )}
               {config.task === "verify" && (
                 <label>
                   Recheck after (hours)

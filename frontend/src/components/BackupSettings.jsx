@@ -1,3 +1,5 @@
+import BackupContents from "./BackupContents";
+import { defaultBackupComponents } from "../utils/backupContents";
 import DestinationCleanup from "./DestinationCleanup";
 import React, { useState } from "react";
 import { useServer } from "../contexts/ServerContext";
@@ -182,20 +184,18 @@ export default function BackupSettings({
             can exceed the storage budget. A retention count of zero disables
             pruning.
           </p>
-          <label>
-            <input
-              className="form-input"
-              type="checkbox"
-              checked={policy.include_server_packs ?? true}
-              onChange={(event) =>
-                setPolicy({
-                  ...policy,
-                  include_server_packs: event.target.checked,
-                })
-              }
-            />
-            Include server-level packs by default
-          </label>
+          <BackupContents
+            mode={policy.mode ?? "selected"}
+            components={policy.components ?? defaultBackupComponents}
+            onChange={(mode, components) =>
+              setPolicy({
+                ...policy,
+                mode,
+                components,
+                include_server_packs: false,
+              })
+            }
+          />
         </div>
       </fieldset>
       <fieldset className="backup-policy-section">

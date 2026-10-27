@@ -186,7 +186,23 @@ describe("Backups", () => {
     await waitFor(() =>
       expect(api.post).toHaveBeenCalledWith("/api/server/TestServer/backups", {
         encrypted: true,
-        include_packs: null,
+        mode: null,
+        components: null,
+      }),
+    );
+  });
+  it("submits world-only coverage without root pack overrides", async () => {
+    render(<Backups />);
+    await screen.findByText("snapshot.bsmbackup");
+    fireEvent.change(screen.getByLabelText("Mode"), {
+      target: { value: "world" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create backup" }));
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith("/api/server/TestServer/backups", {
+        encrypted: null,
+        mode: "world",
+        components: null,
       }),
     );
   });

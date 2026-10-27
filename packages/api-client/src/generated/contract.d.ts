@@ -2551,6 +2551,7 @@ export interface components {
        * @enum {string}
        */
       component:
+        | "server_directory"
         | "world"
         | "server.properties"
         | "allowlist.json"
@@ -2561,6 +2562,11 @@ export interface components {
         | "resource_packs"
         | "development_behavior_packs"
         | "development_resource_packs";
+      /**
+       * Executable
+       * @default false
+       */
+      executable?: boolean;
       /** Path */
       path: string;
       /** Sha256 */
@@ -2710,6 +2716,8 @@ export interface components {
        * @constant
        */
       format_version?: 1;
+      /** Mode */
+      mode?: ("world" | "selected" | "full") | null;
       /**
        * Reason
        * @default manual
@@ -2717,6 +2725,26 @@ export interface components {
        */
       reason?:
         "manual" | "pre_start" | "pre_update" | "pre_restore" | "scheduled";
+      /** Selected Components */
+      selected_components?:
+        | (
+            | "server_directory"
+            | "world"
+            | "server.properties"
+            | "allowlist.json"
+            | "permissions.json"
+            | "script_config"
+            | "bsm_settings"
+            | "behavior_packs"
+            | "resource_packs"
+            | "development_behavior_packs"
+            | "development_resource_packs"
+          )[]
+        | null;
+      /** Source Architecture */
+      source_architecture?: string | null;
+      /** Source Platform */
+      source_platform?: string | null;
       /** Source Server */
       source_server: string;
       /** Source World */
@@ -4891,6 +4919,7 @@ export interface components {
       committed?: boolean | null;
       /** Components */
       components: (
+        | "server_directory"
         | "world"
         | "server.properties"
         | "allowlist.json"
@@ -4944,6 +4973,7 @@ export interface components {
       checked_files: number;
       /** Components */
       components: (
+        | "server_directory"
         | "world"
         | "server.properties"
         | "allowlist.json"
@@ -5534,10 +5564,28 @@ export interface components {
     };
     /** SnapshotCreatePayload */
     SnapshotCreatePayload: {
+      /** Components */
+      components?:
+        | (
+            | "server_directory"
+            | "world"
+            | "server.properties"
+            | "allowlist.json"
+            | "permissions.json"
+            | "script_config"
+            | "bsm_settings"
+            | "behavior_packs"
+            | "resource_packs"
+            | "development_behavior_packs"
+            | "development_resource_packs"
+          )[]
+        | null;
       /** Encrypted */
       encrypted?: boolean | null;
       /** Include Packs */
       include_packs?: boolean | null;
+      /** Mode */
+      mode?: ("world" | "selected" | "full") | null;
     };
     /** SnapshotInspectPayload */
     SnapshotInspectPayload: {
@@ -5565,6 +5613,7 @@ export interface components {
     SnapshotPlanPayload: {
       /** Components */
       components: (
+        | "server_directory"
         | "world"
         | "server.properties"
         | "allowlist.json"
@@ -5583,6 +5632,7 @@ export interface components {
     SnapshotRestorePayload: {
       /** Components */
       components: (
+        | "server_directory"
         | "world"
         | "server.properties"
         | "allowlist.json"

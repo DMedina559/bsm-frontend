@@ -1,3 +1,5 @@
+import BackupContents from "../components/BackupContents";
+import { defaultBackupComponents } from "../utils/backupContents";
 import { useMetricFormat } from "../app/useMetricFormat";
 import { formatByteValue } from "../utils/metricUnits";
 import ActionMenu from "../components/ActionMenu";
@@ -27,6 +29,7 @@ import { useToast } from "../contexts/ToastContext";
 import { useAuth } from "../contexts/AuthContext";
 
 const labels = {
+  server_directory: "Full server directory",
   world: "World",
   "server.properties": "Server properties",
   "allowlist.json": "Allowlist",
@@ -97,7 +100,10 @@ function ServerBackups() {
   });
   const recovery = useResourceQuery("backupRecovery", selectedServer);
   const [encryption, setEncryption] = useState("default");
-  const [packs, setPacks] = useState("default");
+  const [backupMode, setBackupMode] = useState("default");
+  const [backupComponents, setBackupComponents] = useState(
+    defaultBackupComponents,
+  );
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [label, setLabel] = useState("");
@@ -216,7 +222,8 @@ function ServerBackups() {
       path,
       body: {
         encrypted,
-        include_packs: packs === "default" ? null : packs === "include",
+        mode: backupMode === "default" ? null : backupMode,
+        components: backupMode === "selected" ? backupComponents : null,
       },
     });
     if (result) {
@@ -558,22 +565,16 @@ function ServerBackups() {
         )}
         <section className="card backup-create">
           <h2>Create backup</h2>
-          <p>
-            Capture the world, configuration and server settings in one archive.
-          </p>
-          <label>
-            Server-level packs{" "}
-            <select
-              className="form-input"
-              value={packs}
-              disabled={busy}
-              onChange={(event) => setPacks(event.target.value)}
-            >
-              <option value="default">Use configured default</option>
-              <option value="include">Include packs</option>
-              <option value="exclude">Exclude packs</option>
-            </select>
-          </label>{" "}
+          <BackupContents
+            mode={backupMode}
+            components={backupComponents}
+            disabled={busy}
+            allowDefault
+            onChange={(mode, selected) => {
+              setBackupMode(mode);
+              setBackupComponents(selected);
+            }}
+          />
           <label>
             Encryption{" "}
             <select
@@ -587,7 +588,14 @@ function ServerBackups() {
               <option value="plain">Unencrypted</option>
             </select>
           </label>{" "}
-          <button className="action-button" disabled={busy} onClick={create}>
+          <button
+            className="action-button"
+            disabled={
+              busy ||
+              (backupMode === "selected" && backupComponents.length === 0)
+            }
+            onClick={create}
+          >
             Create backup
           </button>
           <details>
@@ -1069,7 +1077,12 @@ function ServerBackups() {
                             />
                             {labels[name]}
                             {state === "absent"
-                              ? " — absent in this backup"
+                              ? manifest.selected_components &&
+                                !manifest.selected_components.includes(name)
+                                ? " — excluded from this backup"
+                                : manifest.selected_components
+                                  ? " — source absent"
+                                  : " — absent in this backup"
                               : ""}
                           </label>
                         ),
