@@ -515,6 +515,16 @@
         "name": "plugin_name",
         "in": "path",
         "required": true
+      },
+      {
+        "name": "scope",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "server_name",
+        "in": "query",
+        "required": false
       }
     ],
     "bodyRequired": false,

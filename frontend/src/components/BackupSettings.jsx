@@ -192,7 +192,6 @@ export default function BackupSettings({
                 ...policy,
                 mode,
                 components,
-                include_server_packs: false,
               })
             }
           />
