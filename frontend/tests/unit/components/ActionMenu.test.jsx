@@ -46,3 +46,32 @@ it("keeps unavailable actions disabled and dismisses after selection or outside 
   fireEvent.pointerDown(document.body);
   expect(screen.queryByRole("menu")).not.toBeInTheDocument();
 });
+
+it("ignores queued scroll events at an unchanged anchor but dismisses when the trigger moves", () => {
+  render(
+    <ActionMenu
+      label="More backup options"
+      items={[{ label: "Pin", onClick: vi.fn() }]}
+    />,
+  );
+  const trigger = screen.getByRole("button", { name: "More backup options" });
+  let top = 200;
+  vi.spyOn(trigger, "getBoundingClientRect").mockImplementation(() => ({
+    top,
+    bottom: top + 40,
+    left: 100,
+    right: 140,
+    width: 40,
+    height: 40,
+  }));
+  fireEvent.click(trigger);
+  // Browser auto-scrolling before a click can deliver its scroll event after opening.
+  fireEvent.scroll(document);
+  expect(screen.getByRole("menuitem", { name: "Pin" })).toBeVisible();
+  top = 100;
+  fireEvent.scroll(window);
+  expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+  fireEvent.click(trigger);
+  fireEvent.resize(window);
+  expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+});
