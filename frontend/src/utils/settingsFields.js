@@ -7,6 +7,7 @@ const number = (description, min = 0, max, step = 1, unit) => ({
   unit,
 });
 export const settingGroups = {
+  general: "Time and regional settings",
   paths: "Storage locations",
   retention: "Retention",
   monitoring: "Monitoring",
@@ -18,6 +19,8 @@ export const settingGroups = {
   plugin_settings: "Plugin settings",
 };
 export const settingGroupHelp = {
+  general:
+    "Default timezone for display and new schedules. Recorded timestamps stay in UTC; existing schedules keep their timezone.",
   paths: "Directories used for servers, backups, downloads, and extensions.",
   retention: "Previous files to keep. Zero disables automatic cleanup.",
   monitoring: "Metrics interval changes apply on the next monitoring cycle.",
@@ -30,6 +33,12 @@ export const settingGroupHelp = {
   custom: "Additional settings used by your extensions.",
 };
 const fields = {
+  "general.timezone": {
+    type: "timezone",
+    label: "Application timezone",
+    description:
+      "Use an IANA region such as America/Los_Angeles. Applies immediately to display defaults and new schedules.",
+  },
   "web.cors_origins": {
     label: "Allowed CORS origins",
     description:

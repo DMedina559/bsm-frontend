@@ -1,7 +1,23 @@
+import BackupContents from "../components/BackupContents";
+import { defaultBackupComponents } from "../utils/backupContents";
+import { useMetricFormat } from "../app/useMetricFormat";
+import { formatByteValue } from "../utils/metricUnits";
+import ActionMenu from "../components/ActionMenu";
+import { useTimeFormat } from "../app/useTimeFormat";
+import Timestamp from "../components/Timestamp";
 import { Link } from "react-router-dom";
 import "../styles/backup-settings.css";
 import React, { useEffect, useRef, useState } from "react";
-import { Archive, Download, RefreshCw, RotateCcw, Trash2 } from "lucide-react";
+import {
+  Archive,
+  Download,
+  RefreshCw,
+  RotateCcw,
+  Trash2,
+  ShieldCheck,
+  Pin,
+  PinOff,
+} from "lucide-react";
 import { callOperation } from "../api/operations";
 import QueryStatus from "../components/QueryStatus";
 import Modal from "../components/Modal";
@@ -13,6 +29,7 @@ import { useToast } from "../contexts/ToastContext";
 import { useAuth } from "../contexts/AuthContext";
 
 const labels = {
+  server_directory: "Full server directory",
   world: "World",
   "server.properties": "Server properties",
   "allowlist.json": "Allowlist",
@@ -55,6 +72,10 @@ export default function Backups() {
 }
 
 function ServerBackups() {
+  const { units } = useMetricFormat();
+  const bytes = (value) =>
+    formatByteValue(value, units.memory, units.precision);
+  const { date } = useTimeFormat();
   const { selectedServer, setSelectedServer, refreshServers } = useServer();
   const { user, sessionGeneration } = useAuth();
   const { confirmAction } = useDialog();
@@ -73,15 +94,23 @@ function ServerBackups() {
   const [port, setPort] = useState(19134);
   const [portv6, setPortv6] = useState(19135);
   const [transferring, setTransferring] = useState(false);
-  const legacy = useResourceQuery("backups", selectedServer);
+  const [legacyExpanded, setLegacyExpanded] = useState(false);
+  const legacy = useResourceQuery("backups", selectedServer, {
+    enabled: legacyExpanded,
+  });
   const recovery = useResourceQuery("backupRecovery", selectedServer);
   const [encryption, setEncryption] = useState("default");
-  const [packs, setPacks] = useState("default");
+  const [backupMode, setBackupMode] = useState("default");
+  const [backupComponents, setBackupComponents] = useState(
+    defaultBackupComponents,
+  );
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [label, setLabel] = useState("");
   const [notes, setNotes] = useState("");
   const [selected, setSelected] = useState(null);
+  const [inspectorTab, setInspectorTab] = useState("restore");
+  const inspectorId = React.useId();
   const [manifest, setManifest] = useState(null);
   const [components, setComponents] = useState([]);
   const [plan, setPlan] = useState(null);
@@ -98,6 +127,7 @@ function ServerBackups() {
     };
   }, [selectedServer, sessionGeneration]);
   const reset = () => {
+    setInspectorTab("restore");
     setSelected(null);
     setManifest(null);
     setPlan(null);
@@ -192,7 +222,8 @@ function ServerBackups() {
       path,
       body: {
         encrypted,
-        include_packs: packs === "default" ? null : packs === "include",
+        ...(backupMode === "default" ? {} : { mode: backupMode }),
+        ...(backupMode === "selected" ? { components: backupComponents } : {}),
       },
     });
     if (result) {
@@ -250,7 +281,7 @@ function ServerBackups() {
   };
   const transferProgress = (verb) => (loaded, total) =>
     setProgress(
-      `${verb}: ${(loaded / 1048576).toFixed(1)} MB${total ? ` of ${(total / 1048576).toFixed(1)} MB` : ""}`,
+      `${verb}: ${bytes(loaded)}${total ? ` of ${bytes(total)}` : ""}`,
     );
   const manage = async (item, action, extra = {}) => {
     const result = await perform("manage_server_snapshot", {
@@ -320,13 +351,19 @@ function ServerBackups() {
   return (
     <div className="container backups-page">
       <div className="header">
-        <h1>
-          <Archive size={24} /> Backups: {selectedServer}
-        </h1>
+        <div>
+          <h1>
+            <Archive size={24} /> Backups: {selectedServer}
+          </h1>
+          <p className="backup-page-subtitle">
+            Create, inspect and restore recovery points.
+          </p>
+        </div>
         <div className="button-group">
           <button
             className="action-button secondary"
             disabled={busy}
+            aria-label="Recovery report"
             onClick={async () => {
               const report = await perform(
                 "download_backup_recovery_report",
@@ -336,7 +373,7 @@ function ServerBackups() {
               if (report) saveBlob(report, "bsm-recovery-report.json");
             }}
           >
-            <Download size={16} /> Recovery report
+            <Download size={16} /> Report
           </button>
           <button
             className="action-button secondary"
@@ -348,6 +385,7 @@ function ServerBackups() {
           <button
             className="action-button secondary"
             disabled={busy}
+            aria-label="Prune old"
             onClick={async () => {
               if (
                 await confirmAction(
@@ -357,224 +395,244 @@ function ServerBackups() {
                 await perform("prune_backups", { path });
             }}
           >
-            <Trash2 size={16} /> Prune old
+            <Trash2 size={16} /> Prune
           </button>
           {user?.role === "admin" && (
             <Link
               className="action-button secondary"
               to="/bsm-settings?tab=backups"
+              aria-label="Backup settings"
             >
-              Backup settings
+              Settings
             </Link>
           )}
         </div>
       </div>
       <QueryStatus query={snapshots} />
       <QueryStatus query={health} />
-      {health.data && (
-        <section
-          className="card"
-          style={{ padding: "1rem", marginBottom: "1rem" }}
-          aria-label="Backup health"
-        >
-          <h2>Recovery readiness: {health.data.readiness ?? "Checking"}</h2>
-          <ul>
-            {(health.data.readiness_reasons ?? []).map((reason) => (
-              <li key={reason}>
-                {reason}
-                {user?.role === "admin" &&
-                /destination|external|key|scheduled/.test(
-                  reason.toLowerCase(),
-                ) ? (
-                  <Link to="/bsm-settings?tab=backups"> Review settings</Link>
-                ) : /verification/.test(reason.toLowerCase()) ? (
-                  <button
-                    className="action-button secondary"
-                    onClick={() => setFilter("failed")}
-                  >
-                    Show affected archives
-                  </button>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-          {health.data.recovery_backup_id && (
-            <p>
-              Latest usable recovery point:{" "}
-              <code>{health.data.recovery_backup_id}</code>
-            </p>
-          )}
-          {health.data.drill && (
-            <p>
-              Last isolated drill: {health.data.drill.status} ·{" "}
-              {new Date(health.data.drill.checked_at).toLocaleString()} ·{" "}
-              {health.data.drill.checked_files ?? 0} files checked
-            </p>
-          )}
-          {Object.entries(health.data.destinations ?? {}).map(
-            ([name, destination]) => (
-              <p key={name}>
-                {name}:{" "}
-                {!destination.enabled
-                  ? "Disabled"
-                  : !destination.available
-                    ? "Unavailable"
-                    : `${(destination.available_bytes / 1073741824).toFixed(1)} GiB free${destination.low_space ? " — low space" : ""}`}
+      <div className="backup-overview-grid">
+        {health.data && (
+          <section className="card backup-health" aria-label="Backup health">
+            <div className="backup-section-heading">
+              <h2>Recovery readiness</h2>
+              <span className="backup-readiness">
+                {health.data.readiness ?? "Checking"}
+              </span>
+            </div>
+            <ul>
+              {(health.data.readiness_reasons ?? []).map((reason) => (
+                <li key={reason}>
+                  {reason}
+                  {user?.role === "admin" &&
+                  /destination|external|key|scheduled/.test(
+                    reason.toLowerCase(),
+                  ) ? (
+                    <Link to="/bsm-settings?tab=backups"> Review settings</Link>
+                  ) : /verification/.test(reason.toLowerCase()) ? (
+                    <button
+                      className="action-button secondary"
+                      onClick={() => setFilter("failed")}
+                    >
+                      Show affected archives
+                    </button>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+            <dl className="backup-stats">
+              <div>
+                <dt>Recovery points</dt>
+                <dd>{health.data.count}</dd>
+              </div>
+              <div>
+                <dt>Storage used</dt>
+                <dd>{bytes(health.data.total_bytes)}</dd>
+              </div>
+              <div>
+                <dt>Last backup</dt>
+                <dd>
+                  {health.data.last_success_at ? (
+                    <Timestamp value={health.data.last_success_at} />
+                  ) : (
+                    "Never"
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt>Last verified</dt>
+                <dd>
+                  {health.data.last_verified_at ? (
+                    <Timestamp value={health.data.last_verified_at} />
+                  ) : (
+                    "Never"
+                  )}
+                </dd>
+              </div>
+            </dl>
+            <details className="backup-health-details">
+              <summary>Recovery and destination details</summary>
+              {health.data.recovery_backup_id && (
+                <p>
+                  Latest usable recovery point:{" "}
+                  <code>{health.data.recovery_backup_id}</code>
+                </p>
+              )}
+              {health.data.drill && (
+                <p>
+                  Last isolated drill: {health.data.drill.status} ·{" "}
+                  {<Timestamp value={health.data.drill.checked_at} />} ·{" "}
+                  {health.data.drill.checked_files ?? 0} files checked
+                </p>
+              )}
+              {Object.entries(health.data.destinations ?? {}).map(
+                ([name, destination]) => (
+                  <p key={name}>
+                    {name}:{" "}
+                    {!destination.enabled
+                      ? "Disabled"
+                      : !destination.available
+                        ? "Unavailable"
+                        : `${bytes(destination.available_bytes)} free${destination.low_space ? " — low space" : ""}`}
+                  </p>
+                ),
+              )}
+            </details>
+            {(health.data.failed_count > 0 ||
+              health.data.destination_failures > 0) && (
+              <p className="message-warning" role="alert">
+                {health.data.failed_count} failed verification ·{" "}
+                {health.data.destination_failures} destination copies need
+                attention
               </p>
-            ),
-          )}
-          <dl className="backup-stats">
-            <div>
-              <dt>Recovery points</dt>
-              <dd>{health.data.count}</dd>
-            </div>
-            <div>
-              <dt>Storage used</dt>
-              <dd>{(health.data.total_bytes / 1048576).toFixed(1)} MB</dd>
-            </div>
-            <div>
-              <dt>Last backup</dt>
-              <dd>
-                {health.data.last_success_at
-                  ? new Date(health.data.last_success_at).toLocaleString()
-                  : "Never"}
-              </dd>
-            </div>
-            <div>
-              <dt>Last verified</dt>
-              <dd>
-                {health.data.last_verified_at
-                  ? new Date(health.data.last_verified_at).toLocaleString()
-                  : "Never"}
-              </dd>
-            </div>
-          </dl>
-          {(health.data.failed_count > 0 ||
-            health.data.destination_failures > 0) && (
-            <p className="message-warning" role="alert">
-              {health.data.failed_count} failed verification ·{" "}
-              {health.data.destination_failures} destination copies need
-              attention
-            </p>
-          )}
-          {!!health.data.missing_key_ids?.length && (
-            <p role="alert">
-              Recovery keys are missing for{" "}
-              {health.data.missing_key_ids.join(", ")}. Use their emergency
-              kits.
-            </p>
-          )}
-          {!!health.data.older_key_ids?.length && (
+            )}
+            {!!health.data.missing_key_ids?.length && (
+              <p role="alert">
+                Recovery keys are missing for{" "}
+                {health.data.missing_key_ids.join(", ")}. Use their emergency
+                kits.
+              </p>
+            )}
+            {!!health.data.older_key_ids?.length && (
+              <p>
+                Older backups still require {health.data.older_key_ids.length}{" "}
+                previous encryption keys. Keep their emergency kits.
+              </p>
+            )}
+            {health.data.schedule && (
+              <p>
+                Schedule: {health.data.schedule.enabled ? "Enabled" : "Paused"}.
+                Next run:{" "}
+                {health.data.schedule.next_run_at ? (
+                  <Timestamp value={health.data.schedule.next_run_at} />
+                ) : (
+                  "None"
+                )}
+                . Last result: {health.data.schedule.last_status ?? "Not run"}.{" "}
+                {health.data.schedule.last_error ?? ""}
+              </p>
+            )}
+            {health.data.last_error && (
+              <p role="alert">{health.data.last_error}</p>
+            )}
+          </section>
+        )}
+        <QueryStatus query={recovery} />
+        {recovery.data?.active && (
+          <section className="message-warning">
             <p>
-              Older backups still require {health.data.older_key_ids.length}{" "}
-              previous encryption keys. Keep their emergency kits.
+              {recovery.data.error ??
+                (recovery.data.committed
+                  ? "Restore committed; cleanup needs attention."
+                  : "An interrupted restore needs recovery before this server can start.")}
             </p>
-          )}
-          {health.data.schedule && (
-            <p>
-              Schedule: {health.data.schedule.enabled ? "Enabled" : "Paused"}.
-              Next run:{" "}
-              {health.data.schedule.next_run_at
-                ? new Date(health.data.schedule.next_run_at).toLocaleString()
-                : "None"}
-              . Last result: {health.data.schedule.last_status ?? "Not run"}.{" "}
-              {health.data.schedule.last_error ?? ""}
-            </p>
-          )}
-          {health.data.last_error && (
-            <p role="alert">{health.data.last_error}</p>
-          )}
-        </section>
-      )}
-      <QueryStatus query={recovery} />
-      {recovery.data?.active && (
-        <section className="message-warning">
-          <p>
-            {recovery.data.error ??
-              (recovery.data.committed
-                ? "Restore committed; cleanup needs attention."
-                : "An interrupted restore needs recovery before this server can start.")}
-          </p>
+            <button
+              className="action-button"
+              disabled={busy}
+              onClick={async () => {
+                if (
+                  await confirmAction(
+                    "Retry restore recovery? Stop the Minecraft server first if rollback is required.",
+                  )
+                ) {
+                  await perform("recover_server_backup", { path });
+                  await recovery.refetch();
+                }
+              }}
+            >
+              Retry recovery
+            </button>
+          </section>
+        )}
+        <section className="card backup-create">
+          <h2>Create backup</h2>
+          <BackupContents
+            mode={backupMode}
+            components={backupComponents}
+            disabled={busy}
+            allowDefault
+            onChange={(mode, selected) => {
+              setBackupMode(mode);
+              setBackupComponents(selected);
+            }}
+          />
+          <label>
+            Encryption{" "}
+            <select
+              className="form-input"
+              value={encryption}
+              disabled={busy}
+              onChange={(e) => setEncryption(e.target.value)}
+            >
+              <option value="default">Use configured default</option>
+              <option value="encrypted">Encrypted</option>
+              <option value="plain">Unencrypted</option>
+            </select>
+          </label>{" "}
           <button
             className="action-button"
-            disabled={busy}
-            onClick={async () => {
-              if (
-                await confirmAction(
-                  "Retry restore recovery? Stop the Minecraft server first if rollback is required.",
-                )
-              ) {
-                await perform("recover_server_backup", { path });
-                await recovery.refetch();
-              }
-            }}
+            disabled={
+              busy ||
+              (backupMode === "selected" && backupComponents.length === 0)
+            }
+            onClick={create}
           >
-            Retry recovery
+            Create backup
           </button>
+          <details>
+            <summary>Import a backup</summary>
+            <form onSubmit={(event) => event.preventDefault()}>
+              <label>
+                Recovery key (if encrypted){" "}
+                <input
+                  className="form-input"
+                  ref={input}
+                  type="password"
+                  name="recovery_key"
+                  autoComplete="off"
+                  onChange={(e) => {
+                    secret.current = e.target.value;
+                  }}
+                />
+              </label>
+            </form>
+            <label>
+              Backup file{" "}
+              <input
+                className="form-input"
+                type="file"
+                accept=".bsmbackup,.tar"
+                disabled={busy}
+                onChange={upload}
+              />
+            </label>
+          </details>
         </section>
-      )}
-      <section className="card backup-create">
-        <h2>Create a recovery point</h2>
-        <p>
-          One archive contains the active world, configuration, script secrets,
-          and BSM server settings.
+      </div>
+      {progress && (
+        <p role="status" className="message info">
+          {progress}
         </p>
-        <label>
-          Server-level packs{" "}
-          <select
-            className="form-input"
-            value={packs}
-            disabled={busy}
-            onChange={(event) => setPacks(event.target.value)}
-          >
-            <option value="default">Use configured default</option>
-            <option value="include">Include packs</option>
-            <option value="exclude">Exclude packs</option>
-          </select>
-        </label>{" "}
-        <label>
-          Encryption{" "}
-          <select
-            className="form-input"
-            value={encryption}
-            disabled={busy}
-            onChange={(e) => setEncryption(e.target.value)}
-          >
-            <option value="default">Use configured default</option>
-            <option value="encrypted">Encrypted</option>
-            <option value="plain">Unencrypted</option>
-          </select>
-        </label>{" "}
-        <button className="action-button" disabled={busy} onClick={create}>
-          Create backup
-        </button>
-        <details>
-          <summary>Import a backup</summary>
-          <label>
-            Recovery key (if encrypted){" "}
-            <input
-              className="form-input"
-              ref={input}
-              type="password"
-              autoComplete="off"
-              onChange={(e) => {
-                secret.current = e.target.value;
-              }}
-            />
-          </label>
-          <label>
-            Backup file{" "}
-            <input
-              className="form-input"
-              type="file"
-              accept=".bsmbackup,.tar"
-              disabled={busy}
-              onChange={upload}
-            />
-          </label>
-        </details>
-      </section>
-      {progress && <p role="status">{progress}</p>}
+      )}
       {transferring && (
         <button
           className="action-button secondary"
@@ -586,7 +644,14 @@ function ServerBackups() {
           Cancel transfer
         </button>
       )}
-      <h2>Recovery points</h2>
+      <div className="backup-section-heading backup-history-heading">
+        <h2>Recovery points</h2>
+        {user?.role === "admin" && (
+          <Link className="action-button secondary" to="/scheduler">
+            Schedules
+          </Link>
+        )}
+      </div>
       <div className="button-group backup-filters">
         <label>
           Find backups
@@ -623,7 +688,12 @@ function ServerBackups() {
           </select>
         </label>
       </div>
-      <div style={{ overflowX: "auto" }}>
+      {snapshots.isFetching && snapshots.data !== undefined && (
+        <p className="form-help-text" role="status">
+          Refreshing recovery points… Existing results remain visible.
+        </p>
+      )}
+      <div className="backup-history-table" aria-busy={snapshots.isFetching}>
         <table className="table">
           <thead>
             <tr>
@@ -637,22 +707,12 @@ function ServerBackups() {
             {visibleSnapshots.map((item, index) => (
               <React.Fragment key={item.backup_id}>
                 {(index === 0 ||
-                  new Date(item.created_at ?? 0).toLocaleDateString() !==
-                    new Date(
-                      visibleSnapshots[index - 1].created_at ?? 0,
-                    ).toLocaleDateString()) && (
+                  date(item.created_at ?? 0) !==
+                    date(visibleSnapshots[index - 1].created_at ?? 0)) && (
                   <tr className="backup-date-group">
                     <th colSpan={4} scope="colgroup">
                       {item.created_at
-                        ? new Date(item.created_at).toLocaleDateString(
-                            undefined,
-                            {
-                              weekday: "long",
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            },
-                          )
+                        ? date(item.created_at)
                         : "Date unavailable"}
                     </th>
                   </tr>
@@ -661,9 +721,11 @@ function ServerBackups() {
                   <td>
                     <strong>
                       {item.label ||
-                        (item.created_at
-                          ? new Date(item.created_at).toLocaleString()
-                          : "Server backup")}
+                        (item.created_at ? (
+                          <Timestamp value={item.created_at} />
+                        ) : (
+                          "Server backup"
+                        ))}
                     </strong>
                     <small className="archive-filename" title={item.filename}>
                       {item.filename}
@@ -686,7 +748,7 @@ function ServerBackups() {
                     </small>
                     {item.error && <p role="alert">{item.error}</p>}
                   </td>
-                  <td>{(item.size / 1048576).toFixed(1)} MB</td>
+                  <td>{bytes(item.size)}</td>
                   <td>
                     {item.encrypted ? "Encrypted" : "Unencrypted"}
                     <br />
@@ -694,10 +756,7 @@ function ServerBackups() {
                     {item.verification?.verified_at && (
                       <span>
                         {" "}
-                        ·{" "}
-                        {new Date(
-                          item.verification.verified_at,
-                        ).toLocaleString()}
+                        · {<Timestamp value={item.verification.verified_at} />}
                       </span>
                     )}
                     {item.pinned && <span> · Pinned</span>}
@@ -705,7 +764,7 @@ function ServerBackups() {
                       <span>
                         {" "}
                         · Protected until{" "}
-                        {new Date(item.protected_until).toLocaleString()}
+                        {<Timestamp value={item.protected_until} />}
                       </span>
                     )}
                     {Object.entries(item.copies ?? {}).map(([name, copy]) => (
@@ -733,50 +792,67 @@ function ServerBackups() {
                         setNotes(item.notes ?? "");
                       }}
                     >
-                      <RotateCcw size={14} /> Inspect / restore
+                      <RotateCcw size={14} /> Inspect
                     </button>{" "}
                     <button
                       className="action-button secondary"
                       disabled={busy}
                       onClick={() => manage(item, "verify")}
                     >
-                      Verify
+                      <ShieldCheck size={14} aria-hidden="true" /> Verify
                     </button>
-                    <button
-                      className="action-button secondary"
-                      disabled={busy || !!item.error}
-                      onClick={() => manage(item, "drill")}
-                    >
-                      Recovery drill
-                    </button>{" "}
-                    <button
-                      className="action-button secondary"
+                    <ActionMenu
+                      label={`More options for ${item.label || item.filename}`}
                       disabled={busy}
-                      onClick={() =>
-                        manage(item, item.pinned ? "unpin" : "pin")
-                      }
-                    >
-                      {item.pinned ? "Unpin" : "Pin"}
-                    </button>
+                      items={[
+                        {
+                          label: "Recovery drill",
+                          Icon: ShieldCheck,
+                          disabled: !!item.error,
+                          onClick: () => manage(item, "drill"),
+                        },
+                        {
+                          label: item.pinned ? "Unpin" : "Pin",
+                          Icon: item.pinned ? PinOff : Pin,
+                          onClick: () =>
+                            manage(item, item.pinned ? "unpin" : "pin"),
+                        },
+                      ]}
+                    />
                   </td>
                 </tr>
               </React.Fragment>
             ))}
             {visibleSnapshots.length === 0 && (
               <tr>
-                <td colSpan={4}>No backups match this view.</td>
+                <td colSpan={4} className="backup-list-state">
+                  {snapshots.data === undefined && !snapshots.error ? (
+                    <span role="status">Loading recovery points…</span>
+                  ) : snapshots.error ? (
+                    "Recovery points could not be loaded or refreshed. Retry the request above."
+                  ) : filter !== "all" || search.trim() ? (
+                    "No backups match this view."
+                  ) : (
+                    "No recovery points yet. Create or import a backup to get started."
+                  )}
+                </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
-      <details>
+      <details
+        onToggle={(event) => setLegacyExpanded(event.currentTarget.open)}
+      >
         <summary>Legacy backups</summary>
         <p>
           These files are independent snapshots. Restore each explicitly; they
           do not form one historical backup.
         </p>
         <QueryStatus query={legacy} />
+        {legacyExpanded && legacy.isPending && !legacy.error && (
+          <p role="status">Loading legacy backups…</p>
+        )}
         {Object.entries(legacy.data ?? {}).map(([type, files]) => (
           <section key={type}>
             <h3>{type}</h3>
@@ -805,418 +881,572 @@ function ServerBackups() {
       </details>
       {selected && (
         <Modal
-          title={`Restore ${selected.filename}`}
+          title="Inspect backup"
+          className="backup-inspector"
           onClose={reset}
           closeDisabled={busy}
         >
-          <details>
-            <summary>Label and notes</summary>
-            <label>
-              Label
-              <input
-                className="form-input"
-                maxLength={120}
-                value={label}
-                onChange={(event) => setLabel(event.target.value)}
-              />
-            </label>
-            <label>
-              Notes
-              <textarea
-                maxLength={2000}
-                value={notes}
-                onChange={(event) => setNotes(event.target.value)}
-              />
-            </label>
-            <p>
-              Labels and notes stay with this manager; archive downloads keep
-              their original contents.
-            </p>
-            <button
-              className="action-button secondary"
-              disabled={busy}
-              onClick={() => manage(selected, "annotate", { label, notes })}
-            >
-              Save label and notes
-            </button>
-          </details>
-          {!manifest ? (
-            <>
-              <p>
-                Validate and inspect this archive before choosing what to
-                restore.
-              </p>
-              {selected.encrypted && (
-                <label>
-                  Recovery key (leave blank to use the stored key)
-                  <input
-                    className="form-input"
-                    type="password"
-                    autoComplete="off"
-                    onChange={(e) => {
-                      secret.current = e.target.value;
-                    }}
-                  />
-                </label>
-              )}
+          <p className="backup-inspector-hint">
+            Inspect this archive, select components, then review a restore plan.
+          </p>
+          <dl className="backup-summary">
+            <div>
+              <dt>Archive</dt>
+              <dd>{selected.filename}</dd>
+            </div>
+            <div>
+              <dt>Created</dt>
+              <dd>
+                {selected.created_at ? (
+                  <Timestamp value={selected.created_at} />
+                ) : (
+                  "Unknown"
+                )}
+              </dd>
+            </div>
+            <div>
+              <dt>Size</dt>
+              <dd>{bytes(selected.size)}</dd>
+            </div>
+            <div>
+              <dt>Encryption</dt>
+              <dd>{selected.encrypted ? "Encrypted" : "Unencrypted"}</dd>
+            </div>
+            <div>
+              <dt>Verification</dt>
+              <dd>{selected.verification?.status ?? "unverified"}</dd>
+            </div>
+          </dl>
+          <div
+            className="backup-inspector-tabs"
+            role="tablist"
+            aria-label="Backup inspector sections"
+          >
+            {[
+              ["restore", "Restore options"],
+              ["details", "Details"],
+              ["manage", "Manage"],
+            ].map(([key, name], index, tabs) => (
               <button
-                className="action-button"
+                key={key}
+                type="button"
+                role="tab"
+                id={`${inspectorId}-${key}-tab`}
+                aria-controls={`${inspectorId}-${key}-panel`}
+                aria-selected={inspectorTab === key}
+                tabIndex={inspectorTab === key ? 0 : -1}
                 disabled={busy}
-                onClick={inspect}
+                onClick={() => setInspectorTab(key)}
+                onKeyDown={(event) => {
+                  const next =
+                    event.key === "ArrowRight"
+                      ? (index + 1) % tabs.length
+                      : event.key === "ArrowLeft"
+                        ? (index + tabs.length - 1) % tabs.length
+                        : event.key === "Home"
+                          ? 0
+                          : event.key === "End"
+                            ? tabs.length - 1
+                            : null;
+                  if (next !== null) {
+                    event.preventDefault();
+                    setInspectorTab(tabs[next][0]);
+                    event.currentTarget.parentElement
+                      .querySelectorAll('[role="tab"]')
+                      [next].focus();
+                  }
+                }}
               >
-                Unlock and inspect
+                {name}
               </button>
-            </>
-          ) : (
-            <>
-              <p>
-                Captured {new Date(manifest.created_at).toLocaleString()} from{" "}
-                {manifest.source_server}, world {manifest.source_world}. Bedrock{" "}
-                {manifest.bedrock_version}; BSM {manifest.bsm_version}.
-              </p>
-              {!plan ? (
-                <>
-                  <button
-                    className="action-button secondary"
-                    disabled={busy}
-                    onClick={() =>
-                      setComponents(
-                        Object.keys(manifest.components).filter(
-                          (name) => manifest.components[name] === "included",
-                        ),
-                      )
+            ))}
+          </div>
+          <section
+            role="tabpanel"
+            id={`${inspectorId}-restore-panel`}
+            aria-labelledby={`${inspectorId}-restore-tab`}
+            hidden={inspectorTab !== "restore"}
+          >
+            <ol className="backup-restore-steps" aria-label="Restore progress">
+              {["Inspect archive", "Select components", "Review restore"].map(
+                (name, index) => (
+                  <li
+                    key={name}
+                    aria-current={
+                      index === (plan ? 2 : manifest ? 1 : 0)
+                        ? "step"
+                        : undefined
                     }
                   >
-                    Select all available
-                  </button>
-                  <fieldset disabled={busy}>
-                    <legend>Components to restore</legend>
-                    {Object.entries(manifest.components).map(
-                      ([name, state]) => (
-                        <label
-                          key={name}
-                          style={{ display: "block", margin: "0.5rem 0" }}
-                        >
-                          <input
-                            className="form-input"
-                            type="checkbox"
-                            disabled={state !== "included"}
-                            checked={components.includes(name)}
-                            onChange={(e) =>
-                              setComponents(
-                                e.target.checked
-                                  ? [...components, name]
-                                  : components.filter((c) => c !== name),
-                              )
-                            }
-                          />
-                          {labels[name]}
-                          {state === "absent" ? " — absent in this backup" : ""}
-                        </label>
-                      ),
+                    {name}
+                  </li>
+                ),
+              )}
+            </ol>
+            {!manifest ? (
+              <>
+                <p>
+                  Validate and inspect this archive before choosing what to
+                  restore.
+                </p>
+                {selected.encrypted && (
+                  <form onSubmit={(event) => event.preventDefault()}>
+                    <label>
+                      Recovery key (leave blank to use the stored key)
+                      <input
+                        className="form-input"
+                        type="password"
+                        name="recovery_key"
+                        autoComplete="off"
+                        onChange={(e) => {
+                          secret.current = e.target.value;
+                        }}
+                      />
+                    </label>
+                  </form>
+                )}
+                <button
+                  className="action-button"
+                  disabled={busy}
+                  onClick={inspect}
+                >
+                  Inspect
+                </button>
+              </>
+            ) : (
+              <>
+                <p>
+                  Captured {<Timestamp value={manifest.created_at} />} from{" "}
+                  {manifest.source_server}, world {manifest.source_world}.
+                  Bedrock {manifest.bedrock_version}; BSM {manifest.bsm_version}
+                  .
+                </p>
+                <details>
+                  <summary>
+                    File inventory ({manifest.files?.length ?? 0})
+                  </summary>
+                  {(manifest.files?.length ?? 0) > 500 && (
+                    <p>
+                      Showing the first 500 files. Download the archive for the
+                      complete inventory.
+                    </p>
+                  )}
+                  <ul>
+                    {(manifest.files ?? []).slice(0, 500).map((file) => (
+                      <li key={file.path}>
+                        {file.path} · {file.size} bytes
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+                {!plan ? (
+                  <>
+                    <button
+                      className="action-button secondary"
+                      disabled={busy}
+                      onClick={() =>
+                        setComponents(
+                          Object.keys(manifest.components).filter(
+                            (name) => manifest.components[name] === "included",
+                          ),
+                        )
+                      }
+                    >
+                      Select all
+                    </button>
+                    <fieldset disabled={busy}>
+                      <legend>Components to restore</legend>
+                      {Object.entries(manifest.components).map(
+                        ([name, state]) => (
+                          <label
+                            key={name}
+                            style={{ display: "block", margin: "0.5rem 0" }}
+                          >
+                            <input
+                              className="form-input"
+                              type="checkbox"
+                              disabled={state !== "included"}
+                              checked={components.includes(name)}
+                              onChange={(e) =>
+                                setComponents(
+                                  e.target.checked
+                                    ? [...components, name]
+                                    : components.filter((c) => c !== name),
+                                )
+                              }
+                            />
+                            {labels[name]}
+                            {state === "absent"
+                              ? manifest.selected_components &&
+                                !manifest.selected_components.includes(name)
+                                ? " — excluded from this backup"
+                                : manifest.selected_components
+                                  ? " — source absent"
+                                  : " — absent in this backup"
+                              : ""}
+                          </label>
+                        ),
+                      )}
+                    </fieldset>
+                    <button
+                      className="action-button"
+                      disabled={busy || !components.length}
+                      onClick={review}
+                    >
+                      Review restore
+                    </button>{" "}
+                    <button
+                      className="action-button secondary"
+                      disabled={busy || !components.length}
+                      onClick={() => review(true)}
+                    >
+                      Dry run
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <h3>Replace on {selectedServer}</h3>
+                    {plan.dry_run && (
+                      <p role="status">
+                        Dry run: {plan.checked_files} selected files copied and
+                        checked in isolation. The server was not stopped.
+                      </p>
                     )}
-                  </fieldset>
-                  <button
-                    className="action-button"
-                    disabled={busy || !components.length}
-                    onClick={review}
-                  >
-                    Review restore
-                  </button>{" "}
-                  <button
-                    className="action-button secondary"
-                    disabled={busy || !components.length}
-                    onClick={() => review(true)}
-                  >
-                    Run dry run
-                  </button>
-                </>
-              ) : (
-                <>
-                  <h3>Replace on {selectedServer}</h3>
-                  {plan.dry_run && (
-                    <p role="status">
-                      Dry run: {plan.checked_files} selected files copied and
-                      checked in isolation. The server was not stopped.
+                    {plan.sufficient_space === false && (
+                      <p role="alert">
+                        Insufficient free space. Free storage and review again
+                        before restoring.
+                      </p>
+                    )}
+                    {!!plan.volumes?.length && (
+                      <table className="table">
+                        <thead>
+                          <tr>
+                            <th>Storage volume</th>
+                            <th>Required</th>
+                            <th>Available</th>
+                            <th>Result</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {plan.volumes.map((volume, index) => (
+                            <tr key={index}>
+                              <td>{volume.roles.join(" + ")}</td>
+                              <td>{bytes(volume.required_bytes)}</td>
+                              <td>{bytes(volume.available_bytes)}</td>
+                              <td>
+                                {volume.sufficient
+                                  ? "Enough space"
+                                  : "Not enough space"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                    {components.some((component) =>
+                      [
+                        "script_config",
+                        "bsm_settings",
+                        "permissions.json",
+                        "allowlist.json",
+                      ].includes(component),
+                    ) && (
+                      <p className="message-warning" role="note">
+                        This selection may replace script secrets, module
+                        permissions, player access, or custom settings.
+                        Sensitive values are hidden.
+                      </p>
+                    )}
+                    <p>
+                      A protected safety backup will be created before any files
+                      are replaced.
                     </p>
-                  )}
-                  {plan.sufficient_space === false && (
-                    <p role="alert">
-                      Insufficient free space. Free storage and review again
-                      before restoring.
+                    <p>
+                      {Object.entries(plan.change_counts ?? {})
+                        .map(([action, count]) => `${count} ${action}`)
+                        .join(" · ")}
                     </p>
-                  )}
-                  {!!plan.volumes?.length && (
+                    <details>
+                      <summary>File changes</summary>
+                      <ul>
+                        {(plan.changes ?? []).map((change) => (
+                          <li key={`${change.component}:${change.path}`}>
+                            {change.action}: {change.path}
+                          </li>
+                        ))}
+                      </ul>
+                      {plan.changes_truncated && (
+                        <p>
+                          Showing the first 1,000 changes. Totals include all
+                          files.
+                        </p>
+                      )}
+                    </details>
                     <table className="table">
                       <thead>
                         <tr>
-                          <th>Storage volume</th>
-                          <th>Required</th>
-                          <th>Available</th>
-                          <th>Result</th>
+                          <th>Setting</th>
+                          <th>Current</th>
+                          <th>Backup</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {plan.volumes.map((volume, index) => (
-                          <tr key={index}>
-                            <td>{volume.roles.join(" + ")}</td>
-                            <td>
-                              {(volume.required_bytes / 1048576).toFixed(1)} MB
-                            </td>
-                            <td>
-                              {(volume.available_bytes / 1048576).toFixed(1)} MB
-                            </td>
-                            <td>
-                              {volume.sufficient
-                                ? "Enough space"
-                                : "Not enough space"}
-                            </td>
+                        {(plan.setting_changes ?? []).map((change) => (
+                          <tr key={`${change.component}:${change.key}`}>
+                            <td>{change.key}</td>
+                            <td>{change.before ?? "Absent"}</td>
+                            <td>{change.after ?? "Absent"}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
-                  )}
-                  {components.some((component) =>
-                    [
-                      "script_config",
-                      "bsm_settings",
-                      "permissions.json",
-                      "allowlist.json",
-                    ].includes(component),
-                  ) && (
-                    <p className="message-warning" role="note">
-                      This selection may replace script secrets, module
-                      permissions, player access, or custom settings. Sensitive
-                      values are hidden.
-                    </p>
-                  )}
-                  <p>
-                    A protected safety backup will be created before any files
-                    are replaced.
-                  </p>
-                  <p>
-                    {Object.entries(plan.change_counts ?? {})
-                      .map(([action, count]) => `${count} ${action}`)
-                      .join(" · ")}
-                  </p>
-                  <details>
-                    <summary>File changes</summary>
                     <ul>
-                      {(plan.changes ?? []).map((change) => (
-                        <li key={`${change.component}:${change.path}`}>
-                          {change.action}: {change.path}
-                        </li>
-                      ))}
+                      {Object.entries(plan.destinations).map(
+                        ([name, destination]) => (
+                          <li key={name}>
+                            {labels[name]} → {destination}
+                          </li>
+                        ),
+                      )}
                     </ul>
-                    {plan.changes_truncated && (
-                      <p>
-                        Showing the first 1,000 changes. Totals include all
-                        files.
+                    {plan.warnings.map((warning) => (
+                      <p key={warning} className="message-warning">
+                        {warning}
                       </p>
-                    )}
-                  </details>
-                  <table className="table">
-                    <thead>
-                      <tr>
-                        <th>Setting</th>
-                        <th>Current</th>
-                        <th>Backup</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(plan.setting_changes ?? []).map((change) => (
-                        <tr key={`${change.component}:${change.key}`}>
-                          <td>{change.key}</td>
-                          <td>{change.before ?? "Absent"}</td>
-                          <td>{change.after ?? "Absent"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <ul>
-                    {Object.entries(plan.destinations).map(
-                      ([name, destination]) => (
-                        <li key={name}>
-                          {labels[name]} → {destination}
-                        </li>
-                      ),
-                    )}
-                  </ul>
-                  {plan.warnings.map((warning) => (
-                    <p key={warning} className="message-warning">
-                      {warning}
+                    ))}
+                    <p>
+                      Required staging and recovery space:{" "}
+                      {bytes(plan.required_bytes)}.
                     </p>
-                  ))}
-                  <p>
-                    Required staging and recovery space:{" "}
-                    {(plan.required_bytes / 1048576).toFixed(1)} MB.
-                  </p>
-                  <label>
-                    <input
-                      className="form-input"
-                      type="checkbox"
-                      checked={restart}
-                      disabled={busy}
-                      onChange={(e) => setRestart(e.target.checked)}
-                    />
-                    Restart after success if the server was running
-                  </label>
-                  <div className="button-group">
-                    <button
-                      className="action-button secondary"
-                      disabled={busy}
-                      onClick={() => setPlan(null)}
-                    >
-                      Change selection
-                    </button>
-                    <button
-                      className="action-button danger-button"
-                      disabled={busy || plan.sufficient_space === false}
-                      onClick={restore}
-                    >
-                      Restore selected components
-                    </button>
-                  </div>
-                </>
-              )}
-              {user?.role === "admin" && (
-                <button
-                  className="action-button secondary"
-                  disabled={busy}
-                  onClick={async () => {
-                    if (
-                      await confirmAction(
-                        "Export an unencrypted copy containing server secrets?",
-                      )
-                    ) {
-                      const blob = await perform(
-                        "export_decrypted_snapshot",
-                        "manage_server_snapshot",
-                        "prepare_backup_copy",
-                        { path: archivePath, body: {}, responseType: "blob" },
-                        false,
-                      );
-                      if (blob) saveBlob(blob, "decrypted.bsmbackup");
-                    }
-                  }}
-                >
-                  Export decrypted copy
-                </button>
-              )}
-            </>
-          )}
-          <details>
-            <summary>Recovery key and destinations</summary>
-            <label>
-              Emergency-kit recovery key
-              <input
-                className="form-input"
-                type="password"
-                autoComplete="off"
-                onChange={(event) => {
-                  secret.current = event.target.value;
-                }}
-              />
-            </label>
-            <button
-              className="action-button secondary"
-              disabled={busy || !selected.encrypted}
-              onClick={() => manage(selected, "test_key")}
-            >
-              Test recovery key
-            </button>
-            <label>
-              Destination name
-              <input
-                className="form-input"
-                value={destination}
-                onChange={(event) => setDestination(event.target.value)}
-              />
-            </label>
-            <button
-              className="action-button secondary"
-              disabled={busy || !destination}
-              onClick={() => manage(selected, "copy", { destination })}
-            >
-              Copy / retry destination
-            </button>
-          </details>
-          {user?.role === "admin" && (
+                    <label>
+                      <input
+                        className="form-input"
+                        type="checkbox"
+                        checked={restart}
+                        disabled={busy}
+                        onChange={(e) => setRestart(e.target.checked)}
+                      />
+                      Restart after success if the server was running
+                    </label>
+                    <div className="button-group">
+                      <button
+                        className="action-button secondary"
+                        disabled={busy}
+                        onClick={() => setPlan(null)}
+                      >
+                        Change selection
+                      </button>
+                      <button
+                        className="action-button danger-button"
+                        disabled={busy || plan.sufficient_space === false}
+                        onClick={restore}
+                      >
+                        Restore
+                      </button>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+          </section>
+          <section
+            role="tabpanel"
+            id={`${inspectorId}-details-panel`}
+            aria-labelledby={`${inspectorId}-details-tab`}
+            hidden={inspectorTab !== "details"}
+          >
             <details>
-              <summary>Restore as a new server</summary>
+              <summary>Capture timings</summary>
+              <dl className="backup-timings">
+                {Object.entries(selected.stage_durations_ms ?? {}).map(
+                  ([stage, duration]) => (
+                    <div key={stage}>
+                      <dt>{stage}</dt>
+                      <dd>{(duration / 1000).toFixed(2)} seconds</dd>
+                    </div>
+                  ),
+                )}
+              </dl>
+            </details>
+            <details>
+              <summary>Label and notes</summary>
+              <label>
+                Label
+                <input
+                  className="form-input"
+                  maxLength={120}
+                  value={label}
+                  onChange={(event) => setLabel(event.target.value)}
+                />
+              </label>
+              <label>
+                Notes
+                <textarea
+                  className="form-input"
+                  rows={4}
+                  maxLength={2000}
+                  value={notes}
+                  onChange={(event) => setNotes(event.target.value)}
+                />
+              </label>
               <p>
-                Install a stopped server, remap its ports, then review and
-                restore the prepared archive on that server. Autostart stays
-                disabled.
+                Labels and notes stay with this manager; archive downloads keep
+                their original contents.
               </p>
-              <label>
-                New server name
-                <input
-                  className="form-input"
-                  value={copyName}
-                  onChange={(event) => setCopyName(event.target.value)}
-                />
-              </label>
-              <label>
-                Bedrock version
-                <input
-                  className="form-input"
-                  value={copyVersion}
-                  onChange={(event) => setCopyVersion(event.target.value)}
-                />
-              </label>
-              <label>
-                IPv4 port
-                <input
-                  className="form-input"
-                  type="number"
-                  min="1"
-                  max="65535"
-                  value={port}
-                  onChange={(event) => setPort(Number(event.target.value))}
-                />
-              </label>
-              <label>
-                IPv6 port
-                <input
-                  className="form-input"
-                  type="number"
-                  min="1"
-                  max="65535"
-                  value={portv6}
-                  onChange={(event) => setPortv6(Number(event.target.value))}
-                />
-              </label>
               <button
-                className="action-button"
-                disabled={busy || !copyName}
+                className="action-button secondary"
+                disabled={busy}
+                onClick={() => manage(selected, "annotate", { label, notes })}
+              >
+                Save
+              </button>
+            </details>
+          </section>
+          <section
+            role="tabpanel"
+            id={`${inspectorId}-manage-panel`}
+            aria-labelledby={`${inspectorId}-manage-tab`}
+            hidden={inspectorTab !== "manage"}
+          >
+            {manifest && user?.role === "admin" && (
+              <button
+                className="action-button secondary"
+                disabled={busy}
                 onClick={async () => {
                   if (
-                    !(await confirmAction(
-                      `Install a stopped server named ${copyName} for this backup?`,
-                    ))
-                  )
-                    return;
-                  const result = await perform("prepare_backup_copy", {
-                    path: archivePath,
-                    body: {
-                      target_server: copyName,
-                      target_version: copyVersion,
-                      server_port: port,
-                      server_portv6: portv6,
-                    },
-                  });
-                  if (result) {
-                    addToast(result.message, "success");
-                    await refreshServers?.();
-                    await setSelectedServer(result.server_name);
+                    await confirmAction(
+                      "Export an unencrypted copy containing server secrets?",
+                    )
+                  ) {
+                    const blob = await perform(
+                      "export_decrypted_snapshot",
+                      { path: archivePath, body: {}, responseType: "blob" },
+                      false,
+                    );
+                    if (blob) saveBlob(blob, "decrypted.bsmbackup");
                   }
                 }}
               >
-                Prepare new server
+                Export decrypted
+              </button>
+            )}{" "}
+            <details>
+              <summary>Recovery key and destinations</summary>
+              <form onSubmit={(event) => event.preventDefault()}>
+                <label>
+                  Emergency-kit recovery key
+                  <input
+                    className="form-input"
+                    type="password"
+                    name="recovery_key"
+                    autoComplete="off"
+                    onChange={(event) => {
+                      secret.current = event.target.value;
+                    }}
+                  />
+                </label>
+              </form>
+              <button
+                className="action-button secondary"
+                disabled={busy || !selected.encrypted}
+                onClick={() => manage(selected, "test_key")}
+              >
+                Test key
+              </button>
+              <label>
+                Destination name
+                <input
+                  className="form-input"
+                  value={destination}
+                  onChange={(event) => setDestination(event.target.value)}
+                />
+              </label>
+              <button
+                className="action-button secondary"
+                disabled={busy || !destination}
+                onClick={() => manage(selected, "copy", { destination })}
+              >
+                Copy
               </button>
             </details>
-          )}
+            {user?.role === "admin" && (
+              <details>
+                <summary>Restore as a new server</summary>
+                <p>
+                  Install a stopped server, remap its ports, then review and
+                  restore the prepared archive on that server. Autostart stays
+                  disabled.
+                </p>
+                <label>
+                  New server name
+                  <input
+                    className="form-input"
+                    value={copyName}
+                    onChange={(event) => setCopyName(event.target.value)}
+                  />
+                </label>
+                <label>
+                  Bedrock version
+                  <input
+                    className="form-input"
+                    value={copyVersion}
+                    onChange={(event) => setCopyVersion(event.target.value)}
+                  />
+                </label>
+                <label>
+                  IPv4 port
+                  <input
+                    className="form-input"
+                    type="number"
+                    min="1"
+                    max="65535"
+                    value={port}
+                    onChange={(event) => setPort(Number(event.target.value))}
+                  />
+                </label>
+                <label>
+                  IPv6 port
+                  <input
+                    className="form-input"
+                    type="number"
+                    min="1"
+                    max="65535"
+                    value={portv6}
+                    onChange={(event) => setPortv6(Number(event.target.value))}
+                  />
+                </label>
+                <button
+                  className="action-button"
+                  disabled={busy || !copyName}
+                  onClick={async () => {
+                    if (
+                      !(await confirmAction(
+                        `Install a stopped server named ${copyName} for this backup?`,
+                      ))
+                    )
+                      return;
+                    const result = await perform("prepare_backup_copy", {
+                      path: archivePath,
+                      body: {
+                        target_server: copyName,
+                        target_version: copyVersion,
+                        server_port: port,
+                        server_portv6: portv6,
+                      },
+                    });
+                    if (result) {
+                      addToast(result.message, "success");
+                      await refreshServers?.();
+                      await setSelectedServer(result.server_name);
+                    }
+                  }}
+                >
+                  Prepare new server
+                </button>
+              </details>
+            )}
+          </section>
           {progress && <p role="status">{progress}</p>}
         </Modal>
       )}

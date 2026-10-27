@@ -89,14 +89,7 @@ const GlobalPlayers = () => {
     <div className="container">
       <QueryStatus query={resourceQuery} />
       <TaskOutcome result={write.data} error={write.error?.data?.error} />
-      <div
-        className="header"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+      <div className="header">
         <h1>Global Player Database</h1>
         <div
           style={{
@@ -153,8 +146,8 @@ const GlobalPlayers = () => {
             color: "var(--text-color-secondary)",
           }}
         >
-          This is the central database of all known players across all servers.
-          Adding players here makes them available for permissions management.
+          Player records shared across servers. Add players here for access
+          management.
         </p>
 
         {/* Add Form */}
@@ -166,7 +159,7 @@ const GlobalPlayers = () => {
             gap: "calc(10px * var(--bsm-spacing-scale))",
             alignItems: "flex-end",
             marginBottom: "calc(20px * var(--bsm-spacing-scale))",
-            background: "rgba(0,0,0,0.1)",
+            background: "var(--bsm-surface-raised)",
             padding: "calc(15px * var(--bsm-spacing-scale))",
             borderRadius: "5px",
           }}
@@ -223,7 +216,7 @@ const GlobalPlayers = () => {
             }}
           >
             <div className="spinner"></div>
-            <p>Loading players...</p>
+            <p role="status">Loading players…</p>
           </div>
         ) : (
           <div className="table-responsive-wrapper">

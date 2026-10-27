@@ -1,3 +1,4 @@
+import { browserTimezone } from "../utils/time";
 import React from "react";
 import { settingField } from "../utils/settingsFields";
 const parseArray = (text) =>
@@ -36,7 +37,35 @@ export default function SettingsField({
       <label htmlFor={id} className="form-label">
         {metadata.label || label || path.split(".").at(-1).replace(/_/g, " ")}
       </label>
-      {metadata.type === "boolean" || typeof value === "boolean" ? (
+      {metadata.type === "timezone" ? (
+        <select
+          id={id}
+          className="form-input"
+          value={value || "UTC"}
+          onChange={(event) => onChange(path, event.target.value)}
+          disabled={readOnly}
+          aria-describedby={helpId}
+        >
+          {[
+            ...new Set(
+              [
+                "UTC",
+                ...(Intl.supportedValuesOf?.("timeZone") ?? []),
+                browserTimezone(),
+                value,
+              ].filter(Boolean),
+            ),
+          ]
+            .sort()
+            .map((zone) => (
+              <option key={zone} value={zone}>
+                {zone === "America/Los_Angeles"
+                  ? "Pacific Time (America/Los_Angeles)"
+                  : zone.replaceAll("_", " ")}
+              </option>
+            ))}
+        </select>
+      ) : metadata.type === "boolean" || typeof value === "boolean" ? (
         <select
           id={id}
           className="form-input"

@@ -149,3 +149,10 @@ revisions, terminal identities/status, resource membership tombstones and retire
 epochs. Small replay watermarks intentionally grow with unique resource/task IDs
 until reset; compaction bounds large payload retention rather than weakening
 correctness with an arbitrary watermark eviction limit.
+
+Runtime diagnostics are opt-in and retain at most 1,000 in-memory observations by
+default. `setEnabled(false)` pauses recording without clearing observations; use
+`clear()` explicitly to remove them. Session reset disables recording, clears the
+current session's observations, and resets its counters. Durable history is owned
+by the embedding application, which must scope it by backend/account and retain
+only the documented safe policy metadata. The runtime remains browser-independent.

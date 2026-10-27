@@ -172,7 +172,7 @@ const Login = () => {
               display: "flex",
               alignItems: "center",
               gap: "calc(5px * var(--bsm-spacing-scale))",
-              fontSize: "0.9em",
+              fontSize: "var(--bsm-small-size)",
               textDecoration: "underline",
             }}
           >

@@ -1,3 +1,4 @@
+import Timestamp from "../Timestamp";
 import { useResourceQuery } from "../../app/resourceQueries";
 
 const labels = {
@@ -68,15 +69,11 @@ export default function ApplicationHealth() {
               title="Health checks refresh every 30 seconds"
             >
               Checked{" "}
-              <time
-                dateTime={new Date(query.data.checked_at * 1000).toISOString()}
-                title={new Date(query.data.checked_at * 1000).toLocaleString()}
-              >
-                {new Date(query.data.checked_at * 1000).toLocaleTimeString(
-                  undefined,
-                  { hour: "numeric", minute: "2-digit" },
-                )}
-              </time>{" "}
+              <Timestamp
+                value={query.data.checked_at}
+                unit="seconds"
+                kind="time"
+              />{" "}
               · every 30s
             </span>
           )}

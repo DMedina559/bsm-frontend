@@ -1,3 +1,4 @@
+import TimeDisplaySettings from "../components/appearance/TimeDisplaySettings";
 import RecoverySettings from "../components/RecoverySettings";
 import "../styles/appearance.css";
 import { usePreference } from "../app/usePreference";
@@ -281,6 +282,7 @@ const Account = ({ appearanceOnly = false }) => {
                 </div>
               </div>
             </section>
+            <TimeDisplaySettings />
             <MetricUnitSettings />
           </div>
           <section
@@ -428,6 +430,7 @@ const Account = ({ appearanceOnly = false }) => {
             aria-busy={passwordSaving}
           >
             <input
+              className="form-input"
               type="text"
               name="username"
               value={user?.username || ""}

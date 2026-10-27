@@ -1,6 +1,6 @@
 /** Bounded, payload-free frontend observations. Never records identities or values. */
 /** @returns {import("./index.js").RuntimeDiagnostics} */
-export function createRuntimeDiagnostics(limit = 200) {
+export function createRuntimeDiagnostics(limit = 1000) {
   let snapshot = {
     enabled: false,
     events: [],
@@ -25,7 +25,8 @@ export function createRuntimeDiagnostics(limit = 200) {
       return () => listeners.delete(listener);
     },
     setEnabled(enabled) {
-      publish({ enabled: Boolean(enabled), events: [] });
+      if (snapshot.enabled !== Boolean(enabled))
+        publish({ enabled: Boolean(enabled) });
     },
     record(type, { reason, family, count } = {}) {
       if (!snapshot.enabled) return;

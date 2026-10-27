@@ -22,6 +22,7 @@ export default function PluginDiagnostics({ data }) {
           <label className="diagnostic-plugin-search">
             <Search size={18} aria-hidden="true" />
             <input
+              className="form-input"
               type="search"
               aria-label="Search plugins"
               placeholder="Search plugins…"

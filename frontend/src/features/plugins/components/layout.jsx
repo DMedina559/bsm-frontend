@@ -66,7 +66,7 @@ export const layoutComponents = {
       isOpen={isOpen}
       onClose={onClose}
       title={title}
-      className={className}
+      className={`plugin-native-modal ${className}`}
     >
       {children}
     </Modal>

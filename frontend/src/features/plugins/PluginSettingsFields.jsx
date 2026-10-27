@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { draftRegistry } from "../../app/draftRegistry";
 
 export function JsonSetting({
@@ -49,6 +49,90 @@ export function JsonSetting({
   );
 }
 
+function EnumArraySetting({
+  path,
+  value,
+  items,
+  field,
+  label,
+  onChange,
+  required,
+}) {
+  const selected = Array.isArray(value) ? value : [];
+  const input = useRef(null);
+  const enforce = required || Array.isArray(value);
+  const error =
+    enforce && selected.length < (field.minItems ?? 0)
+      ? `Choose at least ${field.minItems} option${field.minItems === 1 ? "" : "s"}.`
+      : enforce && selected.length > (field.maxItems ?? Infinity)
+        ? `Choose at most ${field.maxItems} options.`
+        : "";
+  useEffect(() => {
+    input.current?.setCustomValidity(error);
+  }, [error]);
+  const choices = [...new Set([...items.enum, ...selected])];
+  const labels =
+    field["x-bsm-choice-labels"] ?? items["x-bsm-choice-labels"] ?? {};
+  return (
+    <fieldset
+      className="setting-item plugin-server-checklist"
+      aria-describedby={`plugin-help-${path}`}
+    >
+      <legend className="form-label">{label}</legend>
+      <div className="plugin-server-options">
+        {choices.map((choice, index) => {
+          const available = items.enum.includes(choice);
+          return (
+            <label
+              className="plugin-server-option"
+              key={JSON.stringify(choice)}
+            >
+              <input
+                ref={index === 0 ? input : undefined}
+                type="checkbox"
+                checked={selected.includes(choice)}
+                aria-invalid={!!error}
+                disabled={!available && !selected.includes(choice)}
+                onChange={(event) =>
+                  onChange(
+                    path,
+                    event.target.checked
+                      ? [...selected, choice]
+                      : selected.filter((item) => item !== choice),
+                  )
+                }
+              />
+              <span>
+                {labels[choice] ?? String(choice)}
+                {available ? "" : " (unavailable)"}
+              </span>
+            </label>
+          );
+        })}
+        {!items.enum.length && (
+          <small className="form-help-text">
+            {items["x-bsm-server-name"]
+              ? "No valid servers available."
+              : "No options available."}
+          </small>
+        )}
+      </div>
+      <small id={`plugin-help-${path}`} className="form-help-text">
+        {error || field.description}
+      </small>
+      {!(field.minItems > 0) && (
+        <button
+          type="button"
+          className="action-button secondary"
+          onClick={() => onChange(path, [])}
+        >
+          Clear selection
+        </button>
+      )}
+    </fieldset>
+  );
+}
+
 export default function PluginSettingsFields({ values, schema, onChange }) {
   function resolve(field) {
     if (field?.$ref?.startsWith("#/$defs/"))
@@ -77,62 +161,18 @@ export default function PluginSettingsFields({ values, schema, onChange }) {
           </section>
         );
       const items = resolve(field.items);
-      if (field.type === "array" && items["x-bsm-server-name"] && items.enum)
+      if (field.type === "array" && Array.isArray(items.enum))
         return (
-          <fieldset
-            className="setting-item plugin-server-checklist"
+          <EnumArraySetting
             key={path}
-            aria-describedby={`plugin-help-${path}`}
-          >
-            <legend className="form-label">{label}</legend>
-            <div className="plugin-server-options">
-              {[
-                ...new Set([
-                  ...items.enum,
-                  ...(Array.isArray(value) ? value : []),
-                ]),
-              ].map((server) => {
-                const selected = Array.isArray(value) ? value : [];
-                const available = items.enum.includes(server);
-                return (
-                  <label className="plugin-server-option" key={server}>
-                    <input
-                      type="checkbox"
-                      checked={selected.includes(server)}
-                      disabled={!available && !selected.includes(server)}
-                      onChange={(event) =>
-                        onChange(
-                          path,
-                          event.target.checked
-                            ? [...selected, server]
-                            : selected.filter((name) => name !== server),
-                        )
-                      }
-                    />
-                    <span>
-                      {server}
-                      {available ? "" : " (unavailable)"}
-                    </span>
-                  </label>
-                );
-              })}
-              {!items.enum.length && (
-                <small className="form-help-text">
-                  No valid servers available.
-                </small>
-              )}
-            </div>
-            <small id={`plugin-help-${path}`} className="form-help-text">
-              {field.description}
-            </small>
-            <button
-              type="button"
-              className="action-button secondary"
-              onClick={() => onChange(path, [])}
-            >
-              Clear selection
-            </button>
-          </fieldset>
+            path={path}
+            value={value}
+            items={items}
+            field={field}
+            label={label}
+            onChange={onChange}
+            required={required?.includes(name)}
+          />
         );
       if (
         nullable ||

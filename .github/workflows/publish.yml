@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: "22"
+          node-version: "24"
           package-manager-cache: false
       - name: Resolve release
         id: version
@@ -50,7 +50,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: "22"
+          node-version: "24"
           package-manager-cache: false
       - name: Install workspace dependencies
         run: npm ci
@@ -96,8 +96,13 @@ jobs:
     if: needs.release.outputs.product == 'frontend'
     uses: ./.github/workflows/build-test.yml
 
+  lint:
+    needs: release
+    if: needs.release.outputs.product == 'frontend'
+    uses: ./.github/workflows/lint.yml
+
   pypi:
-    needs: [release, validate]
+    needs: [release, validate, lint]
     if: needs.release.outputs.product == 'frontend'
     runs-on: ubuntu-24.04
     environment:
@@ -115,11 +120,11 @@ jobs:
           packages-dir: python/dist/
 
   npm:
-    needs: [release, library, validate]
+    needs: [release, library, validate, lint]
     if: >-
       ${{ !cancelled() && needs.release.result == 'success' &&
           ((needs.release.outputs.product == 'frontend' &&
-            needs.validate.result == 'success') ||
+            needs.validate.result == 'success' && needs.lint.result == 'success') ||
            (needs.release.outputs.product != 'frontend' && needs.library.result == 'success')) }}
     runs-on: ubuntu-24.04
     environment: npm-release
@@ -130,7 +135,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: "22"
+          node-version: "24"
           package-manager-cache: false
       - name: Install npm for trusted publishing
         run: |

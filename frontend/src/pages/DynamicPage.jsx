@@ -35,7 +35,12 @@ export default function DynamicPage({ schemaJson }) {
   });
   const handleInputChange = (id, value) =>
     setFormState((previous) => ({ ...previous, [id]: value }));
-  if (query.loading) return <div className="container">Loading...</div>;
+  if (query.loading)
+    return (
+      <div role="status" className="container">
+        Loading…
+      </div>
+    );
   if (query.error)
     return (
       <div className="container">
