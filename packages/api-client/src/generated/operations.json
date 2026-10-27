@@ -639,6 +639,20 @@
     "bodyTypes": ["application/json"],
     "responseType": "json"
   },
+  "control_schedule": {
+    "method": "POST",
+    "path": "/api/scheduler/schedules/{schedule_id}/action",
+    "parameters": [
+      {
+        "name": "schedule_id",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
+  },
   "install_server": {
     "method": "POST",
     "path": "/api/server/install",
