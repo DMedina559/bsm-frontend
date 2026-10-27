@@ -5567,7 +5567,6 @@ export interface components {
       /** Components */
       components?:
         | (
-            | "server_directory"
             | "world"
             | "server.properties"
             | "allowlist.json"

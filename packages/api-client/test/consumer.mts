@@ -36,3 +36,12 @@ if (health) {
   const instance: string | null | undefined = health.instance_id;
   console.log(pid, version, instance);
 }
+
+// Generated backup metadata can be passed directly to the typed creation API.
+import { contractMetadata } from "../dist/metadata.js";
+const contentBody: import("../dist/generated/contract.js").components["schemas"]["SnapshotCreatePayload"] =
+  {
+    mode: "selected",
+    components: [...contractMetadata.backupContents.defaults],
+  };
+void contentBody;

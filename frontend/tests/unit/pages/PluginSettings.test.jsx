@@ -115,3 +115,66 @@ it("offers current server choices and lets users clear the selection", async () 
   fireEvent.click(screen.getByRole("button", { name: "Clear selection" }));
   expect(server).not.toBeChecked();
 });
+
+it("renders schema component choices as checkboxes and enforces a nonempty selection", async () => {
+  const original = api.get.getMockImplementation();
+  api.get.mockImplementation(async (url, ...args) => {
+    const result = await original(url, ...args);
+    if (url !== "/api/plugins/typed/settings") return result;
+    return {
+      ...result,
+      settings: { ...result.settings, components: ["world"] },
+      settings_schema: {
+        ...result.settings_schema,
+        $defs: {
+          ComponentName: {
+            type: "string",
+            enum: ["world", "server.properties"],
+          },
+        },
+        properties: {
+          ...result.settings_schema.properties,
+          components: {
+            type: "array",
+            title: "Backup components",
+            minItems: 1,
+            uniqueItems: true,
+            items: { $ref: "#/$defs/ComponentName" },
+            "x-bsm-choice-labels": {
+              world: "Active world",
+              "server.properties": "Server properties",
+            },
+          },
+        },
+      },
+    };
+  });
+  render(<PluginSettings />);
+  fireEvent.click(await screen.findByRole("tab", { name: "typed" }));
+  const world = await screen.findByRole("checkbox", { name: "Active world" });
+  expect(world).toBeChecked();
+  expect(
+    screen.queryByRole("textbox", { name: "Backup components" }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("checkbox", { name: /server_directory/ }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(world);
+  expect(world).toBeInvalid();
+  expect(screen.getByText("Choose at least 1 option.")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
+  expect(api.put).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("checkbox", { name: "Server properties" }));
+  expect(world).toBeValid();
+  fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
+  await waitFor(() =>
+    expect(api.put).toHaveBeenCalledWith(
+      "/api/plugins/typed/settings",
+      expect.objectContaining({
+        settings: expect.objectContaining({
+          components: ["server.properties"],
+        }),
+      }),
+    ),
+  );
+});

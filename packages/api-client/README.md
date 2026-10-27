@@ -150,3 +150,5 @@ transport writes with backpressure, closes on success, and aborts partial output
 on cancellation or failure. Without a destination it returns a Blob. These
 options share the normal bearer authentication, backend URL resolution, session
 guards, and abort signals. A timeout of zero disables only the deadline.
+
+Backup pickers can read `contractMetadata.backupContents` from `@bedrock-server-manager/api-client/metadata`. Its component IDs, labels and defaults are generated from the backend Pydantic creation schema, shared with plugin settings. Full-directory capture uses `mode: "full"`; it is not an individual component choice.

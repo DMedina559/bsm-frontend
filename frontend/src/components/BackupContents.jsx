@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 
 import { backupComponents } from "../utils/backupContents";
 
@@ -9,6 +9,14 @@ export default function BackupContents({
   disabled = false,
   allowDefault = false,
 }) {
+  const firstChoice = useRef(null);
+  useEffect(() => {
+    firstChoice.current?.setCustomValidity(
+      mode === "selected" && components.length === 0
+        ? "Select at least one component."
+        : "",
+    );
+  }, [mode, components]);
   return (
     <fieldset disabled={disabled} className="backup-policy-section">
       <legend>Backup contents</legend>
@@ -29,9 +37,10 @@ export default function BackupContents({
       </label>
       {mode === "selected" && (
         <div className="settings-grid">
-          {Object.entries(backupComponents).map(([key, label]) => (
+          {Object.entries(backupComponents).map(([key, label], index) => (
             <label key={key}>
               <input
+                ref={index === 0 ? firstChoice : undefined}
                 type="checkbox"
                 checked={components.includes(key)}
                 onChange={(e) =>
