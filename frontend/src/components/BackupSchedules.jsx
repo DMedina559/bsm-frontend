@@ -1,4 +1,6 @@
 import BackupContents from "./BackupContents";
+import PluginSettingsFields from "../features/plugins/PluginSettingsFields";
+import { updateSetting } from "../utils/settings";
 import { defaultBackupComponents } from "../utils/backupContents";
 import { browserTimezone } from "../utils/time";
 import { useTimeFormat } from "../app/useTimeFormat";
@@ -168,11 +170,65 @@ export default function BackupSchedules({
                 <dd>{entry.last_status ?? "Not run"}</dd>
               </div>
             </dl>
+            {entry.next_attempt_at && (
+              <p className="schedule-muted">
+                Next attempt: <Timestamp value={entry.next_attempt_at} />
+              </p>
+            )}
+            {entry.retry_exhausted && (
+              <p role="alert">
+                Automatic retries exhausted. Review the failure before retrying.
+              </p>
+            )}
+            {entry.blocked_reason && (
+              <p className="schedule-muted">
+                Waiting: {entry.blocked_reason.replaceAll("_", " ")}
+              </p>
+            )}
             {entry.last_error && <p role="alert">{entry.last_error}</p>}
             <div className="button-group">
+              {[
+                ["run_now", "Run now"],
+                [
+                  entry.configuration.enabled ? "pause" : "resume",
+                  entry.configuration.enabled ? "Pause" : "Resume",
+                ],
+                ...(["failed", "interrupted", "deferred"].includes(
+                  entry.last_status,
+                )
+                  ? [["retry", "Retry now"]]
+                  : []),
+              ].map(([action, label]) => (
+                <button
+                  key={action}
+                  className="action-button secondary"
+                  disabled={busy || (["run_now", "retry"].includes(action) && !entry.available)}
+                  onClick={async () => {
+                    if (
+                      (action === "run_now" || action === "retry") &&
+                      !(await confirmAction(
+                        `${label} for ${entry.schedule_id}?`,
+                      ))
+                    )
+                      return;
+                    await perform("control_schedule", {
+                      path: { schedule_id: entry.schedule_id },
+                      body: {
+                        action:
+                          /** @type {"run_now" | "pause" | "resume" | "retry"} */ (
+                            action
+                          ),
+                        revision: entry.revision,
+                      },
+                    });
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
               <button
                 className="action-button secondary"
-                disabled={busy}
+                disabled={busy || editing}
                 onClick={() => {
                   setScheduleId(entry.schedule_id);
                   setExisting(true);
@@ -394,6 +450,21 @@ export default function BackupSchedules({
                       mode: mode === "default" ? null : mode,
                       components: mode === "selected" ? components : null,
                     })
+                  }
+                />
+              )}
+              {config.task.includes(":") && (
+                <PluginSettingsFields
+                  key={config.task}
+                  values={config.options}
+                  schema={
+                    query.data?.task_definitions?.[config.task]?.options_schema
+                  }
+                  onChange={(path, value) =>
+                    change(
+                      "options",
+                      path ? updateSetting(config.options, path, value) : value,
+                    )
                   }
                 />
               )}
