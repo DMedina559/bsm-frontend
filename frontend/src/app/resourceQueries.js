@@ -220,6 +220,26 @@ const resources = {
       settings_schema: data?.settings_schema ?? null,
     }),
   },
+  scopedPluginSettings: {
+    key: (target) => [
+      ...queryKeys.pluginSettings(target.name),
+      target.scope,
+      target.serverName ?? "",
+    ],
+    load: (target, options) =>
+      callOperation("get_plugin_settings", {
+        path: { plugin_name: target.name },
+        query: {
+          scope: target.scope,
+          ...(target.serverName ? { server_name: target.serverName } : {}),
+        },
+        ...options,
+      }),
+    select: (data) => ({
+      settings: object(data?.settings, "plugin settings"),
+      settings_schema: data?.settings_schema ?? null,
+    }),
+  },
   pluginPages: {
     key: queryKeys.pluginPages,
     load: (_target, options) => callOperation("get_plugin_pages", options),

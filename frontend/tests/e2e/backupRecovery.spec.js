@@ -27,7 +27,6 @@ async function recoveryBackend(context) {
           web: { port: 11325 },
           backups: {
             encryption: false,
-            include_server_packs: true,
             safety_window_hours: 168,
             verification_interval_hours: 168,
             keep_daily: 7,

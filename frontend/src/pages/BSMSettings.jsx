@@ -1,3 +1,4 @@
+import ScopedPluginSettings from "../features/plugins/ScopedPluginSettings";
 import { useSearchParams } from "react-router-dom";
 import BackupSettings from "../components/BackupSettings";
 import "../styles/backup-settings.css";
@@ -21,7 +22,7 @@ import { logger } from "../utils/logger";
 const EMPTY_SETTINGS = {};
 const BSMSettings = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const tabs = ["general", "backups", "web", "storage", "advanced"];
+  const tabs = ["general", "backups", "web", "storage", "plugins", "advanced"];
   const activeTab = tabs.includes(searchParams.get("tab"))
     ? searchParams.get("tab")
     : "general";
@@ -198,6 +199,7 @@ const BSMSettings = () => {
                 web: "Web & access",
                 storage: "Storage",
                 advanced: "Advanced",
+                plugins: "Plugins",
               }[tab]
             }
           </button>
@@ -213,7 +215,15 @@ const BSMSettings = () => {
           Unsaved changes
         </p>
       )}
-      {loading && Object.keys(settings).length === 0 ? (
+      {activeTab === "plugins" ? (
+        <div
+          role="tabpanel"
+          id="settings-panel-plugins"
+          aria-labelledby="settings-tab-plugins"
+        >
+          <ScopedPluginSettings scope="global" />
+        </div>
+      ) : loading && Object.keys(settings).length === 0 ? (
         <div
           style={{
             textAlign: "center",
