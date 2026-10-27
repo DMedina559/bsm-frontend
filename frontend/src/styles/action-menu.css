@@ -1,0 +1,40 @@
+.action-menu-trigger {
+  vertical-align: middle;
+}
+.action-menu-panel {
+  position: fixed;
+  z-index: 1200;
+  width: min(220px, calc(100vw - 16px));
+  max-height: calc(100dvh - 16px);
+  overflow-y: auto;
+  padding: var(--bsm-space-1);
+  border: 1px solid var(--border-color);
+  border-radius: var(--bsm-radius-md);
+  background: var(--bsm-surface-raised);
+  box-shadow: var(--bsm-shadow);
+}
+.action-menu-panel button {
+  display: flex;
+  align-items: center;
+  gap: var(--bsm-space-2);
+  width: 100%;
+  min-height: 44px;
+  padding: var(--bsm-space-2) var(--bsm-space-3);
+  border: 0;
+  border-radius: var(--bsm-radius-sm);
+  background: transparent;
+  color: var(--bsm-text);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.action-menu-panel button:hover,
+.action-menu-panel button:focus-visible {
+  background: var(--bsm-accent-soft);
+  outline: 2px solid var(--bsm-focus);
+  outline-offset: -2px;
+}
+.action-menu-panel button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

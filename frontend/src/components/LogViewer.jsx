@@ -264,7 +264,7 @@ export default function LogViewer({
             Follow live
           </button>
         )}
-        {loading && <span role="status">Loading logs...</span>}
+        {loading && <span role="status">Loading logs…</span>}
         {page.tailOmitted && (
           <span role="status">
             Viewing older entries. Follow live to return to current output.
@@ -281,7 +281,7 @@ export default function LogViewer({
           background: "var(--bsm-console)",
           color: "var(--text-color)",
           padding: "calc(15px * var(--bsm-spacing-scale))",
-          fontFamily: "monospace",
+          fontFamily: "var(--bsm-mono)",
           overflowY: "auto",
           height: "400px",
           ...style,

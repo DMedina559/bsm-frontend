@@ -1,3 +1,5 @@
+import { createElement } from "react";
+import Timestamp from "../Timestamp";
 const labels = {
   pid: "Process ID",
   uptime_seconds: "Uptime",
@@ -27,7 +29,11 @@ export function displayValue(value) {
 }
 export function dateValue(value) {
   return Number.isFinite(value) && value > 0
-    ? new Date(value * 1000).toLocaleString()
+    ? createElement(Timestamp, {
+        value,
+        unit: "seconds",
+        fallback: "Not recorded",
+      })
     : "Not recorded";
 }
 export function fieldValue(key, value) {

@@ -17,6 +17,7 @@ import { dateValue, displayValue, fieldValue, labelFor } from "./format";
 
 const icons = {
   runtime: Clock,
+  scheduler: Clock,
   events: Radio,
   state: Layers,
   storage: Database,

@@ -1,3 +1,5 @@
+import BackupContents from "./BackupContents";
+import { defaultBackupComponents } from "../utils/backupContents";
 import DestinationCleanup from "./DestinationCleanup";
 import React, { useState } from "react";
 import { useServer } from "../contexts/ServerContext";
@@ -27,8 +29,7 @@ export default function BackupSettings({
     <section className="backup-settings">
       <h2>Backup policy</h2>
       <p className="form-help-text">
-        Defaults apply across your servers. Save Changes applies policy,
-        destination, and schedule edits.
+        Save changes to apply backup policy and destination settings.
       </p>
       <fieldset className="backup-policy-section">
         <legend>Defaults and retention</legend>
@@ -53,6 +54,24 @@ export default function BackupSettings({
               encryption.
             </small>
           </label>{" "}
+          <label>
+            <input
+              type="checkbox"
+              checked={policy.verify_after_create ?? false}
+              onChange={(event) =>
+                setPolicy({
+                  ...policy,
+                  verify_after_create: event.target.checked,
+                })
+              }
+            />
+            Verify after creation
+            <small className="form-help-text">
+              Off by default. Full verification reads and extracts the archive
+              again and delays pre-start backups. Restore always validates
+              integrity.
+            </small>
+          </label>
           {retention !== undefined && (
             <label>
               Recent recovery points
@@ -81,7 +100,7 @@ export default function BackupSettings({
             [
               "recovery_drill_interval_hours",
               "Isolated recovery drill interval (hours; 0 disables)",
-              168,
+              0,
               0,
             ],
           ].map(([key, label, fallback, min]) => (
@@ -165,47 +184,18 @@ export default function BackupSettings({
             can exceed the storage budget. A retention count of zero disables
             pruning.
           </p>
-          <label>
-            <input
-              className="form-input"
-              type="checkbox"
-              checked={policy.include_server_packs ?? true}
-              onChange={(event) =>
-                setPolicy({
-                  ...policy,
-                  include_server_packs: event.target.checked,
-                })
-              }
-            />
-            Include server-level packs by default
-          </label>
-        </div>
-      </fieldset>
-      <fieldset className="backup-policy-section">
-        <legend>Schedules</legend>
-        <div className="settings-grid">
-          <label>
-            Server schedule
-            <select
-              className="form-input"
-              value={serverName}
-              onChange={(event) => setServerName(event.target.value)}
-            >
-              <option value="">Choose a server</option>
-              {serverNames.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
-          </label>
-          {serverName && (
-            <ScheduleEditor
-              serverName={serverName}
-              policy={policy}
-              setPolicy={setPolicy}
-            />
-          )}
+          <BackupContents
+            mode={policy.mode ?? "selected"}
+            components={policy.components ?? defaultBackupComponents}
+            onChange={(mode, components) =>
+              setPolicy({
+                ...policy,
+                mode,
+                components,
+                include_server_packs: false,
+              })
+            }
+          />
         </div>
       </fieldset>
       <fieldset className="backup-policy-section">
@@ -398,139 +388,5 @@ export default function BackupSettings({
       </details>
       <BackupKeys />
     </section>
-  );
-}
-function ScheduleEditor({ serverName, policy, setPolicy }) {
-  const schedule = policy.schedules?.[serverName];
-  const update = (next) =>
-    setPolicy({
-      ...policy,
-      schedules: {
-        ...policy.schedules,
-        [serverName]: { ...schedule, ...next },
-      },
-    });
-  return (
-    <fieldset>
-      <legend>Scheduled backups for {serverName}</legend>
-      {!schedule ? (
-        <button
-          type="button"
-          className="action-button secondary"
-          onClick={() =>
-            update({
-              enabled: true,
-              time: "03:00",
-              timezone:
-                Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
-              weekdays: [0, 1, 2, 3, 4, 5, 6],
-              catch_up: true,
-              stagger_minutes: 15,
-            })
-          }
-        >
-          Add schedule
-        </button>
-      ) : (
-        <>
-          <label>
-            <input
-              className="form-input"
-              type="checkbox"
-              checked={schedule.enabled}
-              onChange={(event) => update({ enabled: event.target.checked })}
-            />
-            Enable schedule
-          </label>
-          <label>
-            Local time
-            <input
-              className="form-input"
-              type="time"
-              required
-              value={schedule.time}
-              onChange={(event) => update({ time: event.target.value })}
-            />
-          </label>
-          <label>
-            Timezone
-            <input
-              className="form-input"
-              required
-              value={schedule.timezone}
-              placeholder="America/Los_Angeles"
-              onChange={(event) => update({ timezone: event.target.value })}
-            />
-          </label>
-          <div>
-            {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(
-              (day, index) => (
-                <label key={day}>
-                  <input
-                    className="form-input"
-                    type="checkbox"
-                    checked={schedule.weekdays.includes(index)}
-                    disabled={
-                      schedule.weekdays.length === 1 &&
-                      schedule.weekdays.includes(index)
-                    }
-                    onChange={(event) =>
-                      update({
-                        weekdays: event.target.checked
-                          ? [...schedule.weekdays, index].sort()
-                          : schedule.weekdays.filter(
-                              (value) => value !== index,
-                            ),
-                      })
-                    }
-                  />
-                  {day}
-                </label>
-              ),
-            )}
-          </div>
-          <label>
-            <input
-              className="form-input"
-              type="checkbox"
-              checked={schedule.catch_up}
-              onChange={(event) => update({ catch_up: event.target.checked })}
-            />
-            Run one catch-up backup after a missed run
-          </label>
-          <label>
-            Stagger window (minutes)
-            <input
-              className="form-input"
-              type="number"
-              required
-              step={1}
-              min={0}
-              max={120}
-              value={schedule.stagger_minutes}
-              onChange={(event) =>
-                update({ stagger_minutes: Number(event.target.value) })
-              }
-            />
-          </label>
-          <p>
-            BSM assigns a stable offset within this window and runs scheduled
-            servers in sequence. New schedules begin with their next occurrence.
-            Save Changes to apply changes.
-          </p>
-          <button
-            type="button"
-            className="action-button secondary"
-            onClick={() => {
-              const schedules = { ...policy.schedules };
-              delete schedules[serverName];
-              setPolicy({ ...policy, schedules });
-            }}
-          >
-            Remove schedule
-          </button>
-        </>
-      )}
-    </fieldset>
   );
 }

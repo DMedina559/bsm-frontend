@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { getPreferenceIdentity } from "../app/backendIdentity";
 import ApplicationMetrics from "../components/metrics/ApplicationMetrics";
@@ -7,15 +7,27 @@ import "../styles/application-monitor.css";
 
 export default function ApplicationMonitor() {
   const { user, sessionGeneration } = useAuth() || {};
-  const [selected, setSelected] = useState("metrics");
+  const [params, setParams] = useSearchParams();
+  const selected =
+    params.get("view") === "diagnostics" ? "diagnostics" : "metrics";
+  const setSelected = (value) =>
+    setParams((previous) => {
+      const next = new URLSearchParams(previous);
+      next.set("view", value);
+      return next;
+    });
   const admin = user?.role === "admin";
   const active = admin ? selected : "metrics";
   const tabs = ["metrics", "diagnostics"];
   return (
     <div className="container application-monitor">
       <header className="monitor-page-heading">
-        <h1>Application monitor</h1>
-        <p>Performance and system health</p>
+        <h1>Application Monitor</h1>
+        <p>
+          {admin
+            ? "Application health, metrics and diagnostics."
+            : "Application and server process metrics."}
+        </p>
       </header>
       {admin && (
         <div className="monitor-tabs" role="tablist" aria-label="Metrics views">

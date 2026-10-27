@@ -72,7 +72,7 @@ it("keeps diagnostics bounded, opt-in and free of payload values", async () => {
   });
   expect(runtime.diagnostics.getSnapshot().events).toEqual([]);
   runtime.diagnostics.setEnabled(true);
-  for (let i = 0; i < 500; i++)
+  for (let i = 0; i < 1500; i++)
     runtime.stateReconciler.task({
       id: "private",
       status: "bad",
@@ -80,7 +80,7 @@ it("keeps diagnostics bounded, opt-in and free of payload values", async () => {
     });
   await runtime.refreshResources([["servers", "private"]]);
   const snapshot = runtime.diagnostics.getSnapshot();
-  expect(snapshot.events).toHaveLength(200);
+  expect(snapshot.events).toHaveLength(1000);
   expect(JSON.stringify(snapshot)).not.toMatch(/private|secret|token/);
   expect(snapshot.events.at(-1)).toMatchObject({
     type: "refresh",
@@ -141,4 +141,18 @@ it("keeps revisioned field watermarks when a later fleet response omits revision
     runtime.captureStateRequest(),
   );
   expect(result.servers[0].status).toBe("RUNNING");
+});
+it("pauses without erasing evidence and disables recording at the session boundary", () => {
+  const { runtime } = createFixture();
+  runtime.diagnostics.setEnabled(true);
+  runtime.diagnostics.record("rejected", { reason: "invalid-task" });
+  runtime.diagnostics.setEnabled(false);
+  expect(runtime.diagnostics.getSnapshot().events).toHaveLength(1);
+  runtime.reset();
+  expect(runtime.diagnostics.getSnapshot()).toMatchObject({
+    enabled: false,
+    events: [],
+    subscriptions: 0,
+    references: 0,
+  });
 });

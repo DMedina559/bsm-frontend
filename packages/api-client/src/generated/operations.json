@@ -587,6 +587,48 @@
     "bodyTypes": ["application/json"],
     "responseType": "json"
   },
+  "list_schedules": {
+    "method": "GET",
+    "path": "/api/scheduler/schedules",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "query",
+        "required": false
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "delete_schedule": {
+    "method": "DELETE",
+    "path": "/api/scheduler/schedules/{schedule_id}",
+    "parameters": [
+      {
+        "name": "schedule_id",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "save_schedule": {
+    "method": "PUT",
+    "path": "/api/scheduler/schedules/{schedule_id}",
+    "parameters": [
+      {
+        "name": "schedule_id",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
+  },
   "install_server": {
     "method": "POST",
     "path": "/api/server/install",

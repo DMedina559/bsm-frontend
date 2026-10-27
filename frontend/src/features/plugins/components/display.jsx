@@ -160,7 +160,7 @@ export const displayComponents = {
         }}
       >
         {!lines || lines.length === 0 ? (
-          <div className="log-placeholder">Waiting for logs...</div>
+          <div className="log-placeholder">Waiting for logs…</div>
         ) : (
           lines.map((line, idx) => (
             <div key={idx} className="log-line">

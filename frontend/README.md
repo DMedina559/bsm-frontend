@@ -156,10 +156,10 @@ python -m pip install --force-reinstall --no-deps python/dist/*.whl
 npm run test:e2e:backend --workspace=bsm-frontend
 ```
 
-Use the backend commit in `packages/api-client/backend-source.json`. Set
-`BSM_BACKEND_PYTHON` if that installation uses a different Python executable.
-CI runs this smoke check and compares the supported backend's exported contract
-before publishing frontend distributions.
+Use backend `dev` for integration testing. Set `BSM_BACKEND_PYTHON` if that
+installation uses a different Python executable. CI runs the packaged-app check
+against backend `dev` before publishing frontend distributions. Generated API
+consistency, style and types are checked in the separate Lint and Types workflow.
 
 | Test directory            | Contents                                                    |
 | ------------------------- | ----------------------------------------------------------- |
@@ -270,3 +270,50 @@ in memory; reset clears them. Long-session compaction runs every 250 accepted
 observations, drops expendable event payloads, and reduces old terminal tasks to
 identity/status. Revisions, arrival clocks, epoch tombstones and task terminal
 watermarks remain until session/epoch reset, preserving replay protection.
+
+### Dates, times, and shared styles
+
+Set the application timezone in BSM Settings → General. Account → Appearance →
+Dates and times can display the application timezone, your browser's timezone,
+or UTC. Timestamp details retain the UTC instant and original value. Raw logs
+remain UTC; schedules display their explicit scheduling timezone.
+
+Application code should use `Timestamp` for rendered instants and `useTimeFormat`
+for chart labels and date grouping. Numeric timestamps require explicit seconds
+when they come from metrics or diagnostics. Offset-free historical API timestamps
+are interpreted as UTC. Never convert stored timestamps into formatted strings.
+
+Use the shared `header`, `card`, `settings-panel`, `form-input`, `action-button`,
+and status classes. Theme colors come from semantic `--bsm-*` tokens, and geometry
+uses spacing, radius, and density tokens. Page styles should extend those rules
+without redefining common control heights or introducing undefined variables.
+
+### Frontend runtime diagnostics
+
+Open Application monitor → Diagnostics → Frontend runtime to record the browser's
+safe runtime observations. Recording and persistence are both off by default.
+Pausing keeps the current journal; Clear history removes it. Enable Keep history
+across reloads to retain up to 1,000 observations for seven days, scoped to the
+current backend and account. Disabling persistence removes the saved copy while
+keeping the current in-memory view. If browser storage is unavailable, recording
+continues in memory and the view reports the storage failure.
+
+A workspace indicator links back to the recording controls. Filters, 50-row
+pagination and an observation modal keep the journal readable. Download JSON
+exports safe metadata, with current/previous-session labels. Older observations
+never contribute to the live subscription/reference counters. Observation types,
+policy reasons and resource families use fixed allowlists; request bodies,
+credentials, account identities, resource names and payload values are excluded.
+Local history is a bounded, best-effort support journal, not an audit log.
+
+The selected monitor view and diagnostics category are reflected in the URL so
+links and reloads open the same category. Frontend history remains available even
+when the backend diagnostics endpoint is unavailable.
+
+The backup inspector separates restore selection, archive details, and management
+actions. Per-archive secondary actions use a keyboard-accessible three-dot menu
+rendered outside the scrolling table. Byte displays use the account's unit and
+precision preference. Page descriptions are owned by `utils/navigation.js`;
+Scheduler and Application monitor use the same navigation metadata as other pages.
+Plugin component styles are scoped to plugin views and plugin dialogs so opening
+a plugin cannot change native account badges, forms, or other page styles.

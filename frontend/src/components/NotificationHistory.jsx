@@ -1,3 +1,4 @@
+import Timestamp from "./Timestamp";
 import React, { useState } from "react";
 import { Bell } from "lucide-react";
 import { useToast } from "../contexts/ToastContext";
@@ -62,9 +63,7 @@ export default function NotificationHistory() {
                   <strong>
                     {entry.type.charAt(0).toUpperCase() + entry.type.slice(1)}
                   </strong>
-                  <time dateTime={new Date(entry.timestamp).toISOString()}>
-                    {new Date(entry.timestamp).toLocaleString()}
-                  </time>
+                  <Timestamp value={entry.timestamp} />
                 </div>
                 <p>{entry.message}</p>
               </li>

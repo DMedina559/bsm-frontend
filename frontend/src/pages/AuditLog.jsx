@@ -1,3 +1,4 @@
+import Timestamp from "../components/Timestamp";
 import { useResourceQuery } from "../app/resourceQueries";
 import React, { useState } from "react";
 import TaskOutcome from "../components/TaskOutcome";
@@ -33,25 +34,10 @@ const AuditLog = () => {
       setLogRefreshKey((key) => key + 1);
     }
   };
-  const formatDate = (dateString) => {
-    try {
-      return new Date(dateString).toLocaleString();
-    } catch {
-      return dateString;
-    }
-  };
+  const formatDate = (value) => <Timestamp value={value} />;
   return (
     <div className="container">
-      <div
-        className="header"
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "calc(10px * var(--bsm-spacing-scale))",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+      <div className="header">
         <h1
           style={{
             margin: 0,
@@ -129,13 +115,14 @@ const AuditLog = () => {
           <>
             {loading && logs.length === 0 ? (
               <div
+                role="status"
                 className="container"
                 style={{
                   textAlign: "center",
                   padding: "calc(20px * var(--bsm-spacing-scale))",
                 }}
               >
-                Loading logs...
+                Loading logs…
               </div>
             ) : (
               <div className="task-history">
@@ -173,7 +160,7 @@ const AuditLog = () => {
             style={{
               height: "calc(100vh - 250px)",
               minHeight: "400px",
-              fontSize: "0.9em",
+              fontSize: "var(--bsm-small-size)",
               borderRadius: "5px",
               border: "1px solid var(--border-color)",
             }}
@@ -184,13 +171,14 @@ const AuditLog = () => {
           <>
             {loading && tasks.length === 0 ? (
               <div
+                role="status"
                 className="container"
                 style={{
                   textAlign: "center",
                   padding: "calc(20px * var(--bsm-spacing-scale))",
                 }}
               >
-                Loading tasks...
+                Loading tasks…
               </div>
             ) : (
               <div className="task-history">

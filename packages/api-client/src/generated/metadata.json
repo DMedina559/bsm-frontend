@@ -1,5 +1,33 @@
 {
-  "schemaHash": "0832262f432014039eada6e3a6f66f02841b486271cd9eec8efac19d0662e59f",
+  "backupContents": {
+    "components": [
+      { "id": "world", "label": "Active world (includes world packs)" },
+      { "id": "server.properties", "label": "Server properties" },
+      { "id": "allowlist.json", "label": "Allowlist" },
+      { "id": "permissions.json", "label": "Player permissions" },
+      { "id": "script_config", "label": "Script configuration" },
+      { "id": "bsm_settings", "label": "BSM server settings" },
+      { "id": "behavior_packs", "label": "Server behavior packs" },
+      { "id": "resource_packs", "label": "Server resource packs" },
+      {
+        "id": "development_behavior_packs",
+        "label": "Development behavior packs"
+      },
+      {
+        "id": "development_resource_packs",
+        "label": "Development resource packs"
+      }
+    ],
+    "defaults": [
+      "world",
+      "server.properties",
+      "allowlist.json",
+      "permissions.json",
+      "script_config",
+      "bsm_settings"
+    ]
+  },
+  "schemaHash": "0e97a1026c8570e3786e29068fceeb6272a396c034d4fd75c0365b0682d7f017",
   "openapiVersion": "3.1.0",
   "title": "Bedrock Server Manager",
   "source": "DMedina559/bedrock-server-manager: bedrock_server_manager.web.contract",
@@ -13,6 +41,7 @@
     "create_backup",
     "create_first_user",
     "create_server_snapshot",
+    "delete_schedule",
     "delete_server",
     "delete_user",
     "disable_addon",
@@ -72,6 +101,7 @@
     "list_downloads",
     "list_players",
     "list_plugins",
+    "list_schedules",
     "list_server_addons",
     "list_server_backups",
     "list_server_snapshots",
@@ -100,6 +130,7 @@
     "restore_backup",
     "restore_server_snapshot",
     "rotate_backup_key",
+    "save_schedule",
     "scan_players",
     "send_command",
     "set_permissions",

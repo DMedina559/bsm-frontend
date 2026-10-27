@@ -400,3 +400,53 @@
     min-height: 44px;
   }
 }
+
+.runtime-diagnostic-heading,
+.runtime-history-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--bsm-space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--bsm-space-4);
+}
+.runtime-recording-controls label {
+  display: flex;
+  align-items: center;
+  gap: var(--bsm-space-2);
+  margin-block: var(--bsm-space-3);
+}
+.runtime-recording-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bsm-space-2);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: var(--bsm-space-1) var(--bsm-space-3);
+  font-size: var(--bsm-small-size);
+}
+.runtime-recording-status.is-recording {
+  color: var(--bsm-warning);
+}
+.runtime-history-table td {
+  overflow-wrap: anywhere;
+}
+.runtime-history-table td small {
+  display: block;
+  color: var(--bsm-muted);
+}
+.runtime-history-pagination {
+  margin-top: var(--bsm-space-3);
+  justify-content: flex-end;
+}
+.runtime-history-pagination > span {
+  margin-right: auto;
+}
+.runtime-empty {
+  text-align: center;
+  padding: var(--bsm-space-5);
+  color: var(--bsm-muted);
+}
+.runtime-observation-modal {
+  max-width: 640px;
+}

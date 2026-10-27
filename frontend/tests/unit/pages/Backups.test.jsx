@@ -119,6 +119,63 @@ describe("Backups", () => {
     expect(screen.getByText("Legacy backups")).toBeInTheDocument();
     expect(screen.queryByText("Restore All (Latest)")).not.toBeInTheDocument();
   });
+  it("shows loading until the initial backup request finishes, then shows a true empty state", async () => {
+    const original = api.get.getMockImplementation();
+    let resolve;
+    api.get.mockImplementation((url, options) =>
+      url.endsWith("/backups")
+        ? new Promise((done) => {
+            resolve = done;
+          })
+        : original(url, options),
+    );
+    render(<Backups />);
+    expect(
+      await screen.findByText("Loading recovery points…"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("No backups match this view."),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/No recovery points yet/),
+    ).not.toBeInTheDocument();
+    expect(
+      api.get.mock.calls.some(([url]) => url.includes("/backup/list/all")),
+    ).toBe(false);
+    resolve({ backups: [] });
+    expect(
+      await screen.findByText(/No recovery points yet/),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Loading recovery points…"),
+    ).not.toBeInTheDocument();
+  });
+  it("retains existing archives during a slow refresh", async () => {
+    render(<Backups />);
+    await screen.findByText("snapshot.bsmbackup");
+    const original = api.get.getMockImplementation();
+    let resolve;
+    api.get.mockImplementation((url, options) =>
+      url.endsWith("/backups")
+        ? new Promise((done) => {
+            resolve = done;
+          })
+        : original(url, options),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Refresh", exact: true }),
+    );
+    expect(
+      await screen.findByText(/Refreshing recovery points/),
+    ).toBeInTheDocument();
+    expect(screen.getByText("snapshot.bsmbackup")).toBeInTheDocument();
+    resolve({ backups: [archive] });
+    await waitFor(() =>
+      expect(
+        screen.queryByText(/Refreshing recovery points/),
+      ).not.toBeInTheDocument(),
+    );
+  });
   it("creates one backup using the selected encryption policy", async () => {
     render(<Backups />);
     await screen.findByText("snapshot.bsmbackup");
@@ -129,15 +186,32 @@ describe("Backups", () => {
     await waitFor(() =>
       expect(api.post).toHaveBeenCalledWith("/api/server/TestServer/backups", {
         encrypted: true,
-        include_packs: null,
+      }),
+    );
+  });
+  it("submits world-only coverage without root pack overrides", async () => {
+    render(<Backups />);
+    await screen.findByText("snapshot.bsmbackup");
+    fireEvent.change(screen.getByLabelText("Mode"), {
+      target: { value: "world" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create backup" }));
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith("/api/server/TestServer/backups", {
+        encrypted: null,
+        mode: "world",
       }),
     );
   });
   it("inspects contents, disables absent components, and restores a reviewed selection", async () => {
     render(<Backups />);
     await screen.findByText("snapshot.bsmbackup");
-    fireEvent.click(screen.getByRole("button", { name: /Inspect \/ restore/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Unlock and inspect" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Inspect", exact: true }),
+    );
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Inspect", exact: true }).at(-1),
+    );
     expect(await screen.findByLabelText(/Allowlist/)).toBeDisabled();
     fireEvent.click(screen.getByLabelText("World"));
     fireEvent.click(screen.getByLabelText("Server properties"));
@@ -150,7 +224,7 @@ describe("Backups", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("difficulty")).toBeInTheDocument();
     fireEvent.click(
-      screen.getByRole("button", { name: "Restore selected components" }),
+      screen.getByRole("button", { name: "Restore", exact: true }),
     );
     fireEvent.click(await screen.findByRole("button", { name: "Continue" }));
     await waitFor(() =>
@@ -167,10 +241,14 @@ describe("Backups", () => {
   it("runs an isolated dry run before replacement", async () => {
     render(<Backups />);
     await screen.findByText("snapshot.bsmbackup");
-    fireEvent.click(screen.getByRole("button", { name: /Inspect \/ restore/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Unlock and inspect" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Inspect", exact: true }),
+    );
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Inspect", exact: true }).at(-1),
+    );
     await screen.findByText("Components to restore");
-    fireEvent.click(screen.getByRole("button", { name: "Run dry run" }));
+    fireEvent.click(screen.getByRole("button", { name: "Dry run" }));
     expect(
       await screen.findByText(/Dry run: 4 selected files/),
     ).toBeInTheDocument();
@@ -215,4 +293,78 @@ describe("Backups", () => {
     ).toEqual(["a-new.bsmbackup", "z-old.bsmbackup"]);
     expect(container.querySelectorAll(".backup-date-group")).toHaveLength(2);
   });
+
+  it("shows a viewport-bounded inspector with a compact summary", async () => {
+    // The workflow tests above exercise selection and restore; this checks the dialog structure.
+    api.get.mockImplementation((url) => {
+      if (url.endsWith("/backups"))
+        return Promise.resolve({ backups: [archive] });
+      if (url.includes("/scheduler/schedules"))
+        return Promise.resolve({
+          schedules: [],
+          task_types: ["backup", "verify"],
+        });
+      return Promise.resolve({});
+    });
+    localStorage.setItem("selectedServer", "TestServer");
+    render(<Backups />);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Inspect", exact: true }),
+    );
+    const dialog = screen.getByRole("dialog", { name: "Inspect backup" });
+    expect(dialog).toHaveClass("backup-inspector");
+    expect(dialog.querySelector(".dialog-body")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: "Details", exact: true }));
+    expect(
+      screen.getByRole("tabpanel", { name: "Details", exact: true }),
+    ).toBeVisible();
+    expect(screen.getByText("Capture timings")).toBeInTheDocument();
+    expect(screen.getByLabelText("Notes", { exact: true })).toHaveClass(
+      "form-input",
+    );
+    fireEvent.keyDown(
+      screen.getByRole("tab", { name: "Details", exact: true }),
+      { key: "Home" },
+    );
+    expect(
+      screen.getByRole("tab", { name: "Restore options", exact: true }),
+    ).toHaveAttribute("aria-selected", "true");
+    for (const input of document.querySelectorAll('input[type="password"]')) {
+      expect(input.closest("form")).not.toBeNull();
+    }
+  });
+});
+
+it("does not report an empty archive list when the initial request fails", async () => {
+  localStorage.setItem("selectedServer", "TestServer");
+  api.request.mockImplementation((url) =>
+    Promise.resolve(
+      url === "/api/account"
+        ? { username: "testuser", role: "admin" }
+        : url === "/api/servers"
+          ? { status: "success", servers: [{ name: "TestServer" }] }
+          : {},
+    ),
+  );
+  api.get.mockImplementation((url) =>
+    url.endsWith("/backups")
+      ? Promise.reject(
+          Object.assign(new Error("Backup listing unavailable"), {
+            status: 400,
+          }),
+        )
+      : Promise.resolve(
+          url.endsWith("/backups/recovery")
+            ? { recovery: { active: false } }
+            : { health: { readiness: "unknown", count: 0, total_bytes: 0 } },
+        ),
+  );
+  render(<Backups />);
+  expect(
+    await screen.findByText(/Recovery points could not be loaded or refreshed/),
+  ).toBeInTheDocument();
+  expect(screen.queryByText(/No recovery points yet/)).not.toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: "Retry", exact: true }),
+  ).toBeInTheDocument();
 });

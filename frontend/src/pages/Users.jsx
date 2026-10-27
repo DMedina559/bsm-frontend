@@ -224,14 +224,7 @@ const Users = () => {
   return (
     <div className="container">
       <QueryStatus query={resourceQuery} />
-      <div
-        className="header"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+      <div className="header">
         <h1>User Management</h1>
         <div
           style={{
@@ -280,7 +273,7 @@ const Users = () => {
             padding: "calc(40px * var(--bsm-spacing-scale))",
           }}
         >
-          <div className="spinner"></div> Loading users...
+          <div className="spinner"></div> Loading users…
         </div>
       ) : (
         <div className="table-responsive-wrapper">
@@ -324,7 +317,7 @@ const Users = () => {
                       <span
                         style={{
                           marginLeft: "calc(5px * var(--bsm-spacing-scale))",
-                          fontSize: "0.8em",
+                          fontSize: "var(--bsm-small-size)",
                           color: "var(--primary-color)",
                         }}
                       >

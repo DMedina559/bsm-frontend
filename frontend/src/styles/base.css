@@ -61,7 +61,8 @@ pre {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: calc(20px * var(--bsm-spacing-scale));
+  gap: var(--bsm-space-4);
+  flex-wrap: wrap;
   margin-bottom: calc(28px * var(--bsm-spacing-scale));
   padding-bottom: calc(24px * var(--bsm-spacing-scale));
   border-bottom: 1px solid var(--border-color);
@@ -70,6 +71,20 @@ pre {
   font-size: clamp(24px, 2.5vw, 34px);
   letter-spacing: -0.035em;
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--bsm-space-3);
+}
+.card {
+  min-width: 0;
+  padding: var(--bsm-card-padding);
+  border: 1px solid var(--border-color);
+  border-radius: var(--bsm-radius-md);
+  background: var(--bsm-surface);
+}
+.timestamp {
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
 }
 .header-link {
   display: inline-flex;
@@ -143,5 +158,37 @@ pre.monitor-output {
 @media (max-width: 480px) {
   .container {
     padding: calc(16px * var(--bsm-spacing-scale));
+  }
+}
+.runtime-recording-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bsm-space-2);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: var(--bsm-space-1) var(--bsm-space-3);
+  font-size: var(--bsm-small-size);
+  color: var(--bsm-warning);
+}
+.runtime-recording-indicator::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Keep the persistent recording control inside the mobile workspace toolbar. */
+@media (max-width: 768px) {
+  .workspace-topbar .runtime-recording-indicator {
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .workspace-topbar .runtime-recording-label {
+    display: none;
   }
 }

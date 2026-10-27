@@ -26,6 +26,7 @@ export function createApplicationRuntime({
   const diagnostics = createRuntimeDiagnostics();
   const session = createSessionRuntimeModule();
   session.sessionRuntime.onReset(() => {
+    diagnostics.setEnabled(false);
     diagnostics.clear();
     diagnostics.subscriptions(0, 0);
   });

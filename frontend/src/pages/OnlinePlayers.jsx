@@ -194,14 +194,7 @@ const OnlinePlayersWorkspace = () => {
   }
   return (
     <div className="container">
-      <div
-        className="header"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+      <div className="header">
         <h1>Online Players: {selectedServer}</h1>
         <div
           className="status-text"
@@ -256,10 +249,10 @@ const OnlinePlayersWorkspace = () => {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  background: "rgba(0,0,0,0.2)",
+                  background: "var(--bsm-surface-raised)",
                   padding: "calc(15px * var(--bsm-spacing-scale))",
                   borderRadius: "4px",
-                  border: "1px solid rgba(255,255,255,0.05)",
+                  border: "1px solid var(--border-color)",
                 }}
               >
                 <div
@@ -272,7 +265,7 @@ const OnlinePlayersWorkspace = () => {
                   <span
                     style={{
                       fontWeight: "bold",
-                      fontSize: "1.1em",
+                      fontSize: "var(--bsm-body-size)",
                     }}
                   >
                     {player.name}
@@ -280,9 +273,9 @@ const OnlinePlayersWorkspace = () => {
                   {(player.xuid || player.uuid) && (
                     <span
                       style={{
-                        fontSize: "0.8em",
+                        fontSize: "var(--bsm-small-size)",
                         color: "var(--text-color-secondary)",
-                        fontFamily: "monospace",
+                        fontFamily: "var(--bsm-mono)",
                       }}
                     >
                       XUID: {player.xuid || player.uuid}
@@ -363,12 +356,13 @@ const OnlinePlayersWorkspace = () => {
           >
             <div
               style={{
-                background: "rgba(244, 67, 54, 0.1)",
-                border: "1px solid rgba(244, 67, 54, 0.3)",
+                background:
+                  "color-mix(in srgb, var(--bsm-danger) 10%, var(--bsm-surface))",
+                border: "1px solid var(--bsm-danger)",
                 padding: "calc(10px * var(--bsm-spacing-scale))",
                 borderRadius: "4px",
                 color: "var(--bsm-danger)",
-                fontSize: "0.9em",
+                fontSize: "var(--bsm-small-size)",
               }}
             >
               Warning: This will prevent the player from joining the server.

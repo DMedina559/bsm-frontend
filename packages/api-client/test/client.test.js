@@ -181,3 +181,47 @@ test("global diagnostic activity serializes cross-chain filters", async () => {
   assert.equal(url.searchParams.get("sequence_id"), "sequence");
   assert.equal(url.searchParams.get("operation_id"), "operation");
 });
+
+test("lifecycle requests allow long pre-start hooks and retain explicit timeouts", async () => {
+  const seen = [];
+  const client = createApiClient({
+    request: async (url, options) => {
+      seen.push({ url, options });
+      return {};
+    },
+  });
+  for (const id of ["start_server", "restart_server", "stop_server"]) {
+    await client.callOperation(id, { path: { server_name: "alpha" } });
+    assert.equal(seen.at(-1).options.timeout, 0);
+  }
+  await client.callOperation("start_server", {
+    path: { server_name: "alpha" },
+    timeout: 1000,
+  });
+  assert.equal(seen.at(-1).options.timeout, 1000);
+});
+
+test("scheduler operations serialize server filters and configuration", async () => {
+  const seen = [];
+  const client = createApiClient({
+    request: async (url, options) => {
+      seen.push({ url, options });
+      return {};
+    },
+  });
+  await client.callOperation("list_schedules", {
+    query: { server_name: "alpha" },
+  });
+  assert.equal(seen.at(-1).url, "/api/scheduler/schedules?server_name=alpha");
+  const body = { task: "verify", server_name: "alpha", enabled: false };
+  await client.callOperation("save_schedule", {
+    path: { schedule_id: "weekly" },
+    body,
+  });
+  assert.equal(seen.at(-1).options.method, "PUT");
+  assert.deepEqual(seen.at(-1).options.body, body);
+  await client.callOperation("delete_schedule", {
+    path: { schedule_id: "weekly" },
+  });
+  assert.equal(seen.at(-1).options.method, "DELETE");
+});

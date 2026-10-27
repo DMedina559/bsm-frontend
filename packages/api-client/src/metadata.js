@@ -3,6 +3,12 @@ import metadata from "./generated/metadata.json" with { type: "json" };
 export const contractMetadata = Object.freeze({
   ...metadata,
   operations: Object.freeze(metadata.operations),
+  backupContents: Object.freeze({
+    components: Object.freeze(
+      metadata.backupContents.components.map((item) => Object.freeze(item)),
+    ),
+    defaults: Object.freeze(metadata.backupContents.defaults),
+  }),
 });
 /** Compare advertised capabilities without guessing compatibility from version strings. */
 export function compareCapabilities(
