@@ -1,5 +1,16 @@
 import { callOperation } from "../../src/api/operations";
 async function contracts() {
+  const schedules = await callOperation("list_schedules", {
+    query: { server_name: "example" },
+  });
+  schedules.schedules?.forEach((entry) =>
+    entry.configuration.task.toUpperCase(),
+  );
+  await callOperation("save_schedule", {
+    path: { schedule_id: "weekly" },
+    body: { task: "verify", server_name: "example", enabled: false },
+  });
+  await callOperation("delete_schedule", { path: { schedule_id: "weekly" } });
   const globalActivity = await callOperation("get_diagnostic_activity", {
     query: {
       server_name: "example",

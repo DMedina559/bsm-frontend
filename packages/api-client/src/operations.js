@@ -110,7 +110,11 @@ export function createApiClient({ request }) {
       headers,
       signal: options.signal,
       session: options.session,
-      timeout: options.timeout,
+      timeout:
+        options.timeout ??
+        (["start_server", "restart_server", "stop_server"].includes(id)
+          ? 0
+          : undefined),
       responseType: options.responseType ?? operation.responseType,
     });
   }

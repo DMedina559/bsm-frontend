@@ -1,3 +1,4 @@
+import { MemoryRouter } from "react-router-dom";
 import {
   act,
   fireEvent,
@@ -121,7 +122,9 @@ function mount() {
   });
   return render(
     <QueryClientProvider client={client}>
-      <ApplicationMonitor />
+      <MemoryRouter>
+        <ApplicationMonitor />
+      </MemoryRouter>
     </QueryClientProvider>,
   );
 }
@@ -146,7 +149,9 @@ it("mounts diagnostics only for admins and supports keyboard tab navigation", as
   fixtures.user = { username: "admin", role: "user" };
   view.rerender(
     <QueryClientProvider client={new QueryClient()}>
-      <ApplicationMonitor />
+      <MemoryRouter>
+        <ApplicationMonitor />
+      </MemoryRouter>
     </QueryClientProvider>,
   );
   expect(

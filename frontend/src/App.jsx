@@ -1,3 +1,5 @@
+import RuntimeHistoryProvider from "./contexts/RuntimeHistoryProvider";
+import TimeProvider from "./contexts/TimeProvider";
 import { sessionSettings } from "./app/browserStorage";
 import { application } from "./app/application";
 import { setApiBaseUrl } from "./app/connection";
@@ -20,6 +22,7 @@ import Register from "./pages/Register";
 const ApplicationMonitor = lazy(() => import("./pages/ApplicationMonitor"));
 const Monitor = lazy(() => import("./pages/Monitor"));
 const Overview = lazy(() => import("./pages/Overview"));
+const Scheduler = lazy(() => import("./pages/Scheduler"));
 const Backups = lazy(() => import("./pages/Backups"));
 const ServerProperties = lazy(() => import("./pages/ServerProperties"));
 const BSMSettings = lazy(() => import("./pages/BSMSettings"));
@@ -42,7 +45,7 @@ const PrivateRoute = ({ children }) => {
   const location = useLocation();
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div role="status">Loading…</div>;
   }
 
   if (needsSetup) {
@@ -60,7 +63,7 @@ const AppRoutes = () => {
   const { needsSetup, loading } = useAuth();
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div role="status">Loading…</div>;
   }
 
   return (
@@ -87,6 +90,7 @@ const AppRoutes = () => {
         <Route path="application-monitor" element={<ApplicationMonitor />} />
         <Route path="monitor" element={<Monitor />} />
         <Route path="backups" element={<Backups />} />
+        <Route path="scheduler" element={<Scheduler />} />
         <Route path="server-properties" element={<ServerProperties />} />
         <Route path="server-config" element={<ServerConfig />} />
         <Route path="access-control" element={<AccessControl />} />
@@ -145,28 +149,32 @@ const App = () => {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <ThemeProvider>
-            <ToastProvider>
-              <DialogProvider>
-                <DraftNavigationGuard />
-                <WebSocketProvider>
-                  <ServerProvider>
-                    <ErrorBoundary>
-                      <Suspense
-                        fallback={
-                          <div className="app-loading" role="status">
-                            Loading workspace…
-                          </div>
-                        }
-                      >
-                        <AppRoutes />
-                      </Suspense>
-                    </ErrorBoundary>
-                  </ServerProvider>
-                </WebSocketProvider>
-              </DialogProvider>
-            </ToastProvider>
-          </ThemeProvider>
+          <RuntimeHistoryProvider>
+            <TimeProvider>
+              <ThemeProvider>
+                <ToastProvider>
+                  <DialogProvider>
+                    <DraftNavigationGuard />
+                    <WebSocketProvider>
+                      <ServerProvider>
+                        <ErrorBoundary>
+                          <Suspense
+                            fallback={
+                              <div className="app-loading" role="status">
+                                Loading workspace…
+                              </div>
+                            }
+                          >
+                            <AppRoutes />
+                          </Suspense>
+                        </ErrorBoundary>
+                      </ServerProvider>
+                    </WebSocketProvider>
+                  </DialogProvider>
+                </ToastProvider>
+              </ThemeProvider>
+            </TimeProvider>
+          </RuntimeHistoryProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>

@@ -62,14 +62,7 @@ const Plugins = () => {
   return (
     <div className="container">
       <QueryStatus query={resourceQuery} />
-      <div
-        className="header"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+      <div className="header">
         <h1>Plugin Management</h1>
         <button
           className="action-button secondary"
@@ -113,7 +106,7 @@ const Plugins = () => {
           Plugin Settings
         </Link>
       </div>
-      {resourceQuery.isPending && <p>Loading plugins…</p>}
+      {resourceQuery.isPending && <p role="status">Loading plugins…</p>}
       <div className="plugin-grid">
         {plugins
           .filter(

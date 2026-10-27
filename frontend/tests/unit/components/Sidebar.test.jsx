@@ -80,7 +80,7 @@ describe("Sidebar", () => {
     const group = (name) =>
       within(screen.getByRole("heading", { name }).closest(".nav-group"));
     expect(
-      group("Selected server").getByRole("link", { name: "Settings" }),
+      group("Selected Server").getByRole("link", { name: "Settings" }),
     ).toBeInTheDocument();
     expect(
       group("Global").getByRole("link", { name: "Settings" }),
@@ -96,6 +96,21 @@ describe("Sidebar", () => {
     ).toHaveAttribute("href", "/plugins");
     // Admin item
     expect(screen.getByText("Install Server")).toBeInTheDocument();
+  });
+
+  it("uses distinct icons for built-in navigation pages", async () => {
+    await act(async () => {
+      render(<Sidebar />);
+    });
+    await screen.findByText("Install Server");
+    const links = within(
+      screen.getByRole("navigation", { name: "Application pages" }),
+    ).getAllByRole("link");
+    const icons = links.map((link) =>
+      link.querySelector("svg")?.getAttribute("class"),
+    );
+    expect(icons.every(Boolean)).toBe(true);
+    expect(new Set(icons).size).toBe(icons.length);
   });
 
   it("keeps Appearance and Account navigation states separate", async () => {

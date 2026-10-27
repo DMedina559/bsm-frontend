@@ -554,7 +554,7 @@ test("non-administrators cannot open diagnostics or fetch its endpoints", async 
   await login(page, "viewer");
   await page.goto("application-monitor");
   await expect(
-    page.getByRole("heading", { name: "Metrics", exact: true }),
+    page.getByRole("heading", { name: "Application Metrics", exact: true }),
   ).toBeVisible();
   await expect(page.getByRole("tab", { name: "Diagnostics" })).toHaveCount(0);
   expect(calls).toBe(0);
@@ -722,10 +722,13 @@ test("administrators can inspect bounded frontend rejection diagnostics without 
   await login(page, "alice");
   await page.goto("application-monitor");
   await page.getByRole("tab", { name: "Diagnostics", exact: true }).click();
-  await page.getByText("Frontend runtime diagnostics", { exact: true }).click();
+  await page
+    .getByRole("button", { name: "Frontend runtime", exact: true })
+    .click();
   await page
     .getByLabel("Record frontend observations", { exact: true })
     .check();
+  await page.getByLabel("Keep history across reloads", { exact: true }).check();
   await expect(page.getByLabel("WebSocket health")).toHaveText("Live");
   state.sockets.at(-1).send(
     JSON.stringify({
@@ -737,13 +740,28 @@ test("administrators can inspect bounded frontend rejection diagnostics without 
       },
     }),
   );
-  await expect(
-    page.getByRole("cell", { name: "invalid-task", exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole("cell", { name: /invalid-task/ })).toBeVisible();
   await expect(
     page.getByText("never-display", { exact: false }),
   ).not.toBeVisible();
+  // Flush on navigation and restore the sanitized journal in a new browser session.
+  await page.goto("application-monitor?view=diagnostics&category=frontend");
+  await expect(page.getByRole("cell", { name: /invalid-task/ })).toBeVisible();
+  await expect(
+    page.getByRole("cell", { name: "Previous session", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByLabel("Record frontend observations", { exact: true }),
+  ).toBeChecked();
   await page.setViewportSize({ width: 390, height: 844 });
+  const recordingControl = page.getByRole("link", {
+    name: "Frontend diagnostics recording is enabled",
+    exact: true,
+  });
+  await expect(recordingControl).toBeVisible();
+  await expect
+    .poll(async () => (await recordingControl.boundingBox())?.width)
+    .toBe(44);
   await expect
     .poll(() =>
       page.evaluate(
@@ -752,10 +770,10 @@ test("administrators can inspect bounded frontend rejection diagnostics without 
     )
     .toBe(true);
   await page
-    .getByRole("button", { name: "Clear observations", exact: true })
+    .getByRole("button", { name: "Clear history", exact: true })
     .click();
   await expect(
-    page.getByText("No observations recorded.", { exact: true }),
+    page.getByText(/Waiting for frontend observations/),
   ).toBeVisible();
 });
 

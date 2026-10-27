@@ -588,7 +588,7 @@ const ServerProperties = () => {
             padding: "calc(20px * var(--bsm-spacing-scale))",
           }}
         >
-          <div className="spinner"></div> Loading properties...
+          <div className="spinner"></div> Loading properties…
         </div>
       ) : (
         <form
@@ -621,7 +621,7 @@ const ServerProperties = () => {
                       style={{
                         padding:
                           "calc(10px * var(--bsm-spacing-scale)) calc(15px * var(--bsm-spacing-scale))",
-                        background: "rgba(0,0,0,0.2)",
+                        background: "var(--bsm-surface-raised)",
                         borderBottom: isCollapsed
                           ? "none"
                           : "1px solid var(--border-color)",
@@ -666,7 +666,7 @@ const ServerProperties = () => {
                               style={{
                                 marginBottom:
                                   "calc(5px * var(--bsm-spacing-scale))",
-                                fontSize: "0.9em",
+                                fontSize: "var(--bsm-small-size)",
                                 color: "var(--text-color-secondary)",
                               }}
                               title={prop.key}
@@ -697,7 +697,7 @@ const ServerProperties = () => {
                 style={{
                   padding:
                     "calc(10px * var(--bsm-spacing-scale)) calc(15px * var(--bsm-spacing-scale))",
-                  background: "rgba(0,0,0,0.2)",
+                  background: "var(--bsm-surface-raised)",
                   borderBottom: "1px solid var(--border-color)",
                   fontWeight: "bold",
                 }}
@@ -724,7 +724,7 @@ const ServerProperties = () => {
                     style={{
                       display: "block",
                       marginBottom: "calc(5px * var(--bsm-spacing-scale))",
-                      fontSize: "0.9em",
+                      fontSize: "var(--bsm-small-size)",
                     }}
                     htmlFor="serverproperties-field-1"
                   >
@@ -753,7 +753,7 @@ const ServerProperties = () => {
                     style={{
                       display: "block",
                       marginBottom: "calc(5px * var(--bsm-spacing-scale))",
-                      fontSize: "0.9em",
+                      fontSize: "var(--bsm-small-size)",
                     }}
                     htmlFor="serverproperties-field-2"
                   >
@@ -857,30 +857,6 @@ const ServerProperties = () => {
           closeDisabled={saving}
           className="addon-dialog"
         >
-          <div
-            style={{
-              padding:
-                "calc(15px * var(--bsm-spacing-scale)) calc(20px * var(--bsm-spacing-scale))",
-              borderBottom: "1px solid var(--border-color, #555)",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <button
-              onClick={() => setShowRawModal(false)}
-              style={{
-                background: "transparent",
-                border: "none",
-                color: "var(--text-color, #fff)",
-                fontSize: "1.5rem",
-                cursor: "pointer",
-              }}
-              type="button"
-            >
-              &times;
-            </button>
-          </div>
           <div
             style={{
               padding: "calc(20px * var(--bsm-spacing-scale))",

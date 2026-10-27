@@ -397,7 +397,7 @@ const Content = () => {
 
             <div
               style={{
-                fontSize: "0.85em",
+                fontSize: "var(--bsm-small-size)",
                 color: "var(--text-color-secondary)",
                 display: "flex",
                 flexWrap: "wrap",
@@ -442,7 +442,7 @@ const Content = () => {
                     flex: 1,
                     padding:
                       "calc(2px * var(--bsm-spacing-scale)) calc(6px * var(--bsm-spacing-scale))",
-                    fontSize: "0.8em",
+                    fontSize: "var(--bsm-small-size)",
                     height: "24px",
                     maxWidth: "200px",
                   }}
@@ -467,7 +467,7 @@ const Content = () => {
         <div
           style={{
             padding: "calc(10px * var(--bsm-spacing-scale))",
-            background: "rgba(0,0,0,0.1)",
+            background: "var(--bsm-surface-raised)",
             borderLeft: "1px solid var(--border-color)",
             display: "flex",
             flexDirection: "column",
@@ -483,7 +483,7 @@ const Content = () => {
               style={{
                 padding:
                   "calc(6px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
-                fontSize: "0.85em",
+                fontSize: "var(--bsm-small-size)",
                 width: "100%",
                 justifyContent: "center",
               }}
@@ -499,7 +499,7 @@ const Content = () => {
               style={{
                 padding:
                   "calc(6px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
-                fontSize: "0.85em",
+                fontSize: "var(--bsm-small-size)",
                 background: "var(--bsm-success)",
                 color: "var(--text-color)",
                 width: "100%",
@@ -517,7 +517,7 @@ const Content = () => {
             style={{
               padding:
                 "calc(6px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
-              fontSize: "0.85em",
+              fontSize: "var(--bsm-small-size)",
               width: "100%",
               justifyContent: "center",
             }}
@@ -576,16 +576,7 @@ const Content = () => {
   return (
     <div className="container">
       <QueryStatus query={contentQuery} />
-      <div
-        className="header"
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "calc(10px * var(--bsm-spacing-scale))",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+      <div className="header">
         <h1
           style={{
             margin: 0,
@@ -697,17 +688,6 @@ const Content = () => {
         >
           <QueryStatus query={addonsQuery} />
           <div
-            className="dynamic-modal-header"
-            style={{
-              padding: "calc(15px * var(--bsm-spacing-scale))",
-              borderBottom: "1px solid var(--border-color)",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          ></div>
-
-          <div
             style={{
               padding: "0 calc(15px * var(--bsm-spacing-scale))",
               borderBottom: "1px solid var(--border-color)",
@@ -765,7 +745,7 @@ const Content = () => {
           </div>
 
           <div
-            className="dynamic-modal-body"
+            className="addon-dialog-body"
             style={{
               padding: "calc(15px * var(--bsm-spacing-scale))",
               overflowY: "auto",
@@ -775,13 +755,14 @@ const Content = () => {
             <DraftConflictNotice draft={addonDraft} />
             {addonsLoading ? (
               <div
+                role="status"
                 style={{
                   textAlign: "center",
                   padding: "calc(20px * var(--bsm-spacing-scale))",
                   color: "var(--text-color-secondary)",
                 }}
               >
-                Loading addons...
+                Loading addons…
               </div>
             ) : (
               <>
@@ -900,7 +881,7 @@ const Content = () => {
             />
             <p
               style={{
-                fontSize: "0.85em",
+                fontSize: "var(--bsm-small-size)",
                 color: "var(--text-color-secondary)",
                 marginTop: "calc(5px * var(--bsm-spacing-scale))",
               }}
@@ -918,7 +899,7 @@ const Content = () => {
               color: "var(--text-color-secondary)",
             }}
           >
-            <div className="spinner"></div> Loading available content...
+            <div className="spinner"></div> Loading available content…
           </div>
         ) : (
           <div className="table-responsive-wrapper">
@@ -984,7 +965,7 @@ const Content = () => {
                           style={{
                             padding:
                               "calc(5px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
-                            fontSize: "0.9em",
+                            fontSize: "var(--bsm-small-size)",
                           }}
                           disabled={actionLoading}
                           type="button"

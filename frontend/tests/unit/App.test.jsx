@@ -53,7 +53,7 @@ describe("App", () => {
     });
 
     // It should show "Loading..."
-    expect(screen.getByText("Loading...")).toBeInTheDocument();
+    expect(screen.getByText("Loading…")).toBeInTheDocument();
   });
 
   it("redirects to setup if setup is needed", async () => {
