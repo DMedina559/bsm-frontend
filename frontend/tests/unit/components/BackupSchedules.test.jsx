@@ -76,6 +76,68 @@ describe("Backup schedules", () => {
       await screen.findByText(/body.time: string_pattern_mismatch/),
     ).toBeInTheDocument();
   });
+  it("pauses a schedule with the listed configuration revision", async () => {
+    api.get.mockResolvedValue({
+      schedules: [
+        {
+          schedule_id: "nightly",
+          configuration: {
+            task: "verify",
+            server_name: "alpha",
+            enabled: true,
+            time: "03:00",
+            timezone: "UTC",
+          },
+          available: true,
+          revision: "current",
+          runs: [],
+        },
+      ],
+      task_types: ["backup", "verify"],
+    });
+    api.post.mockResolvedValue({ status: "success" });
+    render(<BackupSchedules serverName="alpha" />);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Pause", exact: true }),
+    );
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith(
+        "/api/scheduler/schedules/nightly/action",
+        { action: "pause", revision: "current" },
+      ),
+    );
+  });
+  it("shows pending retries independently of the next calendar occurrence", async () => {
+    api.get.mockResolvedValue({
+      schedules: [
+        {
+          schedule_id: "nightly",
+          configuration: {
+            task: "verify",
+            server_name: "alpha",
+            enabled: true,
+            time: "03:00",
+            timezone: "UTC",
+          },
+          available: true,
+          revision: "current",
+          last_status: "failed",
+          next_attempt_at: "2026-10-27T03:02:00Z",
+          retry_exhausted: true,
+          blocked_reason: "retry_exhausted",
+          runs: [],
+        },
+      ],
+      task_types: ["backup", "verify"],
+    });
+    render(<BackupSchedules serverName="alpha" />);
+    expect(
+      await screen.findByText(/Automatic retries exhausted/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Retry now", exact: true }),
+    ).toBeInTheDocument();
+  });
 });
 
 it("offers Pacific Time as a regional timezone instead of PDT", async () => {

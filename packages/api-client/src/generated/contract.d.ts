@@ -831,6 +831,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/scheduler/schedules/{schedule_id}/action": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Control Schedule */
+    post: operations["control_schedule"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/server/install": {
     parameters: {
       query?: never;
@@ -3052,6 +3069,16 @@ export interface components {
        */
       status: "success" | "skipped" | "partial";
     };
+    /** ControlSchedulePayload */
+    ControlSchedulePayload: {
+      /**
+       * Action
+       * @enum {string}
+       */
+      action: "run_now" | "pause" | "resume" | "retry";
+      /** Revision */
+      revision?: string | null;
+    };
     /**
      * CustomZipsResponse
      * @description Response model for custom zips list.
@@ -4084,6 +4111,12 @@ export interface components {
       schedules?: components["schemas"]["ScheduleEntry"][];
       /** Server Time */
       server_time?: string | null;
+      /** Task Definitions */
+      task_definitions?: {
+        [key: string]: {
+          [key: string]: components["schemas"]["JsonValue"];
+        };
+      };
       /** Task Types */
       task_types?: string[];
       /**
@@ -5235,6 +5268,47 @@ export interface components {
       /** Shutdown Requested */
       shutdown_requested: boolean;
     };
+    /**
+     * ScheduleConfigurationView
+     * @description Read saved definitions even if this host has lost their timezone data.
+     */
+    ScheduleConfigurationView: {
+      /**
+       * Catch Up
+       * @default true
+       */
+      catch_up?: boolean;
+      /**
+       * Enabled
+       * @default true
+       */
+      enabled?: boolean;
+      /** Options */
+      options?: {
+        [key: string]: components["schemas"]["JsonValue"];
+      };
+      /** Server Name */
+      server_name: string;
+      /**
+       * Stagger Minutes
+       * @default 15
+       */
+      stagger_minutes?: number;
+      /** Task */
+      task: string;
+      /**
+       * Time
+       * @default 03:00
+       */
+      time?: string;
+      /**
+       * Timezone
+       * @default UTC
+       */
+      timezone?: string;
+      /** Weekdays */
+      weekdays?: number[];
+    };
     /** ScheduleEntry */
     ScheduleEntry: {
       /**
@@ -5244,9 +5318,13 @@ export interface components {
       attempts?: number;
       /** Available */
       available: boolean;
-      configuration: components["schemas"]["ScheduledTask"];
+      /** Blocked Reason */
+      blocked_reason?: string | null;
+      configuration: components["schemas"]["ScheduleConfigurationView"];
       /** Last Error */
       last_error?: string | null;
+      /** Last Evaluated At */
+      last_evaluated_at?: string | null;
       /** Last Status */
       last_status?: string | null;
       /** Last Success At */
@@ -5256,8 +5334,17 @@ export interface components {
        * @default false
        */
       legacy?: boolean;
+      /** Next Attempt At */
+      next_attempt_at?: string | null;
       /** Next Run At */
       next_run_at?: string | null;
+      /**
+       * Retry Exhausted
+       * @default false
+       */
+      retry_exhausted?: boolean;
+      /** Revision */
+      revision?: string | null;
       /** Runs */
       runs?: {
         [key: string]: components["schemas"]["JsonValue"];
@@ -10432,6 +10519,104 @@ export interface operations {
       cookie?: never;
     };
     requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SuccessResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  control_schedule: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        schedule_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ControlSchedulePayload"];
+      };
+    };
     responses: {
       /** @description Successful Response */
       200: {
