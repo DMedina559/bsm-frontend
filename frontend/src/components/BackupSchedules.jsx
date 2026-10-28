@@ -202,7 +202,10 @@ export default function BackupSchedules({
                 <button
                   key={action}
                   className="action-button secondary"
-                  disabled={busy || (["run_now", "retry"].includes(action) && !entry.available)}
+                  disabled={
+                    busy ||
+                    (["run_now", "retry"].includes(action) && !entry.available)
+                  }
                   onClick={async () => {
                     if (
                       (action === "run_now" || action === "retry") &&
