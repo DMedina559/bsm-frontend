@@ -68,10 +68,21 @@ function saveBlob(blob, filename) {
 export default function Backups() {
   const { selectedServer } = useServer();
   const { sessionGeneration } = useAuth();
-  return <ServerBackups key={`${sessionGeneration}:${selectedServer}`} />;
+  const [prepared, setPrepared] = useState(null);
+  return (
+    <ServerBackups
+      key={`${sessionGeneration}:${selectedServer}`}
+      prepared={prepared?.generation === sessionGeneration ? prepared : null}
+      onPrepared={(result) =>
+        setPrepared(
+          result ? { ...result, generation: sessionGeneration } : null,
+        )
+      }
+    />
+  );
 }
 
-function ServerBackups() {
+function ServerBackups({ prepared, onPrepared }) {
   const { units } = useMetricFormat();
   const bytes = (value) =>
     formatByteValue(value, units.memory, units.precision);
@@ -88,12 +99,15 @@ function ServerBackups() {
     refetchInterval: 30000,
     refetchIntervalInBackground: false,
   });
+  const [preparedNotice, setPreparedNotice] = useState("");
+  const openedPrepared = useRef(null);
   const [destination, setDestination] = useState("");
   const [copyName, setCopyName] = useState("");
   const [copyVersion, setCopyVersion] = useState("LATEST");
   const [port, setPort] = useState(19134);
   const [portv6, setPortv6] = useState(19135);
   const [transferring, setTransferring] = useState(false);
+  const [transferMessage, setTransferMessage] = useState("");
   const [legacyExpanded, setLegacyExpanded] = useState(false);
   const legacy = useResourceQuery("backups", selectedServer, {
     enabled: legacyExpanded,
@@ -119,14 +133,18 @@ function ServerBackups() {
   const secret = useRef("");
   const input = useRef(null);
   const scope = useRef(new AbortController());
+  const transferScope = useRef(new AbortController());
   useEffect(() => {
     scope.current = new AbortController();
+    transferScope.current = new AbortController();
     return () => {
       scope.current.abort();
+      transferScope.current.abort();
       secret.current = "";
     };
   }, [selectedServer, sessionGeneration]);
   const reset = () => {
+    setPreparedNotice("");
     setInspectorTab("restore");
     setSelected(null);
     setManifest(null);
@@ -136,60 +154,81 @@ function ServerBackups() {
     if (input.current) input.current.value = "";
   };
 
-  const write = useResourceMutation(
-    async ({ id, options, wait = true }, { session }) => {
-      const signal = AbortSignal.any([session.signal, scope.current.signal]);
-      const body =
-        unlockOperations.has(id) || id === "import_server_snapshot"
-          ? {
-              ...options.body,
-              ...(secret.current ? { recovery_key: secret.current } : {}),
-            }
-          : options.body;
-      /** @type {any} */
-      const result = await callOperation(id, {
-        ...options,
-        body,
-        session,
+  const execute = async (
+    { id, options, wait = true, quiet = false },
+    { session },
+  ) => {
+    const signal = AbortSignal.any([
+      session.signal,
+      scope.current.signal,
+      ...(quiet || id === "import_server_snapshot"
+        ? [transferScope.current.signal]
+        : []),
+    ]);
+    const body =
+      unlockOperations.has(id) || id === "import_server_snapshot"
+        ? {
+            ...options.body,
+            ...(secret.current ? { recovery_key: secret.current } : {}),
+          }
+        : options.body;
+    /** @type {any} */
+    const result = await callOperation(id, {
+      ...options,
+      body,
+      session,
+      signal,
+      timeout: 0,
+    });
+    if (!wait || !result?.task_id) return result;
+    for (;;) {
+      signal.throwIfAborted();
+      const task = await callOperation("get_task_status", {
+        path: { task_id: result.task_id },
         signal,
-        timeout: 0,
+        session,
       });
-      if (!wait || !result?.task_id) return result;
-      for (;;) {
-        signal.throwIfAborted();
-        const task = await callOperation("get_task_status", {
-          path: { task_id: result.task_id },
-          signal,
-          session,
-        });
-        setProgress(task.message);
-        if (task.status === "completed") return task.result;
-        if (["failed", "cancelled"].includes(task.status))
-          throw new Error(task.error?.message ?? task.message);
-        await new Promise((resolve, reject) => {
-          const onAbort = () => {
-            clearTimeout(timer);
-            reject(new DOMException("Cancelled", "AbortError"));
-          };
-          const timer = setTimeout(() => {
-            signal.removeEventListener("abort", onAbort);
-            resolve();
-          }, 700);
-          signal.addEventListener("abort", onAbort, { once: true });
-        });
-      }
-    },
-    [queryKeys.serverBackups(selectedServer)],
-  );
+      if (!quiet) setProgress(task.message);
+      if (task.status === "completed") return task.result;
+      if (["failed", "cancelled"].includes(task.status))
+        throw new Error(task.error?.message ?? task.message);
+      await new Promise((resolve, reject) => {
+        const onAbort = () => {
+          clearTimeout(timer);
+          reject(new DOMException("Cancelled", "AbortError"));
+        };
+        const timer = setTimeout(() => {
+          signal.removeEventListener("abort", onAbort);
+          resolve();
+        }, 700);
+        signal.addEventListener("abort", onAbort, { once: true });
+      });
+    }
+  };
+  const write = useResourceMutation(execute, [
+    queryKeys.serverBackups(selectedServer),
+  ]);
+  const read = useResourceMutation(execute, []);
   const busy = write.isPending;
+  const reading = read.isPending;
+  const readOperations = new Set([
+    "download_backup_recovery_report",
+    "download_server_snapshot",
+  ]);
   const perform = async (id, options = {}, wait = true) => {
+    const quiet = readOperations.has(id);
     try {
-      return await write.mutateAsync({ id, options, wait });
+      return await (quiet ? read : write).mutateAsync({
+        id,
+        options,
+        wait,
+        quiet,
+      });
     } catch (error) {
       if (error.name !== "AbortError") addToast(error.message, "error");
       return null;
     } finally {
-      setProgress("");
+      if (!quiet) setProgress("");
     }
   };
   const path = selectedServer ? { server_name: selectedServer } : {};
@@ -248,6 +287,25 @@ function ServerBackups() {
       );
     }
   };
+  useEffect(() => {
+    if (
+      !prepared ||
+      prepared.server_name !== selectedServer ||
+      openedPrepared.current === prepared.backup_id
+    )
+      return;
+    const item = snapshots.data?.find(
+      (entry) => entry.backup_id === prepared.backup_id,
+    );
+    if (!item) return;
+    openedPrepared.current = prepared.backup_id;
+    setSelected(item);
+    setInspectorTab("restore");
+    setPreparedNotice(
+      `Server ${selectedServer} is prepared. Your backup data has not been restored. Inspect the contents, review the restore plan, then restore before starting this server.`,
+    );
+    onPrepared(null);
+  }, [prepared, selectedServer, snapshots.data, onPrepared]);
   const review = async (dryRun = false) => {
     const result = await perform(
       dryRun === true ? "dry_run_server_restore" : "plan_snapshot_restore",
@@ -280,7 +338,7 @@ function ServerBackups() {
     }
   };
   const transferProgress = (verb) => (loaded, total) =>
-    setProgress(
+    setTransferMessage(
       `${verb}: ${bytes(loaded)}${total ? ` of ${bytes(total)}` : ""}`,
     );
   const manage = async (item, action, extra = {}) => {
@@ -313,6 +371,7 @@ function ServerBackups() {
         return;
       }
     }
+    setTransferMessage("");
     setTransferring(true);
     const blob = await perform(
       "download_server_snapshot",
@@ -331,6 +390,7 @@ function ServerBackups() {
   const upload = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    setTransferMessage("");
     setTransferring(true);
     const result = await perform("import_server_snapshot", {
       path,
@@ -362,7 +422,7 @@ function ServerBackups() {
         <div className="button-group">
           <button
             className="action-button secondary"
-            disabled={busy}
+            disabled={reading}
             aria-label="Recovery report"
             onClick={async () => {
               const report = await perform(
@@ -377,7 +437,6 @@ function ServerBackups() {
           </button>
           <button
             className="action-button secondary"
-            disabled={busy}
             onClick={() => snapshots.refetch()}
           >
             <RefreshCw size={16} /> Refresh
@@ -633,12 +692,21 @@ function ServerBackups() {
           {progress}
         </p>
       )}
+      {transferring && transferMessage && (
+        <p role="status">{transferMessage}</p>
+      )}
+      {busy && (
+        <p className="form-help-text">
+          A backup task is running. You can refresh, download, or browse backup
+          details while it finishes.
+        </p>
+      )}
       {transferring && (
         <button
           className="action-button secondary"
           onClick={() => {
-            scope.current.abort();
-            scope.current = new AbortController();
+            transferScope.current.abort();
+            transferScope.current = new AbortController();
           }}
         >
           Cancel transfer
@@ -777,14 +845,14 @@ function ServerBackups() {
                   <td>
                     <button
                       className="action-button secondary"
-                      disabled={busy}
+                      disabled={reading}
                       onClick={() => download(item)}
                     >
                       <Download size={14} /> Download
                     </button>{" "}
                     <button
                       className="action-button"
-                      disabled={busy || !!item.error}
+                      disabled={!!item.error}
                       onClick={() => {
                         reset();
                         setSelected(item);
@@ -884,8 +952,12 @@ function ServerBackups() {
           title="Inspect backup"
           className="backup-inspector"
           onClose={reset}
-          closeDisabled={busy}
         >
+          {preparedNotice && (
+            <p role="status" className="message warning">
+              {preparedNotice}
+            </p>
+          )}
           <p className="backup-inspector-hint">
             Inspect this archive, select components, then review a restore plan.
           </p>
@@ -935,7 +1007,6 @@ function ServerBackups() {
                 aria-controls={`${inspectorId}-${key}-panel`}
                 aria-selected={inspectorTab === key}
                 tabIndex={inspectorTab === key ? 0 : -1}
-                disabled={busy}
                 onClick={() => setInspectorTab(key)}
                 onKeyDown={(event) => {
                   const next =
@@ -1436,7 +1507,11 @@ function ServerBackups() {
                       },
                     });
                     if (result) {
-                      addToast(result.message, "success");
+                      addToast(
+                        "New server prepared. Continue with restore review; no data has been restored yet.",
+                        "info",
+                      );
+                      onPrepared(result);
                       await refreshServers?.();
                       await setSelectedServer(result.server_name);
                     }

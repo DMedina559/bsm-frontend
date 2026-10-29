@@ -368,3 +368,191 @@ it("does not report an empty archive list when the initial request fails", async
     screen.getByRole("button", { name: "Retry", exact: true }),
   ).toBeInTheDocument();
 });
+
+it("keeps read-only controls and inspector dismissal available during a drill", async () => {
+  localStorage.setItem("selectedServer", "TestServer");
+  api.request.mockImplementation((url) =>
+    Promise.resolve(
+      url === "/api/account"
+        ? { username: "testuser", role: "admin" }
+        : url === "/api/servers"
+          ? { status: "success", servers: [{ name: "TestServer" }] }
+          : {},
+    ),
+  );
+  let finish;
+  let drillSignal;
+  let downloadSignal;
+  api.get.mockImplementation((url, options) => {
+    if (url.endsWith("/download")) {
+      downloadSignal = options.signal;
+      return new Promise((resolve, reject) =>
+        options.signal.addEventListener(
+          "abort",
+          () => reject(new DOMException("Cancelled", "AbortError")),
+          { once: true },
+        ),
+      );
+    }
+    if (url.includes("/api/tasks/status/"))
+      return new Promise((resolve) => {
+        finish = resolve;
+        drillSignal = options.signal;
+      });
+    if (url.endsWith("/backups"))
+      return Promise.resolve({ backups: [archive] });
+    return Promise.resolve({});
+  });
+  api.post.mockResolvedValue({ status: "accepted", task_id: "drill" });
+  render(<Backups />);
+  await screen.findByText(archive.filename);
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: `More options for ${archive.filename}`,
+    }),
+  );
+  fireEvent.click(screen.getByRole("menuitem", { name: "Recovery drill" }));
+  await waitFor(() => expect(finish).toBeTypeOf("function"));
+  expect(
+    screen.getByRole("button", { name: "Refresh", exact: true }),
+  ).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Recovery report" })).toBeEnabled();
+  expect(
+    screen.getByRole("button", { name: "Download", exact: true }),
+  ).toBeEnabled();
+  expect(
+    screen.getByRole("button", { name: "Verify", exact: true }),
+  ).toBeDisabled();
+  fireEvent.click(screen.getByRole("button", { name: "Inspect", exact: true }));
+  expect(
+    await screen.findByRole("dialog", { name: "Inspect backup" }),
+  ).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Close dialog" }));
+  expect(
+    screen.queryByRole("dialog", { name: "Inspect backup" }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Download", exact: true }),
+  );
+  await screen.findByRole("button", { name: "Cancel transfer" });
+  await waitFor(() => expect(downloadSignal).toBeDefined());
+  fireEvent.click(screen.getByRole("button", { name: "Cancel transfer" }));
+  expect(downloadSignal.aborted).toBe(true);
+  expect(drillSignal.aborted).toBe(false);
+  finish({ status: "completed", result: { message: "Completed" } });
+  await screen.findByText("Backup operation completed.");
+});
+
+it("opens the prepared target archive for restore review after switching servers", async () => {
+  localStorage.setItem("selectedServer", "TestServer");
+  let prepared = false;
+  const copied = {
+    ...archive,
+    backup_id: "copy.bsmbackup",
+    filename: "copy.bsmbackup",
+  };
+  api.request.mockImplementation((url) =>
+    Promise.resolve(
+      url === "/api/account"
+        ? { username: "testuser", role: "admin" }
+        : url === "/api/servers"
+          ? {
+              status: "success",
+              servers: [
+                { name: "TestServer" },
+                ...(prepared ? [{ name: "test_2" }] : []),
+              ],
+            }
+          : {},
+    ),
+  );
+  api.get.mockImplementation((url) => {
+    if (url.includes("/api/tasks/status/") && !url.endsWith("/prepare"))
+      return Promise.resolve({
+        status: "completed",
+        result: results[url.split("/").at(-1)],
+      });
+    if (url.includes("/api/tasks/status/"))
+      return Promise.resolve({
+        status: "completed",
+        result: {
+          server_name: "test_2",
+          backup_id: copied.backup_id,
+          message: "Prepared",
+        },
+      });
+    if (url.endsWith("/backups"))
+      return Promise.resolve({
+        backups: [url.includes("/test_2/") ? copied : archive],
+      });
+    return Promise.resolve({});
+  });
+  api.post.mockImplementation((url) => {
+    if (url.endsWith("/prepare-copy")) prepared = true;
+    return Promise.resolve({
+      status: "accepted",
+      task_id: url.endsWith("/inspect")
+        ? "inspect"
+        : url.endsWith("/plan")
+          ? "plan"
+          : url.endsWith("/restore")
+            ? "restore"
+            : "prepare",
+    });
+  });
+  render(<Backups />);
+  await screen.findByText(archive.filename);
+  fireEvent.click(screen.getByRole("button", { name: "Inspect", exact: true }));
+  fireEvent.click(screen.getByRole("tab", { name: "Manage", exact: true }));
+  fireEvent.click(screen.getByText("Restore as a new server", { exact: true }));
+  fireEvent.change(screen.getByLabelText("New server name"), {
+    target: { value: "test_2" },
+  });
+  fireEvent.click(
+    screen.getByRole("button", { name: "Prepare new server", exact: true }),
+  );
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Continue", exact: true }),
+  );
+  expect(
+    await screen.findByRole("heading", { name: "Backups: test_2" }),
+  ).toBeInTheDocument();
+  expect(
+    await screen.findByRole("dialog", { name: "Inspect backup" }),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByRole("tab", { name: "Restore options", exact: true }),
+  ).toHaveAttribute("aria-selected", "true");
+  expect(
+    screen.getByText(/Your backup data has not been restored/),
+  ).toBeInTheDocument();
+  expect(screen.getAllByText(copied.filename).length).toBeGreaterThan(0);
+  expect(api.post.mock.calls.some(([url]) => url.endsWith("/restore"))).toBe(
+    false,
+  );
+  fireEvent.click(
+    screen.getAllByRole("button", { name: "Inspect", exact: true }).at(-1),
+  );
+  await screen.findByLabelText("World");
+  fireEvent.click(
+    screen.getByRole("button", { name: "Review restore", exact: true }),
+  );
+  await screen.findByText("Replaces secrets");
+  fireEvent.click(screen.getByRole("button", { name: "Restore", exact: true }));
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Continue", exact: true }),
+  );
+  await waitFor(() =>
+    expect(
+      api.post.mock.calls.some(
+        ([url]) => url === "/api/server/test_2/backups/copy.bsmbackup/restore",
+      ),
+    ).toBe(true),
+  );
+  expect(
+    api.post.mock.calls.some(
+      ([url]) =>
+        url === "/api/server/TestServer/backups/snapshot.bsmbackup/restore",
+    ),
+  ).toBe(false);
+});
