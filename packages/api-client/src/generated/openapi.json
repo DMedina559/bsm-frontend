@@ -7408,7 +7408,7 @@
         "title": "SetPropertiesResponse",
         "type": "object"
       },
-      "SettingItemResponse": {
+      "SettingItemPayload": {
         "additionalProperties": false,
         "description": "Request model for a single setting key-value pair.",
         "properties": {
@@ -7425,7 +7425,7 @@
           }
         },
         "required": ["key", "value"],
-        "title": "SettingItemResponse",
+        "title": "SettingItemPayload",
         "type": "object"
       },
       "SettingsResponse": {
@@ -7446,7 +7446,7 @@
           "setting": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/SettingItemResponse"
+                "$ref": "#/components/schemas/SettingItemPayload"
               },
               {
                 "type": "null"
@@ -19872,7 +19872,7 @@
           }
         ],
         "summary": "Get Raw Properties",
-        "tags": ["Server Raw Properties"]
+        "tags": ["Server Properties"]
       }
     },
     "/api/server/{server_name}/properties/set": {
@@ -22160,7 +22160,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SettingItemResponse"
+                "$ref": "#/components/schemas/SettingItemPayload"
               }
             }
           },

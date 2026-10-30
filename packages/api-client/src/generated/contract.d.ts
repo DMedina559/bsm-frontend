@@ -5556,10 +5556,10 @@ export interface components {
       status?: "success" | "skipped" | "partial";
     };
     /**
-     * SettingItemResponse
+     * SettingItemPayload
      * @description Request model for a single setting key-value pair.
      */
-    SettingItemResponse: {
+    SettingItemPayload: {
       /**
        * Key
        * @description The dot-notation key of the setting (e.g., 'web.port').
@@ -5575,7 +5575,7 @@ export interface components {
     SettingsResponse: {
       /** Message */
       message?: string | null;
-      setting?: components["schemas"]["SettingItemResponse"] | null;
+      setting?: components["schemas"]["SettingItemPayload"] | null;
       /** Settings */
       settings?: {
         [key: string]: components["schemas"]["JsonValue"];
@@ -16373,7 +16373,7 @@ export interface operations {
     };
     requestBody: {
       content: {
-        "application/json": components["schemas"]["SettingItemResponse"];
+        "application/json": components["schemas"]["SettingItemPayload"];
       };
     };
     responses: {
