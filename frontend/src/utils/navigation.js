@@ -82,6 +82,7 @@ export const PAGE_INFO = {
     "Install Server",
     "Create a Bedrock server and configure its workspace.",
   ],
+  "/instances": ["Global", "Instances", "Manage independent BSM connections."],
   "/api-explorer": [
     "Global",
     "API Explorer",

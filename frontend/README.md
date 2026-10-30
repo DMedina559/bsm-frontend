@@ -355,3 +355,34 @@ repository root after frontend changes. This builds shared libraries and the web
 interface and copies assets to `python/src/bsm_frontend/static/` without building
 Python distributions. Refresh the browser to load the updated interface. The
 frontend package itself must be editable, even if the backend already is.
+
+### Hidden multi-instance workspace
+
+Enable `?hidden=true` and open **Global → Instances**, or open `/instances` under
+the app base path. The instance hub is available even when the default backend is
+signed out or unreachable. Save names and backend root URLs (including ingress
+prefixes), then sign in to each independently. **Save current connection** adds
+the existing backend and reuses its scoped token when available.
+
+Every signed-in instance has its own HTTP transport, session generation, query
+cache and WebSocket connection. Fleet cards stay connected concurrently, show
+combined availability counts, and offer per-server start/stop controls. Identical
+server names on different backends remain distinct. Lifecycle events refresh only
+their owning instance; visible-page polling refreshes snapshots every 15 seconds.
+An offline instance retains a marked last-known snapshot with actions disabled.
+Expired credentials stop automatic polling until you sign in again.
+
+**Open workspace** selects an instance for the regular management pages in the
+current tab. The header switcher returns to other saved instances or the default
+connection; pending settings drafts require confirmation before switching.
+**New tab** opens a separate full workspace, passing only that instance's session
+token through same-origin session storage, never the URL. Changing the selected
+instance in one tab does not switch other tabs. Profile names/URLs are shared;
+login persistence follows the chosen session-only or remembered setting. Passwords
+are not saved. Removing a profile forgets its local credentials without stopping
+or deleting any remote servers.
+
+Remote instances must permit the frontend origin through their existing CORS
+configuration. HTTPS frontends require HTTPS backend URLs. The feature uses the
+existing BSM API and does not introduce a proxy, bulk actions or backend changes.
+`?hidden=false` returns to the normal default connection and hides these controls.

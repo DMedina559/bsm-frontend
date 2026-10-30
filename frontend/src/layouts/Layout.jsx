@@ -1,3 +1,5 @@
+import InstanceSwitcher from "../components/InstanceSwitcher";
+import "../styles/instances.css";
 import RuntimeRecordingIndicator from "../components/diagnostics/RuntimeRecordingIndicator";
 import { useTimeFormat } from "../app/useTimeFormat";
 import BackupAlerts from "../components/BackupAlerts";
@@ -98,6 +100,7 @@ const Layout = () => {
             <span aria-current="page">{title}</span>
           </nav>
           <div className="workspace-indicators">
+            <InstanceSwitcher />
             <span
               className={`connection-indicator ${isConnected ? "connected" : "degraded"}`}
               role="status"

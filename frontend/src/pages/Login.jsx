@@ -3,7 +3,7 @@ import { getAppConfig } from "../app/config";
 import AuthBrand from "../components/AuthBrand";
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import RemoteConfigModal from "../components/RemoteConfigModal";
 import { getApiBaseUrl } from "../api/transport";
 import { Globe } from "lucide-react";
@@ -179,6 +179,12 @@ const Login = () => {
             <Globe size={16} /> Configure Remote Server
           </button>
         </div>
+      )}
+
+      {sessionSettings.getItem("show_hidden_flag") === "true" && (
+        <Link to="/instances" className="instances-login-link">
+          Manage BSM instances
+        </Link>
       )}
 
       {showRemoteModal && (

@@ -1,3 +1,4 @@
+import { INSTANCE_PROFILES_KEY } from "../app/instanceProfiles";
 import {
   getToken,
   setCredentials,
@@ -32,6 +33,7 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const identityRef = useRef(null);
+  const backendRef = useRef(getBackendIdentity());
   const checkGeneration = useRef(0);
   const [loading, setLoading] = useState(true);
   const [needsSetup, setNeedsSetup] = useState(false);
@@ -219,6 +221,12 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const changed = (event) => {
       if (event.type === "storage" && !isSessionStorageEvent(event)) return;
+      if (
+        event.key === INSTANCE_PROFILES_KEY &&
+        backendRef.current === getBackendIdentity()
+      )
+        return;
+      backendRef.current = getBackendIdentity();
       if (event.key === "api_base_url") {
         // Credentials are backend-scoped. Discard ambiguous legacy tokens in this tab.
         try {
@@ -228,14 +236,23 @@ export const AuthProvider = ({ children }) => {
         }
       }
       checkGeneration.current += 1;
+      setLoading(true);
       resetSession();
       identityRef.current = null;
       setUser(null);
       void checkUser();
     };
+    const instanceCredentials = (event) => {
+      if (event.detail?.url === getBackendIdentity()) changed(event);
+    };
+    window.addEventListener("bsm:instance-credentials", instanceCredentials);
     window.addEventListener("storage", changed);
     window.addEventListener("bsm:connection-changed", changed);
     return () => {
+      window.removeEventListener(
+        "bsm:instance-credentials",
+        instanceCredentials,
+      );
       window.removeEventListener("storage", changed);
       window.removeEventListener("bsm:connection-changed", changed);
     };

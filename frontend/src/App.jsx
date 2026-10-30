@@ -1,3 +1,4 @@
+import { selectInstance } from "./app/instanceProfiles";
 import RuntimeHistoryProvider from "./contexts/RuntimeHistoryProvider";
 import TimeProvider from "./contexts/TimeProvider";
 import { sessionSettings } from "./app/browserStorage";
@@ -39,6 +40,7 @@ const GlobalPlayers = lazy(() => import("./pages/GlobalPlayers"));
 const OnlinePlayers = lazy(() => import("./pages/OnlinePlayers"));
 const DynamicPage = lazy(() => import("./pages/DynamicPage"));
 const ApiExplorer = lazy(() => import("./pages/ApiExplorer"));
+const Instances = lazy(() => import("./pages/Instances"));
 const Playground = lazy(() => import("./pages/Playground"));
 
 const PrivateRoute = ({ children }) => {
@@ -62,13 +64,15 @@ const PrivateRoute = ({ children }) => {
 
 const AppRoutes = () => {
   const { needsSetup, loading } = useAuth();
+  const location = useLocation();
 
-  if (loading) {
+  if (loading && location.pathname !== "/instances") {
     return <div role="status">Loading…</div>;
   }
 
   return (
     <Routes>
+      <Route path="/instances" element={<Instances />} />
       <Route
         path="/login"
         element={needsSetup ? <Navigate to="/setup" /> : <Login />}
@@ -125,7 +129,18 @@ const App = () => {
       if (hidden === "true") {
         sessionSettings.setItem("show_hidden_flag", "true");
         // Clean URL without reloading
-        const newUrl = window.location.pathname;
+        const instance = params.get("instance");
+        if (instance) {
+          try {
+            selectInstance(instance);
+          } catch {
+            /* Ignore stale saved-instance links. */
+          }
+        }
+        params.delete("hidden");
+        params.delete("instance");
+        const newUrl =
+          window.location.pathname + (params.size ? `?${params}` : "");
         window.history.replaceState({}, "", newUrl);
         // Force a re-render to ensure components pick up the change immediately
         window.location.reload();
@@ -135,6 +150,21 @@ const App = () => {
         const newUrl = window.location.pathname;
         window.history.replaceState({}, "", newUrl);
         window.location.reload();
+      } else if (
+        params.has("instance") &&
+        sessionSettings.getItem("show_hidden_flag") === "true"
+      ) {
+        try {
+          selectInstance(params.get("instance"));
+        } catch {
+          /* A deleted instance falls back to the default connection. */
+        }
+        params.delete("instance");
+        window.history.replaceState(
+          {},
+          "",
+          window.location.pathname + (params.size ? `?${params}` : ""),
+        );
       }
     };
 

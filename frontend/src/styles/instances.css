@@ -1,0 +1,391 @@
+.instances-page {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 32px;
+  color: var(--bsm-text);
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.instances-page *,
+.instance-switcher * {
+  box-sizing: border-box;
+}
+.instances-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.instances-header h1 {
+  font-size: 28px;
+  margin: 5px 0 8px;
+  letter-spacing: -0.6px;
+}
+.instances-header p {
+  margin: 0;
+  color: var(--bsm-muted);
+  font-size: 13px;
+}
+.instances-back {
+  display: inline-block;
+  font-size: 12px;
+  color: var(--bsm-muted);
+  margin-bottom: 20px;
+}
+.instances-eyebrow {
+  display: block;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--bsm-muted);
+}
+.instances-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 25px;
+  padding: 18px 20px;
+  background: var(--bsm-surface);
+  border: 1px solid var(--bsm-border);
+  border-radius: 10px;
+}
+.instances-summary > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--bsm-muted);
+  font-size: 12px;
+}
+.instances-summary strong {
+  color: var(--bsm-text);
+  font-size: 19px;
+}
+.instances-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 430px), 1fr));
+  gap: 18px;
+  align-items: start;
+}
+.instance-card,
+.instances-add {
+  min-width: 0;
+  background: var(--bsm-surface);
+  border: 1px solid var(--bsm-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.instance-card-header {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 20px 20px 14px;
+}
+.instance-avatar {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--bsm-accent-soft);
+  color: var(--bsm-accent);
+  flex-shrink: 0;
+}
+.instance-identity {
+  flex: 1;
+  min-width: 0;
+}
+.instance-card h2 {
+  font-size: 17px;
+  margin: 0 0 4px;
+}
+.instance-identity code {
+  display: block;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  font: 10px var(--bsm-mono);
+  color: var(--bsm-muted);
+}
+.instance-state {
+  font-size: 10px;
+  text-transform: capitalize;
+  padding: 4px 7px;
+  color: var(--bsm-muted);
+  background: var(--bsm-surface-raised);
+  border-radius: 5px;
+  white-space: nowrap;
+}
+.instance-state-online {
+  color: var(--bsm-success);
+  background: color-mix(in srgb, var(--bsm-success) 12%, transparent);
+}
+.instance-state-offline {
+  color: var(--bsm-warning);
+}
+.instance-card-meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 0 20px 15px;
+  color: var(--bsm-muted);
+  font-size: 11px;
+  border-bottom: 1px solid var(--bsm-border);
+}
+.instance-error {
+  padding: 10px 14px;
+  margin: 12px 15px;
+  color: var(--bsm-danger);
+  border: 1px solid color-mix(in srgb, var(--bsm-danger) 35%, transparent);
+  border-radius: 7px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.instance-login {
+  padding: 18px 20px;
+}
+.instance-login-fields,
+.instances-add > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.instances-page label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--bsm-muted);
+}
+.instances-page input:not([type="checkbox"]) {
+  width: 100%;
+  min-width: 0;
+  padding: 9px 10px;
+  font: inherit;
+  background: var(--bsm-input);
+  color: var(--bsm-text);
+  border: 1px solid var(--bsm-border);
+  border-radius: 6px;
+}
+.instance-login-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  gap: 10px;
+}
+.instance-login-actions label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+}
+.instance-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 10px;
+  margin: 0;
+  min-height: 32px;
+  color: var(--bsm-text);
+  background: var(--bsm-surface-raised);
+  border: 1px solid var(--bsm-border);
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  font: 550 11px/1.5 var(--bsm-font);
+  white-space: nowrap;
+}
+.instance-button:hover:not(:disabled) {
+  border-color: var(--bsm-accent);
+  background: var(--bsm-accent-soft);
+}
+.instance-button.primary {
+  background: var(--bsm-accent-strong);
+  border-color: var(--bsm-accent-strong);
+  color: var(--bsm-on-accent);
+}
+.instance-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.instances-page :is(input, button, a, summary):focus-visible,
+.instance-switcher :is(select, a):focus-visible {
+  outline: 2px solid var(--bsm-focus);
+  outline-offset: 3px;
+}
+.instance-fleet {
+  padding: 16px 20px 0;
+}
+.instance-fleet-heading {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--bsm-muted);
+  margin-bottom: 10px;
+}
+.instance-server-list {
+  max-height: 340px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.instance-server {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border-top: 1px solid var(--bsm-border);
+  padding: 12px 0;
+}
+.instance-server > div {
+  flex: 1;
+  min-width: 0;
+}
+.instance-server strong {
+  display: block;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.instance-server small {
+  display: block;
+  color: var(--bsm-muted);
+  font-size: 10px;
+  margin-top: 3px;
+  text-transform: capitalize;
+}
+.instance-server-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--bsm-muted);
+}
+.instance-server-dot.running {
+  background: var(--bsm-success);
+}
+.instance-stale {
+  color: var(--bsm-warning);
+  font-size: 11px;
+}
+.instance-card-footer {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  padding: 14px 20px;
+}
+.instance-options {
+  border-top: 1px solid var(--bsm-border);
+  padding: 12px 20px;
+}
+.instance-options summary {
+  cursor: pointer;
+  color: var(--bsm-muted);
+  font-size: 11px;
+}
+.instance-options > div {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.instance-options label {
+  margin-top: 12px;
+}
+.instance-empty-fleet {
+  color: var(--bsm-muted);
+  font-size: 12px;
+  padding: 20px;
+  margin: 0;
+}
+.instances-add {
+  padding: 20px;
+}
+.instances-add h2 {
+  margin: 0 0 15px;
+  font-size: 17px;
+}
+.instances-add p {
+  color: var(--bsm-muted);
+  font-size: 11px;
+  margin: 12px 0;
+}
+.instances-current {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--bsm-muted);
+}
+.instances-empty {
+  padding: 65px 20px;
+  text-align: center;
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  background: var(--bsm-surface);
+  border: 1px dashed var(--bsm-border);
+  border-radius: 12px;
+  color: var(--bsm-muted);
+}
+.instances-empty h2 {
+  margin: 0;
+  color: var(--bsm-text);
+  font-size: 20px;
+}
+.instances-empty p {
+  max-width: 460px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.instances-footnote {
+  color: var(--bsm-muted);
+  font-size: 11px;
+  line-height: 1.7;
+}
+.instance-switcher {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.instance-switcher select {
+  max-width: 160px;
+  min-width: 0;
+  padding: 5px 7px;
+  border: 1px solid var(--bsm-border);
+  border-radius: 6px;
+  background: var(--bsm-input);
+  color: var(--bsm-text);
+  font-size: 11px;
+}
+.instance-switcher a {
+  font-size: 11px;
+  color: var(--bsm-muted);
+}
+.instances-login-link {
+  display: block;
+  text-align: center;
+  margin: 15px 0;
+  font-size: 12px;
+}
+@media (max-width: 700px) {
+  .instances-page {
+    padding: 20px;
+    gap: 15px;
+  }
+  .instance-login-fields,
+  .instances-add > div {
+    grid-template-columns: 1fr;
+  }
+  .instances-summary {
+    gap: 15px;
+  }
+  .instance-switcher select {
+    max-width: 100px;
+  }
+  .instance-switcher a {
+    display: none;
+  }
+}
