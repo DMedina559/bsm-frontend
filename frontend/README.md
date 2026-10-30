@@ -99,7 +99,14 @@ not API permissions: backend authorization still applies.
 
 Load the connected backend's OpenAPI document, upload a JSON file, or paste JSON.
 Search operations by ID, method, path, or tag, including plugin operations. Inspect
-models and follow local model references. Parameters and JSON bodies are validated
+models and follow local model references. The workspace separates Operations and
+Models; each operation has Request, Response, and Schema tabs. Schema-aware fields
+include boolean and enum choices, nested objects, required markers, and defaults.
+Switch to JSON for complex bodies. Responses display properties or tables, with
+filtering and pagination for large arrays. Headers and complete raw JSON remain
+available in separate views, with copy controls.
+
+Parameters and JSON bodies are validated
 against the selected contract before execution. Request fields and example values
 help build bodies; the JSON editor supports nested and union models. Execution
 currently supports JSON bodies and path, query, and header parameters; other body

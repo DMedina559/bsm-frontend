@@ -148,3 +148,30 @@ export function exampleValue(schema, raw, seen = new Set()) {
     return spec.minimum ?? 0;
   return "";
 }
+
+export const pretty = (value) => JSON.stringify(value, null, 2) ?? "";
+export function schemaType(schema, raw) {
+  if (raw?.$ref)
+    return raw.$ref.split("/").at(-1).replace(/~1/g, "/").replace(/~0/g, "~");
+  const spec = resolve(schema, raw);
+  if (spec.anyOf || spec.oneOf)
+    return (spec.anyOf ?? spec.oneOf)
+      .map((s) => schemaType(schema, s))
+      .join(" | ");
+  if (spec.type === "array") return `${schemaType(schema, spec.items)}[]`;
+  return spec.type ?? (spec.properties ? "object" : "JSON");
+}
+export function objectFields(schema, raw) {
+  const spec = resolve(schema, raw);
+  if (spec.allOf)
+    return spec.allOf.reduce((acc, part) => {
+      const item = objectFields(schema, part);
+      return {
+        ...acc,
+        ...item,
+        properties: { ...acc.properties, ...item.properties },
+        required: [...(acc.required ?? []), ...(item.required ?? [])],
+      };
+    }, spec);
+  return spec;
+}

@@ -145,6 +145,7 @@ describe("API Explorer", () => {
     fireEvent.change(screen.getByLabelText(/name \(path\)/), {
       target: { value: "alpha" },
     });
+    fireEvent.click(screen.getByRole("button", { name: "JSON", exact: true }));
     fireEvent.change(screen.getByLabelText("JSON body"), {
       target: { value: '{"enabled":true}' },
     });
@@ -156,7 +157,9 @@ describe("API Explorer", () => {
     );
     expect(request.mock.calls[1][0]).toBe("/api/plugin/alpha");
     expect(request.mock.calls[1][1].body).toEqual({ enabled: true });
-    expect(screen.getByText(/"status": 202/)).toBeInTheDocument();
+    expect(
+      screen.getByText("202", { selector: ".ae-status" }),
+    ).toBeInTheDocument();
   });
 });
 
@@ -190,13 +193,17 @@ it("loads pasted contracts and keeps the active contract after an invalid replac
       <ApiExplorer />
     </MemoryRouter>,
   );
+  fireEvent.click(screen.getByRole("button", { name: "Import contract" }));
   const input = screen.getByLabelText("OpenAPI JSON");
   fireEvent.change(input, { target: { value: JSON.stringify(schema) } });
   fireEvent.click(screen.getByRole("button", { name: "Load JSON" }));
   expect(
     screen.getByRole("button", { name: /POST plugin_example/ }),
   ).toBeInTheDocument();
-  fireEvent.change(input, { target: { value: "{}" } });
+  fireEvent.click(screen.getByRole("button", { name: "Import contract" }));
+  fireEvent.change(screen.getByLabelText("OpenAPI JSON"), {
+    target: { value: "{}" },
+  });
   fireEvent.click(screen.getByRole("button", { name: "Load JSON" }));
   expect(screen.getByRole("alert")).toHaveTextContent("OpenAPI");
   expect(
