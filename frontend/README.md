@@ -339,3 +339,12 @@ precision preference. Page descriptions are owned by `utils/navigation.js`;
 Scheduler and Application monitor use the same navigation metadata as other pages.
 Plugin component styles are scoped to plugin views and plugin dialogs so opening
 a plugin cannot change native account badges, forms, or other page styles.
+
+### Updating an editable Python frontend install
+
+Install the frontend package once from this checkout with
+`python -m pip install -e ./python`, then run `npm run build:editable` from the
+repository root after frontend changes. This builds shared libraries and the web
+interface and copies assets to `python/src/bsm_frontend/static/` without building
+Python distributions. Refresh the browser to load the updated interface. The
+frontend package itself must be editable, even if the backend already is.

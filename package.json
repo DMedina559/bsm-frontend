@@ -17,6 +17,7 @@
     "prepare": "npm run build:packages",
     "build:packages": "npm run build --workspace=@bedrock-server-manager/api-client --workspace=@bedrock-server-manager/runtime --workspace=@bedrock-server-manager/storage",
     "build:web": "npm run build --workspace=bsm-frontend",
+    "build:editable": "npm run build && node scripts/build-python.mjs --assets-only",
     "build:python": "npm run build && node scripts/build-python.mjs",
     "check": "npm run build:packages && npm run api:check && npm run lint && npm run typecheck && npm test",
     "dev": "node scripts/dev.mjs",
