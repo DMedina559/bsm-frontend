@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import { createInstanceConnection } from "../../../../src/features/instances/connection";
 
 const sessions = [];
+beforeEach(() => sessionStorage.clear());
 afterEach(() => {
   sessions.splice(0).forEach((session) => session.dispose());
   vi.useRealTimers();
@@ -200,4 +201,84 @@ it("refreshes only the instance that receives a socket lifecycle event", async (
   expect(
     requests.filter((request) => request.url.includes("one.test")),
   ).toHaveLength(aRequests + 3);
+});
+
+it("forces a new fleet read when an action overlaps an older refresh", async () => {
+  const base = responder([]);
+  let release,
+    status = "running",
+    hold = false;
+  const fetch = vi.fn(async (url, options) => {
+    if (url.endsWith("/stop")) {
+      status = "stopped";
+      return Response.json({ status: "success" });
+    }
+    if (url.endsWith("/api/servers")) {
+      const snapshot = status;
+      if (hold) {
+        hold = false;
+        await new Promise((resolve) => {
+          release = resolve;
+        });
+      }
+      return Response.json({
+        servers: [{ name: "survival", status: snapshot }],
+      });
+    }
+    return base(url, options);
+  });
+  const session = create("https://race.test", fetch);
+  await session.start();
+  hold = true;
+  const old = session.refresh();
+  await vi.waitFor(() => expect(release).toBeTypeOf("function"));
+  const action = session.action("survival", "stop_server");
+  await vi.waitFor(() => expect(status).toBe("stopped"));
+  release();
+  await Promise.all([old, action]);
+  expect(session.getSnapshot().servers[0].status).toBe("stopped");
+});
+it("restarts polling after recovery from rejected credentials", async () => {
+  vi.useFakeTimers();
+  let rejected = true;
+  const base = responder([]);
+  const fetch = vi.fn((url, options) =>
+    rejected
+      ? Response.json({ detail: "Forbidden" }, { status: 403 })
+      : base(url, options),
+  );
+  const session = create("https://recovery.test", fetch);
+  await session.start();
+  rejected = false;
+  await session.refresh();
+  const count = fetch.mock.calls.length;
+  await vi.advanceTimersByTimeAsync(15001);
+  expect(fetch.mock.calls.length).toBeGreaterThan(count);
+  expect(session.getSnapshot().status).toBe("online");
+});
+it("keeps accepted tasks pending and recovers completion over HTTP", async () => {
+  const base = responder([]);
+  let taskStatus = "running";
+  const fetch = vi.fn((url, options) => {
+    if (url.endsWith("/stop"))
+      return Response.json({ status: "accepted", task_id: "task-one" });
+    if (url.endsWith("/api/tasks/status/task-one"))
+      return Response.json({ id: "task-one", status: taskStatus });
+    return base(url, options);
+  });
+  const session = create("https://tasks.test", fetch);
+  await session.start();
+  await session.action("survival", "stop_server");
+  expect(session.getSnapshot().pending).toBe("survival");
+  await expect(session.action("survival", "start_server")).rejects.toThrow(
+    /already running/,
+  );
+  taskStatus = "completed";
+  await session.refresh();
+  expect(session.getSnapshot().pending).toBeNull();
+  expect(session.getSnapshot().operations[0].status).toBe("completed");
+  session.dispose();
+  const restored = create("https://tasks.test", fetch);
+  await restored.start();
+  expect(restored.getSnapshot().operations[0].status).toBe("completed");
 });

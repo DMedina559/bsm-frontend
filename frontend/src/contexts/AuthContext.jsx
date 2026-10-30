@@ -1,4 +1,4 @@
-import { INSTANCE_PROFILES_KEY } from "../app/instanceProfiles";
+import { isInstanceProfileKey } from "../app/instanceProfiles";
 import {
   getToken,
   setCredentials,
@@ -222,7 +222,7 @@ export const AuthProvider = ({ children }) => {
     const changed = (event) => {
       if (event.type === "storage" && !isSessionStorageEvent(event)) return;
       if (
-        event.key === INSTANCE_PROFILES_KEY &&
+        isInstanceProfileKey(event.key) &&
         backendRef.current === getBackendIdentity()
       )
         return;
@@ -243,7 +243,11 @@ export const AuthProvider = ({ children }) => {
       void checkUser();
     };
     const instanceCredentials = (event) => {
-      if (event.detail?.url === getBackendIdentity()) changed(event);
+      if (
+        event.detail?.source !== "workspace" &&
+        event.detail?.url === getBackendIdentity()
+      )
+        changed(event);
     };
     window.addEventListener("bsm:instance-credentials", instanceCredentials);
     window.addEventListener("storage", changed);

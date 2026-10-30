@@ -43,7 +43,14 @@ function ActiveInstanceSwitcher() {
       >
         <option value="">Default connection</option>
         {profiles.map((profile) => (
-          <option key={profile.id} value={profile.id}>
+          <option
+            key={profile.id}
+            value={profile.id}
+            disabled={
+              window.location.protocol === "https:" &&
+              new URL(profile.url).protocol === "http:"
+            }
+          >
             {profile.name}
           </option>
         ))}

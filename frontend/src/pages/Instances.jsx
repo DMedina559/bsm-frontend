@@ -27,7 +27,15 @@ import { useDialog } from "../contexts/DialogContext";
 import "../styles/instances.css";
 
 const running = (server) => String(server.status).toLowerCase() === "running";
-function InstanceCard({ profile, token, onState, onOpen, onRemove }) {
+function InstanceCard({
+  profile,
+  token,
+  onState,
+  onOpen,
+  onRemove,
+  search,
+  statusFilter,
+}) {
   const [snapshot, setSnapshot] = useState({
     status: token ? "connecting" : "signed-out",
     servers: [],
@@ -88,7 +96,14 @@ function InstanceCard({ profile, token, onState, onOpen, onRemove }) {
       setCredentials((value) => ({ ...value, password: "" }));
     }
   }
+  const { confirmAction } = useDialog();
   async function action(server, operation) {
+    if (
+      !(await confirmAction(
+        `${operation === "stop_server" ? "Stop" : "Start"} ${server.name} on ${profile.name} (${profile.url})?`,
+      ))
+    )
+      return;
     setError("");
     try {
       await connection.current.action(server.name, operation);
@@ -96,6 +111,15 @@ function InstanceCard({ profile, token, onState, onOpen, onRemove }) {
       setError(failure.message);
     }
   }
+  const matches = (server) =>
+    `${profile.name} ${profile.url} ${server.name}`
+      .toLowerCase()
+      .includes(search.toLowerCase()) &&
+    (statusFilter === "all" ||
+      (statusFilter === "running" ? running(server) : !running(server)));
+  const blocked =
+    window.location.protocol === "https:" &&
+    new URL(profile.url).protocol === "http:";
   const canManage = ["admin", "moderator"].includes(snapshot.user?.role);
   return (
     <article className="instance-card" aria-label={profile.name}>
@@ -122,6 +146,12 @@ function InstanceCard({ profile, token, onState, onOpen, onRemove }) {
               : "Disconnected"}
         </span>
       </div>
+      {blocked && (
+        <p className="instance-error" role="alert">
+          This profile is saved, but an HTTPS frontend cannot connect to an HTTP
+          backend. Use an HTTPS backend URL or open the frontend over HTTP.
+        </p>
+      )}
       {(error || snapshot.error) && (
         <p className="instance-error" role="alert">
           {error || snapshot.error}
@@ -165,7 +195,10 @@ function InstanceCard({ profile, token, onState, onOpen, onRemove }) {
               />
               Remember this instance
             </label>
-            <button className="instance-button primary" disabled={busy}>
+            <button
+              className="instance-button primary"
+              disabled={busy || blocked}
+            >
               {busy ? "Signing in…" : "Sign in"}
             </button>
           </div>
@@ -185,14 +218,20 @@ function InstanceCard({ profile, token, onState, onOpen, onRemove }) {
               Last known state · reconnect before making changes
             </p>
           )}
+          {!snapshot.servers.some(matches) && (
+            <p className="instance-empty-fleet">
+              No servers match these filters.
+            </p>
+          )}
           <div className="instance-server-list">
-            {snapshot.servers.map((server) => (
+            {snapshot.servers.filter(matches).map((server) => (
               <div className="instance-server" key={server.name}>
                 <span
                   className={`instance-server-dot ${running(server) ? "running" : ""}`}
                 />
                 <div>
                   <strong>{server.name}</strong>
+                  <small>{profile.name}</small>
                   <small>
                     {server.status ?? "Unknown"}
                     {server.version ? ` · ${server.version}` : ""}
@@ -234,10 +273,46 @@ function InstanceCard({ profile, token, onState, onOpen, onRemove }) {
       ) : snapshot.status === "online" ? (
         <p className="instance-empty-fleet">No servers on this instance.</p>
       ) : null}
+      <div className="instance-health">
+        <span>
+          Last successful refresh:{" "}
+          {snapshot.updatedAt
+            ? new Date(snapshot.updatedAt).toLocaleTimeString()
+            : "Never"}
+        </span>
+        <span>
+          {" "}
+          ·{" "}
+          {snapshot.pending
+            ? `Action pending on ${snapshot.pending}`
+            : "No pending actions"}
+        </span>
+      </div>
+      <details className="instance-options">
+        <summary>
+          Task history · {profile.name} ({snapshot.operations?.length ?? 0})
+        </summary>
+        {snapshot.operations?.length ? (
+          <ol className="instance-task-list">
+            {[...snapshot.operations].reverse().map((operation) => (
+              <li key={operation.id}>
+                <strong>{operation.serverName}</strong> ·{" "}
+                {operation.kind.replaceAll("_", " ")} · {operation.status}
+                {operation.error?.message && (
+                  <p role="alert">{operation.error.message}</p>
+                )}
+                <small>{new Date(operation.updatedAt).toLocaleString()}</small>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p>No actions in this session.</p>
+        )}
+      </details>
       <div className="instance-card-footer">
         <button
           className="instance-button"
-          disabled={busy || snapshot.status === "signed-out"}
+          disabled={busy || blocked || snapshot.status === "signed-out"}
           onClick={() => void connection.current.refresh()}
         >
           <RefreshCw size={13} />
@@ -245,7 +320,7 @@ function InstanceCard({ profile, token, onState, onOpen, onRemove }) {
         </button>
         <button
           className="instance-button"
-          disabled={busy}
+          disabled={busy || blocked}
           onClick={() => onOpen(profile)}
         >
           Open workspace
@@ -260,6 +335,7 @@ function InstanceCard({ profile, token, onState, onOpen, onRemove }) {
               setError(failure.message);
             }
           }}
+          disabled={blocked}
           title="Open an independent workspace in a separate tab"
         >
           New tab
@@ -277,7 +353,7 @@ function InstanceCard({ profile, token, onState, onOpen, onRemove }) {
           {snapshot.user && (
             <button
               className="instance-button"
-              disabled={busy}
+              disabled={busy || blocked}
               onClick={async () => {
                 setBusy(true);
                 try {
@@ -317,6 +393,9 @@ function InstanceCard({ profile, token, onState, onOpen, onRemove }) {
   );
 }
 function InstanceWorkspace() {
+  const [connectionFilter, setConnectionFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [profiles, setProfiles] = useState(readInstances);
   const [states, setStates] = useState({});
   const [form, setForm] = useState({ name: "", url: "" });
@@ -447,29 +526,74 @@ function InstanceWorkspace() {
           </button>
         </div>
       )}
-      <div className="instances-grid">
-        {profiles.map((profile) => (
-          <InstanceCard
-            key={profile.id}
-            profile={profile}
-            token={readInstanceToken(profile.url)}
-            onState={(id, value) =>
-              setStates((current) => ({ ...current, [id]: value }))
-            }
-            onOpen={(target) => {
-              selectInstance(target.id);
-              navigate("/", { replace: true });
-            }}
-            onRemove={async (target) => {
-              if (
-                await confirmAction(
-                  `Remove ${target.name} and forget its saved login?`,
-                )
-              )
-                removeInstance(target.id);
-            }}
+      <div className="instances-filters">
+        <label>
+          Search fleet
+          <input
+            type="search"
+            placeholder="Instance, URL, or server name"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
           />
-        ))}
+        </label>
+        <label>
+          Server status
+          <select
+            aria-label="Server status"
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+          >
+            <option value="all">All servers</option>
+            <option value="running">Running</option>
+            <option value="stopped">Not running</option>
+          </select>
+        </label>
+        <label>
+          Connection
+          <select
+            aria-label="Connection filter"
+            value={connectionFilter}
+            onChange={(event) => setConnectionFilter(event.target.value)}
+          >
+            <option value="all">All connections</option>
+            <option value="online">Online</option>
+            <option value="offline">Needs attention</option>
+          </select>
+        </label>
+      </div>
+      <div className="instances-grid">
+        {profiles
+          .filter(
+            (profile) =>
+              connectionFilter === "all" ||
+              (connectionFilter === "online"
+                ? states[profile.id]?.status === "online"
+                : states[profile.id]?.status !== "online"),
+          )
+          .map((profile) => (
+            <InstanceCard
+              key={profile.id}
+              profile={profile}
+              search={search}
+              statusFilter={statusFilter}
+              token={readInstanceToken(profile.url)}
+              onState={(id, value) =>
+                setStates((current) => ({ ...current, [id]: value }))
+              }
+              onOpen={(target) => {
+                selectInstance(target.id);
+                navigate("/", { replace: true });
+              }}
+              onRemove={async (target) => {
+                if (
+                  await confirmAction(
+                    `Remove ${target.name} and forget its saved login?`,
+                  )
+                )
+                  removeInstance(target.id);
+              }}
+            />
+          ))}
       </div>
       {!profiles.length && (
         <div className="instances-empty">

@@ -1,3 +1,4 @@
+import { getActiveInstance } from "../app/instanceProfiles";
 import { sessionRuntime } from "../app/sessionRuntime";
 import React, {
   createContext,
@@ -45,6 +46,8 @@ export const ToastProvider = ({ children }) => {
   const addToast = useCallback(
     (message, type = "info") => {
       if (sessionRuntime.capture().generation !== generation) return;
+      const instance = getActiveInstance();
+      if (instance) message = `${instance.name}: ${message}`;
       const id = ++counter.current;
       const entry = {
         id:

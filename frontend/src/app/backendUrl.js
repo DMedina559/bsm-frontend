@@ -1,4 +1,4 @@
-export function validateBackendUrl(value) {
+export function validateBackendUrl(value, { allowMixedContent = false } = {}) {
   const url = new URL(value);
   if (
     !["http:", "https:"].includes(url.protocol) ||
@@ -10,7 +10,11 @@ export function validateBackendUrl(value) {
     throw new Error(
       "Enter an HTTP or HTTPS URL without credentials, a query, or a fragment.",
     );
-  if (window.location.protocol === "https:" && url.protocol === "http:")
+  if (
+    !allowMixedContent &&
+    window.location.protocol === "https:" &&
+    url.protocol === "http:"
+  )
     throw new Error(
       "An HTTPS page requires an HTTPS backend to avoid mixed content.",
     );

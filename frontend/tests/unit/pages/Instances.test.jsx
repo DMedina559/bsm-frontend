@@ -65,11 +65,28 @@ it("shows multiple fleets and scopes same-named server actions to the selected c
       name: "Stop survival on Home",
     }),
   );
-  expect(sessions.get(a.id).action).toHaveBeenCalledWith(
-    "survival",
-    "stop_server",
+  await waitFor(() =>
+    expect(sessions.get(a.id).action).toHaveBeenCalledWith(
+      "survival",
+      "stop_server",
+    ),
   );
   expect(sessions.get(b.id).action).not.toHaveBeenCalled();
+  fireEvent.change(screen.getByLabelText("Search fleet"), {
+    target: { value: "Home" },
+  });
+  expect(
+    within(screen.getByRole("article", { name: "Lab" })).queryByText(
+      "survival",
+    ),
+  ).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText("Search fleet"), {
+    target: { value: "" },
+  });
+  fireEvent.change(screen.getByLabelText("Server status", { exact: true }), {
+    target: { value: "stopped" },
+  });
+  expect(screen.queryByText("survival")).not.toBeInTheDocument();
   view.unmount();
   expect(sessions.get(a.id).dispose).toHaveBeenCalledOnce();
   expect(sessions.get(b.id).dispose).toHaveBeenCalledOnce();

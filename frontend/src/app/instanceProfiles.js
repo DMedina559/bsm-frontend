@@ -3,16 +3,33 @@ import { localSettings, sessionSettings } from "./browserStorage";
 import { validateBackendUrl } from "./backendUrl";
 
 export const INSTANCE_PROFILES_KEY = "bsm.instance-profiles.v1";
+export const INSTANCE_RECORD_PREFIX = "bsm.instance-record.v1:";
+export const isInstanceProfileKey = (key) =>
+  key === INSTANCE_PROFILES_KEY || key?.startsWith(INSTANCE_RECORD_PREFIX);
 export const ACTIVE_INSTANCE_KEY = "bsm.active-instance";
 export const instancesEnabled = () =>
   sessionSettings.getItem("show_hidden_flag") === "true";
 const notify = () => window.dispatchEvent(new Event("bsm:instances-changed"));
 export function readInstances() {
   try {
-    const values = JSON.parse(
+    let values = JSON.parse(
       localSettings.getItem(INSTANCE_PROFILES_KEY) ?? "[]",
     );
-    if (!Array.isArray(values)) return [];
+    if (!Array.isArray(values)) values = [];
+    // Independent records prevent edits to different profiles overwriting each other.
+    const merged = new Map(values.map((value) => [value?.id, value]));
+    for (const key of localSettings.keys()) {
+      if (!key.startsWith(INSTANCE_RECORD_PREFIX)) continue;
+      try {
+        const id = key.slice(INSTANCE_RECORD_PREFIX.length);
+        const value = JSON.parse(localSettings.getItem(key));
+        if (value === null) merged.delete(id);
+        else merged.set(id, value);
+      } catch {
+        /* Preserve other valid profiles. */
+      }
+    }
+    values = [...merged.values()];
     const seen = new Set();
     return values.flatMap((value) => {
       try {
@@ -23,7 +40,7 @@ export function readInstances() {
           !value.name.trim()
         )
           return [];
-        const url = validateBackendUrl(value.url);
+        const url = validateBackendUrl(value.url, { allowMixedContent: true });
         if (seen.has(url) || seen.has(value.id)) return [];
         seen.add(url);
         seen.add(value.id);
@@ -53,8 +70,8 @@ export function saveInstance({ name, url }) {
     throw new Error("This backend is already saved.");
   const profile = { id: crypto.randomUUID(), name, url };
   localSettings.setItem(
-    INSTANCE_PROFILES_KEY,
-    JSON.stringify([...profiles, profile]),
+    INSTANCE_RECORD_PREFIX + profile.id,
+    JSON.stringify(profile),
   );
   notify();
   return profile;
@@ -63,13 +80,11 @@ export function renameInstance(id, name) {
   name = name.trim();
   if (!name || name.length > 80)
     throw new Error("Enter a name of 1–80 characters.");
+  const profile = readInstances().find((value) => value.id === id);
+  if (!profile) throw new Error("Instance no longer exists.");
   localSettings.setItem(
-    INSTANCE_PROFILES_KEY,
-    JSON.stringify(
-      readInstances().map((profile) =>
-        profile.id === id ? { ...profile, name } : profile,
-      ),
-    ),
+    INSTANCE_RECORD_PREFIX + id,
+    JSON.stringify({ ...profile, name }),
   );
   notify();
 }
@@ -84,18 +99,23 @@ export function selectInstance(id) {
   notify();
 }
 export const instanceCredentialKey = (url) =>
-  `bsm.credentials:${encodeURIComponent(validateBackendUrl(url))}`;
+  `bsm.credentials:${encodeURIComponent(validateBackendUrl(url, { allowMixedContent: true }))}`;
 export function readInstanceToken(url) {
   const key = instanceCredentialKey(url);
   return sessionSettings.getItem(key) || localSettings.getItem(key) || null;
 }
-export function writeInstanceToken(url, token, remember = false) {
+export function writeInstanceToken(
+  url,
+  token,
+  remember = false,
+  source = "instances",
+) {
   const key = instanceCredentialKey(url);
   sessionSettings.removeItem(key);
   localSettings.removeItem(key);
   if (token) (remember ? localSettings : sessionSettings).setItem(key, token);
   window.dispatchEvent(
-    new CustomEvent("bsm:instance-credentials", { detail: { url } }),
+    new CustomEvent("bsm:instance-credentials", { detail: { url, source } }),
   );
 }
 export function removeInstance(id) {
@@ -103,17 +123,14 @@ export function removeInstance(id) {
   if (!profile) return;
   if (getActiveInstance()?.id === id) selectInstance(null);
   writeInstanceToken(profile.url, null);
-  localSettings.setItem(
-    INSTANCE_PROFILES_KEY,
-    JSON.stringify(readInstances().filter((item) => item.id !== id)),
-  );
+  localSettings.setItem(INSTANCE_RECORD_PREFIX + id, "null");
   notify();
 }
 export function subscribeInstances(listener) {
   const storage = (event) => {
     if (
       event.key === null ||
-      event.key === INSTANCE_PROFILES_KEY ||
+      isInstanceProfileKey(event.key) ||
       event.key?.startsWith("bsm.credentials:")
     )
       listener();

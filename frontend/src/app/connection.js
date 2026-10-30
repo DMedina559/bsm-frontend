@@ -3,7 +3,8 @@ export { validateBackendUrl } from "./backendUrl";
 import {
   getActiveInstance,
   ACTIVE_INSTANCE_KEY,
-  INSTANCE_PROFILES_KEY,
+  isInstanceProfileKey,
+  writeInstanceToken,
 } from "./instanceProfiles";
 import { createUrlResolver } from "@bedrock-server-manager/api-client/urls";
 import { getApiProxyBasePath, serializeHttpUrl } from "../utils/basePath";
@@ -40,6 +41,7 @@ export function getToken() {
   return null;
 }
 export function clearCredentials() {
+  writeInstanceToken(getConnectionIdentity(), null, false, "workspace");
   for (const area of ["sessionStorage", "localStorage"]) {
     write(area, credentialKey(), null);
     write(area, "access_token", null);
@@ -47,7 +49,7 @@ export function clearCredentials() {
 }
 export function setCredentials(token, remember = false) {
   clearCredentials();
-  write(remember ? "localStorage" : "sessionStorage", credentialKey(), token);
+  writeInstanceToken(getConnectionIdentity(), token, remember, "workspace");
 }
 export function setApiBaseUrl(value) {
   const next = value ? validateBackendUrl(value) : "";
@@ -78,7 +80,7 @@ export function isSessionStorageEvent(event) {
   return (
     event.key === null ||
     event.key === "api_base_url" ||
-    event.key === INSTANCE_PROFILES_KEY ||
+    isInstanceProfileKey(event.key) ||
     event.key === "access_token" ||
     event.key === credentialKey()
   );

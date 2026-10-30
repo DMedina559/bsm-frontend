@@ -10,11 +10,16 @@ import {
   openInstanceTab,
   instanceCredentialKey,
   ACTIVE_INSTANCE_KEY,
+  INSTANCE_RECORD_PREFIX,
+  INSTANCE_PROFILES_KEY,
+  renameInstance,
 } from "../../../src/app/instanceProfiles";
 import {
   getApiBaseUrl,
   getToken,
   isSessionStorageEvent,
+  setCredentials,
+  clearCredentials,
 } from "../../../src/app/connection";
 
 beforeEach(() => {
@@ -88,4 +93,64 @@ it("opens an independent tab with only the selected session token and no token i
   expect(data.get(instanceCredentialKey(a.url))).toBe("session-token");
   expect(tab.location.replace.mock.calls[0][0]).not.toContain("session-token");
   expect(sessionStorage.getItem(ACTIVE_INSTANCE_KEY)).toBeNull();
+});
+
+it("preserves mixed-content profiles while editing another profile", () => {
+  localStorage.setItem(
+    INSTANCE_PROFILES_KEY,
+    JSON.stringify([{ id: "http", name: "Local", url: "http://local.test" }]),
+  );
+  const other = saveInstance({ name: "Remote", url: "https://remote.test" });
+  renameInstance(other.id, "Renamed");
+  expect(readInstances().find((profile) => profile.id === "http")?.url).toBe(
+    "http://local.test",
+  );
+  removeInstance("http");
+  expect(readInstances()).toEqual([{ ...other, name: "Renamed" }]);
+});
+it("stores separate profile writes independently and observes external edits", () => {
+  const one = saveInstance({ name: "One", url: "https://one.test" });
+  const two = saveInstance({ name: "Two", url: "https://two.test" });
+  localStorage.setItem(
+    INSTANCE_RECORD_PREFIX + one.id,
+    JSON.stringify({ ...one, name: "External" }),
+  );
+  renameInstance(two.id, "Second");
+  expect(readInstances().map((profile) => profile.name)).toEqual([
+    "External",
+    "Second",
+  ]);
+});
+
+it("broadcasts workspace credential changes to instance views without auth recursion", () => {
+  const profile = saveInstance({ name: "One", url: "https://one.test" });
+  selectInstance(profile.id);
+  const listener = vi.fn();
+  window.addEventListener("bsm:instance-credentials", listener);
+  try {
+    setCredentials("updated-token");
+    expect(readInstanceToken(profile.url)).toBe("updated-token");
+    expect(listener.mock.calls.at(-1)[0].detail).toEqual({
+      url: profile.url,
+      source: "workspace",
+    });
+    clearCredentials();
+    expect(readInstanceToken(profile.url)).toBeNull();
+  } finally {
+    window.removeEventListener("bsm:instance-credentials", listener);
+  }
+});
+it("reads saved HTTP profiles on an HTTPS page without deleting them on rename", () => {
+  const profile = saveInstance({ name: "Local", url: "http://local.test" });
+  const other = saveInstance({ name: "Remote", url: "https://remote.test" });
+  vi.stubGlobal("window", {
+    location: new URL("https://ui.test"),
+    dispatchEvent: vi.fn(),
+  });
+  try {
+    renameInstance(other.id, "Remote renamed");
+    expect(readInstances()).toContainEqual(profile);
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });

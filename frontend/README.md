@@ -365,12 +365,34 @@ prefixes), then sign in to each independently. **Save current connection** adds
 the existing backend and reuses its scoped token when available.
 
 Every signed-in instance has its own HTTP transport, session generation, query
-cache and WebSocket connection. Fleet cards stay connected concurrently, show
+cache and socket manager. Where Web Locks and BroadcastChannel are supported,
+the hub shares a socket with workspaces for the same backend and account; otherwise
+each view uses an independent socket. Fleet cards stay connected concurrently, show
 combined availability counts, and offer per-server start/stop controls. Identical
 server names on different backends remain distinct. Lifecycle events refresh only
 their owning instance; visible-page polling refreshes snapshots every 15 seconds.
 An offline instance retains a marked last-known snapshot with actions disabled.
-Expired credentials stop automatic polling until you sign in again.
+Expired credentials stop periodic polling. Manual refresh or returning to the page
+can retry the connection; a successful recovery restarts polling.
+
+Search by instance, backend URL, or server name, and filter by server status or
+connection health. Cards show the last successful refresh and identify the instance
+beside each server and in action confirmations. Workspace notifications also carry
+the selected instance name.
+
+Accepted background actions register with the per-instance operation coordinator.
+Task updates arrive through socket subscriptions with HTTP recovery during refresh;
+actions remain pending until the task completes. Task history is bounded to 100
+records per backend/account in this tab's session storage and survives navigation
+and reload. Unavailable tasks remain marked unknown; inspect them in the full
+workspace before retrying. Status refreshes arriving during an older request queue
+another read, including after a command completes.
+
+Profile edits use independent storage records, so simultaneous changes to different
+instances do not overwrite one another. Concurrent changes to the same profile use
+the last saved value. Older profile lists are read without destructive migration.
+HTTP profiles remain saved when opening the frontend over HTTPS, with an explicit
+mixed-content restriction instead of disappearing.
 
 **Open workspace** selects an instance for the regular management pages in the
 current tab. The header switcher returns to other saved instances or the default
@@ -383,6 +405,12 @@ are not saved. Removing a profile forgets its local credentials without stopping
 or deleting any remote servers.
 
 Remote instances must permit the frontend origin through their existing CORS
-configuration. HTTPS frontends require HTTPS backend URLs. The feature uses the
+configuration. Add the exact frontend origin (including its port) to
+`web.cors_origins` in each backend's Settings → Web, preserve existing entries,
+and restart that backend's web server. For example, a frontend at
+`http://localhost:11325` needs that exact origin; localhost ports 3000 or 5173 do
+not match it. Network error guidance includes both addresses, but browsers cannot
+reliably distinguish CORS failures from certificate or connectivity failures.
+HTTPS frontends require HTTPS backend URLs. The feature uses the
 existing BSM API and does not introduce a proxy, bulk actions or backend changes.
 `?hidden=false` returns to the normal default connection and hides these controls.
