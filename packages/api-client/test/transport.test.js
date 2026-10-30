@@ -283,3 +283,27 @@ test("multipart uploads use native progress and retain authorization and cancell
     globalThis.XMLHttpRequest = original;
   }
 });
+
+test("response metadata is available for JSON, errors and empty responses", async () => {
+  for (const status of [200, 204, 422]) {
+    let metadata;
+    const client = transport(async (_url, options) => {
+      assert.equal(options.onResponseMetadata, undefined);
+      return new Response(status === 204 ? null : '{"ok":true}', {
+        status,
+        headers: { "content-type": "application/json" },
+      });
+    });
+    try {
+      await client.request("/api/example", {
+        onResponseMetadata: (value) => {
+          metadata = value;
+        },
+      });
+    } catch (error) {
+      assert.equal(error.status, 422);
+    }
+    assert.equal(metadata.status, status);
+    assert.equal(metadata.headers["content-type"], "application/json");
+  }
+});

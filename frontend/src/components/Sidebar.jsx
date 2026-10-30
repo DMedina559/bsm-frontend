@@ -155,6 +155,11 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
         ...(sessionSettings.getItem("show_hidden_flag") === "true"
           ? [
               {
+                path: "/api-explorer",
+                label: "API Explorer",
+                icon: Code,
+              },
+              {
                 path: "/playground",
                 label: "Playground",
                 icon: Code,

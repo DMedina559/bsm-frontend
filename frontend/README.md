@@ -90,6 +90,28 @@ remote connections do not inherit ambiguous values. Logging overrides remain
 device settings; the hidden-navigation flag lasts for the browser session.
 Credentials belong to the separate connection adapter.
 
+### Hidden API Explorer
+
+Open the app with `?hidden=true`, then choose **API Explorer** in Global navigation
+(or visit `/api-explorer` under the app base path). `?hidden=false` hides it again;
+the explorer route itself also requires hidden mode. This flag controls visibility,
+not API permissions: backend authorization still applies.
+
+Load the connected backend's OpenAPI document, upload a JSON file, or paste JSON.
+Search operations by ID, method, path, or tag, including plugin operations. Inspect
+models and follow local model references. Parameters and JSON bodies are validated
+against the selected contract before execution. Request fields and example values
+help build bodies; the JSON editor supports nested and union models. Execution
+currently supports JSON bodies and path, query, and header parameters; other body
+formats and cookie parameters are shown in the contract but are not executable.
+
+Requests perform real actions using the existing connection and session; imported
+`servers` URLs are ignored. Preview requests before executing, cancel pending work,
+and inspect response status, headers, body, and elapsed time. Binary responses show
+their media type and size. Contract JSON, request values, and responses remain in
+page memory and are not saved. These are runtime schema checks, not newly generated
+TypeScript types.
+
 Server snapshots, tasks, metrics and drafts are not persisted as browser truth.
 Background refreshes preserve dirty forms and display conflicts. Session changes
 invalidate pending saves and clear application-owned drafts and operations.

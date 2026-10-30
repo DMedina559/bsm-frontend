@@ -82,6 +82,11 @@ export const PAGE_INFO = {
     "Install Server",
     "Create a Bedrock server and configure its workspace.",
   ],
+  "/api-explorer": [
+    "Global",
+    "API Explorer",
+    "Inspect and call OpenAPI operations.",
+  ],
   "/playground": ["Global", "Playground", "Preview native plugin components."],
   "/plugin-native-view": [
     "Plugins",
