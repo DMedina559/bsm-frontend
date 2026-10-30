@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import JSON5 from "json5";
 import DynamicPage from "./DynamicPage";
 import { useToast } from "../contexts/ToastContext";
-import { Play } from "lucide-react";
+import { Play, Code, Eye } from "lucide-react";
+import "../styles/playground.css";
 const DEFAULT_JSON = `{
   "type": "Container",
   "children": [
@@ -15,7 +16,7 @@ const DEFAULT_JSON = `{
         {
           "type": "Text",
           "props": {
-            "content": "Type or paste your JSON schema here to see it rendered below."
+            "content": "Type or paste your JSON schema here to see it rendered in the preview."
           }
         }
       ]
@@ -25,13 +26,18 @@ const DEFAULT_JSON = `{
 const Playground = () => {
   const [jsonInput, setJsonInput] = useState(DEFAULT_JSON);
   const [schemaJson, setSchemaJson] = useState(null);
+  const [activeTab, setActiveTab] = useState("raw");
+  const [renderedSource, setRenderedSource] = useState(null);
   const { addToast } = useToast();
   const handleRender = () => {
     try {
       // First try standard JSON parsing
       const parsed = JSON.parse(jsonInput);
       setSchemaJson(parsed);
+      setRenderedSource(jsonInput);
+      setActiveTab("rendered");
       addToast("Schema rendered successfully", "success");
+      return true;
     } catch {
       try {
         // If standard JSON fails, attempt to parse Python-like dictionaries
@@ -46,87 +52,125 @@ const Playground = () => {
 
         const parsed = JSON5.parse(sanitized);
         setSchemaJson(parsed);
+        setRenderedSource(jsonInput);
+        setActiveTab("rendered");
         addToast("Schema (Python/JS format) rendered successfully", "success");
+        return true;
       } catch (fallbackErr) {
         addToast("Invalid JSON or Object: " + fallbackErr.message, "error");
+        return false;
       }
     }
   };
+  const selectTab = (tab) => {
+    if (tab === "rendered" && renderedSource !== jsonInput)
+      return handleRender();
+    setActiveTab(tab);
+    return true;
+  };
+  const handleTabKeys = (event) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    const next =
+      event.key === "Home"
+        ? "raw"
+        : event.key === "End"
+          ? "rendered"
+          : activeTab === "raw"
+            ? "rendered"
+            : "raw";
+    if (selectTab(next))
+      event.currentTarget.parentElement
+        .querySelector(`#playground-tab-${next}`)
+        ?.focus();
+  };
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "calc(20px * var(--bsm-spacing-scale))",
-        padding: "calc(20px * var(--bsm-spacing-scale))",
-      }}
-    >
-      <div className="header">
-        <h1>Developer Playground</h1>
-      </div>
-
-      <div className="card">
-        <h3>JSON Input</h3>
-        <textarea
-          aria-label="JSON schema"
-          className="form-input"
-          style={{
-            width: "100%",
-            height: "300px",
-            fontFamily: "var(--bsm-mono)",
-            padding: "calc(10px * var(--bsm-spacing-scale))",
-            background: "var(--input-bg, #222)",
-            color: "var(--text-color, #eee)",
-            border: "1px solid var(--border-color, #444)",
-            borderRadius: "4px",
-            resize: "vertical",
-          }}
-          value={jsonInput}
-          onChange={(e) => setJsonInput(e.target.value)}
-          placeholder="Paste your JSON schema here..."
-        />
-        <div
-          style={{
-            marginTop: "calc(10px * var(--bsm-spacing-scale))",
-            display: "flex",
-            justifyContent: "flex-end",
-          }}
-        >
-          <button
-            className="action-button primary"
-            onClick={handleRender}
-            type="button"
-          >
-            <Play
-              size={16}
-              style={{
-                marginRight: "calc(5px * var(--bsm-spacing-scale))",
-              }}
-            />
-            Render Page
-          </button>
+    <div className="playground-page">
+      <div className="playground-header">
+        <div>
+          <span className="playground-eyebrow">Developer tools</span>
+          <h1>Developer Playground</h1>
+          <p>Edit a native plugin page and preview its components.</p>
         </div>
-      </div>
-
-      {schemaJson && (
-        <div
-          style={{
-            borderTop: "2px dashed var(--border-color, #444)",
-            paddingTop: "calc(20px * var(--bsm-spacing-scale))",
-          }}
+        <button
+          className="action-button primary"
+          onClick={handleRender}
+          type="button"
         >
-          <h3>Preview</h3>
+          <Play size={15} />
+          Render Page
+        </button>
+      </div>
+      <section className="playground-workspace">
+        <div className="playground-toolbar">
           <div
-            style={{
-              background: "var(--bg-color, #1a1a1a)",
-              borderRadius: "8px",
-              overflow: "hidden",
-            }}
+            role="tablist"
+            aria-label="Playground views"
+            className="playground-tabs"
           >
-            <DynamicPage schemaJson={schemaJson} />
+            {[
+              { id: "raw", label: "Raw", icon: Code },
+              { id: "rendered", label: "Rendered", icon: Eye },
+            ].map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                id={`playground-tab-${id}`}
+                role="tab"
+                type="button"
+                aria-selected={activeTab === id}
+                aria-controls={`playground-panel-${id}`}
+                tabIndex={activeTab === id ? 0 : -1}
+                onClick={() => selectTab(id)}
+                onKeyDown={handleTabKeys}
+              >
+                <Icon size={15} />
+                {label}
+              </button>
+            ))}
           </div>
+          <span className="playground-document-status">
+            {renderedSource === jsonInput
+              ? "Preview up to date"
+              : renderedSource === null
+                ? "Ready to render"
+                : "Preview has pending changes"}
+          </span>
         </div>
-      )}
+        <div
+          id="playground-panel-raw"
+          role="tabpanel"
+          aria-labelledby="playground-tab-raw"
+          hidden={activeTab !== "raw"}
+          className="playground-panel"
+        >
+          <label htmlFor="playground-json">
+            Page schema<span>JSON / JSON5</span>
+          </label>
+          <textarea
+            id="playground-json"
+            aria-label="JSON schema"
+            spellCheck={false}
+            value={jsonInput}
+            onChange={(event) => setJsonInput(event.target.value)}
+            placeholder="Paste your JSON schema here…"
+          />
+          <p>
+            Switch to Rendered to preview your latest changes. Invalid input
+            stays here so you can correct it.
+          </p>
+        </div>
+        <div
+          id="playground-panel-rendered"
+          role="tabpanel"
+          aria-labelledby="playground-tab-rendered"
+          hidden={activeTab !== "rendered"}
+          className="playground-panel playground-preview"
+        >
+          {schemaJson !== null && activeTab === "rendered" && (
+            <DynamicPage schemaJson={schemaJson} />
+          )}
+        </div>
+      </section>
     </div>
   );
 };

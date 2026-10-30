@@ -90,6 +90,35 @@ remote connections do not inherit ambiguous values. Logging overrides remain
 device settings; the hidden-navigation flag lasts for the browser session.
 Credentials belong to the separate connection adapter.
 
+### Hidden API Explorer
+
+Open the app with `?hidden=true`, then choose **API Explorer** in Global navigation
+(or visit `/api-explorer` under the app base path). `?hidden=false` hides it again;
+the explorer route itself also requires hidden mode. This flag controls visibility,
+not API permissions: backend authorization still applies.
+
+Load the connected backend's OpenAPI document, upload a JSON file, or paste JSON.
+Search operations by ID, method, path, or tag, including plugin operations. Inspect
+models and follow local model references. The workspace separates Operations and
+Models; each operation has Request, Response, and Schema tabs. Schema-aware fields
+include boolean and enum choices, nested objects, required markers, and defaults.
+Switch to JSON for complex bodies. Responses display properties or tables, with
+filtering and pagination for large arrays. Headers and complete raw JSON remain
+available in separate views, with copy controls.
+
+Parameters and JSON bodies are validated
+against the selected contract before execution. Request fields and example values
+help build bodies; the JSON editor supports nested and union models. Execution
+currently supports JSON bodies and path, query, and header parameters; other body
+formats and cookie parameters are shown in the contract but are not executable.
+
+Requests perform real actions using the existing connection and session; imported
+`servers` URLs are ignored. Preview requests before executing, cancel pending work,
+and inspect response status, headers, body, and elapsed time. Binary responses show
+their media type and size. Contract JSON, request values, and responses remain in
+page memory and are not saved. These are runtime schema checks, not newly generated
+TypeScript types.
+
 Server snapshots, tasks, metrics and drafts are not persisted as browser truth.
 Background refreshes preserve dirty forms and display conflicts. Session changes
 invalidate pending saves and clear application-owned drafts and operations.
@@ -317,3 +346,12 @@ precision preference. Page descriptions are owned by `utils/navigation.js`;
 Scheduler and Application monitor use the same navigation metadata as other pages.
 Plugin component styles are scoped to plugin views and plugin dialogs so opening
 a plugin cannot change native account badges, forms, or other page styles.
+
+### Updating an editable Python frontend install
+
+Install the frontend package once from this checkout with
+`python -m pip install -e ./python`, then run `npm run build:editable` from the
+repository root after frontend changes. This builds shared libraries and the web
+interface and copies assets to `python/src/bsm_frontend/static/` without building
+Python distributions. Refresh the browser to load the updated interface. The
+frontend package itself must be editable, even if the backend already is.

@@ -11,17 +11,20 @@ if (!existsSync(new URL("../frontend/dist/index.html", import.meta.url)))
   throw new Error("Build the web interface before packaging Python assets.");
 rmSync(packagedAssets, { recursive: true, force: true });
 cpSync(webAssets, packagedAssets, { recursive: true });
-rmSync(new URL("../python/dist/", import.meta.url), {
-  recursive: true,
-  force: true,
-});
-const result = spawnSync(process.env.PYTHON || "python", ["-m", "build"], {
-  cwd: pythonDirectory,
-  stdio: "inherit",
-});
-if (result.error)
-  throw new Error(
-    "Python's build package is required. Install it with python -m pip install build.",
-    { cause: result.error },
-  );
-process.exitCode = result.status ?? 1;
+console.log(`Frontend assets copied to ${packagedAssets}`);
+if (!process.argv.includes("--assets-only")) {
+  rmSync(new URL("../python/dist/", import.meta.url), {
+    recursive: true,
+    force: true,
+  });
+  const result = spawnSync(process.env.PYTHON || "python", ["-m", "build"], {
+    cwd: pythonDirectory,
+    stdio: "inherit",
+  });
+  if (result.error)
+    throw new Error(
+      "Python's build package is required. Install it with python -m pip install build.",
+      { cause: result.error },
+    );
+  process.exitCode = result.status ?? 1;
+}

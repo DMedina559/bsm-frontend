@@ -3,6 +3,10 @@ export interface RequestOptions extends Omit<RequestInit, "body" | "headers"> {
   headers?: Record<string, string>;
   /** Milliseconds; zero disables the deadline while preserving cancellation. */
   timeout?: number;
+  onResponseMetadata?: (response: {
+    status: number;
+    headers: Record<string, string>;
+  }) => void;
   onUploadProgress?: (loaded: number, total: number | null) => void;
   onDownloadProgress?: (loaded: number, total: number | null) => void;
   /** Binary response destination; streamed with backpressure and aborted on failure. */

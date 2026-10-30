@@ -61,6 +61,7 @@ Run these commands from the repository root.
 | `npm run api:generate`          | Regenerate API types and metadata, then rebuild the SDK                       |
 | `npm run pack:frontend`         | Pack the verified frontend for npm after Python asset staging                 |
 | `npm run check:implementations` | Check shared JavaScript implementations and typed factory boundaries          |
+| `npm run build:editable`        | Build the frontend and copy assets into the editable Python package           |
 | `npm run build:python`          | Build the web interface and its Python distributions                          |
 
 `npm run check` does not run browser scenarios or build the Python distribution.
@@ -89,6 +90,20 @@ terminals. Generated outputs are not committed.
 A normal npm build does not require Python. For Python delivery, install Python
 3.11 or later and `python -m pip install build`, then run `npm run build:python`.
 The installed backend continues to use `bsm_frontend.get_static_dir()`.
+
+For an editable frontend install from this checkout, run:
+
+```sh
+python -m pip install -e ./python
+npm run build:editable
+```
+
+`build:editable` builds the shared libraries and web interface, then replaces
+`python/src/bsm_frontend/static/` with the fresh assets. It does not run Python,
+build wheels/source archives, or change existing `python/dist/` artifacts.
+After subsequent frontend edits, rerun `npm run build:editable` and refresh the
+browser. The editable install must point to this frontend checkout; an editable
+backend install alone does not make the frontend package editable.
 
 ## OpenAPI contract
 
@@ -168,7 +183,6 @@ every 15 seconds while viewing activity. This is bounded metadata, not an unlimi
 event log. Unavailable sources and partial views are labeled explicitly. Global
 activity requires a backend exposing `get_diagnostic_activity`; other diagnostics
 remain usable on older backends. Traces now include operation ancestry and outcomes.
-
 
 ### Backup verification and scheduling
 

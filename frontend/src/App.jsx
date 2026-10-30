@@ -38,6 +38,7 @@ const ServerInstall = lazy(() => import("./pages/ServerInstall"));
 const GlobalPlayers = lazy(() => import("./pages/GlobalPlayers"));
 const OnlinePlayers = lazy(() => import("./pages/OnlinePlayers"));
 const DynamicPage = lazy(() => import("./pages/DynamicPage"));
+const ApiExplorer = lazy(() => import("./pages/ApiExplorer"));
 const Playground = lazy(() => import("./pages/Playground"));
 
 const PrivateRoute = ({ children }) => {
@@ -106,6 +107,7 @@ const AppRoutes = () => {
         <Route path="appearance" element={<Account appearanceOnly />} />
         <Route path="server-install" element={<ServerInstall />} />
         <Route path="plugin-native-view" element={<DynamicPage />} />
+        <Route path="api-explorer" element={<ApiExplorer />} />
         <Route path="playground" element={<Playground />} />
       </Route>
       <Route path="*" element={<Navigate to="/" />} />

@@ -120,6 +120,7 @@ export function createHttpTransport({
       responseType = "json",
       session = captureSession(),
       onUploadProgress,
+      onResponseMetadata,
       onDownloadProgress,
       downloadTo,
       ...restOptions
@@ -212,6 +213,11 @@ export function createHttpTransport({
           ? await uploadRequest(finalUrl, config, onUploadProgress, signal)
           : await fetcher(finalUrl, config);
       assertCurrent();
+
+      onResponseMetadata?.({
+        status: response.status,
+        headers: Object.fromEntries(response.headers),
+      });
 
       if (response.status === 204) {
         logger.debug(`[API] Response (No Content)`, {
