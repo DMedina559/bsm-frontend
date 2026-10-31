@@ -32,7 +32,7 @@ for (const port of [4176, 4177]) {
     res.setHeader("Vary", "Origin");
     res.setHeader(
       "Access-Control-Allow-Headers",
-      "authorization, content-type, cache-control, pragma",
+      "authorization, content-type, cache-control, pragma, x-bsm-auth-mode, x-csrf-token",
     );
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     if (req.method === "OPTIONS") {

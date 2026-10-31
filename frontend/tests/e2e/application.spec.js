@@ -28,11 +28,12 @@ async function backend(context, role = "admin") {
     async (route) => {
       const request = route.request();
       const path = new URL(request.url()).pathname;
+      const requestHeaders = await request.allHeaders();
       const identity =
-        request.headers().authorization?.replace("Bearer ", "") ??
-        request
-          .headers()
-          .cookie?.match(/(?:^|;\s*)access_token_cookie=([^;]+)/)?.[1];
+        requestHeaders.authorization?.replace("Bearer ", "") ??
+        requestHeaders.cookie?.match(
+          /(?:^|;\s*)access_token_cookie=([^;]+)/,
+        )?.[1];
       let data = { status: "success" };
       let status = 200;
       const headers = {};
@@ -41,7 +42,7 @@ async function backend(context, role = "admin") {
         const username = new URLSearchParams(request.postData()).get(
           "username",
         );
-        const cookieMode = request.headers()["x-bsm-auth-mode"] === "cookie";
+        const cookieMode = requestHeaders["x-bsm-auth-mode"] === "cookie";
         data = {
           access_token: cookieMode ? "" : username,
           token_type: "bearer",
@@ -123,6 +124,19 @@ async function backend(context, role = "admin") {
   return state;
 }
 async function login(page, name) {
+  const cookie = (await page.context().cookies()).find(
+    (item) => item.name === "access_token_cookie",
+  );
+  if (cookie?.value === name) {
+    await page.goto("./");
+    await expect(
+      page.getByRole("button", {
+        name: `Open ${name}-server monitor`,
+        exact: true,
+      }),
+    ).toBeVisible();
+    return;
+  }
   await page.goto("login");
   await page.getByLabel("Username", { exact: true }).fill(name);
   await page.getByLabel("Password", { exact: true }).fill("password");

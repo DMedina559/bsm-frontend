@@ -5,7 +5,7 @@ async function login(page, name) {
   await page.getByLabel("Password", { exact: true }).fill("password");
   await page.getByRole("button", { name: "Sign In", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Login", exact: true }),
+    page.getByRole("heading", { name: "Welcome back", exact: true }),
   ).toHaveCount(0);
 }
 test("production standalone UI authenticates across origins and isolates credentials across tabs", async ({
@@ -35,7 +35,7 @@ test("production standalone UI authenticates across origins and isolates credent
     localStorage.setItem("api_base_url", "http://127.0.0.1:4177"),
   );
   await expect(
-    page.getByRole("heading", { name: "Login", exact: true }),
+    page.getByRole("heading", { name: "Welcome back", exact: true }),
   ).toBeVisible();
   const records = await (
     await request.get("http://127.0.0.1:4177/audit/requests")
@@ -55,7 +55,7 @@ test("production standalone UI authenticates across origins and isolates credent
   ).toBe(true);
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "Login", exact: true }),
+    page.getByRole("heading", { name: "Welcome back", exact: true }),
   ).toBeVisible();
 });
 test("production ingress keeps application assets and backend requests under the prefix", async ({
@@ -67,7 +67,7 @@ test("production ingress keeps application assets and backend requests under the
   });
   await page.goto("http://127.0.0.1:4175/ingress/test/app/");
   await expect(
-    page.getByRole("heading", { name: "Login", exact: true }),
+    page.getByRole("heading", { name: "Welcome back", exact: true }),
   ).toBeVisible();
   await expect(page.locator(".auth-brand img")).toHaveJSProperty(
     "naturalWidth",
@@ -75,7 +75,7 @@ test("production ingress keeps application assets and backend requests under the
   );
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "Login", exact: true }),
+    page.getByRole("heading", { name: "Welcome back", exact: true }),
   ).toBeVisible();
   expect(missing).toEqual([]);
 });
