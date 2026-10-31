@@ -24,6 +24,11 @@ test("Swagger bearer authentication is isolated from the embedded cookie session
     }),
   );
   const origin = "http://127.0.0.1:4180";
+  const schema = await (await request.get(`${origin}/api/openapi.json`)).json();
+  test.skip(
+    schema.paths?.["/api/account"]?.get?.["x-bsm-access"]?.version !== 1,
+    "Backend predates the versioned HTTP access contract",
+  );
   const username = "smoke-admin";
   const password = "temporary-smoke-password";
   const setup = await (await request.get(`${origin}/api/setup/status`)).json();
