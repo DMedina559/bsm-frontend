@@ -170,6 +170,7 @@ export default function IntegrationTokens() {
     }
   }
   const presets = {
+    full: policy.data?.token_permissions ?? [],
     monitoring: ["account:read", "health:read", "servers:read", "tasks:read"],
     operator: [
       "account:read",
@@ -286,10 +287,18 @@ export default function IntegrationTokens() {
                 >
                   Backup automation
                 </option>
+                <option value="full">Full access</option>
                 <option value="custom">Custom</option>
               </select>
             </label>
           </div>
+          {preset === "full" && (
+            <p className="help-text">
+              Includes every permission your account can delegate to
+              integrations. Selected server limits still apply; account security
+              management is excluded.
+            </p>
+          )}
           <details className="credential-capabilities">
             <summary>Allowed capabilities ({permissions.length})</summary>
             <div className="access-choice-list">

@@ -151,3 +151,57 @@ it("shows non-expiring credentials as active and keeps rotation available", asyn
     screen.getByRole("button", { name: "Revoke Persistent monitor" }),
   ).toBeVisible();
 });
+
+it.each([[capabilities], [["account:read", "servers:read"]]])(
+  "full access uses only delegable permissions and preserves selected server limits (%j)",
+  async (allowed) => {
+    const original = callOperation.getMockImplementation();
+    callOperation.mockImplementation((id, ...args) =>
+      id === "get_access_policy"
+        ? Promise.resolve({
+            ...catalog,
+            permissions: {
+              ...catalog.permissions,
+              "users:manage": "Manage accounts",
+            },
+            token_permissions: allowed,
+          })
+        : original(id, ...args),
+    );
+    render(
+      <DialogProvider>
+        <IntegrationTokens />
+      </DialogProvider>,
+    );
+    await screen.findByLabelText("Credential name");
+    fireEvent.change(screen.getByLabelText("Credential name"), {
+      target: { value: "Full integration" },
+    });
+    fireEvent.click(
+      screen.getByLabelText("All servers this account may access"),
+    );
+    fireEvent.click(await screen.findByLabelText("Alpha"));
+    fireEvent.change(
+      screen.getByRole("combobox", { name: /Permission preset/ }),
+      { target: { value: "full" } },
+    );
+    expect(
+      screen.getByText(`Allowed capabilities (${allowed.length})`),
+    ).toBeVisible();
+    expect(screen.queryByLabelText("users:manage")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Create credential" }));
+    await waitFor(() =>
+      expect(callOperation).toHaveBeenCalledWith(
+        "create_integration_token",
+        expect.objectContaining({
+          body: {
+            name: "Full integration",
+            expires_in_days: 30,
+            permissions: allowed,
+            server_ids: [identity],
+          },
+        }),
+      ),
+    );
+  },
+);
