@@ -29,11 +29,20 @@ async function backend(context, role = "admin") {
       const request = route.request();
       const path = new URL(request.url()).pathname;
       const requestHeaders = await request.allHeaders();
+      // WebKit's intercepted request headers omit HttpOnly cookies. Read the
+      // browser-managed jar for cookie-mode requests, scoped to this exact URL.
+      const sessionCookie =
+        requestHeaders["x-bsm-auth-mode"] === "cookie"
+          ? (await context.cookies(request.url())).find(
+              (cookie) => cookie.name === "access_token_cookie",
+            )?.value
+          : undefined;
       const identity =
         requestHeaders.authorization?.replace("Bearer ", "") ??
         requestHeaders.cookie?.match(
           /(?:^|;\s*)access_token_cookie=([^;]+)/,
-        )?.[1];
+        )?.[1] ??
+        sessionCookie;
       let data = { status: "success" };
       let status = 200;
       const headers = {};
@@ -48,22 +57,10 @@ async function backend(context, role = "admin") {
           token_type: "bearer",
         };
         if (cookieMode) {
-          // WebKit does not consistently apply Set-Cookie from fulfilled fetches.
-          // Model the server-issued HttpOnly cookie in the browser cookie jar.
-          await context.addCookies([
-            {
-              name: "access_token_cookie",
-              value: username,
-              url: "http://127.0.0.1:4173/",
-              httpOnly: true,
-              sameSite: "Lax",
-            },
-          ]);
           headers["Set-Cookie"] =
             `access_token_cookie=${username}; Path=/; HttpOnly; SameSite=Lax`;
         }
       } else if (path === "/auth/logout") {
-        await context.clearCookies({ name: "access_token_cookie" });
         headers["Set-Cookie"] =
           "access_token_cookie=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax";
       } else if (path === "/api/account") {
