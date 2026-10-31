@@ -53,7 +53,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           repository: DMedina559/bedrock-server-manager
-          ref: dev
+          # Test the auth PR against its companion backend until backend #480 merges.
+          # Merged dev builds and releases continue to verify the actual backend dev.
+          ref: ${{ github.event_name == 'pull_request' && github.head_ref == 'feat/http-access-policy' && '36d3ebd6a4088738d32a6e064dfee0c3b7c8babe' || 'dev' }}
           path: backend
           persist-credentials: false
 
