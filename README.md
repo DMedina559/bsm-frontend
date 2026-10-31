@@ -242,3 +242,11 @@ until revoked (`expires_in_days: null` in the API). The default remains 30 days;
 rotation preserves a non-expiring credential's lack of a deadline. Login sessions
 retain their configured expiry limits. Login asks for an authenticator/recovery
 code only after the server validates the username/password and requires MFA.
+
+**Frontend settings** is the central home for themes/palettes/backgrounds,
+display and fleet preferences, browser recovery, connections, and frontend
+recording. It is available to every signed-in account from the sidebar, Account,
+and application Settings. Existing account/backend-scoped preferences are reused;
+`/appearance` redirects to the Appearance category. Account focuses on identity,
+sessions, integration credentials, and security. Frontend diagnostics keeps its
+history tools and links to the central recording controls.

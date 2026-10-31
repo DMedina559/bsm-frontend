@@ -32,7 +32,7 @@ import {
   ChevronLeft,
   UserCheck,
   ChevronRight,
-  Palette,
+  Settings2,
   Code,
   Search,
 } from "lucide-react";
@@ -389,16 +389,16 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
       </nav>
       <div className="footer-nav">
         <NavLink
-          to="/appearance"
+          to="/frontend-settings"
           className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
           onClick={handleNavClick}
-          title="Appearance"
+          title="Frontend settings"
         >
-          <Palette size={18} />
+          <Settings2 size={18} />
           {effectiveCollapsed ? (
-            <span className="sr-only">Appearance</span>
+            <span className="sr-only">Frontend settings</span>
           ) : (
-            <span>Appearance</span>
+            <span>Frontend settings</span>
           )}
         </NavLink>
         <NavLink

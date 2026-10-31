@@ -113,14 +113,14 @@ describe("Sidebar", () => {
     expect(new Set(icons).size).toBe(icons.length);
   });
 
-  it("keeps Appearance and Account navigation states separate", async () => {
-    window.history.replaceState({}, "", "/appearance");
+  it("keeps Frontend settings and Account navigation states separate", async () => {
+    window.history.replaceState({}, "", "/frontend-settings");
     await act(async () => {
       render(<Sidebar />);
     });
-    const appearance = screen.getByRole("link", { name: "Appearance" });
+    const appearance = screen.getByRole("link", { name: "Frontend settings" });
     const account = screen.getByRole("link", { name: "Account" });
-    expect(appearance).toHaveAttribute("href", "/appearance");
+    expect(appearance).toHaveAttribute("href", "/frontend-settings");
     expect(appearance).toHaveAttribute("aria-current", "page");
     expect(account).not.toHaveAttribute("aria-current");
     fireEvent.click(account);
@@ -138,7 +138,9 @@ describe("Sidebar", () => {
     );
     expect(screen.queryByText("Version 4.0")).not.toBeInTheDocument();
     expect(screen.queryByText("Backend 4.0.0b2.dev4")).not.toBeInTheDocument();
-    expect(screen.getByText(/Frontend/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Frontend/, { selector: ".sidebar-version span" }),
+    ).toBeInTheDocument();
   });
   it("displays splash text", async () => {
     await act(async () => {

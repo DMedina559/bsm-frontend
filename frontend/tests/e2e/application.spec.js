@@ -28,16 +28,31 @@ async function backend(context, role = "admin") {
     async (route) => {
       const request = route.request();
       const path = new URL(request.url()).pathname;
-      const identity = request.headers().authorization?.replace("Bearer ", "");
+      const identity =
+        request.headers().authorization?.replace("Bearer ", "") ??
+        request
+          .headers()
+          .cookie?.match(/(?:^|;\s*)access_token_cookie=([^;]+)/)?.[1];
       let data = { status: "success" };
       let status = 200;
+      const headers = {};
       if (path === "/api/setup/status") data = { needs_setup: false };
-      else if (path === "/auth/token")
+      else if (path === "/auth/token") {
+        const username = new URLSearchParams(request.postData()).get(
+          "username",
+        );
+        const cookieMode = request.headers()["x-bsm-auth-mode"] === "cookie";
         data = {
-          access_token: new URLSearchParams(request.postData()).get("username"),
+          access_token: cookieMode ? "" : username,
           token_type: "bearer",
         };
-      else if (path === "/api/account") {
+        if (cookieMode)
+          headers["Set-Cookie"] =
+            `access_token_cookie=${username}; Path=/; HttpOnly; SameSite=Lax`;
+      } else if (path === "/auth/logout") {
+        headers["Set-Cookie"] =
+          "access_token_cookie=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax";
+      } else if (path === "/api/account") {
         if (!identity) {
           status = 401;
           data = { detail: "Sign in" };
@@ -102,7 +117,7 @@ async function backend(context, role = "admin") {
         };
       else if (path.includes("themes")) data = { themes: [] };
       else if (path.includes("plugins")) data = { plugins: {} };
-      await route.fulfill({ status, json: data });
+      await route.fulfill({ status, headers, json: data });
     },
   );
   return state;
@@ -658,7 +673,7 @@ test("restores opt-in drafts after reload without persisting secrets or writing 
     });
   });
   await login(page, "alice");
-  await page.goto("account");
+  await page.goto("frontend-settings?tab=recovery");
   await page.getByLabel("Recover unsaved settings and properties").check();
   await page.goto("bsm-settings");
   await page
@@ -725,10 +740,12 @@ test("administrators can inspect bounded frontend rejection diagnostics without 
   await page
     .getByRole("button", { name: "Frontend runtime", exact: true })
     .click();
+  await page.goto("frontend-settings?tab=diagnostics");
   await page
     .getByLabel("Record frontend observations", { exact: true })
     .check();
   await page.getByLabel("Keep history across reloads", { exact: true }).check();
+  await page.goto("application-monitor?view=diagnostics&category=frontend");
   await expect(page.getByLabel("WebSocket health")).toHaveText("Live");
   state.sockets.at(-1).send(
     JSON.stringify({
@@ -748,11 +765,12 @@ test("administrators can inspect bounded frontend rejection diagnostics without 
   await page.goto("application-monitor?view=diagnostics&category=frontend");
   await expect(page.getByRole("cell", { name: /invalid-task/ })).toBeVisible();
   await expect(
-    page.getByRole("cell", { name: "Previous session", exact: true }),
+    page
+      .getByRole("row")
+      .filter({ has: page.getByRole("cell", { name: /invalid-task/ }) })
+      .getByRole("cell", { name: "Previous session", exact: true }),
   ).toBeVisible();
-  await expect(
-    page.getByLabel("Record frontend observations", { exact: true }),
-  ).toBeChecked();
+  await expect(page.getByText("Recording", { exact: true })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   const recordingControl = page.getByRole("link", {
     name: "Frontend diagnostics recording is enabled",
