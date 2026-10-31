@@ -118,7 +118,7 @@ describe("Sidebar", () => {
     await act(async () => {
       render(<Sidebar />);
     });
-    const appearance = screen.getByRole("link", { name: "Frontend settings" });
+    const appearance = screen.getByRole("link", { name: "Frontend Settings" });
     const account = screen.getByRole("link", { name: "Account" });
     expect(appearance).toHaveAttribute("href", "/frontend-settings");
     expect(appearance).toHaveAttribute("aria-current", "page");

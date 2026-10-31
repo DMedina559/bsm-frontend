@@ -38,9 +38,23 @@ export function getConnectionIdentity() {
 export function getAuthenticationMode() {
   return getAppConfig().mode === "embedded" &&
     !getActiveInstance() &&
-    !getApiBaseUrl()
+    !getApiBaseUrl() &&
+    !isTokenAuthentication()
     ? "cookie-recovery"
     : "bearer";
+}
+const tokenModeKey = () =>
+  `bsm.workspace-token:${encodeURIComponent(getConnectionIdentity())}`;
+export function isTokenAuthentication() {
+  return (
+    read("sessionStorage", tokenModeKey()) === "true" ||
+    read("localStorage", tokenModeKey()) === "true"
+  );
+}
+export function setTokenCredentials(token, remember = false) {
+  clearCredentials();
+  write(remember ? "localStorage" : "sessionStorage", tokenModeKey(), "true");
+  writeInstanceToken(getConnectionIdentity(), token, remember, "workspace");
 }
 const credentialKey = () =>
   `bsm.credentials:${encodeURIComponent(getConnectionIdentity())}`;
@@ -54,6 +68,8 @@ export function getToken() {
   return null;
 }
 export function clearCredentials() {
+  write("sessionStorage", tokenModeKey(), null);
+  write("localStorage", tokenModeKey(), null);
   writeInstanceToken(getConnectionIdentity(), null, false, "workspace");
   for (const area of ["sessionStorage", "localStorage"]) {
     write(area, credentialKey(), null);
@@ -95,6 +111,7 @@ export function isSessionStorageEvent(event) {
     event.key === "api_base_url" ||
     isInstanceProfileKey(event.key) ||
     event.key === "access_token" ||
-    event.key === credentialKey()
+    event.key === credentialKey() ||
+    event.key === tokenModeKey()
   );
 }

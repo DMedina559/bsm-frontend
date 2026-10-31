@@ -1,3 +1,4 @@
+import { authenticateIntegrationToken } from "./tokenAuthentication";
 import { connectionFailure } from "./probe";
 import { sessionSettings } from "../../app/browserStorage";
 import { createSharedSocketManager } from "../../app/sharedSocketManager";
@@ -162,8 +163,15 @@ export function createInstanceConnection(
         }
       }
       const results = await Promise.allSettled([
-        client.callOperation("list_servers"),
+        !Array.isArray(user.permissions) ||
+        user.permissions.includes("servers:read")
+          ? client.callOperation("list_servers")
+          : Promise.resolve({ servers: [] }),
         client.callOperation("get_system_info"),
+        user.server_access === "assigned" &&
+        user.permissions?.includes("servers:read")
+          ? client.callOperation("list_access_servers")
+          : Promise.resolve([]),
       ]);
       if (disposed) return;
       const fleet = results[0];
@@ -226,6 +234,10 @@ export function createInstanceConnection(
       publish({
         status: "online",
         user,
+        serverAccess:
+          results[2].status === "fulfilled" && Array.isArray(results[2].value)
+            ? results[2].value
+            : [],
         servers: fleet.value.servers,
         info:
           results[1].status === "fulfilled"
@@ -421,7 +433,7 @@ export function createInstanceConnection(
       await refresh();
     },
     refresh,
-    async login(username, password, remember = false, otp = "") {
+    async login(username, password, remember = false, otp = "", signal) {
       if (profile.paused || disposed)
         throw new Error("Resume this connection before signing in.");
       const body = new URLSearchParams({
@@ -433,7 +445,7 @@ export function createInstanceConnection(
       if (otp) body.set("otp", otp);
       let result;
       try {
-        result = await loginClient.callOperation("login", { body });
+        result = await loginClient.callOperation("login", { body, signal });
       } catch (error) {
         if (error.mfaRequired) throw error;
         throw new Error(connectionError(error));
@@ -444,9 +456,23 @@ export function createInstanceConnection(
         throw new Error("This instance did not return an access token.");
       writeToken(profile.url, result.access_token, remember);
     },
+    async loginWithToken(candidate, remember = false, signal) {
+      if (profile.paused || disposed)
+        throw new Error("Resume this connection before signing in.");
+      const result = await authenticateIntegrationToken(
+        profile.url,
+        candidate,
+        { signal, fetch: fetcher },
+      );
+      if (disposed || signal?.aborted)
+        throw new DOMException("Instance session changed", "AbortError");
+      writeToken(profile.url, result.token, remember);
+      return result.account;
+    },
     async logout() {
       try {
-        if (token) await client.callOperation("logout");
+        if (token && !token.startsWith("bsm_it_"))
+          await client.callOperation("logout");
       } finally {
         if (!disposed) writeToken(profile.url, null);
       }

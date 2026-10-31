@@ -3563,8 +3563,12 @@ export interface components {
      * @description Current account with sorted role-derived HTTP capabilities.
      */
     CurrentAccountResponse: {
+      /** Credential Expires At */
+      credential_expires_at?: number | null;
       /** Credential Id */
       credential_id?: string | null;
+      /** Credential Name */
+      credential_name?: string | null;
       /** Id */
       id: number;
       /** Identity Type */

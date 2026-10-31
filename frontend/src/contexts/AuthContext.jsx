@@ -1,3 +1,4 @@
+import { authenticateIntegrationToken } from "../features/instances/tokenAuthentication";
 import {
   isInstanceProfileKey,
   getInstanceIssue,
@@ -6,6 +7,8 @@ import {
   getToken,
   getAuthenticationMode,
   setCredentials,
+  setTokenCredentials,
+  isTokenAuthentication,
   clearCredentials,
   isSessionStorageEvent,
 } from "../app/connection";
@@ -308,7 +311,14 @@ export const AuthProvider = ({ children }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const login = async (username, password, rememberMe = false, otp = "") => {
+  const login = async (
+    username,
+    password,
+    rememberMe = false,
+    otp = "",
+    signal,
+  ) => {
+    if (isTokenAuthentication()) clearCredentials();
     checkGeneration.current += 1;
     resetSession();
     identityRef.current = null;
@@ -322,7 +332,7 @@ export const AuthProvider = ({ children }) => {
     if (otp) formData.append("otp", otp);
 
     const attempt = checkGeneration.current;
-    const data = await callOperation("login", { body: formData });
+    const data = await callOperation("login", { body: formData, signal });
 
     if (attempt !== checkGeneration.current) return data;
     if (data.access_token || getAuthenticationMode() === "cookie-recovery") {
@@ -336,6 +346,28 @@ export const AuthProvider = ({ children }) => {
 
     await checkUser();
     return data;
+  };
+
+  const loginWithToken = async (candidate, remember = false, signal) => {
+    const backend = getBackendIdentity();
+    const generation = sessionRuntime.capture().generation;
+    const result = await authenticateIntegrationToken(backend, candidate, {
+      signal,
+    });
+    if (
+      signal?.aborted ||
+      backend !== getBackendIdentity() ||
+      generation !== sessionRuntime.capture().generation
+    )
+      throw new DOMException("Connection changed", "AbortError");
+    checkGeneration.current += 1;
+    resetSession();
+    identityRef.current = null;
+    setUser(null);
+    setTokenCredentials(result.token, remember);
+    authenticationModeRef.current = getAuthenticationMode();
+    await checkUser();
+    return result.account;
   };
 
   const logout = async ({ server = true } = {}) => {
@@ -363,6 +395,7 @@ export const AuthProvider = ({ children }) => {
       value={{
         user,
         login,
+        loginWithToken,
         logout,
         loading,
         checkUser,

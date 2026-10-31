@@ -14,9 +14,16 @@ test("production standalone UI authenticates across origins and isolates credent
   request,
 }) => {
   await page.goto("http://127.0.0.1:4174/");
+  await page
+    .getByRole("button", { name: "Active BSM instance: Default", exact: true })
+    .click();
   await expect(
-    page.getByRole("button", { name: "Configure Remote Server" }),
+    page.getByRole("menuitem", {
+      name: "Configure Remote Server",
+      exact: true,
+    }),
   ).toBeVisible();
+  await page.keyboard.press("Escape");
   await login(page, "alice");
   await expect
     .poll(async () => {

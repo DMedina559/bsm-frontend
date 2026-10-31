@@ -49,12 +49,12 @@ it("shows saved colors in the open menu and marks the selected connection", asyn
   });
   show();
   const trigger = screen.getByRole("button", {
-    name: "Active BSM instance: Default connection",
+    name: "Active BSM instance: Default",
   });
   fireEvent.keyDown(trigger, { key: "ArrowDown" });
   expect(
     screen.getByRole("menuitemradio", {
-      name: "Default connection",
+      name: "Default",
       checked: true,
     }),
   ).toHaveFocus();
@@ -88,7 +88,7 @@ it("opens management without switching connections or discarding drafts", () => 
   fireEvent.click(
     screen.getByRole("button", { name: "Active BSM instance: Home" }),
   );
-  fireEvent.click(screen.getByRole("menuitem", { name: "Manage instances…" }));
+  fireEvent.click(screen.getByRole("menuitem", { name: "Manage Instances…" }));
   expect(screen.getByLabelText("Current route")).toHaveTextContent(
     "/instances",
   );

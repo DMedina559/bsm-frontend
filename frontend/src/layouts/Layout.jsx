@@ -1,3 +1,4 @@
+import TokenAccessNotice from "../components/auth/TokenAccessNotice";
 import { getActiveInstance, subscribeInstances } from "../app/instanceProfiles";
 import InstanceSwitcher from "../components/InstanceSwitcher";
 import "../styles/instances.css";
@@ -142,6 +143,7 @@ const Layout = () => {
           ref={mainRef}
           tabIndex={-1}
         >
+          <TokenAccessNotice account={user} />
           {!["/", "/account", "/frontend-settings"].includes(pathname) && (
             <div className="page-context">
               <span>{description}</span>

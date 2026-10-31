@@ -1,3 +1,4 @@
+import { navigationLabel } from "../utils/navigationLabel";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -7,12 +8,12 @@ import {
   selectInstance,
   subscribeInstances,
 } from "../app/instanceProfiles";
-import { Check, ChevronDown, Server, Settings } from "lucide-react";
+import { Check, ChevronDown, Server, Settings, Globe } from "lucide-react";
 import ActionMenu from "./ActionMenu";
 import { draftRegistry } from "../app/draftRegistry";
 import { useDialog } from "../contexts/DialogContext";
 
-function ActiveInstanceSwitcher() {
+function ActiveInstanceSwitcher({ onConfigure }) {
   const [profiles, setProfiles] = useState(readInstances);
   const [active, setActive] = useState(() => getActiveInstance()?.id ?? "");
   const selected = profiles.find((profile) => profile.id === active);
@@ -37,7 +38,8 @@ function ActiveInstanceSwitcher() {
     selectInstance(id);
     navigate("/", { replace: true });
   }
-  const choices = [{ id: "", name: "Default connection" }, ...profiles];
+  const enabled = instancesEnabled();
+  const choices = [{ id: "", name: "Default" }, ...(enabled ? profiles : [])];
   const items = choices.map((profile) => ({
     id: `instance:${profile.id}`,
     label: profile.name,
@@ -64,20 +66,29 @@ function ActiveInstanceSwitcher() {
       </>
     ),
   }));
-  items.push({
-    id: "manage",
-    label: "Manage instances…",
-    Icon: Settings,
-    separatorBefore: true,
-    onClick: () => navigate("/instances"),
-  });
+  if (onConfigure)
+    items.push({
+      id: "configure",
+      label: navigationLabel("Configure Remote Server"),
+      Icon: Globe,
+      separatorBefore: true,
+      onClick: onConfigure,
+    });
+  if (enabled)
+    items.push({
+      id: "manage",
+      label: navigationLabel("Manage instances…"),
+      Icon: Settings,
+      separatorBefore: !onConfigure,
+      onClick: () => navigate("/instances"),
+    });
   return (
     <div
       className={`instance-switcher${color ? " has-instance-color" : ""}`}
       style={color ? { "--instance-color": color } : undefined}
     >
       <ActionMenu
-        label={`Active BSM instance: ${selected?.name ?? "Default connection"}`}
+        label={`Active BSM instance: ${selected?.name ?? "Default"}`}
         triggerClassName="instance-switcher-trigger"
         menuClassName="instance-switcher-menu"
         items={items}
@@ -89,9 +100,9 @@ function ActiveInstanceSwitcher() {
         )}
         <span
           className="instance-switcher-name"
-          title={selected?.name ?? "Default connection"}
+          title={selected?.name ?? "Default"}
         >
-          {selected?.name ?? "Default connection"}
+          {selected?.name ?? "Default"}
         </span>
         <ChevronDown size={14} aria-hidden="true" />
       </ActionMenu>
@@ -99,6 +110,8 @@ function ActiveInstanceSwitcher() {
   );
 }
 
-export default function InstanceSwitcher() {
-  return instancesEnabled() ? <ActiveInstanceSwitcher /> : null;
+export default function InstanceSwitcher({ onConfigure } = {}) {
+  return instancesEnabled() || onConfigure ? (
+    <ActiveInstanceSwitcher onConfigure={onConfigure} />
+  ) : null;
 }

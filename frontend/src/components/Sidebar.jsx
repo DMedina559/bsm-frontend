@@ -1,3 +1,4 @@
+import { navigationLabel } from "../utils/navigationLabel";
 import { useAccess } from "../app/useAccess";
 import { sessionSettings } from "../app/browserStorage";
 import { useResourceQuery } from "../app/resourceQueries";
@@ -200,7 +201,14 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
         })),
       ],
     },
-  ];
+  ].map((group) => ({
+    ...group,
+    label: navigationLabel(group.label),
+    items: group.items.map((item) => ({
+      ...item,
+      label: item.pluginPath ? item.label : navigationLabel(item.label),
+    })),
+  }));
   const required = {
     "/application-monitor": "runtime:metrics",
     "/server-install": "servers:manage",
@@ -384,13 +392,15 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
           to="/frontend-settings"
           className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
           onClick={handleNavClick}
-          title="Frontend settings"
+          title={navigationLabel("Frontend settings")}
         >
           <Settings2 size={18} />
           {effectiveCollapsed ? (
-            <span className="sr-only">Frontend settings</span>
+            <span className="sr-only">
+              {navigationLabel("Frontend settings")}
+            </span>
           ) : (
-            <span>Frontend settings</span>
+            <span>{navigationLabel("Frontend settings")}</span>
           )}
         </NavLink>
         <NavLink

@@ -1,3 +1,5 @@
+import SignInForm from "../components/auth/SignInForm";
+import TokenAccessNotice from "../components/auth/TokenAccessNotice";
 import ConnectionProbe from "../features/instances/ConnectionProbe";
 import ProfileEditor from "../features/instances/ProfileEditor";
 import { sessionSettings } from "../app/browserStorage";
@@ -51,25 +53,15 @@ function InstanceCard({
     info: null,
     updatedAt: null,
   });
-  const [credentials, setCredentials] = useState({
-    username: "",
-    password: "",
-    remember: false,
-  });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [showLogin, setShowLogin] = useState(false);
-  const [mfaRequired, setMfaRequired] = useState(false);
-  const [otp, setOtp] = useState("");
   const connection = useRef(null);
   const onStateRef = useRef(onState);
   useEffect(() => {
     onStateRef.current = onState;
   }, [onState]);
   useEffect(() => {
-    setMfaRequired(false);
-    setOtp("");
-    setCredentials((value) => ({ ...value, password: "" }));
     const session = createInstanceConnection(
       { id: profile.id, url: profile.url, paused: profile.paused },
       {
@@ -88,34 +80,6 @@ function InstanceCard({
       connection.current = null;
     };
   }, [profile.id, profile.url, profile.paused, token]);
-  async function login(event) {
-    event.preventDefault();
-    if (busy) return;
-    let retainPassword = mfaRequired;
-    setBusy(true);
-    setError("");
-    try {
-      await connection.current.login(
-        credentials.username,
-        credentials.password,
-        credentials.remember,
-        otp,
-      );
-      retainPassword = false;
-      setMfaRequired(false);
-      setShowLogin(false);
-    } catch (failure) {
-      if (failure.mfaRequired) {
-        retainPassword = true;
-        setMfaRequired(true);
-      } else setError(failure.message);
-    } finally {
-      setBusy(false);
-      setOtp("");
-      if (!retainPassword)
-        setCredentials((value) => ({ ...value, password: "" }));
-    }
-  }
   const { confirmAction } = useDialog();
   async function action(server, operation) {
     const session = connection.current;
@@ -145,7 +109,15 @@ function InstanceCard({
   const blocked =
     window.location.protocol === "https:" &&
     new URL(profile.url).protocol === "http:";
-  const canManage = ["admin", "moderator"].includes(snapshot.user?.role);
+  const canManage = Array.isArray(snapshot.user?.permissions)
+    ? snapshot.user.permissions.includes("servers:control")
+    : ["admin", "moderator"].includes(snapshot.user?.role);
+  const canControl = (server) =>
+    canManage &&
+    (snapshot.user?.server_access !== "assigned" ||
+      snapshot.serverAccess
+        ?.find((resource) => resource.name === server.name)
+        ?.permissions.includes("servers:control"));
   return (
     <article
       hidden={hidden}
@@ -210,87 +182,32 @@ function InstanceCard({
         <ConnectionProbe key={profile.url} url={profile.url} />
       )}
       {!profile.paused && (snapshot.status === "signed-out" || showLogin) && (
-        <form className="instance-login" onSubmit={login}>
-          {!mfaRequired && (
-            <div className="instance-login-fields">
-              <label>
-                Username
-                <input
-                  autoComplete="username"
-                  required
-                  value={credentials.username}
-                  onChange={(e) =>
-                    setCredentials({ ...credentials, username: e.target.value })
-                  }
-                />
-              </label>
-              <label>
-                Password
-                <input
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={credentials.password}
-                  onChange={(e) =>
-                    setCredentials({ ...credentials, password: e.target.value })
-                  }
-                />
-              </label>
-            </div>
-          )}
-          {mfaRequired && (
-            <label>
-              Authenticator or recovery code
-              <input
-                autoComplete="one-time-code"
-                value={otp}
-                onChange={(event) => setOtp(event.target.value)}
-                maxLength={128}
-                required
-                autoFocus
-                disabled={busy}
-              />
-            </label>
-          )}
-          <div className="instance-login-actions">
-            <label>
-              <input
-                type="checkbox"
-                checked={credentials.remember}
-                onChange={(e) =>
-                  setCredentials({ ...credentials, remember: e.target.checked })
-                }
-              />
-              Remember this instance
-            </label>
-            <button
-              className="instance-button primary"
-              disabled={busy || blocked || profile.paused}
-            >
-              {busy
-                ? "Signing in…"
-                : mfaRequired
-                  ? "Verify and sign in"
-                  : "Sign in"}
-            </button>
-          </div>
-          {mfaRequired && (
-            <button
-              type="button"
-              className="instance-button"
-              disabled={busy}
-              onClick={() => {
-                setMfaRequired(false);
-                setOtp("");
-                setCredentials((value) => ({ ...value, password: "" }));
-                setError("");
-              }}
-            >
-              Back to sign in
-            </button>
-          )}
-        </form>
+        <SignInForm
+          key={`${profile.id}:${profile.url}:${profile.paused}:${!!token}`}
+          variant="instance"
+          disabled={busy || blocked || profile.paused}
+          onPassword={async ({ username, password, remember, otp }, signal) => {
+            await connection.current.login(
+              username,
+              password,
+              remember,
+              otp,
+              signal,
+            );
+            setShowLogin(false);
+          }}
+          onToken={async (candidate, remember, signal) => {
+            await connection.current.loginWithToken(
+              candidate,
+              remember,
+              signal,
+            );
+            setShowLogin(false);
+          }}
+        />
       )}
+      <TokenAccessNotice account={snapshot.user} />
+
       {snapshot.servers.length > 0 ? (
         <div className="instance-fleet">
           <div className="instance-fleet-heading">
@@ -324,7 +241,7 @@ function InstanceCard({
                     {server.version ? ` · ${server.version}` : ""}
                   </small>
                 </div>
-                {canManage && (
+                {canControl(server) && (
                   <button
                     className="instance-button"
                     disabled={
@@ -520,9 +437,6 @@ function InstanceCard({
             disabled={profile.paused}
             onClick={() => {
               setShowLogin(!showLogin);
-              setMfaRequired(false);
-              setOtp("");
-              setCredentials((value) => ({ ...value, password: "" }));
               setError("");
             }}
           >

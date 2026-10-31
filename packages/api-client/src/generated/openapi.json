@@ -1913,6 +1913,17 @@
         "additionalProperties": false,
         "description": "Current account with sorted role-derived HTTP capabilities.",
         "properties": {
+          "credential_expires_at": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Credential Expires At"
+          },
           "credential_id": {
             "anyOf": [
               {
@@ -1923,6 +1934,17 @@
               }
             ],
             "title": "Credential Id"
+          },
+          "credential_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Credential Name"
           },
           "id": {
             "title": "Id",

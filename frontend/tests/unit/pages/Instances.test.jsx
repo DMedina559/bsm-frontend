@@ -223,6 +223,7 @@ it("shows a second-factor step only after the selected instance requests MFA", a
       "password",
       false,
       "123456",
+      expect.any(AbortSignal),
     ),
   );
 });

@@ -247,3 +247,59 @@ input[type="radio"] {
   margin: calc(-10px * var(--bsm-spacing-scale)) 0
     calc(18px * var(--bsm-spacing-scale));
 }
+
+.sign-in-form,
+.sign-in-fields {
+  display: flex;
+  flex-direction: column;
+  gap: calc(15px * var(--bsm-spacing-scale));
+}
+.sign-in-remember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sign-in-remember input {
+  width: auto;
+}
+.sign-in-methods summary {
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+.token-access-notice {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--bsm-border);
+  border-radius: var(--bsm-radius-md);
+  background: var(--bsm-surface);
+  color: var(--bsm-text);
+  font-size: var(--bsm-small-size);
+}
+.token-access-notice > span {
+  margin-left: 10px;
+  color: var(--bsm-muted);
+}
+.token-access-notice p {
+  margin: 8px 0;
+}
+.token-permission-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.token-permission-list code {
+  overflow-wrap: anywhere;
+}
+.instance-card > .token-access-notice {
+  margin: 0 20px 12px;
+}
+
+.login-connection {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+.login-connection .instance-switcher-trigger {
+  max-width: min(280px, 100%);
+}

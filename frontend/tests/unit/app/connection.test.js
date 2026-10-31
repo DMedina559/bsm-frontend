@@ -95,3 +95,20 @@ it("uses bearer-only authentication for a saved workspace at the embedded host",
   selectInstance(instance.id);
   expect(getAuthenticationMode()).toBe("bearer");
 });
+
+it("keeps an explicit embedded token login bearer-only and clears its marker on logout", async () => {
+  const {
+    setTokenCredentials,
+    getAuthenticationMode,
+    getToken,
+    clearCredentials,
+  } = await import("../../../src/app/connection");
+  setApiBaseUrl("");
+  setTokenCredentials("bsm_it_tab", false);
+  expect(getAuthenticationMode()).toBe("bearer");
+  expect(getToken()).toBe("bsm_it_tab");
+  expect(Object.values(localStorage).join(" ")).not.toContain("bsm_it_tab");
+  clearCredentials();
+  expect(getToken()).toBeNull();
+  expect(getAuthenticationMode()).toBe("cookie-recovery");
+});
