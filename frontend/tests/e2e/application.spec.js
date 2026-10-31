@@ -47,10 +47,23 @@ async function backend(context, role = "admin") {
           access_token: cookieMode ? "" : username,
           token_type: "bearer",
         };
-        if (cookieMode)
+        if (cookieMode) {
+          // WebKit does not consistently apply Set-Cookie from fulfilled fetches.
+          // Model the server-issued HttpOnly cookie in the browser cookie jar.
+          await context.addCookies([
+            {
+              name: "access_token_cookie",
+              value: username,
+              url: "http://127.0.0.1:4173/",
+              httpOnly: true,
+              sameSite: "Lax",
+            },
+          ]);
           headers["Set-Cookie"] =
             `access_token_cookie=${username}; Path=/; HttpOnly; SameSite=Lax`;
+        }
       } else if (path === "/auth/logout") {
+        await context.clearCookies({ name: "access_token_cookie" });
         headers["Set-Cookie"] =
           "access_token_cookie=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax";
       } else if (path === "/api/account") {
