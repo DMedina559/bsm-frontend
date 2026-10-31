@@ -135,6 +135,15 @@ export function createInstanceConnection(
         throw new Error("Invalid account response from this instance.");
       if (disposed) return;
       publish({ user });
+      if (user.mfa_enrollment_required) {
+        publish({
+          status: "enrollment-required",
+          servers: [],
+          error:
+            "MFA enrollment is required. Open this instance workspace to set up your authenticator.",
+        });
+        return;
+      }
       if (!historyKey) {
         historyKey = `bsm.instance-tasks.v1:${JSON.stringify([profile.url, String(user.id ?? user.username)])}`;
         try {
@@ -387,7 +396,19 @@ export function createInstanceConnection(
         fetch: fetcher,
         captureSession: () => runtime.sessionRuntime.capture(),
       });
-      return publicTransport.request(url, { ...options, credentials: "omit" });
+      let mfaRequired = false;
+      return publicTransport
+        .request(url, {
+          ...options,
+          credentials: "omit",
+          onResponseMetadata: (metadata) => {
+            mfaRequired = metadata.headers["x-bsm-mfa"] === "required";
+          },
+        })
+        .catch((error) => {
+          if (error.status === 401 && mfaRequired) error.mfaRequired = true;
+          throw error;
+        });
     },
   });
   return {
@@ -400,7 +421,7 @@ export function createInstanceConnection(
       await refresh();
     },
     refresh,
-    async login(username, password, remember = false) {
+    async login(username, password, remember = false, otp = "") {
       if (profile.paused || disposed)
         throw new Error("Resume this connection before signing in.");
       const body = new URLSearchParams({
@@ -409,10 +430,12 @@ export function createInstanceConnection(
         grant_type: "password",
         remember_me: String(remember),
       });
+      if (otp) body.set("otp", otp);
       let result;
       try {
         result = await loginClient.callOperation("login", { body });
       } catch (error) {
+        if (error.mfaRequired) throw error;
         throw new Error(connectionError(error));
       }
       if (disposed)

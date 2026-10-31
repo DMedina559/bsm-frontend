@@ -25,7 +25,9 @@ function SessionRow({ record, admin, busy, perform, time }) {
               ? "Signed out"
               : record.active
                 ? "Active"
-                : "Expired"}
+                : record.expired_reason === "idle"
+                  ? "Idle timeout"
+                  : "Expired"}
           </span>
         </div>
         <p>
@@ -143,6 +145,14 @@ export default function Sessions({ userId }) {
     setBusy(true);
     setError("");
     try {
+      if (
+        !admin &&
+        action === "revoke" &&
+        rows.data?.find((row) => row.id === id)?.current
+      ) {
+        await logout();
+        return true;
+      }
       if (action === "admin-all")
         await callOperation("revoke_account_login_sessions", {
           path: { user_id: userId },
@@ -180,7 +190,7 @@ export default function Sessions({ userId }) {
           (action === "revoke" &&
             rows.data?.find((row) => row.id === id)?.current))
       )
-        await logout();
+        await logout({ server: false });
       else await queryClient.invalidateQueries({ queryKey: key });
       return true;
     } catch (failure) {
@@ -210,13 +220,34 @@ export default function Sessions({ userId }) {
         <p role="alert">{error || rows.error.message}</p>
       )}
       <div className="security-session-list">
-        {rows.data?.map((record) => (
-          <SessionRow
-            key={record.id}
-            {...{ record, admin, busy, perform, time }}
-          />
-        ))}
+        {[...(rows.data ?? [])]
+          .filter((record) => record.active)
+          .sort((a, b) => Number(b.current) - Number(a.current))
+          .map((record) => (
+            <SessionRow
+              key={record.id}
+              {...{ record, admin, busy, perform, time }}
+            />
+          ))}
       </div>
+      {(rows.data ?? []).some((record) => !record.active) && (
+        <details className="security-session-history">
+          <summary>
+            Previous sessions (
+            {rows.data.filter((record) => !record.active).length})
+          </summary>
+          <div className="security-session-list">
+            {rows.data
+              .filter((record) => !record.active)
+              .map((record) => (
+                <SessionRow
+                  key={record.id}
+                  {...{ record, admin, busy, perform, time }}
+                />
+              ))}
+          </div>
+        </details>
+      )}
       {rows.data?.length === 0 && <p>No recorded sessions.</p>}
       {admin && (
         <div className="form-actions">

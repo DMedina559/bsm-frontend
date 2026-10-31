@@ -250,3 +250,12 @@ and application Settings. Existing account/backend-scoped preferences are reused
 `/appearance` redirects to the Appearance category. Account focuses on identity,
 sessions, integration credentials, and security. Frontend diagnostics keeps its
 history tools and links to the central recording controls.
+
+Saved instance connections use the same progressive MFA prompt as workspace
+login. Administrators required to enroll are guided to Account, with recovery
+codes kept visible until acknowledged. Sessions show the current login first,
+keep expired/revoked history collapsed, distinguish idle from absolute expiry,
+and show the remaining recent-verification time. Current-device sign-out does
+not require another password prompt. Owned security notices appear in the
+existing notification history. New/reset passwords use a 15-character minimum;
+existing login passwords remain accepted. Passkeys are deferred.

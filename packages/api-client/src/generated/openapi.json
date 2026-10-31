@@ -1580,7 +1580,8 @@
           },
           "new_password": {
             "format": "password",
-            "minLength": 1,
+            "maxLength": 1024,
+            "minLength": 15,
             "title": "New Password",
             "type": "string",
             "writeOnly": true
@@ -1940,6 +1941,11 @@
           },
           "is_active": {
             "title": "Is Active",
+            "type": "boolean"
+          },
+          "mfa_enrollment_required": {
+            "default": false,
+            "title": "Mfa Enrollment Required",
             "type": "boolean"
           },
           "permissions": {
@@ -4770,6 +4776,18 @@
             "title": "Current",
             "type": "boolean"
           },
+          "expired_reason": {
+            "anyOf": [
+              {
+                "enum": ["absolute", "idle"],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expired Reason"
+          },
           "expires_at": {
             "title": "Expires At",
             "type": "integer"
@@ -7518,6 +7536,11 @@
             "title": "Recovery Codes Remaining",
             "type": "integer"
           },
+          "required": {
+            "default": false,
+            "title": "Required",
+            "type": "boolean"
+          },
           "session_id": {
             "anyOf": [
               {
@@ -9339,7 +9362,8 @@
         "properties": {
           "password": {
             "format": "password",
-            "minLength": 1,
+            "maxLength": 1024,
+            "minLength": 15,
             "title": "Password",
             "type": "string",
             "writeOnly": true

@@ -17,6 +17,21 @@ import {
   clearStoredHistory,
   HISTORY_LIMIT,
 } from "../utils/notificationHistory";
+const SECURITY_MESSAGES = {
+  login: "A new login was created for your account.",
+  recovery_code_used: "A recovery code was used to verify your account.",
+  mfa_enabled: "Two-factor authentication was enabled.",
+  mfa_disabled: "Two-factor authentication was disabled.",
+  recovery_codes_rotated: "Your recovery codes were replaced.",
+  password_changed: "Your password was changed.",
+  password_reset: "Your password was reset.",
+  local_mfa_reset: "A local administrator reset your MFA.",
+  integration_credential_created: "An integration credential was created.",
+  integration_credential_rotated: "An integration credential was rotated.",
+  integration_credential_revoked: "An integration credential was revoked.",
+  all_integration_credentials_revoked:
+    "All integration credentials were revoked.",
+};
 const VISIBLE_LIMIT = 8;
 const ToastContext = createContext();
 export const useToast = () => useContext(ToastContext);
@@ -44,14 +59,16 @@ export const ToastProvider = ({ children }) => {
     setToasts(visible.current);
   }, []);
   const addToast = useCallback(
-    (message, type = "info") => {
+    (message, type = "info", eventId = null) => {
       if (sessionRuntime.capture().generation !== generation) return;
       const instance = getActiveInstance();
       if (instance) message = `${instance.name}: ${message}`;
       const id = ++counter.current;
       const entry = {
         id:
-          globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`,
+          eventId ||
+          globalThis.crypto?.randomUUID?.() ||
+          `${Date.now()}-${Math.random()}`,
         message: String(message),
         type: ["info", "success", "warning", "error"].includes(type)
           ? type
@@ -87,6 +104,27 @@ export const ToastProvider = ({ children }) => {
     },
     [removeToast, scope, generation],
   );
+  useEffect(() => {
+    const notice = (event) => {
+      const detail = event.detail;
+      if (
+        !scope ||
+        detail?.backend !== backend ||
+        detail.generation !== sessionRuntime.capture().generation ||
+        !SECURITY_MESSAGES[detail.action]
+      )
+        return;
+      addToast(
+        SECURITY_MESSAGES[detail.action],
+        "info",
+        /^[a-f0-9]{32}$/.test(detail.eventId)
+          ? `security:${detail.eventId}`
+          : null,
+      );
+    };
+    window.addEventListener("bsm:security-notice", notice);
+    return () => window.removeEventListener("bsm:security-notice", notice);
+  }, [scope, backend, addToast]);
   useEffect(() => {
     const current = timers.current;
     return () => {

@@ -6,10 +6,12 @@ import AccountSecurity from "../../../../src/components/access/AccountSecurity";
 import SecurityVerification from "../../../../src/components/access/SecurityVerification";
 import { queryClient } from "../../../../src/app/queryClient";
 import { callOperation } from "../../../../src/api/operations";
+const authPolicy = vi.hoisted(() => ({ required: false }));
 vi.mock("../../../../src/api/operations", () => ({ callOperation: vi.fn() }));
 vi.mock("../../../../src/contexts/AuthContext", () => ({
   useAuth: () => ({
     user: {
+      mfa_enrollment_required: authPolicy.required,
       id: 1,
       username: "admin",
       role: "admin",
@@ -34,6 +36,7 @@ beforeEach(() => {
   queryClient.clear();
   vi.clearAllMocks();
   enabled = false;
+  authPolicy.required = false;
   callOperation.mockImplementation(async (id) => {
     if (id === "get_account_security")
       return {
@@ -161,4 +164,17 @@ it("explains capability restrictions and supports recent verification without ca
   expect(JSON.stringify(queryClient.getMutationCache().getAll())).not.toContain(
     "synthetic-private-password",
   );
+});
+
+it("opens MFA enrollment immediately when administrator policy requires it", async () => {
+  authPolicy.required = true;
+  show();
+  expect(
+    await screen.findByRole("button", { name: "Set up authenticator" }),
+  ).toBeVisible();
+  expect(screen.getByRole("tab", { name: "Password & MFA" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  expect(screen.queryByText("Password panel")).not.toBeInTheDocument();
 });

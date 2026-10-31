@@ -3571,6 +3571,11 @@ export interface components {
       identity_type?: string | null;
       /** Is Active */
       is_active: boolean;
+      /**
+       * Mfa Enrollment Required
+       * @default false
+       */
+      mfa_enrollment_required?: boolean;
       /** Permissions */
       permissions?: string[];
       /** Policy Revision */
@@ -4755,6 +4760,8 @@ export interface components {
       created_at: number;
       /** Current */
       current: boolean;
+      /** Expired Reason */
+      expired_reason?: ("absolute" | "idle") | null;
       /** Expires At */
       expires_at: number;
       /** Id */
@@ -6011,6 +6018,11 @@ export interface components {
       recent_until: number;
       /** Recovery Codes Remaining */
       recovery_codes_remaining: number;
+      /**
+       * Required
+       * @default false
+       */
+      required?: boolean;
       /** Session Id */
       session_id?: string | null;
     };

@@ -66,6 +66,8 @@ const PrivateRoute = ({ children }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  if (user.mfa_enrollment_required && location.pathname !== "/account")
+    return <Navigate to="/account" replace />;
   return children;
 };
 

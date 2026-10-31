@@ -55,7 +55,7 @@ it("opens recovery directly and supports category keyboard navigation", () => {
   });
   expect(
     screen.getByRole("link", { name: "Manage saved instances" }),
-  ).toHaveAttribute("href", "/instances");
+  ).toHaveAttribute("href", "/instances?hidden=true");
   expect(screen.getByRole("tab", { name: /Connections/ })).toHaveFocus();
 });
 it("edits the existing account-scoped display preferences instead of creating another store", async () => {

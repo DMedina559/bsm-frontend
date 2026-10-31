@@ -39,6 +39,7 @@ export const AuthProvider = ({ children }) => {
   const identityRef = useRef(null);
   const permissionRoleRef = useRef(null);
   const policyRevisionRef = useRef(null);
+  const mfaEnrollmentRef = useRef(false);
   const backendRef = useRef(getBackendIdentity());
   const authenticationModeRef = useRef(getAuthenticationMode());
   const instanceIssueRef = useRef(getInstanceIssue());
@@ -169,10 +170,15 @@ export const AuthProvider = ({ children }) => {
       // Clear session-owned state before publishing the authenticated identity.
       // Do not perform cache mutations inside a React state updater.
       const nextIdentity = userData?.id ?? userData?.username ?? null;
+      const completingEnrollment =
+        identityRef.current === nextIdentity &&
+        mfaEnrollmentRef.current &&
+        !userData.mfa_enrollment_required;
       if (
         identityRef.current !== nextIdentity ||
         (policyRevisionRef.current !== null &&
-          policyRevisionRef.current !== userData.policy_revision)
+          policyRevisionRef.current !== userData.policy_revision &&
+          !completingEnrollment)
       ) {
         resetSession();
       } else if (stateReconciler.current(ticket)) {
@@ -193,6 +199,7 @@ export const AuthProvider = ({ children }) => {
       }
       identityRef.current = nextIdentity;
       policyRevisionRef.current = userData.policy_revision ?? null;
+      mfaEnrollmentRef.current = userData.mfa_enrollment_required === true;
       setUser(userData);
     } catch (error) {
       if (!current()) return;
@@ -267,17 +274,19 @@ export const AuthProvider = ({ children }) => {
         !event.detail?.backend ||
         event.detail.backend === getBackendIdentity()
       )
-        changed(event);
+        void checkUser();
     };
     const socketConnected = () => void checkUser();
     const instanceCredentials = (event) => {
       if (
+        getAuthenticationMode() === "bearer" &&
         event.detail?.source !== "workspace" &&
         event.detail?.url === getBackendIdentity()
       )
         changed(event);
     };
     window.addEventListener("bsm:access-changed", accessChanged);
+    window.addEventListener("bsm:credentials-changed", accessChanged);
     window.addEventListener("bsm:socket-connected", socketConnected);
     window.addEventListener("bsm:instance-credentials", instanceCredentials);
     window.addEventListener("bsm:instances-changed", changed);
@@ -285,6 +294,7 @@ export const AuthProvider = ({ children }) => {
     window.addEventListener("bsm:connection-changed", changed);
     return () => {
       window.removeEventListener("bsm:access-changed", accessChanged);
+      window.removeEventListener("bsm:credentials-changed", accessChanged);
       window.removeEventListener("bsm:socket-connected", socketConnected);
       window.removeEventListener(
         "bsm:instance-credentials",
@@ -328,14 +338,14 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
-  const logout = async () => {
+  const logout = async ({ server = true } = {}) => {
     checkGeneration.current += 1;
     identityRef.current = null;
     setUser(null);
     const attempt = checkGeneration.current;
     try {
       logger.info("[Auth] Logging out user", { username: user?.username });
-      if (!user?.credential_id) await callOperation("logout");
+      if (server && !user?.credential_id) await callOperation("logout");
     } catch (e) {
       logger.warn("[Auth] Logout failed on server", { error: e });
     }

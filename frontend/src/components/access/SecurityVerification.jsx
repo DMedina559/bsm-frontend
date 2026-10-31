@@ -18,6 +18,7 @@ export default function SecurityVerification() {
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [needsFactor, setNeedsFactor] = useState(false);
   const controller = useRef(null);
   useEffect(() => {
     setOpen(false);
@@ -35,6 +36,18 @@ export default function SecurityVerification() {
         setPassword("");
         setOtp("");
         setOpen(true);
+        setNeedsFactor(false);
+        controller.current?.abort();
+        const statusRequest = new AbortController();
+        controller.current = statusRequest;
+        void callOperation("get_account_security", {
+          signal: statusRequest.signal,
+        })
+          .then((status) => {
+            if (!statusRequest.signal.aborted)
+              setNeedsFactor(status.enabled === true);
+          })
+          .catch(() => {});
       }
     };
     window.addEventListener("bsm:security-verification-required", show);
@@ -95,20 +108,19 @@ export default function SecurityVerification() {
             disabled={busy}
           />
         </label>
-        <label className="form-label">
-          Authenticator or recovery code
-          <input
-            className="form-input"
-            autoComplete="one-time-code"
-            value={otp}
-            onChange={(event) => setOtp(event.target.value)}
-            maxLength={128}
-            disabled={busy}
-          />
-        </label>
-        <p className="help-text">
-          Leave the code blank if two-factor authentication is not enabled.
-        </p>
+        {needsFactor && (
+          <label className="form-label">
+            Authenticator or recovery code
+            <input
+              className="form-input"
+              autoComplete="one-time-code"
+              value={otp}
+              onChange={(event) => setOtp(event.target.value)}
+              maxLength={128}
+              disabled={busy}
+            />
+          </label>
+        )}
         {error && <p role="alert">{error}</p>}
         <button className="action-button primary-button" disabled={busy}>
           {busy ? "Verifying…" : "Verify identity"}

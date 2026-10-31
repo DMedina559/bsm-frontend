@@ -16,6 +16,7 @@ import "../../styles/access.css";
 
 function SecondFactor({ status, identity, sessionGeneration }) {
   const { confirmAction } = useDialog();
+  const { checkUser } = useAuth();
   const [enrollment, setEnrollment] = useState(null);
   const [codes, setCodes] = useState(null);
   const [code, setCode] = useState("");
@@ -71,6 +72,7 @@ function SecondFactor({ status, identity, sessionGeneration }) {
       await queryClient.invalidateQueries({
         queryKey: ["account-security", identity, sessionGeneration],
       });
+      if (action === "confirm" || action === "disable") await checkUser?.();
     } catch (failure) {
       if (!abort.signal.aborted) setError(failure.message);
     } finally {
@@ -184,6 +186,9 @@ function SecondFactor({ status, identity, sessionGeneration }) {
           </div>
         </div>
       )}
+      {status?.required && (
+        <p className="help-text">MFA is required for administrator accounts.</p>
+      )}
       <div className="form-actions">
         {!status?.enabled && !enrollment && (
           <button
@@ -205,7 +210,7 @@ function SecondFactor({ status, identity, sessionGeneration }) {
             </button>
             <button
               className="action-button danger"
-              disabled={busy}
+              disabled={busy || status.required}
               onClick={() => run("disable")}
             >
               Disable two-factor
@@ -308,7 +313,14 @@ export default function AccountSecurity({ children }) {
   const { user, sessionGeneration } = useAuth();
   const time = useTimeFormat();
   const identity = getPreferenceIdentity(user);
-  const [tab, setTab] = useState("sessions");
+  const [tab, setTab] = useState(
+    user?.mfa_enrollment_required ? "sign-in" : "sessions",
+  );
+  const [clock, setClock] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setClock(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
   const status = useQuery(
     {
       queryKey: ["account-security", identity, sessionGeneration],
@@ -331,6 +343,19 @@ export default function AccountSecurity({ children }) {
       className="settings-panel account-security"
       aria-labelledby="account-security-heading"
     >
+      {user?.mfa_enrollment_required && (
+        <p className="message warning" role="alert">
+          Your administrator requires MFA. Set up an authenticator below to
+          unlock this account.
+        </p>
+      )}
+      {status.data?.recent_until * 1000 > clock && (
+        <p className="help-text" role="status">
+          Identity verified for about{" "}
+          {Math.ceil((status.data.recent_until * 1000 - clock) / 60000)} more
+          minutes.
+        </p>
+      )}
       <div className="section-heading">
         <ShieldCheck size={22} />
         <div>
@@ -432,7 +457,7 @@ export default function AccountSecurity({ children }) {
               status={status.data}
               {...{ identity, sessionGeneration }}
             />
-            {children}
+            {!user?.mfa_enrollment_required && children}
           </>
         )}
       </div>

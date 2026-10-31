@@ -68,7 +68,10 @@ export default function Account() {
         <Save size={20} />
         <div>
           <h2>Change Password</h2>
-          <p>Use a unique password for your account.</p>
+          <p>
+            Use a unique passphrase of at least 15 characters. Spaces are
+            welcome.
+          </p>
         </div>
       </div>
       <form
@@ -95,6 +98,8 @@ export default function Account() {
               id={id}
               name={id}
               type="password"
+              minLength={key === "currentPassword" ? 1 : 15}
+              maxLength={1024}
               value={passwords[key]}
               onChange={(event) =>
                 setPasswords({

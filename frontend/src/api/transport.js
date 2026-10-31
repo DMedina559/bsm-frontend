@@ -73,6 +73,7 @@ export function request(url, options = {}) {
   let revision;
   let recentRequired = false;
   let mfaRequired = false;
+  let enrollmentRequired = false;
   const headers = new Headers(options.headers);
   headers.set(
     "X-BSM-Auth-Mode",
@@ -90,6 +91,8 @@ export function request(url, options = {}) {
         revision = metadata.headers["x-bsm-policy-revision"];
         recentRequired = metadata.headers["x-bsm-recent-auth"] === "required";
         mfaRequired = metadata.headers["x-bsm-mfa"] === "required";
+        enrollmentRequired =
+          metadata.headers["x-bsm-mfa-enrollment"] === "required";
         if (
           metadata.headers["x-bsm-csrf-token"] &&
           getBackendIdentity() === backend &&
@@ -128,6 +131,15 @@ export function request(url, options = {}) {
     })
     .catch((error) => {
       if (error.status === 401 && mfaRequired) error.mfaRequired = true;
+      if (
+        error.status === 403 &&
+        enrollmentRequired &&
+        getBackendIdentity() === backend &&
+        sessionRuntime.capture().generation === generation
+      )
+        window.dispatchEvent(
+          new CustomEvent("bsm:credentials-changed", { detail: { backend } }),
+        );
       if (
         error.status === 403 &&
         recentRequired &&

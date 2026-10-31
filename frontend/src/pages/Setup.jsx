@@ -47,6 +47,10 @@ const Setup = () => {
       }}
     >
       <AuthBrand />
+      <p className="form-help-text">
+        Use at least 15 characters. Spaces and memorable passphrases are
+        welcome.
+      </p>
       <div
         className="header"
         style={{
@@ -89,12 +93,13 @@ const Setup = () => {
           </label>
           <input
             type="password"
+            minLength={15}
+            maxLength={1024}
             id="password"
             className="form-input"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            minLength={8}
             autoComplete="new-password"
             disabled={loading}
           />
@@ -105,12 +110,13 @@ const Setup = () => {
           </label>
           <input
             type="password"
+            minLength={15}
+            maxLength={1024}
             id="confirmPassword"
             className="form-input"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
-            minLength={8}
             autoComplete="new-password"
             disabled={loading}
           />

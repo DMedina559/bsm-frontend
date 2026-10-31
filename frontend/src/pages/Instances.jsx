@@ -59,12 +59,17 @@ function InstanceCard({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [showLogin, setShowLogin] = useState(false);
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [otp, setOtp] = useState("");
   const connection = useRef(null);
   const onStateRef = useRef(onState);
   useEffect(() => {
     onStateRef.current = onState;
   }, [onState]);
   useEffect(() => {
+    setMfaRequired(false);
+    setOtp("");
+    setCredentials((value) => ({ ...value, password: "" }));
     const session = createInstanceConnection(
       { id: profile.id, url: profile.url, paused: profile.paused },
       {
@@ -85,6 +90,8 @@ function InstanceCard({
   }, [profile.id, profile.url, profile.paused, token]);
   async function login(event) {
     event.preventDefault();
+    if (busy) return;
+    let retainPassword = mfaRequired;
     setBusy(true);
     setError("");
     try {
@@ -92,13 +99,21 @@ function InstanceCard({
         credentials.username,
         credentials.password,
         credentials.remember,
+        otp,
       );
+      retainPassword = false;
+      setMfaRequired(false);
       setShowLogin(false);
     } catch (failure) {
-      setError(failure.message);
+      if (failure.mfaRequired) {
+        retainPassword = true;
+        setMfaRequired(true);
+      } else setError(failure.message);
     } finally {
       setBusy(false);
-      setCredentials((value) => ({ ...value, password: "" }));
+      setOtp("");
+      if (!retainPassword)
+        setCredentials((value) => ({ ...value, password: "" }));
     }
   }
   const { confirmAction } = useDialog();
@@ -157,7 +172,11 @@ function InstanceCard({
           <code title={profile.url}>{profile.url}</code>
         </div>
         <span className={`instance-state instance-state-${snapshot.status}`}>
-          {snapshot.status === "signed-out" ? "Sign in" : snapshot.status}
+          {snapshot.status === "signed-out"
+            ? "Sign in"
+            : snapshot.status === "enrollment-required"
+              ? "Set up MFA"
+              : snapshot.status}
         </span>
       </div>
       {profile.paused && (
@@ -192,31 +211,47 @@ function InstanceCard({
       )}
       {!profile.paused && (snapshot.status === "signed-out" || showLogin) && (
         <form className="instance-login" onSubmit={login}>
-          <div className="instance-login-fields">
+          {!mfaRequired && (
+            <div className="instance-login-fields">
+              <label>
+                Username
+                <input
+                  autoComplete="username"
+                  required
+                  value={credentials.username}
+                  onChange={(e) =>
+                    setCredentials({ ...credentials, username: e.target.value })
+                  }
+                />
+              </label>
+              <label>
+                Password
+                <input
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={credentials.password}
+                  onChange={(e) =>
+                    setCredentials({ ...credentials, password: e.target.value })
+                  }
+                />
+              </label>
+            </div>
+          )}
+          {mfaRequired && (
             <label>
-              Username
+              Authenticator or recovery code
               <input
-                autoComplete="username"
+                autoComplete="one-time-code"
+                value={otp}
+                onChange={(event) => setOtp(event.target.value)}
+                maxLength={128}
                 required
-                value={credentials.username}
-                onChange={(e) =>
-                  setCredentials({ ...credentials, username: e.target.value })
-                }
+                autoFocus
+                disabled={busy}
               />
             </label>
-            <label>
-              Password
-              <input
-                type="password"
-                autoComplete="current-password"
-                required
-                value={credentials.password}
-                onChange={(e) =>
-                  setCredentials({ ...credentials, password: e.target.value })
-                }
-              />
-            </label>
-          </div>
+          )}
           <div className="instance-login-actions">
             <label>
               <input
@@ -232,9 +267,28 @@ function InstanceCard({
               className="instance-button primary"
               disabled={busy || blocked || profile.paused}
             >
-              {busy ? "Signing in…" : "Sign in"}
+              {busy
+                ? "Signing in…"
+                : mfaRequired
+                  ? "Verify and sign in"
+                  : "Sign in"}
             </button>
           </div>
+          {mfaRequired && (
+            <button
+              type="button"
+              className="instance-button"
+              disabled={busy}
+              onClick={() => {
+                setMfaRequired(false);
+                setOtp("");
+                setCredentials((value) => ({ ...value, password: "" }));
+                setError("");
+              }}
+            >
+              Back to sign in
+            </button>
+          )}
         </form>
       )}
       {snapshot.servers.length > 0 ? (
@@ -464,7 +518,13 @@ function InstanceCard({
           <button
             className="instance-button"
             disabled={profile.paused}
-            onClick={() => setShowLogin(!showLogin)}
+            onClick={() => {
+              setShowLogin(!showLogin);
+              setMfaRequired(false);
+              setOtp("");
+              setCredentials((value) => ({ ...value, password: "" }));
+              setError("");
+            }}
           >
             Switch account
           </button>

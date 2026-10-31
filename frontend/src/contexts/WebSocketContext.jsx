@@ -1,3 +1,4 @@
+import { sessionRuntime } from "../app/sessionRuntime";
 import { createSharedSocketManager } from "../app/sharedSocketManager";
 import { getBackendIdentity } from "../app/backendIdentity";
 import { getPreferenceIdentity } from "../app/backendIdentity";
@@ -44,6 +45,20 @@ export const WebSocketProvider = ({ children }) => {
         setConnectionState(state.connectionState);
       },
       onMessage: (message, ticket) => {
+        if (message.type === "security_event") {
+          window.dispatchEvent(
+            new CustomEvent("bsm:security-notice", {
+              detail: {
+                backend: getBackendIdentity(),
+                action: message.action,
+                eventId: message.event_id,
+                generation: sessionRuntime.capture().generation,
+              },
+            }),
+          );
+          return;
+        }
+
         if (
           ["access_changed", "policy_changed", "credentials_changed"].includes(
             message.type,

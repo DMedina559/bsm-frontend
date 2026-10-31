@@ -204,7 +204,10 @@ export default function FrontendSettings() {
                 </dd>
               </dl>
               <div className="form-actions">
-                <Link className="action-button primary-button" to="/instances">
+                <Link
+                  className="action-button primary-button"
+                  to="/instances?hidden=true"
+                >
                   Manage saved instances
                 </Link>
                 {canConfigure && (
