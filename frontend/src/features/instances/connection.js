@@ -72,7 +72,8 @@ export function createInstanceConnection(
     socket,
     stopSocket,
     historyKey = null,
-    retryCount = 0;
+    retryCount = 0,
+    sendingId = null;
   const publish = (patch) => {
     if (!disposed) {
       state = { ...state, ...patch };
@@ -172,6 +173,7 @@ export function createInstanceConnection(
       for (const operation of runtime.operationCoordinator
         .list()
         .filter((value) => !value.terminal)) {
+        if (operation.id === sendingId) continue;
         if (operation.uncertain) {
           const server = fleet.value.servers.find(
             (value) => value.name === operation.serverName,
@@ -188,6 +190,7 @@ export function createInstanceConnection(
               status: "completed",
               terminal: true,
               uncertain: false,
+              confirmedByState: true,
             });
           continue;
         }
@@ -306,6 +309,7 @@ export function createInstanceConnection(
   const stopOperations = runtime.operationCoordinator.subscribe(
     (operations) => {
       if (disposed || operations.length === 0) return;
+      operations = operations.filter((operation) => !operation.supersededBy);
       const active = operations.filter((operation) => !operation.terminal);
       for (const operation of active.filter((value) => !value.uncertain)) {
         const topic = `task:${operation.id}`;
@@ -350,14 +354,18 @@ export function createInstanceConnection(
                   createdAt,
                   updatedAt,
                   uncertain,
+                  acknowledged,
+                  confirmedByState,
                 }) => ({
                   id,
                   kind,
                   serverName,
-                  status,
+                  status: uncertain ? "unknown" : status,
                   createdAt,
                   updatedAt,
                   ...(uncertain ? { uncertain: true } : {}),
+                  ...(acknowledged ? { acknowledged: true } : {}),
+                  ...(confirmedByState ? { confirmedByState: true } : {}),
                 }),
               ),
           ),
@@ -430,7 +438,17 @@ export function createInstanceConnection(
         throw new Error("Unsupported instance action.");
       if (!state.servers.some((server) => server.name === serverName))
         throw new Error("This server is not in the instance's current fleet.");
-      publish({ pending: serverName });
+      // Persist before dispatch: disposal can abort the response after the server
+      // has accepted the write. A new owner must recover it as unknown.
+      sendingId = `request:${crypto.randomUUID()}`;
+      const intent = runtime.operationCoordinator.register({
+        id: sendingId,
+        kind: action,
+        serverName,
+        status: "pending",
+        uncertain: true,
+        sending: true,
+      });
       try {
         const result = await client.callOperation(action, {
           path: { server_name: serverName },
@@ -445,9 +463,20 @@ export function createInstanceConnection(
             kind: action,
             serverName,
           });
+          runtime.operationCoordinator.register({
+            ...intent,
+            status: "cancelled",
+            terminal: true,
+            uncertain: false,
+            sending: false,
+            supersededBy: result.task_id,
+          });
         } else {
           runtime.operationCoordinator.register({
-            id: crypto.randomUUID(),
+            ...intent,
+            terminal: true,
+            uncertain: false,
+            sending: false,
             kind: action,
             serverName,
             status: ["error", "failed", "partial"].includes(result?.status)
@@ -455,6 +484,7 @@ export function createInstanceConnection(
               : "completed",
           });
         }
+        sendingId = null;
         await refresh(true);
         if (["error", "failed", "partial"].includes(result?.status))
           throw new Error(
@@ -471,12 +501,12 @@ export function createInstanceConnection(
             /Invalid task ID/.test(error.message) ||
             ["TimeoutError", "AbortError"].includes(error.name))
         ) {
+          sendingId = null;
           const uncertain = runtime.operationCoordinator.register({
-            id: `uncertain:${crypto.randomUUID()}`,
-            kind: action,
-            serverName,
+            ...intent,
             status: "unknown",
             uncertain: true,
+            sending: false,
           });
           await refresh(true);
           if (runtime.operationCoordinator.get(uncertain.id)?.terminal)
@@ -489,8 +519,17 @@ export function createInstanceConnection(
             `The outcome of ${action.replaceAll("_", " ")} on ${serverName} is unknown because the response was lost. Check the server state before retrying. No automatic retry was sent.`,
           );
         }
+        if (!disposed && !runtime.operationCoordinator.get(intent.id)?.terminal)
+          runtime.operationCoordinator.register({
+            ...intent,
+            status: "failed",
+            terminal: true,
+            uncertain: false,
+            sending: false,
+          });
         throw error;
       } finally {
+        if (sendingId === intent.id) sendingId = null;
         publish({
           pending:
             runtime.operationCoordinator
@@ -501,13 +540,16 @@ export function createInstanceConnection(
     },
     acknowledgeUncertain(id) {
       const operation = runtime.operationCoordinator.get(id);
-      if (!operation?.uncertain)
-        throw new Error("This operation does not need acknowledgement.");
+      if (!operation?.uncertain || operation.sending)
+        throw new Error(
+          "Only an unresolved response can be acknowledged after the request has finished.",
+        );
       runtime.operationCoordinator.register({
         ...operation,
         status: "cancelled",
         terminal: true,
         uncertain: false,
+        acknowledged: true,
       });
     },
     dispose() {

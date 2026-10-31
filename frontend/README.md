@@ -451,6 +451,12 @@ the delay. Hidden/offline pages defer periodic requests. Filtering cards does no
 pause their connections. Connection details show the backend, frontend origin,
 account, version, HTTP/socket status, last success, and next scheduled refresh.
 
+The hub saves a request intent before dispatching each server action. Leaving the
+page or reloading while the response is pending restores that intent as unknown,
+so an aborted browser request cannot silently unlock a duplicate action. A known
+backend task replaces the temporary intent; definite rejections are recorded as
+failed. Late responses from disposed connections cannot rewrite recovered history.
+
 A timeout or lost mutation response can mean the backend accepted the action.
 The hub records **Outcome unknown**, keeps further actions blocked, and does not
 automatically repeat writes. A fresh fleet read can confirm a Start/Stop target

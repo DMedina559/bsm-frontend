@@ -371,3 +371,81 @@ it("confirms a lost action response from fresh server state without repeating th
     fetch.mock.calls.filter(([url]) => url.endsWith("/start")),
   ).toHaveLength(1);
 });
+
+it("persists an unresolved request before dispatch and restores it after hub navigation", async () => {
+  const base = responder([]);
+  let release;
+  const fetch = vi.fn((url, options) =>
+    url.endsWith("/stop")
+      ? new Promise((resolve) => {
+          release = resolve;
+        })
+      : base(url, options),
+  );
+  const first = create("https://navigation.test", fetch);
+  await first.start();
+  const action = first.action("survival", "stop_server").catch(() => {});
+  await vi.waitFor(() => expect(release).toBeTypeOf("function"));
+  const intent = first.getSnapshot().operations[0];
+  expect(intent.sending).toBe(true);
+  expect(() => first.acknowledgeUncertain(intent.id)).toThrow(
+    /request has finished/,
+  );
+  const key = `bsm.instance-tasks.v1:${JSON.stringify(["https://navigation.test", "1"])}`;
+  expect(JSON.parse(sessionStorage.getItem(key))[0]).toMatchObject({
+    status: "unknown",
+    uncertain: true,
+  });
+  first.dispose();
+  const next = create("https://navigation.test", fetch);
+  await next.start();
+  expect(next.getSnapshot().pending).toBe("survival");
+  await expect(next.action("survival", "stop_server")).rejects.toThrow(
+    /already running/,
+  );
+  // A late old response must not overwrite the new owner's recovered intent.
+  release(Response.json({ status: "accepted", task_id: "accepted-by-server" }));
+  await action;
+  expect(JSON.parse(sessionStorage.getItem(key))[0].uncertain).toBe(true);
+  expect(next.getSnapshot().operations[0].uncertain).toBe(true);
+  expect(
+    fetch.mock.calls.filter(([url]) => url.endsWith("/stop")),
+  ).toHaveLength(1);
+});
+it("replaces a request intent with its known backend task without a duplicate pending record", async () => {
+  const base = responder([]);
+  const fetch = vi.fn((url, options) => {
+    if (url.endsWith("/stop"))
+      return Response.json({ status: "accepted", task_id: "known-task" });
+    if (url.endsWith("/api/tasks/status/known-task"))
+      return Response.json({ id: "known-task", status: "running" });
+    return base(url, options);
+  });
+  const session = create("https://known-task.test", fetch);
+  await session.start();
+  await session.action("survival", "stop_server");
+  expect(session.getSnapshot().operations).toHaveLength(1);
+  expect(session.getSnapshot().operations[0].id).toBe("known-task");
+  session.dispose();
+  const restored = create("https://known-task.test", fetch);
+  await restored.start();
+  expect(restored.getSnapshot().operations).toHaveLength(1);
+  expect(restored.getSnapshot().operations[0].id).toBe("known-task");
+});
+it("records a definite rejected action as failed and unlocks controls", async () => {
+  const base = responder([]);
+  const fetch = vi.fn((url, options) =>
+    url.endsWith("/stop")
+      ? Response.json({ detail: "Conflict" }, { status: 409 })
+      : base(url, options),
+  );
+  const session = create("https://rejected.test", fetch);
+  await session.start();
+  await expect(session.action("survival", "stop_server")).rejects.toThrow();
+  expect(session.getSnapshot().pending).toBeNull();
+  expect(session.getSnapshot().operations[0]).toMatchObject({
+    status: "failed",
+    terminal: true,
+    uncertain: false,
+  });
+});

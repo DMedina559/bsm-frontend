@@ -373,14 +373,21 @@ function InstanceCard({
               <li key={operation.id}>
                 <strong>{operation.serverName}</strong> ·{" "}
                 {operation.kind.replaceAll("_", " ")} ·{" "}
-                {operation.id.startsWith("uncertain:") && operation.terminal
-                  ? operation.status === "completed"
-                    ? "Target state confirmed"
-                    : "Acknowledged (outcome unconfirmed)"
-                  : operation.uncertain
-                    ? "Outcome unknown"
-                    : operation.status}
-                {operation.uncertain && (
+                {operation.sending
+                  ? "Sending request…"
+                  : operation.acknowledged
+                    ? "Acknowledged (outcome unconfirmed)"
+                    : operation.confirmedByState
+                      ? "Target state confirmed"
+                      : operation.id.startsWith("uncertain:") &&
+                          operation.terminal
+                        ? operation.status === "completed"
+                          ? "Target state confirmed"
+                          : "Acknowledged (outcome unconfirmed)"
+                        : operation.uncertain
+                          ? "Outcome unknown"
+                          : operation.status}
+                {operation.uncertain && !operation.sending && (
                   <button
                     type="button"
                     className="instance-button"
