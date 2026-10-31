@@ -1,10 +1,23 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 import { MoreVertical } from "lucide-react";
 import "../styles/action-menu.css";
 
 /** Compact actions in the top layer of the app, outside scrolling tables. */
-export default function ActionMenu({ label, items, disabled = false }) {
+export default function ActionMenu({
+  label,
+  items,
+  disabled = false,
+  children,
+  triggerClassName = "",
+  menuClassName = "",
+}) {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const trigger = useRef(null);
@@ -88,7 +101,7 @@ export default function ActionMenu({ label, items, disabled = false }) {
       <button
         ref={trigger}
         type="button"
-        className="icon-button action-menu-trigger"
+        className={`icon-button action-menu-trigger ${triggerClassName}`}
         disabled={disabled}
         aria-label={label}
         aria-haspopup="menu"
@@ -103,7 +116,7 @@ export default function ActionMenu({ label, items, disabled = false }) {
         }}
         onBlur={blur}
       >
-        <MoreVertical size={20} aria-hidden="true" />
+        {children ?? <MoreVertical size={20} aria-hidden="true" />}
       </button>
       {open &&
         createPortal(
@@ -112,7 +125,7 @@ export default function ActionMenu({ label, items, disabled = false }) {
             id={id}
             role="menu"
             aria-label={label}
-            className="action-menu-panel"
+            className={`action-menu-panel ${menuClassName}`}
             style={position}
             onBlur={blur}
             onKeyDown={(event) => {
@@ -138,20 +151,34 @@ export default function ActionMenu({ label, items, disabled = false }) {
             }}
           >
             {items.map(
-              ({ label: text, Icon, disabled: unavailable, onClick }) => (
-                <button
-                  key={text}
-                  type="button"
-                  role="menuitem"
-                  disabled={unavailable || disabled}
-                  onClick={() => {
-                    close(true);
-                    onClick();
-                  }}
-                >
-                  {Icon && <Icon size={16} aria-hidden="true" />}
-                  {text}
-                </button>
+              ({
+                id: itemId,
+                label: text,
+                content,
+                Icon,
+                checked,
+                separatorBefore,
+                disabled: unavailable,
+                onClick,
+              }) => (
+                <React.Fragment key={itemId ?? text}>
+                  {separatorBefore && (
+                    <div role="separator" className="action-menu-separator" />
+                  )}
+                  <button
+                    type="button"
+                    role={checked === undefined ? "menuitem" : "menuitemradio"}
+                    aria-checked={checked}
+                    disabled={unavailable || disabled}
+                    onClick={() => {
+                      close(true);
+                      onClick();
+                    }}
+                  >
+                    {Icon && <Icon size={16} aria-hidden="true" />}
+                    {content ?? text}
+                  </button>
+                </React.Fragment>
               ),
             )}
           </div>,

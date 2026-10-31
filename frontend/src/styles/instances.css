@@ -216,7 +216,7 @@
   cursor: not-allowed;
 }
 .instances-page :is(input, button, a, summary):focus-visible,
-.instance-switcher select:focus-visible {
+.instance-switcher-trigger:focus-visible {
   outline: 2px solid var(--bsm-focus);
   outline-offset: 3px;
 }
@@ -356,7 +356,13 @@
   align-items: center;
   gap: 8px;
 }
-.instance-switcher select {
+.instance-switcher .instance-switcher-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  height: auto;
+  min-height: 32px;
   max-width: 160px;
   min-width: 0;
   padding: 5px 7px;
@@ -366,7 +372,7 @@
   color: var(--bsm-text);
   font-size: 11px;
 }
-.instance-switcher.has-instance-color select {
+.instance-switcher.has-instance-color .instance-switcher-trigger {
   border-color: var(--instance-color);
 }
 .instance-color-swatch {
@@ -375,7 +381,26 @@
   flex-shrink: 0;
   border: 1px solid var(--bsm-muted);
   border-radius: 50%;
-  background: var(--instance-color);
+  background: var(--instance-color, var(--bsm-muted));
+}
+.instance-switcher-name,
+.instance-option-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.instance-switcher-trigger > svg {
+  flex-shrink: 0;
+}
+.instance-switcher-menu {
+  width: min(280px, calc(100vw - 16px));
+}
+.instance-switcher-menu .instance-option-name {
+  flex: 1;
+}
+.instance-switcher-menu button[aria-checked="true"] {
+  background: var(--bsm-accent-soft);
 }
 .instances-login-link {
   display: block;
@@ -395,7 +420,7 @@
   .instances-summary {
     gap: 15px;
   }
-  .instance-switcher select {
+  .instance-switcher .instance-switcher-trigger {
     max-width: 100px;
   }
 }
