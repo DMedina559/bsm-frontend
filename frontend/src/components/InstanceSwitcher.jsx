@@ -52,6 +52,7 @@ function ActiveInstanceSwitcher() {
             }
           >
             {profile.name}
+            {profile.paused ? " (paused)" : ""}
           </option>
         ))}
       </select>

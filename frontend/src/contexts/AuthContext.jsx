@@ -1,4 +1,7 @@
-import { isInstanceProfileKey } from "../app/instanceProfiles";
+import {
+  isInstanceProfileKey,
+  getInstanceIssue,
+} from "../app/instanceProfiles";
 import {
   getToken,
   setCredentials,
@@ -34,6 +37,7 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const identityRef = useRef(null);
   const backendRef = useRef(getBackendIdentity());
+  const instanceIssueRef = useRef(getInstanceIssue());
   const checkGeneration = useRef(0);
   const [loading, setLoading] = useState(true);
   const [needsSetup, setNeedsSetup] = useState(false);
@@ -103,6 +107,12 @@ export const AuthProvider = ({ children }) => {
     const check = ++checkGeneration.current;
     await queryClient.cancelQueries({ queryKey: queryKeys.account() });
     const current = () => check === checkGeneration.current;
+    if (getInstanceIssue()) {
+      setUser(null);
+      setNeedsSetup(false);
+      setLoading(false);
+      return;
+    }
     // Always check setup status first if not logged in or to ensure correctness
     try {
       logger.debug("[Auth] Checking setup status");
@@ -222,10 +232,13 @@ export const AuthProvider = ({ children }) => {
     const changed = (event) => {
       if (event.type === "storage" && !isSessionStorageEvent(event)) return;
       if (
-        isInstanceProfileKey(event.key) &&
-        backendRef.current === getBackendIdentity()
+        (isInstanceProfileKey(event.key) ||
+          event.type === "bsm:instances-changed") &&
+        backendRef.current === getBackendIdentity() &&
+        instanceIssueRef.current === getInstanceIssue()
       )
         return;
+      instanceIssueRef.current = getInstanceIssue();
       backendRef.current = getBackendIdentity();
       if (event.key === "api_base_url") {
         // Credentials are backend-scoped. Discard ambiguous legacy tokens in this tab.
@@ -250,6 +263,7 @@ export const AuthProvider = ({ children }) => {
         changed(event);
     };
     window.addEventListener("bsm:instance-credentials", instanceCredentials);
+    window.addEventListener("bsm:instances-changed", changed);
     window.addEventListener("storage", changed);
     window.addEventListener("bsm:connection-changed", changed);
     return () => {
@@ -257,6 +271,7 @@ export const AuthProvider = ({ children }) => {
         "bsm:instance-credentials",
         instanceCredentials,
       );
+      window.removeEventListener("bsm:instances-changed", changed);
       window.removeEventListener("storage", changed);
       window.removeEventListener("bsm:connection-changed", changed);
     };

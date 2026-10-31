@@ -1,4 +1,9 @@
-import { selectInstance } from "./app/instanceProfiles";
+import {
+  selectInstance,
+  getInstanceIssue,
+  subscribeInstances,
+  ACTIVE_INSTANCE_KEY,
+} from "./app/instanceProfiles";
 import RuntimeHistoryProvider from "./contexts/RuntimeHistoryProvider";
 import TimeProvider from "./contexts/TimeProvider";
 import { sessionSettings } from "./app/browserStorage";
@@ -10,7 +15,7 @@ import DraftNavigationGuard from "./components/DraftNavigationGuard";
 import { DialogProvider } from "./contexts/DialogContext";
 import React, { Suspense, lazy } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
 import { useAuth, AuthProvider } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import { ServerProvider } from "./contexts/ServerContext";
@@ -65,6 +70,30 @@ const PrivateRoute = ({ children }) => {
 const AppRoutes = () => {
   const { needsSetup, loading } = useAuth();
   const location = useLocation();
+  const instanceIssue = React.useSyncExternalStore(
+    subscribeInstances,
+    getInstanceIssue,
+    () => null,
+  );
+  if (instanceIssue && location.pathname !== "/instances")
+    return (
+      <main className="instances-page">
+        <h1>Connection unavailable</h1>
+        <p role="alert">{instanceIssue}</p>
+        <Link className="instance-button primary" to="/instances">
+          Choose an instance
+        </Link>
+        <button
+          className="instance-button"
+          onClick={() => {
+            selectInstance(null);
+            window.location.reload();
+          }}
+        >
+          Use default connection
+        </button>
+      </main>
+    );
 
   if (loading && location.pathname !== "/instances") {
     return <div role="status">Loading…</div>;
@@ -134,7 +163,7 @@ const App = () => {
           try {
             selectInstance(instance);
           } catch {
-            /* Ignore stale saved-instance links. */
+            sessionSettings.setItem(ACTIVE_INSTANCE_KEY, instance);
           }
         }
         params.delete("hidden");
@@ -157,7 +186,7 @@ const App = () => {
         try {
           selectInstance(params.get("instance"));
         } catch {
-          /* A deleted instance falls back to the default connection. */
+          sessionSettings.setItem(ACTIVE_INSTANCE_KEY, params.get("instance"));
         }
         params.delete("instance");
         window.history.replaceState(

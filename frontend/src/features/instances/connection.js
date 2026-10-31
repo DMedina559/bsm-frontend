@@ -1,3 +1,4 @@
+import { connectionFailure } from "./probe";
 import { sessionSettings } from "../../app/browserStorage";
 import { createSharedSocketManager } from "../../app/sharedSocketManager";
 import { validateBackendUrl } from "../../app/backendUrl";
@@ -50,7 +51,8 @@ export function createInstanceConnection(
       transport.request(url, { ...options, credentials: "omit" }),
   });
   let state = {
-    status: token ? "connecting" : "signed-out",
+    url: profile.url,
+    status: profile.paused ? "paused" : token ? "connecting" : "signed-out",
     user: null,
     info: null,
     servers: [],
@@ -59,6 +61,8 @@ export function createInstanceConnection(
     updatedAt: null,
     pending: null,
     operations: [],
+    nextRefreshAt: null,
+    retryCount: 0,
   };
   let disposed = false,
     inFlight = null,
@@ -67,7 +71,8 @@ export function createInstanceConnection(
     eventTimer,
     socket,
     stopSocket,
-    historyKey = null;
+    historyKey = null,
+    retryCount = 0;
   const publish = (patch) => {
     if (!disposed) {
       state = { ...state, ...patch };
@@ -75,7 +80,13 @@ export function createInstanceConnection(
     }
   };
   const queueRefresh = () => {
-    if (disposed || eventTimer || !platform.isVisible() || !platform.isOnline())
+    if (
+      disposed ||
+      profile.paused ||
+      eventTimer ||
+      !platform.isVisible() ||
+      !platform.isOnline()
+    )
       return;
     eventTimer = setTimeout(() => {
       eventTimer = null;
@@ -83,9 +94,12 @@ export function createInstanceConnection(
     }, 250);
   };
   function connectSocket(user) {
-    if (socket || disposed) return;
+    if (socket || disposed || profile.paused) return;
     const callbacks = {
-      onState: (value) => publish({ socket: value.connectionState }),
+      onState: (value) => {
+        publish({ socket: value.connectionState });
+        if (state.status === "online") scheduleRefresh();
+      },
       onMessage: (message, ticket) => {
         runtime.reconcileSocketMessage(message, ticket);
         if (message.type === "event" || message.type === "task_update")
@@ -103,7 +117,7 @@ export function createInstanceConnection(
     coreEventTopics.forEach(socket.subscribe);
     for (const operation of runtime.operationCoordinator
       .list()
-      .filter((value) => !value.terminal)) {
+      .filter((value) => !value.terminal && !value.uncertain)) {
       const topic = `task:${operation.id}`;
       socket.subscribe(topic);
       taskTopics.add(topic);
@@ -158,6 +172,25 @@ export function createInstanceConnection(
       for (const operation of runtime.operationCoordinator
         .list()
         .filter((value) => !value.terminal)) {
+        if (operation.uncertain) {
+          const server = fleet.value.servers.find(
+            (value) => value.name === operation.serverName,
+          );
+          const expected =
+            operation.kind === "start_server"
+              ? "running"
+              : operation.kind === "stop_server"
+                ? "stopped"
+                : null;
+          if (expected && String(server?.status).toLowerCase() === expected)
+            runtime.operationCoordinator.register({
+              ...operation,
+              status: "completed",
+              terminal: true,
+              uncertain: false,
+            });
+          continue;
+        }
         try {
           const ticket = runtime.stateReconciler.capture();
           const result = await client.callOperation("get_task_status", {
@@ -189,21 +222,25 @@ export function createInstanceConnection(
         updatedAt: new Date().toISOString(),
         error: null,
       });
+      retryCount = 0;
       connectSocket(user);
-      ensurePolling();
+      scheduleRefresh();
     } catch (error) {
       if (disposed || error.name === "AbortError") return;
       const unauthorized = error.status === 401;
       const forbidden = error.status === 403;
       if (unauthorized || forbidden) {
-        clearInterval(pollTimer);
+        clearTimeout(pollTimer);
         pollTimer = null;
         taskTopics.clear();
         stopSocket?.();
         socket = null;
         cache.clear();
       }
+      retryCount++;
       publish({
+        retryCount,
+        nextRefreshAt: null,
         status: unauthorized
           ? "signed-out"
           : forbidden
@@ -212,21 +249,45 @@ export function createInstanceConnection(
         error: connectionError(error),
         ...(unauthorized ? { user: null, servers: [], updatedAt: null } : {}),
       });
+      if (!unauthorized && !forbidden) scheduleRefresh();
     }
   }
   function connectionError(error) {
-    if (error instanceof TypeError || /fetch|network/i.test(error.message))
-      return `Cannot reach ${profile.url} from ${window.location.origin}. Check the address and certificate, and allow ${window.location.origin} in this backend's web.cors_origins setting, then restart its web server. Browsers cannot distinguish CORS from other network failures.`;
-    return error.message;
+    return connectionFailure(error, profile.url);
   }
-  function ensurePolling() {
-    if (disposed || pollTimer || !token) return;
-    pollTimer = setInterval(() => {
+  function scheduleRefresh() {
+    clearTimeout(pollTimer);
+    pollTimer = null;
+    if (
+      disposed ||
+      profile.paused ||
+      !token ||
+      ["signed-out", "forbidden"].includes(state.status)
+    )
+      return;
+    const delay =
+      state.status !== "online"
+        ? Math.min(
+            120000,
+            15000 * 2 ** Math.min(Math.max(0, retryCount - 1), 3),
+          )
+        : state.pending
+          ? 5000
+          : state.socket === "connected"
+            ? 60000
+            : 15000;
+    publish({
+      nextRefreshAt: new Date(Date.now() + delay).toISOString(),
+      retryCount,
+    });
+    pollTimer = setTimeout(() => {
+      pollTimer = null;
       if (platform.isVisible() && platform.isOnline()) void refresh();
-    }, 15000);
+      else scheduleRefresh();
+    }, delay);
   }
   function refresh(fresh = false) {
-    if (disposed || !token) return Promise.resolve();
+    if (disposed || profile.paused || !token) return Promise.resolve();
     if (inFlight) {
       if (fresh) refreshAgain = true;
       return inFlight;
@@ -246,7 +307,7 @@ export function createInstanceConnection(
     (operations) => {
       if (disposed || operations.length === 0) return;
       const active = operations.filter((operation) => !operation.terminal);
-      for (const operation of active) {
+      for (const operation of active.filter((value) => !value.uncertain)) {
         const topic = `task:${operation.id}`;
         if (socket && !taskTopics.has(topic)) {
           socket.subscribe(topic);
@@ -254,7 +315,12 @@ export function createInstanceConnection(
         }
       }
       for (const topic of taskTopics) {
-        if (!active.some((operation) => `task:${operation.id}` === topic)) {
+        if (
+          !active.some(
+            (operation) =>
+              !operation.uncertain && `task:${operation.id}` === topic,
+          )
+        ) {
           socket?.unsubscribe(topic);
           taskTopics.delete(topic);
         }
@@ -276,13 +342,22 @@ export function createInstanceConnection(
             operations
               .slice(-100)
               .map(
-                ({ id, kind, serverName, status, createdAt, updatedAt }) => ({
+                ({
                   id,
                   kind,
                   serverName,
                   status,
                   createdAt,
                   updatedAt,
+                  uncertain,
+                }) => ({
+                  id,
+                  kind,
+                  serverName,
+                  status,
+                  createdAt,
+                  updatedAt,
+                  ...(uncertain ? { uncertain: true } : {}),
                 }),
               ),
           ),
@@ -310,7 +385,7 @@ export function createInstanceConnection(
   return {
     getSnapshot: () => state,
     async start() {
-      if (disposed || started) return;
+      if (disposed || started || profile.paused) return;
       started = true;
       platform.addEventListener("visibilitychange", wake);
       platform.addEventListener("online", wake);
@@ -318,6 +393,8 @@ export function createInstanceConnection(
     },
     refresh,
     async login(username, password, remember = false) {
+      if (profile.paused || disposed)
+        throw new Error("Resume this connection before signing in.");
       const body = new URLSearchParams({
         username,
         password,
@@ -385,6 +462,34 @@ export function createInstanceConnection(
               "The operation did not fully complete. Refresh before retrying.",
           );
         return result;
+      } catch (error) {
+        if (
+          !disposed &&
+          (error.status === 0 ||
+            error.status >= 500 ||
+            error.committed ||
+            /Invalid task ID/.test(error.message) ||
+            ["TimeoutError", "AbortError"].includes(error.name))
+        ) {
+          const uncertain = runtime.operationCoordinator.register({
+            id: `uncertain:${crypto.randomUUID()}`,
+            kind: action,
+            serverName,
+            status: "unknown",
+            uncertain: true,
+          });
+          await refresh(true);
+          if (runtime.operationCoordinator.get(uncertain.id)?.terminal)
+            return {
+              status: "success",
+              message:
+                "The response was lost; a fresh read confirmed the requested server state.",
+            };
+          throw new Error(
+            `The outcome of ${action.replaceAll("_", " ")} on ${serverName} is unknown because the response was lost. Check the server state before retrying. No automatic retry was sent.`,
+          );
+        }
+        throw error;
       } finally {
         publish({
           pending:
@@ -394,10 +499,21 @@ export function createInstanceConnection(
         });
       }
     },
+    acknowledgeUncertain(id) {
+      const operation = runtime.operationCoordinator.get(id);
+      if (!operation?.uncertain)
+        throw new Error("This operation does not need acknowledgement.");
+      runtime.operationCoordinator.register({
+        ...operation,
+        status: "cancelled",
+        terminal: true,
+        uncertain: false,
+      });
+    },
     dispose() {
       if (disposed) return;
       disposed = true;
-      clearInterval(pollTimer);
+      clearTimeout(pollTimer);
       clearTimeout(eventTimer);
       platform.removeEventListener("visibilitychange", wake);
       platform.removeEventListener("online", wake);

@@ -13,6 +13,10 @@ import {
   INSTANCE_RECORD_PREFIX,
   INSTANCE_PROFILES_KEY,
   renameInstance,
+  updateInstance,
+  getInstanceIssue,
+  exportInstanceProfiles,
+  importInstanceProfiles,
 } from "../../../src/app/instanceProfiles";
 import {
   getApiBaseUrl,
@@ -153,4 +157,80 @@ it("reads saved HTTP profiles on an HTTPS page without deleting them on rename",
   } finally {
     vi.unstubAllGlobals();
   }
+});
+
+it("keeps removed selections disconnected from the default backend", () => {
+  localStorage.setItem("api_base_url", "https://default.test");
+  const profile = saveInstance({
+    name: "Selected",
+    url: "https://selected.test",
+  });
+  selectInstance(profile.id);
+  removeInstance(profile.id);
+  expect(getInstanceIssue()).toMatch(/removed/);
+  expect(getApiBaseUrl()).toBe(profile.url);
+  selectInstance(null);
+  expect(getInstanceIssue()).toBeNull();
+  expect(getApiBaseUrl()).toBe("https://default.test");
+});
+it("changes backend addresses without carrying credentials across targets", () => {
+  const profile = saveInstance({ name: "One", url: "https://old.test" });
+  writeInstanceToken(profile.url, "old-secret");
+  writeInstanceToken("https://new.test", "previous-secret");
+  selectInstance(profile.id);
+  updateInstance(profile.id, {
+    url: "https://new.test",
+    group: "Home",
+    color: "#abcdef",
+    titleInTab: true,
+  });
+  expect(getApiBaseUrl()).toBe("https://new.test");
+  expect(readInstanceToken(profile.url)).toBeNull();
+  expect(readInstanceToken("https://new.test")).toBeNull();
+  updateInstance(profile.id, { paused: true });
+  expect(getInstanceIssue()).toMatch(/paused/);
+  updateInstance(profile.id, { paused: false });
+  expect(getInstanceIssue()).toBeNull();
+});
+it("exports and imports only whitelisted profile preferences, skipping duplicate URLs", () => {
+  const profile = saveInstance({
+    name: "Home",
+    url: "https://home.test",
+    group: "Home",
+    color: "#abcdef",
+    paused: true,
+    titleInTab: true,
+  });
+  writeInstanceToken(profile.url, "secret-token");
+  const exported = exportInstanceProfiles();
+  expect(exported).not.toContain("secret-token");
+  expect(exported).not.toContain(profile.id);
+  const data = JSON.parse(exported);
+  data.instances.push({
+    name: "Remote",
+    url: "https://remote.test",
+    token: "evil-token",
+    password: "secret-password",
+    id: "injected",
+  });
+  expect(importInstanceProfiles(JSON.stringify(data))).toEqual({
+    added: 1,
+    skipped: 1,
+  });
+  expect(readInstances()[1].id).not.toBe("injected");
+  expect(readInstanceToken("https://remote.test")).toBeNull();
+  expect(exportInstanceProfiles()).not.toContain("secret-password");
+  const before = readInstances();
+  expect(() =>
+    importInstanceProfiles(
+      JSON.stringify({
+        version: 1,
+        instances: [
+          { name: "Valid", url: "https://valid.test" },
+          { name: "Invalid", url: "javascript:alert(1)" },
+        ],
+      }),
+    ),
+  ).toThrow();
+  expect(readInstances()).toEqual(before);
 });

@@ -429,3 +429,98 @@
   display: block;
   opacity: 0.7;
 }
+
+.instance-card[hidden] {
+  display: none !important;
+}
+.instance-editor fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  display: grid;
+  gap: 1rem;
+}
+.instance-editor {
+  margin-top: 1rem;
+}
+.instance-probe {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+}
+.instance-probe small,
+.instance-probe p {
+  flex-basis: 100%;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.instance-probe small,
+.instances-tools small {
+  color: var(--bsm-muted);
+  font-size: 0.8rem;
+}
+.instance-probe a {
+  color: var(--bsm-text);
+  font-size: 0.85rem;
+}
+.instance-details {
+  display: grid;
+  grid-template-columns: minmax(90px, 1fr) minmax(0, 2fr);
+  gap: 0.65rem 1rem;
+  font-size: 0.8rem;
+}
+.instance-details dt {
+  color: var(--bsm-muted);
+}
+.instance-details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.instance-group {
+  display: inline-block;
+  color: var(--bsm-muted);
+  font-size: 0.75rem;
+  margin: 0.25rem 0;
+}
+.instances-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.instance-import {
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  max-width: 100%;
+}
+.instance-import input {
+  width: 100%;
+  min-width: 0;
+}
+.instance-checkbox {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 0.6rem;
+}
+.instance-checkbox input {
+  width: auto !important;
+}
+.instance-state-paused {
+  color: var(--bsm-muted);
+}
+
+.instance-card > .instance-probe {
+  margin: 0;
+  padding: 0.8rem 20px;
+  border-bottom: 1px solid var(--bsm-border);
+}
+.instance-editor input[type="color"] {
+  width: 5rem;
+  min-height: 2.5rem;
+  padding: 0.2rem;
+}

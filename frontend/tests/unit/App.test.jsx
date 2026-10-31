@@ -121,3 +121,26 @@ it("offers recovery when an application provider fails before routes mount", () 
     report.mockRestore();
   }
 });
+
+it("shows an explicit removed-instance screen without requesting the default backend", async () => {
+  const { saveInstance, selectInstance, removeInstance } =
+    await import("../../src/app/instanceProfiles");
+  sessionStorage.setItem("show_hidden_flag", "true");
+  const profile = saveInstance({ name: "Gone", url: "https://gone.test" });
+  selectInstance(profile.id);
+  removeInstance(profile.id);
+  const api = await import("../support/httpFixtures");
+  api.get.mockClear();
+  const view = render(
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>,
+  );
+  await screen.findByRole("heading", { name: "Connection unavailable" });
+  expect(screen.getByRole("alert")).toHaveTextContent("removed");
+  expect(api.get).not.toHaveBeenCalled();
+  view.unmount();
+  selectInstance(null);
+  sessionStorage.clear();
+  localStorage.clear();
+});

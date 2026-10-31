@@ -1,3 +1,5 @@
+import ConnectionProbe from "../features/instances/ConnectionProbe";
+import ProfileEditor from "../features/instances/ProfileEditor";
 import { sessionSettings } from "../app/browserStorage";
 import React, { useEffect, useRef, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
@@ -16,7 +18,9 @@ import {
   readInstances,
   saveInstance,
   removeInstance,
-  renameInstance,
+  updateInstance,
+  exportInstanceProfiles,
+  importInstanceProfiles,
   selectInstance,
   subscribeInstances,
   readInstanceToken,
@@ -35,9 +39,10 @@ function InstanceCard({
   onRemove,
   search,
   statusFilter,
+  hidden,
 }) {
   const [snapshot, setSnapshot] = useState({
-    status: token ? "connecting" : "signed-out",
+    status: profile.paused ? "paused" : token ? "connecting" : "signed-out",
     servers: [],
     pending: null,
     user: null,
@@ -61,7 +66,7 @@ function InstanceCard({
   }, [onState]);
   useEffect(() => {
     const session = createInstanceConnection(
-      { id: profile.id, url: profile.url },
+      { id: profile.id, url: profile.url, paused: profile.paused },
       {
         onChange: (value) => {
           setSnapshot(value);
@@ -77,7 +82,7 @@ function InstanceCard({
       session.dispose();
       connection.current = null;
     };
-  }, [profile.id, profile.url, token]);
+  }, [profile.id, profile.url, profile.paused, token]);
   async function login(event) {
     event.preventDefault();
     setBusy(true);
@@ -98,6 +103,7 @@ function InstanceCard({
   }
   const { confirmAction } = useDialog();
   async function action(server, operation) {
+    const session = connection.current;
     if (
       !(await confirmAction(
         `${operation === "stop_server" ? "Stop" : "Start"} ${server.name} on ${profile.name} (${profile.url})?`,
@@ -106,13 +112,17 @@ function InstanceCard({
       return;
     setError("");
     try {
-      await connection.current.action(server.name, operation);
+      if (session !== connection.current)
+        throw new Error(
+          "The connection changed. Review the target instance before confirming again.",
+        );
+      await session.action(server.name, operation);
     } catch (failure) {
       setError(failure.message);
     }
   }
   const matches = (server) =>
-    `${profile.name} ${profile.url} ${server.name}`
+    `${profile.name} ${profile.group ?? ""} ${profile.url} ${server.name}`
       .toLowerCase()
       .includes(search.toLowerCase()) &&
     (statusFilter === "all" ||
@@ -122,19 +132,39 @@ function InstanceCard({
     new URL(profile.url).protocol === "http:";
   const canManage = ["admin", "moderator"].includes(snapshot.user?.role);
   return (
-    <article className="instance-card" aria-label={profile.name}>
+    <article
+      hidden={hidden}
+      className="instance-card"
+      aria-label={profile.name}
+      style={
+        profile.color
+          ? {
+              "--instance-color": profile.color,
+              borderTop: "3px solid var(--instance-color)",
+            }
+          : undefined
+      }
+    >
       <div className="instance-card-header">
         <div className="instance-avatar">
           <Server size={20} />
         </div>
         <div className="instance-identity">
           <h2>{profile.name}</h2>
+          {profile.group && (
+            <span className="instance-group">{profile.group}</span>
+          )}
           <code title={profile.url}>{profile.url}</code>
         </div>
         <span className={`instance-state instance-state-${snapshot.status}`}>
           {snapshot.status === "signed-out" ? "Sign in" : snapshot.status}
         </span>
       </div>
+      {profile.paused && (
+        <p className="instance-stale">
+          Connection paused · no polling or socket activity
+        </p>
+      )}
       <div className="instance-card-meta">
         <span>{snapshot.user?.username ?? "No active session"}</span>
         <span>{snapshot.info?.app_version ?? "BSM"}</span>
@@ -157,7 +187,10 @@ function InstanceCard({
           {error || snapshot.error}
         </p>
       )}
-      {(snapshot.status === "signed-out" || showLogin) && (
+      {!profile.paused && (
+        <ConnectionProbe key={profile.url} url={profile.url} />
+      )}
+      {!profile.paused && (snapshot.status === "signed-out" || showLogin) && (
         <form className="instance-login" onSubmit={login}>
           <div className="instance-login-fields">
             <label>
@@ -197,7 +230,7 @@ function InstanceCard({
             </label>
             <button
               className="instance-button primary"
-              disabled={busy || blocked}
+              disabled={busy || blocked || profile.paused}
             >
               {busy ? "Signing in…" : "Sign in"}
             </button>
@@ -289,6 +322,48 @@ function InstanceCard({
         </span>
       </div>
       <details className="instance-options">
+        <summary>Connection details</summary>
+        <dl className="instance-details">
+          <dt>Backend</dt>
+          <dd>{profile.url}</dd>
+          <dt>Frontend origin</dt>
+          <dd>{window.location.origin}</dd>
+          <dt>Account</dt>
+          <dd>
+            {snapshot.user?.username ?? "Signed out"} ·{" "}
+            {snapshot.user?.role ?? "No role"}
+          </dd>
+          <dt>Version</dt>
+          <dd>
+            {snapshot.info?.app_version ?? "Not available until connected"}
+          </dd>
+          <dt>HTTP / socket</dt>
+          <dd>
+            {snapshot.status} / {snapshot.socket}
+          </dd>
+          <dt>Last success</dt>
+          <dd>
+            {snapshot.updatedAt
+              ? new Date(snapshot.updatedAt).toLocaleString()
+              : "Never"}
+          </dd>
+          <dt>Next refresh</dt>
+          <dd>
+            {profile.paused
+              ? "Paused"
+              : snapshot.nextRefreshAt
+                ? new Date(snapshot.nextRefreshAt).toLocaleTimeString()
+                : "Not scheduled"}
+          </dd>
+          <dt>Certificate trust</dt>
+          <dd>
+            {profile.url.startsWith("https:")
+              ? "Managed by your browser"
+              : "HTTP · connection is not encrypted"}
+          </dd>
+        </dl>
+      </details>
+      <details className="instance-options">
         <summary>
           Task history · {profile.name} ({snapshot.operations?.length ?? 0})
         </summary>
@@ -297,7 +372,32 @@ function InstanceCard({
             {[...snapshot.operations].reverse().map((operation) => (
               <li key={operation.id}>
                 <strong>{operation.serverName}</strong> ·{" "}
-                {operation.kind.replaceAll("_", " ")} · {operation.status}
+                {operation.kind.replaceAll("_", " ")} ·{" "}
+                {operation.id.startsWith("uncertain:") && operation.terminal
+                  ? operation.status === "completed"
+                    ? "Target state confirmed"
+                    : "Acknowledged (outcome unconfirmed)"
+                  : operation.uncertain
+                    ? "Outcome unknown"
+                    : operation.status}
+                {operation.uncertain && (
+                  <button
+                    type="button"
+                    className="instance-button"
+                    onClick={async () => {
+                      if (
+                        await confirmAction(
+                          `Have you checked ${operation.serverName} on ${profile.name}? Acknowledging this only unlocks actions; it does not cancel a backend operation.`,
+                        )
+                      ) {
+                        connection.current.acknowledgeUncertain(operation.id);
+                        setError("");
+                      }
+                    }}
+                  >
+                    I checked the server
+                  </button>
+                )}
                 {operation.error?.message && (
                   <p role="alert">{operation.error.message}</p>
                 )}
@@ -312,7 +412,7 @@ function InstanceCard({
       <div className="instance-card-footer">
         <button
           className="instance-button"
-          disabled={busy || blocked || snapshot.status === "signed-out"}
+          disabled={busy || blocked || profile.paused || !token}
           onClick={() => void connection.current.refresh()}
         >
           <RefreshCw size={13} />
@@ -320,7 +420,7 @@ function InstanceCard({
         </button>
         <button
           className="instance-button"
-          disabled={busy || blocked}
+          disabled={busy || blocked || profile.paused}
           onClick={() => onOpen(profile)}
         >
           Open workspace
@@ -335,7 +435,7 @@ function InstanceCard({
               setError(failure.message);
             }
           }}
-          disabled={blocked}
+          disabled={blocked || profile.paused}
           title="Open an independent workspace in a separate tab"
         >
           New tab
@@ -345,7 +445,18 @@ function InstanceCard({
         <summary>Connection options</summary>
         <div>
           <button
+            type="button"
             className="instance-button"
+            disabled={!!snapshot.pending}
+            onClick={() =>
+              updateInstance(profile.id, { paused: !profile.paused })
+            }
+          >
+            {profile.paused ? "Resume connection" : "Pause connection"}
+          </button>
+          <button
+            className="instance-button"
+            disabled={profile.paused}
             onClick={() => setShowLogin(!showLogin)}
           >
             Switch account
@@ -353,7 +464,7 @@ function InstanceCard({
           {snapshot.user && (
             <button
               className="instance-button"
-              disabled={busy || blocked}
+              disabled={busy || blocked || profile.paused}
               onClick={async () => {
                 setBusy(true);
                 try {
@@ -373,26 +484,18 @@ function InstanceCard({
             Remove instance
           </button>
         </div>
-        <label>
-          Display name
-          <input
-            defaultValue={profile.name}
-            maxLength={80}
-            onBlur={(e) => {
-              try {
-                if (e.target.value.trim() !== profile.name)
-                  renameInstance(profile.id, e.target.value);
-              } catch (failure) {
-                setError(failure.message);
-              }
-            }}
-          />
-        </label>
+        <ProfileEditor
+          key={JSON.stringify(profile)}
+          profile={profile}
+          disabled={!!snapshot.pending}
+        />
       </details>
     </article>
   );
 }
 function InstanceWorkspace() {
+  const [groupFilter, setGroupFilter] = useState("all");
+  const [notice, setNotice] = useState("");
   const [connectionFilter, setConnectionFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -406,7 +509,11 @@ function InstanceWorkspace() {
   useEffect(() => subscribeInstances(() => setProfiles(readInstances())), []);
   const currentUrl = getConnectionIdentity();
   const snapshots = profiles
-    .map((profile) => states[profile.id])
+    .map((profile) =>
+      states[profile.id]?.url && states[profile.id].url !== profile.url
+        ? null
+        : states[profile.id],
+    )
     .filter(Boolean);
   const online = snapshots.filter((value) => value.status === "online");
   function add(event) {
@@ -444,6 +551,63 @@ function InstanceWorkspace() {
           Add instance
         </button>
       </header>
+      <div className="instances-tools">
+        <button
+          type="button"
+          className="instance-button"
+          onClick={() => {
+            const url = URL.createObjectURL(
+              new Blob([exportInstanceProfiles()], {
+                type: "application/json",
+              }),
+            );
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "bsm-instances.json";
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+          }}
+        >
+          Export profiles
+        </button>
+        <label className="instance-import">
+          Import profiles
+          <input
+            type="file"
+            accept=".json,application/json"
+            onChange={async (event) => {
+              const file = event.target.files?.[0];
+              event.target.value = "";
+              if (!file) return;
+              try {
+                if (file.size > 256000)
+                  throw new Error(
+                    "Profile imports must be smaller than 256 KB.",
+                  );
+                const text = await file.text();
+                if (
+                  !(await confirmAction(
+                    "Import these profiles? Existing URLs will be skipped. Credentials are never imported.",
+                  ))
+                )
+                  return;
+                const result = importInstanceProfiles(text);
+                setNotice(
+                  `${result.added} profiles imported; ${result.skipped} existing or duplicate URLs skipped.`,
+                );
+                setError("");
+              } catch (failure) {
+                setError(failure.message);
+              }
+            }}
+          />
+        </label>
+        <small>
+          Exports contain profile settings only, without credentials or task
+          history.
+        </small>
+      </div>
+      {notice && <p role="status">{notice}</p>}
       <div className="instances-summary">
         <div>
           <Layers size={18} />
@@ -502,6 +666,7 @@ function InstanceWorkspace() {
               />
             </label>
           </div>
+          <ConnectionProbe key={form.url} url={form.url} />
           <p>
             Use the backend root, including any proxy prefix. Each instance
             keeps its own login.
@@ -527,6 +692,27 @@ function InstanceWorkspace() {
         </div>
       )}
       <div className="instances-filters">
+        <label>
+          Group
+          <select
+            aria-label="Instance group"
+            value={groupFilter}
+            onChange={(event) => setGroupFilter(event.target.value)}
+          >
+            <option value="all">All groups</option>
+            {[
+              ...new Set(
+                profiles.map((profile) => profile.group).filter(Boolean),
+              ),
+            ]
+              .sort()
+              .map((group) => (
+                <option key={group} value={group}>
+                  {group}
+                </option>
+              ))}
+          </select>
+        </label>
         <label>
           Search fleet
           <input
@@ -562,38 +748,37 @@ function InstanceWorkspace() {
         </label>
       </div>
       <div className="instances-grid">
-        {profiles
-          .filter(
-            (profile) =>
-              connectionFilter === "all" ||
-              (connectionFilter === "online"
-                ? states[profile.id]?.status === "online"
-                : states[profile.id]?.status !== "online"),
-          )
-          .map((profile) => (
-            <InstanceCard
-              key={profile.id}
-              profile={profile}
-              search={search}
-              statusFilter={statusFilter}
-              token={readInstanceToken(profile.url)}
-              onState={(id, value) =>
-                setStates((current) => ({ ...current, [id]: value }))
-              }
-              onOpen={(target) => {
-                selectInstance(target.id);
-                navigate("/", { replace: true });
-              }}
-              onRemove={async (target) => {
-                if (
-                  await confirmAction(
-                    `Remove ${target.name} and forget its saved login?`,
-                  )
+        {profiles.map((profile) => (
+          <InstanceCard
+            hidden={
+              (groupFilter !== "all" && profile.group !== groupFilter) ||
+              (connectionFilter !== "all" &&
+                (connectionFilter === "online"
+                  ? states[profile.id]?.status !== "online"
+                  : states[profile.id]?.status === "online"))
+            }
+            key={profile.id}
+            profile={profile}
+            search={search}
+            statusFilter={statusFilter}
+            token={readInstanceToken(profile.url)}
+            onState={(id, value) =>
+              setStates((current) => ({ ...current, [id]: value }))
+            }
+            onOpen={(target) => {
+              selectInstance(target.id);
+              navigate("/", { replace: true });
+            }}
+            onRemove={async (target) => {
+              if (
+                await confirmAction(
+                  `Remove ${target.name} and forget its saved login?`,
                 )
-                  removeInstance(target.id);
-              }}
-            />
-          ))}
+              )
+                removeInstance(target.id);
+            }}
+          />
+        ))}
       </div>
       {!profiles.length && (
         <div className="instances-empty">
@@ -606,9 +791,9 @@ function InstanceWorkspace() {
         </div>
       )}
       <footer className="instances-footnote">
-        Only instance names and URLs are saved as profiles. Passwords are never
-        retained. Saved bearer tokens follow your choice of session or
-        remembered login.
+        Instance names, URLs, and display preferences are saved as profiles.
+        Passwords are never retained. Saved bearer tokens follow your choice of
+        session or remembered login.
       </footer>
     </div>
   );

@@ -370,7 +370,7 @@ the hub shares a socket with workspaces for the same backend and account; otherw
 each view uses an independent socket. Fleet cards stay connected concurrently, show
 combined availability counts, and offer per-server start/stop controls. Identical
 server names on different backends remain distinct. Lifecycle events refresh only
-their owning instance; visible-page polling refreshes snapshots every 15 seconds.
+their owning instance; adaptive polling refreshes visible-page snapshots when needed.
 An offline instance retains a marked last-known snapshot with actions disabled.
 Expired credentials stop periodic polling. Manual refresh or returning to the page
 can retry the connection; a successful recovery restarts polling.
@@ -414,3 +414,47 @@ reliably distinguish CORS failures from certificate or connectivity failures.
 HTTPS frontends require HTTPS backend URLs. The feature uses the
 existing BSM API and does not introduce a proxy, bulk actions or backend changes.
 `?hidden=false` returns to the normal default connection and hides these controls.
+
+#### Connection testing and profile tools
+
+**Test connection** makes credential-free, read-only requests to the candidate
+backend's setup and information endpoints, preserving proxy prefixes. It checks
+BSM response shapes and reports when sign-in is needed to inspect the version.
+This is an initial compatibility check; it does not prove account permissions or
+that every backend operation is available. **Open backend** opens the address in
+a separate tab for certificate and connectivity troubleshooting. TLS certificate
+validation is controlled by the browser; the frontend cannot disable it or read
+certificate expiry and issuer details. Browser network errors do not reliably
+identify CORS versus certificate failures.
+
+Connection options include editing the URL, group, color, and an optional
+instance name in the workspace tab title. A URL change disconnects the old
+connection, forgets its login, and requires authentication for the new address;
+credentials are never copied between addresses. Profiles with pending actions
+cannot be edited or paused until those actions are reconciled. **Pause** stops
+that profile's automatic hub requests and sockets without deleting it. Resuming
+reconnects it. Removing or pausing the active instance shows a connection recovery
+screen in affected workspaces; the frontend does not silently select the default
+backend. Choose another instance or explicitly choose the default connection.
+
+**Export profiles** saves a versioned JSON file containing only names, URLs,
+groups, colors, pause settings, and tab-title preferences. **Import profiles**
+validates the complete file before writing, creates new profile IDs, skips existing
+or duplicate URLs, and never imports credentials or task history. Imports are
+limited to 100 entries and 256 KB. Concurrent edits to different profiles remain
+independent; edits to the same profile use the last saved value.
+
+Healthy live connections refresh their HTTP snapshots every 60 seconds; fallback
+connections use 15 seconds, and pending actions use 5 seconds. Unavailable
+backends back off from 15 seconds to 120 seconds; a successful connection resets
+the delay. Hidden/offline pages defer periodic requests. Filtering cards does not
+pause their connections. Connection details show the backend, frontend origin,
+account, version, HTTP/socket status, last success, and next scheduled refresh.
+
+A timeout or lost mutation response can mean the backend accepted the action.
+The hub records **Outcome unknown**, keeps further actions blocked, and does not
+automatically repeat writes. A fresh fleet read can confirm a Start/Stop target
+state. Otherwise inspect the server and use **I checked the server** to acknowledge
+the uncertain outcome. This unlocks controls without claiming to cancel or confirm
+the backend operation. Unknown outcomes survive reloads in the account's task
+history. Certificate checks, profile tests, and reconnection never retry mutations.

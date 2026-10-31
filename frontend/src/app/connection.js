@@ -2,6 +2,8 @@ import { validateBackendUrl } from "./backendUrl";
 export { validateBackendUrl } from "./backendUrl";
 import {
   getActiveInstance,
+  getInstanceIssue,
+  getSelectedInstanceUrl,
   ACTIVE_INSTANCE_KEY,
   isInstanceProfileKey,
   writeInstanceToken,
@@ -17,6 +19,8 @@ const write = (area, key, value) =>
     ? ports[area].removeItem(key)
     : ports[area].setItem(key, value);
 export function getApiBaseUrl() {
+  if (getInstanceIssue())
+    return getActiveInstance()?.url ?? getSelectedInstanceUrl();
   return (
     getActiveInstance()?.url ??
     read("localStorage", "api_base_url") ??

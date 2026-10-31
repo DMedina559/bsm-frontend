@@ -282,3 +282,92 @@ it("keeps accepted tasks pending and recovers completion over HTTP", async () =>
   await restored.start();
   expect(restored.getSnapshot().operations[0].status).toBe("completed");
 });
+
+it("does no network or socket work for a paused profile", async () => {
+  const fetch = responder([]),
+    device = platform();
+  const session = createInstanceConnection(
+    { id: "paused", url: "https://paused.test", paused: true },
+    { fetch, platform: device, readToken: () => "token" },
+  );
+  sessions.push(session);
+  await session.start();
+  await session.refresh();
+  expect(session.getSnapshot().status).toBe("paused");
+  expect(fetch).not.toHaveBeenCalled();
+  expect(device.sockets).toHaveLength(0);
+});
+it("backs off offline polling and resets after recovery", async () => {
+  vi.useFakeTimers();
+  let offline = true;
+  const base = responder([]);
+  const fetch = vi.fn((url, options) => {
+    if (offline) throw new TypeError("Network unavailable");
+    return base(url, options);
+  });
+  const session = create("https://backoff.test", fetch);
+  await session.start();
+  expect(fetch).toHaveBeenCalledTimes(1);
+  await vi.advanceTimersByTimeAsync(15000);
+  expect(fetch).toHaveBeenCalledTimes(2);
+  await vi.advanceTimersByTimeAsync(15000);
+  expect(fetch).toHaveBeenCalledTimes(2);
+  offline = false;
+  await vi.advanceTimersByTimeAsync(15000);
+  expect(session.getSnapshot().status).toBe("online");
+  expect(session.getSnapshot().retryCount).toBe(0);
+});
+it("preserves uncertain mutations across reloads without retrying writes", async () => {
+  const base = responder([]);
+  const fetch = vi.fn((url, options) => {
+    if (url.endsWith("/stop"))
+      throw new DOMException("Response timed out", "TimeoutError");
+    return base(url, options);
+  });
+  const session = create("https://uncertain.test", fetch);
+  await session.start();
+  await expect(session.action("survival", "stop_server")).rejects.toThrow(
+    /outcome.*unknown/,
+  );
+  expect(session.getSnapshot().pending).toBe("survival");
+  const operation = session.getSnapshot().operations[0];
+  expect(operation.uncertain).toBe(true);
+  session.dispose();
+  const restored = create("https://uncertain.test", fetch);
+  await restored.start();
+  await expect(restored.action("survival", "stop_server")).rejects.toThrow(
+    /already running/,
+  );
+  expect(
+    fetch.mock.calls.filter(([url]) => url.endsWith("/stop")),
+  ).toHaveLength(1);
+  expect(
+    fetch.mock.calls.some(([url]) => url.includes("/tasks/status/uncertain")),
+  ).toBe(false);
+  restored.acknowledgeUncertain(operation.id);
+  expect(restored.getSnapshot().pending).toBeNull();
+});
+
+it("confirms a lost action response from fresh server state without repeating the mutation", async () => {
+  let status = "stopped";
+  const base = responder([]);
+  const fetch = vi.fn((url, options) => {
+    if (url.endsWith("/start")) {
+      status = "running";
+      throw new DOMException("Timed out", "TimeoutError");
+    }
+    if (url.endsWith("/api/servers"))
+      return Response.json({ servers: [{ name: "survival", status }] });
+    return base(url, options);
+  });
+  const session = create("https://confirmed.test", fetch);
+  await session.start();
+  await expect(
+    session.action("survival", "start_server"),
+  ).resolves.toMatchObject({ status: "success" });
+  expect(session.getSnapshot().pending).toBeNull();
+  expect(session.getSnapshot().operations[0].status).toBe("completed");
+  expect(
+    fetch.mock.calls.filter(([url]) => url.endsWith("/start")),
+  ).toHaveLength(1);
+});
