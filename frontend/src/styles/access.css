@@ -276,3 +276,132 @@
     width: 100%;
   }
 }
+
+.integration-token-form {
+  display: grid;
+  gap: 1rem;
+  margin-block: 1.5rem;
+}
+.integration-token-form h3,
+.credential-secret h3,
+.credential-secret p {
+  margin: 0;
+}
+.credential-form-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 1.25rem;
+  align-items: start;
+}
+.credential-form-fields .form-label {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  min-width: 0;
+}
+.credential-expiry {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: grid;
+  gap: 0.8rem;
+  padding: 1rem;
+  border: 1px solid var(--bsm-border);
+  border-radius: 0.6rem;
+  background: var(--bsm-surface-raised);
+}
+.credential-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.credential-checkbox input {
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--bsm-accent);
+}
+.credential-capabilities {
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--bsm-border);
+  border-radius: 0.6rem;
+}
+.credential-capabilities summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.integration-token-form > button {
+  justify-self: start;
+}
+.credential-secret {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+  margin-block: 1rem 1.5rem;
+  border: 1px solid var(--bsm-accent);
+  border-radius: 0.65rem;
+  background: var(--bsm-accent-soft);
+  min-width: 0;
+}
+.credential-secret-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+.credential-secret-heading > svg {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  color: var(--bsm-accent);
+}
+.credential-secret h3 {
+  font-size: 1rem;
+}
+.credential-secret-heading p,
+.credential-copy-status {
+  font-size: 0.8rem;
+  color: var(--bsm-muted);
+}
+.credential-secret-heading p {
+  margin-top: 0.3rem;
+}
+.settings-panel
+  .credential-secret
+  textarea[aria-label="New integration credential"] {
+  margin: 0;
+  box-sizing: border-box;
+  min-width: 0;
+  resize: none;
+  line-height: 1.5;
+  font: 0.85rem / 1.5 var(--bsm-mono);
+  background: var(--bsm-input);
+  color: var(--bsm-text);
+}
+.credential-secret-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.credential-secret-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.credential-copy-status.failed {
+  color: var(--bsm-warning);
+}
+@media (max-width: 600px) {
+  .credential-form-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .credential-expiry {
+    grid-column: auto;
+    grid-row: auto;
+  }
+  .settings-panel
+    .credential-secret
+    textarea[aria-label="New integration credential"] {
+    min-height: 8rem;
+  }
+}

@@ -6,6 +6,9 @@ test("named credentials are shown once, usable as bearer, and revocable", async 
 }) => {
   const request = context.request;
   const origin = "http://127.0.0.1:4180";
+  await context.grantPermissions(["clipboard-read", "clipboard-write"], {
+    origin,
+  });
   const schema = await (await request.get(`${origin}/api/openapi.json`)).json();
   test.skip(
     !schema.paths?.["/api/account/tokens"],
@@ -60,7 +63,21 @@ test("named credentials are shown once, usable as bearer, and revocable", async 
     exact: true,
   });
   await expect(field).toBeVisible();
+  await page
+    .getByRole("button", { name: "Copy credential", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Copied", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page
+      .getByRole("status")
+      .filter({ hasText: "Credential copied to clipboard." }),
+  ).toBeVisible();
   const secret = await field.inputValue();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+    secret,
+  );
   expect(secret).toMatch(/^bsm_it_[a-f0-9]{32}\./);
   const bearer = { Authorization: `Bearer ${secret}` };
   const account = await request.get(`${origin}/api/account`, {
@@ -90,6 +107,14 @@ test("named credentials are shown once, usable as bearer, and revocable", async 
     path: "/tmp/access-settings-browser.png",
     fullPage: true,
   });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(field).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({ path: "/tmp/credential-mobile.png", fullPage: true });
   await page
     .getByRole("button", { name: "Dismiss credential", exact: true })
     .click();

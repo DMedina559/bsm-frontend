@@ -1,3 +1,4 @@
+import CredentialSecret from "./CredentialSecret";
 import React, { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { callOperation } from "../../api/operations";
@@ -131,6 +132,7 @@ export default function IntegrationTokens() {
     controller.current = abort;
     setBusy(true);
     setError("");
+    setCreated(null);
     try {
       const result = await callOperation("rotate_integration_token", {
         path: { token_id: id },
@@ -211,109 +213,84 @@ export default function IntegrationTokens() {
         <p role="status">Loading access settings…</p>
       )}
       {created && (
-        <div className="alert alert-info">
-          <p>Copy this credential now. It will not be shown again.</p>
-          <textarea
-            aria-label="New integration credential"
-            readOnly
-            value={created}
-            rows={3}
-            autoComplete="off"
-            spellCheck={false}
-          />
-          <button
-            type="button"
-            className="action-button secondary"
-            onClick={() =>
-              navigator.clipboard
-                .writeText(created)
-                .catch(() =>
-                  setError("Copy the credential from the field above."),
-                )
-            }
-          >
-            Copy credential
-          </button>
-          <button
-            type="button"
-            className="action-button secondary"
-            onClick={() => setCreated(null)}
-          >
-            Dismiss credential
-          </button>
-        </div>
+        <CredentialSecret value={created} onDismiss={() => setCreated(null)} />
       )}
       {policy.data && (
-        <form onSubmit={create}>
-          <label className="form-label">
-            Credential name
-            <input
-              className="form-input"
-              required
-              maxLength={100}
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Home Assistant"
-            />
-          </label>
-          <label className="form-label">
-            <input
-              type="checkbox"
-              checked={neverExpire}
-              onChange={(event) => setNeverExpire(event.target.checked)}
-            />
-            Never expire
-          </label>
-          <label className="form-label">
-            Expires after days
-            <input
-              className="form-input"
-              type="number"
-              min={1}
-              max={365}
-              required={!neverExpire}
-              disabled={neverExpire}
-              value={days}
-              onChange={(event) => setDays(Number(event.target.value))}
-            />
-          </label>
-          <label className="form-label">
-            Permission preset
-            <select
-              className="form-input"
-              value={preset}
-              onChange={(event) => {
-                const value = event.target.value;
-                setPreset(value);
-                if (presets[value])
-                  setPermissions(
-                    presets[value].filter((permission) =>
-                      policy.data.token_permissions.includes(permission),
-                    ),
-                  );
-              }}
-            >
-              <option value="monitoring">Monitoring</option>
-              <option
-                value="operator"
-                disabled={
-                  !policy.data.token_permissions.includes("servers:control")
-                }
+        <form className="integration-token-form" onSubmit={create}>
+          <h3>Create a credential</h3>
+          <div className="credential-form-fields">
+            <label className="form-label">
+              Credential name
+              <input
+                className="form-input"
+                required
+                maxLength={100}
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="Home Assistant"
+              />
+            </label>
+            <div className="credential-expiry">
+              <label className="credential-checkbox">
+                <input
+                  type="checkbox"
+                  checked={neverExpire}
+                  onChange={(event) => setNeverExpire(event.target.checked)}
+                />
+                Never expire
+              </label>
+              <label className="form-label">
+                Expires after days
+                <input
+                  className="form-input"
+                  type="number"
+                  min={1}
+                  max={365}
+                  required={!neverExpire}
+                  disabled={neverExpire}
+                  value={days}
+                  onChange={(event) => setDays(Number(event.target.value))}
+                />
+              </label>
+            </div>
+            <label className="form-label">
+              Permission preset
+              <select
+                className="form-input"
+                value={preset}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setPreset(value);
+                  if (presets[value])
+                    setPermissions(
+                      presets[value].filter((permission) =>
+                        policy.data.token_permissions.includes(permission),
+                      ),
+                    );
+                }}
               >
-                Server operator
-              </option>
-              <option
-                value="backups"
-                disabled={
-                  !policy.data.token_permissions.includes("backups:create")
-                }
-              >
-                Backup automation
-              </option>
-              <option value="custom">Custom</option>
-            </select>
-          </label>
-          <details>
+                <option value="monitoring">Monitoring</option>
+                <option
+                  value="operator"
+                  disabled={
+                    !policy.data.token_permissions.includes("servers:control")
+                  }
+                >
+                  Server operator
+                </option>
+                <option
+                  value="backups"
+                  disabled={
+                    !policy.data.token_permissions.includes("backups:create")
+                  }
+                >
+                  Backup automation
+                </option>
+                <option value="custom">Custom</option>
+              </select>
+            </label>
+          </div>
+          <details className="credential-capabilities">
             <summary>Allowed capabilities ({permissions.length})</summary>
             <div className="access-choice-list">
               {policy.data.token_permissions.map((permission) => (
@@ -332,7 +309,7 @@ export default function IntegrationTokens() {
               ))}
             </div>
           </details>
-          <label>
+          <label className="credential-checkbox">
             <input
               type="checkbox"
               checked={allServers}
@@ -354,7 +331,7 @@ export default function IntegrationTokens() {
               ))}
             </div>
           )}
-          <p>
+          <p className="help-text">
             Credentials cannot exceed your account’s role or server assignments.
             They cannot manage accounts or create more credentials.
           </p>
