@@ -54,6 +54,7 @@ function ServerCard({
   server,
   isAdmin = false,
   canControl = true,
+  canManage = true,
   busy,
   onOpen,
   onAction,
@@ -179,7 +180,7 @@ function ServerCard({
           const { Icon, label, title, className } = actionDefinitions[action];
           const disabled =
             !online ||
-            (action === "update" ? !isAdmin : !canControl) ||
+            (action === "update" ? !canManage : !canControl) ||
             busy ||
             (action === "update" && !stable) ||
             (action === "command" && !running);
@@ -217,8 +218,9 @@ export const ConnectedServerCard = memo(function ConnectedServerCard({
     <MemoServerCard
       server={server}
       {...props}
-      isAdmin={props.isAdmin && can("servers:manage", serverName)}
+      isAdmin={props.isAdmin && can("servers:properties", serverName)}
       canControl={can("servers:control", serverName)}
+      canManage={can("servers:manage", serverName)}
     />
   ) : null;
 });
