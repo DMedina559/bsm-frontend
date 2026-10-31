@@ -13,6 +13,7 @@ import { useDialog } from "../contexts/DialogContext";
 function ActiveInstanceSwitcher() {
   const [profiles, setProfiles] = useState(readInstances);
   const [active, setActive] = useState(() => getActiveInstance()?.id ?? "");
+  const color = profiles.find((profile) => profile.id === active)?.color;
   const { confirmAction } = useDialog();
   const navigate = useNavigate();
   useEffect(
@@ -24,7 +25,11 @@ function ActiveInstanceSwitcher() {
     [],
   );
   return (
-    <div className="instance-switcher">
+    <div
+      className={`instance-switcher${color ? " has-instance-color" : ""}`}
+      style={color ? { "--instance-color": color } : undefined}
+    >
+      {color && <span className="instance-color-swatch" aria-hidden="true" />}
       <select
         aria-label="Active BSM instance"
         value={active}

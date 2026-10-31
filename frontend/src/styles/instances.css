@@ -91,6 +91,12 @@
   color: var(--bsm-accent);
   flex-shrink: 0;
 }
+.instance-card.has-instance-color .instance-avatar {
+  background: color-mix(in srgb, var(--instance-color) 18%, var(--bsm-surface));
+  color: var(--bsm-text);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--instance-color) 60%, var(--bsm-border));
+}
 .instance-identity {
   flex: 1;
   min-width: 0;
@@ -359,6 +365,17 @@
   background: var(--bsm-input);
   color: var(--bsm-text);
   font-size: 11px;
+}
+.instance-switcher.has-instance-color select {
+  border-color: var(--instance-color);
+}
+.instance-color-swatch {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  border: 1px solid var(--bsm-muted);
+  border-radius: 50%;
+  background: var(--instance-color);
 }
 .instances-login-link {
   display: block;

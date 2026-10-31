@@ -149,7 +149,7 @@ function InstanceCard({
   return (
     <article
       hidden={hidden}
-      className="instance-card"
+      className={`instance-card${profile.color ? " has-instance-color" : ""}`}
       aria-label={profile.name}
       style={
         profile.color
