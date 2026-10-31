@@ -2243,7 +2243,7 @@
   "list_schedules": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["scheduler:manage"]
+        "OAuth2PasswordBearer": ["scheduler:read"]
       },
       {
         "APIKeyCookie": []
@@ -2258,7 +2258,7 @@
       "authentication": "required",
       "classification": "permission",
       "integration_tokens": "supported",
-      "required_permissions": ["scheduler:manage"],
+      "required_permissions": ["scheduler:read"],
       "resource_scope": "global",
       "version": 1
     },
@@ -3547,7 +3547,7 @@
   "get_server_bans": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["bans:manage"]
+        "OAuth2PasswordBearer": ["bans:read"]
       },
       {
         "APIKeyCookie": []
@@ -3562,7 +3562,7 @@
       "authentication": "required",
       "classification": "permission",
       "integration_tokens": "supported",
-      "required_permissions": ["bans:manage"],
+      "required_permissions": ["bans:read"],
       "resource_scope": "server",
       "version": 1
     },

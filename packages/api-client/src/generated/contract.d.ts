@@ -1217,7 +1217,14 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** List Schedules */
+    /**
+     * List Schedules
+     * @description List scheduled tasks.
+     *
+     *     Requires unrestricted resource access and the ``scheduler:read`` capability.
+     *     Principals restricted to specific servers cannot query or inspect schedules,
+     *     even when filtering by an assigned server name.
+     */
     get: operations["list_schedules"];
     put?: never;
     post?: never;

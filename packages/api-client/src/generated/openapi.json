@@ -19116,6 +19116,7 @@
             "name": "token",
             "required": true,
             "schema": {
+              "maxLength": 128,
               "title": "Token",
               "type": "string"
             }
@@ -19246,6 +19247,7 @@
             "name": "token",
             "required": true,
             "schema": {
+              "maxLength": 128,
               "title": "Token",
               "type": "string"
             }
@@ -19651,6 +19653,7 @@
     },
     "/api/scheduler/schedules": {
       "get": {
+        "description": "List scheduled tasks.\n\nRequires unrestricted resource access and the ``scheduler:read`` capability.\nPrincipals restricted to specific servers cannot query or inspect schedules,\neven when filtering by an assigned server name.",
         "operationId": "list_schedules",
         "parameters": [
           {
@@ -19774,7 +19777,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["scheduler:manage"]
+            "OAuth2PasswordBearer": ["scheduler:read"]
           },
           {
             "APIKeyCookie": []
@@ -19791,7 +19794,7 @@
           "authentication": "required",
           "classification": "permission",
           "integration_tokens": "supported",
-          "required_permissions": ["scheduler:manage"],
+          "required_permissions": ["scheduler:read"],
           "resource_scope": "global",
           "version": 1
         }
@@ -25230,7 +25233,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["bans:manage"]
+            "OAuth2PasswordBearer": ["bans:read"]
           },
           {
             "APIKeyCookie": []
@@ -25247,7 +25250,7 @@
           "authentication": "required",
           "classification": "permission",
           "integration_tokens": "supported",
-          "required_permissions": ["bans:manage"],
+          "required_permissions": ["bans:read"],
           "resource_scope": "server",
           "version": 1
         }
