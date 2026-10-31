@@ -1843,11 +1843,18 @@
         "additionalProperties": false,
         "properties": {
           "expires_in_days": {
+            "anyOf": [
+              {
+                "maximum": 365.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "default": 30,
-            "maximum": 365.0,
-            "minimum": 1.0,
-            "title": "Expires In Days",
-            "type": "integer"
+            "title": "Expires In Days"
           },
           "name": {
             "maxLength": 100,
@@ -4436,8 +4443,15 @@
             "type": "integer"
           },
           "expires_at": {
-            "title": "Expires At",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
           },
           "id": {
             "pattern": "^[a-f0-9]{32}$",

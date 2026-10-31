@@ -72,6 +72,7 @@ export function request(url, options = {}) {
   const generation = sessionRuntime.capture().generation;
   let revision;
   let recentRequired = false;
+  let mfaRequired = false;
   const headers = new Headers(options.headers);
   headers.set(
     "X-BSM-Auth-Mode",
@@ -88,6 +89,7 @@ export function request(url, options = {}) {
       onResponseMetadata: (metadata) => {
         revision = metadata.headers["x-bsm-policy-revision"];
         recentRequired = metadata.headers["x-bsm-recent-auth"] === "required";
+        mfaRequired = metadata.headers["x-bsm-mfa"] === "required";
         if (
           metadata.headers["x-bsm-csrf-token"] &&
           getBackendIdentity() === backend &&
@@ -125,6 +127,7 @@ export function request(url, options = {}) {
       return data;
     })
     .catch((error) => {
+      if (error.status === 401 && mfaRequired) error.mfaRequired = true;
       if (
         error.status === 403 &&
         recentRequired &&

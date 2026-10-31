@@ -46,6 +46,12 @@ test("named credentials are shown once, usable as bearer, and revocable", async 
   await page
     .getByLabel("Credential name", { exact: true })
     .fill("Browser monitoring");
+  const supportsNoExpiry =
+    schema.components?.schemas?.CreateIntegrationToken?.properties?.expires_in_days?.anyOf?.some(
+      (type) => type.type === "null",
+    );
+  if (supportsNoExpiry)
+    await page.getByLabel("Never expire", { exact: true }).check();
   await page
     .getByRole("button", { name: "Create credential", exact: true })
     .click();
@@ -68,7 +74,18 @@ test("named credentials are shown once, usable as bearer, and revocable", async 
     ).status(),
   ).toBe(403);
   const listing = await request.get(`${origin}/api/account/tokens`);
-  expect(await listing.text()).not.toContain(secret);
+  const listingText = await listing.text();
+  expect(listingText).not.toContain(secret);
+  if (supportsNoExpiry) {
+    expect(
+      JSON.parse(listingText).find(
+        (token) => token.name === "Browser monitoring",
+      ).expires_at,
+    ).toBeNull();
+    await expect(
+      page.getByText("Never expires", { exact: true }),
+    ).toBeVisible();
+  }
   await page.screenshot({
     path: "/tmp/access-settings-browser.png",
     fullPage: true,

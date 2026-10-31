@@ -236,3 +236,9 @@ JavaScript storage. Cookie mutations send an in-memory CSRF proof. Saved instanc
 and external clients use bearer mode. Passwords and one-time security secrets are
 excluded from the shared query/mutation cache. Sensitive changes prompt for recent
 password and factor verification, then ask users to retry the action explicitly.
+
+Choose **Never expire** when creating an integration credential to keep it valid
+until revoked (`expires_in_days: null` in the API). The default remains 30 days;
+rotation preserves a non-expiring credential's lack of a deadline. Login sessions
+retain their configured expiry limits. Login asks for an authenticator/recovery
+code only after the server validates the username/password and requires MFA.

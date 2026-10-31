@@ -38,6 +38,7 @@ export default function IntegrationTokens() {
   );
   const [name, setName] = useState("");
   const [days, setDays] = useState(30);
+  const [neverExpire, setNeverExpire] = useState(false);
   const [permissions, setPermissions] = useState([
     "account:read",
     "health:read",
@@ -81,7 +82,7 @@ export default function IntegrationTokens() {
         signal: abort.signal,
         body: {
           name,
-          expires_in_days: days,
+          expires_in_days: neverExpire ? null : days,
           permissions,
           server_ids: allServers ? null : selected,
         },
@@ -256,13 +257,22 @@ export default function IntegrationTokens() {
             />
           </label>
           <label className="form-label">
+            <input
+              type="checkbox"
+              checked={neverExpire}
+              onChange={(event) => setNeverExpire(event.target.checked)}
+            />
+            Never expire
+          </label>
+          <label className="form-label">
             Expires after days
             <input
               className="form-input"
               type="number"
               min={1}
               max={365}
-              required
+              required={!neverExpire}
+              disabled={neverExpire}
               value={days}
               onChange={(event) => setDays(Number(event.target.value))}
             />
@@ -367,9 +377,11 @@ export default function IntegrationTokens() {
               <p>
                 {token.revoked_at
                   ? "Revoked"
-                  : token.expires_at * 1000 <= now
-                    ? "Expired"
-                    : `Expires ${time.format(token.expires_at, { unit: "seconds", kind: "date" })}`}
+                  : token.expires_at === null
+                    ? "Never expires"
+                    : token.expires_at * 1000 <= now
+                      ? "Expired"
+                      : `Expires ${time.format(token.expires_at, { unit: "seconds", kind: "date" })}`}
               </p>
               <details>
                 <summary>
@@ -399,15 +411,17 @@ export default function IntegrationTokens() {
               </small>
             </div>
             <div className="security-session-actions">
-              {!token.revoked_at && token.expires_at * 1000 > now && (
-                <button
-                  className="action-button secondary"
-                  disabled={busy}
-                  onClick={() => rotate(token.id)}
-                >
-                  Rotate {token.name}
-                </button>
-              )}
+              {!token.revoked_at &&
+                (token.expires_at === null ||
+                  token.expires_at * 1000 > now) && (
+                  <button
+                    className="action-button secondary"
+                    disabled={busy}
+                    onClick={() => rotate(token.id)}
+                  >
+                    Rotate {token.name}
+                  </button>
+                )}
               <button
                 className="action-button danger"
                 type="button"

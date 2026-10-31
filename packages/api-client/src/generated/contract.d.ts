@@ -3544,7 +3544,7 @@ export interface components {
        * Expires In Days
        * @default 30
        */
-      expires_in_days?: number;
+      expires_in_days?: number | null;
       /** Name */
       name: string;
       /** Permissions */
@@ -4623,7 +4623,7 @@ export interface components {
       /** Created At */
       created_at: number;
       /** Expires At */
-      expires_at: number;
+      expires_at: number | null;
       /** Id */
       id: string;
       /** Last Used At */

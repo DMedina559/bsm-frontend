@@ -24,6 +24,9 @@ describe("Login", () => {
     );
     expect(screen.getByLabelText(/Password/i)).toBeInTheDocument();
     expect(
+      screen.queryByLabelText(/Authenticator or recovery code/i),
+    ).toBeNull();
+    expect(
       screen.getByRole("button", { name: /Sign In/i }),
     ).toBeInTheDocument();
   });
@@ -102,8 +105,63 @@ describe("Login", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Invalid username, password, or verification code"),
+        screen.getByText("Invalid username or password"),
       ).toBeInTheDocument();
     });
+  });
+  it("asks for a factor only after valid credentials receive an MFA challenge", async () => {
+    let attempts = 0;
+    globalThis.fetch.mockImplementation((url) => {
+      if (url === "/api/setup/status")
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ needs_setup: false }),
+        });
+      if (url === "/api/account") return Promise.reject({ status: 401 });
+      if (url === "/auth/token") {
+        attempts += 1;
+        return Promise.resolve({
+          ok: false,
+          status: 401,
+          headers: new Headers({
+            "content-type": "application/json",
+            ...(attempts === 1 ? { "X-BSM-MFA": "required" } : {}),
+          }),
+          json: async () => ({
+            detail:
+              attempts === 1
+                ? "Authenticator or recovery code required"
+                : "Incorrect username or password",
+          }),
+        });
+      }
+      return Promise.resolve({ ok: true, json: async () => ({}) });
+    });
+    render(<Login />);
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "user" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign In" }));
+    const factor = await screen.findByLabelText(
+      "Authenticator or recovery code",
+    );
+    expect(screen.queryByLabelText("Password")).toBeNull();
+    expect(screen.queryByRole("alert")).toBeNull();
+    fireEvent.change(factor, { target: { value: "wrong-code" } });
+    fireEvent.click(screen.getByRole("button", { name: "Verify and sign in" }));
+    expect(
+      await screen.findByText(
+        "Invalid verification code. Try again or use a recovery code.",
+      ),
+    ).toBeVisible();
+    expect(factor.value).toBe("");
+    fireEvent.click(screen.getByRole("button", { name: "Back to sign in" }));
+    expect(
+      screen.queryByLabelText("Authenticator or recovery code"),
+    ).toBeNull();
+    expect(screen.getByLabelText("Password").value).toBe("");
   });
 });

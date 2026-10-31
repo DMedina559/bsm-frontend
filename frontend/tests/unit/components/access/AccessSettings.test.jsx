@@ -96,3 +96,58 @@ it("edits server grants using immutable resource IDs and the selected account's 
   );
   expect(await screen.findByText("Server access saved.")).toBeInTheDocument();
 });
+
+it("creates a non-expiring credential only when explicitly selected", async () => {
+  render(
+    <DialogProvider>
+      <IntegrationTokens />
+    </DialogProvider>,
+  );
+  await screen.findByLabelText("Credential name");
+  const duration = screen.getByLabelText("Expires after days");
+  expect(duration.value).toBe("30");
+  fireEvent.change(screen.getByLabelText("Credential name"), {
+    target: { value: "Permanent integration" },
+  });
+  fireEvent.click(screen.getByLabelText("Never expire"));
+  expect(duration).toBeDisabled();
+  fireEvent.click(screen.getByRole("button", { name: "Create credential" }));
+  await waitFor(() =>
+    expect(callOperation).toHaveBeenCalledWith(
+      "create_integration_token",
+      expect.objectContaining({
+        body: expect.objectContaining({ expires_in_days: null }),
+      }),
+    ),
+  );
+});
+
+it("shows non-expiring credentials as active and keeps rotation available", async () => {
+  const original = callOperation.getMockImplementation();
+  callOperation.mockImplementation((id, ...args) =>
+    id === "list_integration_tokens"
+      ? Promise.resolve([
+          {
+            id: identity,
+            name: "Persistent monitor",
+            expires_at: null,
+            revoked_at: null,
+            permissions: ["account:read"],
+            server_ids: null,
+          },
+        ])
+      : original(id, ...args),
+  );
+  render(
+    <DialogProvider>
+      <IntegrationTokens />
+    </DialogProvider>,
+  );
+  expect(await screen.findByText("Never expires")).toBeVisible();
+  expect(
+    screen.getByRole("button", { name: "Rotate Persistent monitor" }),
+  ).toBeVisible();
+  expect(
+    screen.getByRole("button", { name: "Revoke Persistent monitor" }),
+  ).toBeVisible();
+});

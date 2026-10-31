@@ -27,7 +27,7 @@
       "bsm_settings"
     ]
   },
-  "schemaHash": "6d2dfb362442c3785b1b59bf8163bc1392508a051bb924ded60e6c0c6046c490",
+  "schemaHash": "021fbf00e69adb0a0fa721ec8bb9fcf5dd27849a87e739f5f2e49244fe2941aa",
   "openapiVersion": "3.1.0",
   "title": "Bedrock Server Manager",
   "source": "DMedina559/bedrock-server-manager: bedrock_server_manager.web.contract",
