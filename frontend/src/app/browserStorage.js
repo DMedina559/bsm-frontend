@@ -2,6 +2,20 @@
 export function createBrowserStorage(area) {
   const memory = new Map();
   return {
+    keys() {
+      try {
+        return [
+          ...new Set([
+            ...Array.from({ length: globalThis[area].length }, (_, index) =>
+              globalThis[area].key(index),
+            ),
+            ...memory.keys(),
+          ]),
+        ].filter((key) => typeof key === "string");
+      } catch {
+        return [...memory.keys()];
+      }
+    },
     getItem(key) {
       if (memory.has(key)) return memory.get(key);
       try {

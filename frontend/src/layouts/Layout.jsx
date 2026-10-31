@@ -1,3 +1,6 @@
+import { getActiveInstance, subscribeInstances } from "../app/instanceProfiles";
+import InstanceSwitcher from "../components/InstanceSwitcher";
+import "../styles/instances.css";
 import RuntimeRecordingIndicator from "../components/diagnostics/RuntimeRecordingIndicator";
 import { useTimeFormat } from "../app/useTimeFormat";
 import BackupAlerts from "../components/BackupAlerts";
@@ -17,6 +20,14 @@ import { PAGE_INFO } from "../utils/navigation";
 import { useFocusTrap } from "../utils/useFocusTrap";
 
 const Layout = () => {
+  const instanceTitle = React.useSyncExternalStore(
+    subscribeInstances,
+    () => {
+      const profile = getActiveInstance();
+      return profile?.titleInTab ? profile.name : "";
+    },
+    () => "",
+  );
   const { format } = useTimeFormat();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(
@@ -54,9 +65,9 @@ const Layout = () => {
     wasMobileOpen.current = mobileOpen;
   }, [mobileOpen, isMobile]);
   useEffect(() => {
-    document.title = `${title} · Bedrock Server Manager`;
+    document.title = `${instanceTitle ? `${instanceTitle} · ` : ""}${title} · Bedrock Server Manager`;
     mainRef.current?.focus({ preventScroll: true });
-  }, [pathname, title]);
+  }, [pathname, title, instanceTitle]);
 
   return (
     <div className="page-layout">
@@ -98,6 +109,7 @@ const Layout = () => {
             <span aria-current="page">{title}</span>
           </nav>
           <div className="workspace-indicators">
+            <InstanceSwitcher />
             <span
               className={`connection-indicator ${isConnected ? "connected" : "degraded"}`}
               role="status"

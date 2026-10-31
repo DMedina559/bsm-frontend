@@ -1,3 +1,9 @@
+import {
+  selectInstance,
+  getInstanceIssue,
+  subscribeInstances,
+  ACTIVE_INSTANCE_KEY,
+} from "./app/instanceProfiles";
 import RuntimeHistoryProvider from "./contexts/RuntimeHistoryProvider";
 import TimeProvider from "./contexts/TimeProvider";
 import { sessionSettings } from "./app/browserStorage";
@@ -9,7 +15,7 @@ import DraftNavigationGuard from "./components/DraftNavigationGuard";
 import { DialogProvider } from "./contexts/DialogContext";
 import React, { Suspense, lazy } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
 import { useAuth, AuthProvider } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import { ServerProvider } from "./contexts/ServerContext";
@@ -39,6 +45,7 @@ const GlobalPlayers = lazy(() => import("./pages/GlobalPlayers"));
 const OnlinePlayers = lazy(() => import("./pages/OnlinePlayers"));
 const DynamicPage = lazy(() => import("./pages/DynamicPage"));
 const ApiExplorer = lazy(() => import("./pages/ApiExplorer"));
+const Instances = lazy(() => import("./pages/Instances"));
 const Playground = lazy(() => import("./pages/Playground"));
 
 const PrivateRoute = ({ children }) => {
@@ -62,13 +69,39 @@ const PrivateRoute = ({ children }) => {
 
 const AppRoutes = () => {
   const { needsSetup, loading } = useAuth();
+  const location = useLocation();
+  const instanceIssue = React.useSyncExternalStore(
+    subscribeInstances,
+    getInstanceIssue,
+    () => null,
+  );
+  if (instanceIssue && location.pathname !== "/instances")
+    return (
+      <main className="instances-page">
+        <h1>Connection unavailable</h1>
+        <p role="alert">{instanceIssue}</p>
+        <Link className="instance-button primary" to="/instances">
+          Choose an instance
+        </Link>
+        <button
+          className="instance-button"
+          onClick={() => {
+            selectInstance(null);
+            window.location.reload();
+          }}
+        >
+          Use default connection
+        </button>
+      </main>
+    );
 
-  if (loading) {
+  if (loading && location.pathname !== "/instances") {
     return <div role="status">Loading…</div>;
   }
 
   return (
     <Routes>
+      <Route path="/instances" element={<Instances />} />
       <Route
         path="/login"
         element={needsSetup ? <Navigate to="/setup" /> : <Login />}
@@ -125,7 +158,18 @@ const App = () => {
       if (hidden === "true") {
         sessionSettings.setItem("show_hidden_flag", "true");
         // Clean URL without reloading
-        const newUrl = window.location.pathname;
+        const instance = params.get("instance");
+        if (instance) {
+          try {
+            selectInstance(instance);
+          } catch {
+            sessionSettings.setItem(ACTIVE_INSTANCE_KEY, instance);
+          }
+        }
+        params.delete("hidden");
+        params.delete("instance");
+        const newUrl =
+          window.location.pathname + (params.size ? `?${params}` : "");
         window.history.replaceState({}, "", newUrl);
         // Force a re-render to ensure components pick up the change immediately
         window.location.reload();
@@ -135,6 +179,21 @@ const App = () => {
         const newUrl = window.location.pathname;
         window.history.replaceState({}, "", newUrl);
         window.location.reload();
+      } else if (
+        params.has("instance") &&
+        sessionSettings.getItem("show_hidden_flag") === "true"
+      ) {
+        try {
+          selectInstance(params.get("instance"));
+        } catch {
+          sessionSettings.setItem(ACTIVE_INSTANCE_KEY, params.get("instance"));
+        }
+        params.delete("instance");
+        window.history.replaceState(
+          {},
+          "",
+          window.location.pathname + (params.size ? `?${params}` : ""),
+        );
       }
     };
 

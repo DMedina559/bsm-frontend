@@ -1,3 +1,13 @@
+import { validateBackendUrl } from "./backendUrl";
+export { validateBackendUrl } from "./backendUrl";
+import {
+  getActiveInstance,
+  getInstanceIssue,
+  getSelectedInstanceUrl,
+  ACTIVE_INSTANCE_KEY,
+  isInstanceProfileKey,
+  writeInstanceToken,
+} from "./instanceProfiles";
 import { createUrlResolver } from "@bedrock-server-manager/api-client/urls";
 import { getApiProxyBasePath, serializeHttpUrl } from "../utils/basePath";
 import { getAppConfig } from "./config";
@@ -9,7 +19,13 @@ const write = (area, key, value) =>
     ? ports[area].removeItem(key)
     : ports[area].setItem(key, value);
 export function getApiBaseUrl() {
-  return read("localStorage", "api_base_url") ?? getAppConfig().backendUrl;
+  if (getInstanceIssue())
+    return getActiveInstance()?.url ?? getSelectedInstanceUrl();
+  return (
+    getActiveInstance()?.url ??
+    read("localStorage", "api_base_url") ??
+    getAppConfig().backendUrl
+  );
 }
 export function getConnectionIdentity() {
   const url = new URL(
@@ -29,6 +45,7 @@ export function getToken() {
   return null;
 }
 export function clearCredentials() {
+  writeInstanceToken(getConnectionIdentity(), null, false, "workspace");
   for (const area of ["sessionStorage", "localStorage"]) {
     write(area, credentialKey(), null);
     write(area, "access_token", null);
@@ -36,29 +53,12 @@ export function clearCredentials() {
 }
 export function setCredentials(token, remember = false) {
   clearCredentials();
-  write(remember ? "localStorage" : "sessionStorage", credentialKey(), token);
-}
-export function validateBackendUrl(value) {
-  const url = new URL(value);
-  if (
-    !["http:", "https:"].includes(url.protocol) ||
-    url.username ||
-    url.password ||
-    url.search ||
-    url.hash
-  )
-    throw new Error(
-      "Enter an HTTP or HTTPS URL without credentials, a query, or a fragment.",
-    );
-  if (window.location.protocol === "https:" && url.protocol === "http:")
-    throw new Error(
-      "An HTTPS page requires an HTTPS backend to avoid mixed content.",
-    );
-  return url.href.replace(/\/+$/, "");
+  writeInstanceToken(getConnectionIdentity(), token, remember, "workspace");
 }
 export function setApiBaseUrl(value) {
   const next = value ? validateBackendUrl(value) : "";
   clearCredentials();
+  sessionSettings.removeItem(ACTIVE_INSTANCE_KEY);
   write("localStorage", "api_base_url", next || null);
   clearCredentials();
   window.dispatchEvent(new Event("bsm:connection-changed"));
@@ -84,7 +84,8 @@ export function isSessionStorageEvent(event) {
   return (
     event.key === null ||
     event.key === "api_base_url" ||
+    isInstanceProfileKey(event.key) ||
     event.key === "access_token" ||
-    event.key?.startsWith("bsm.credentials:")
+    event.key === credentialKey()
   );
 }
