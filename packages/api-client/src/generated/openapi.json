@@ -20732,8 +20732,23 @@
         "responses": {
           "200": {
             "content": {
-              "application/json": {
-                "schema": {}
+              "image/jpeg": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              },
+              "image/vnd.microsoft.icon": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
               }
             },
             "description": "Successful Response"
@@ -20829,16 +20844,26 @@
             "description": "Service Unavailable"
           }
         },
-        "security": [],
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["content:read"]
+          },
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "IntegrationToken": []
+          }
+        ],
         "summary": "Get Server Addon Icon",
         "tags": ["Addon Management"],
         "x-bsm-access": {
           "additional_checks": [],
-          "allowed_roles": [],
-          "authentication": "none",
-          "classification": "public",
-          "integration_tokens": "unsupported",
-          "required_permissions": [],
+          "allowed_roles": ["moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "supported",
+          "required_permissions": ["content:read"],
           "resource_scope": "server",
           "version": 1
         }
@@ -28189,6 +28214,26 @@
         ],
         "responses": {
           "200": {
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              },
+              "image/vnd.microsoft.icon": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
             "description": "Successful Response"
           },
           "400": {
@@ -28282,16 +28327,26 @@
             "description": "Service Unavailable"
           }
         },
-        "security": [],
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["servers:read"]
+          },
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "IntegrationToken": []
+          }
+        ],
         "summary": "Get World Icon",
         "tags": ["World Management"],
         "x-bsm-access": {
           "additional_checks": [],
-          "allowed_roles": [],
-          "authentication": "none",
-          "classification": "public",
-          "integration_tokens": "unsupported",
-          "required_permissions": [],
+          "allowed_roles": ["user", "moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "supported",
+          "required_permissions": ["servers:read"],
           "resource_scope": "server",
           "version": 1
         }
@@ -30356,8 +30411,33 @@
     },
     "/audit-log/list": {
       "get": {
-        "description": "Return audit logs as JSON.",
+        "description": "Return a bounded page of audit logs, newest first.\n\nDefaults to 100 records; request subsequent pages with offset. Ordering uses\ntimestamp and ID descending. Concurrent new entries can shift offset pages.",
         "operationId": "list_audit_logs",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {

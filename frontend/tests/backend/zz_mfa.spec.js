@@ -204,6 +204,34 @@ test("login asks for MFA after credentials and accepts a recovery code", async (
     const displayedCodes = await enrollmentPage
       .locator(".security-recovery li code")
       .allTextContents();
+    // Direct writes are exercised with a fake handle; CI cannot operate an OS dialog.
+    await enrollmentPage.evaluate(() => {
+      window.__savedRecovery = "";
+      window.showSaveFilePicker = async () => ({
+        createWritable: async () => ({
+          write: async (text) => {
+            window.__savedRecovery = text;
+          },
+          close: async () => {},
+          abort: async () => {},
+        }),
+      });
+    });
+    await enrollmentPage
+      .getByRole("button", { name: "Download recovery codes", exact: true })
+      .click();
+    await expect(
+      enrollmentPage.getByText("Recovery codes saved.", { exact: true }),
+    ).toBeVisible();
+    const directSave = await enrollmentPage.evaluate(
+      () => window.__savedRecovery,
+    );
+    for (const recoveryCode of displayedCodes)
+      expect(directSave).toContain(recoveryCode);
+    await enrollmentPage.evaluate(() => {
+      window.showSaveFilePicker = undefined;
+      delete window.__savedRecovery;
+    });
     const downloaded = enrollmentPage.waitForEvent("download");
     await enrollmentPage
       .getByRole("button", { name: "Download recovery codes", exact: true })

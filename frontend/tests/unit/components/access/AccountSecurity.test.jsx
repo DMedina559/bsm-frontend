@@ -223,7 +223,7 @@ it.each(["dismiss", "leave"])(
         name: "Download recovery codes",
       });
       fireEvent.click(download);
-      expect(create).toHaveBeenCalledTimes(1);
+      await waitFor(() => expect(create).toHaveBeenCalledTimes(1));
       expect(revoke).not.toHaveBeenCalled();
       expect(screen.getByText(/Download requested/)).toHaveAttribute(
         "role",
@@ -233,7 +233,7 @@ it.each(["dismiss", "leave"])(
         document.querySelector('a[download="bsm-recovery-codes.txt"]'),
       ).toBeNull();
       fireEvent.click(download);
-      expect(create).toHaveBeenCalledTimes(1);
+      await waitFor(() => expect(create).toHaveBeenCalledTimes(1));
       expect(revoke).not.toHaveBeenCalled();
       if (exit === "dismiss")
         fireEvent.click(

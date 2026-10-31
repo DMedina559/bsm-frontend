@@ -11,8 +11,8 @@ import { useDialog } from "../contexts/DialogContext";
 import React, { useMemo, useState } from "react";
 import { useServer } from "../contexts/ServerContext";
 import { useToast } from "../contexts/ToastContext";
-import { request, resolveApiUrl } from "../api/transport";
-import { resolveOperationUrl } from "../api/operations";
+import { request } from "../api/transport";
+import ResourceIcon from "../components/ResourceIcon";
 
 import {
   Upload,
@@ -337,24 +337,11 @@ const Content = () => {
           }}
         >
           {item.icon ? (
-            <img
-              src={resolveApiUrl(
-                resolveOperationUrl("get_server_addon_icon", {
-                  path: { server_name: selectedServer },
-                  query: { pack_type: packType, uuid: item.uuid },
-                }),
-              )}
-              alt={`${item.name} icon`}
-              style={{
-                width: "48px",
-                height: "48px",
-                objectFit: "cover",
-                borderRadius: "4px",
-                flexShrink: 0,
-              }}
-              onError={(e) => {
-                e.target.style.display = "none";
-              }}
+            <ResourceIcon
+              serverName={selectedServer}
+              packType={packType}
+              uuid={item.uuid}
+              name={item.name}
             />
           ) : (
             <div

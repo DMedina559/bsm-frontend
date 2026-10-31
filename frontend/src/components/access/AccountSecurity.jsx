@@ -10,6 +10,7 @@ import {
 import { useTimeFormat } from "../../app/useTimeFormat";
 import { useAuth } from "../../contexts/AuthContext";
 import { useDialog } from "../../contexts/DialogContext";
+import { saveTextFile } from "../../utils/saveTextFile";
 import IntegrationTokens from "./IntegrationTokens";
 import Sessions from "./Sessions";
 import "../../styles/access.css";
@@ -24,10 +25,13 @@ function SecondFactor({ status, identity, sessionGeneration }) {
   const [error, setError] = useState("");
   const [downloadMessage, setDownloadMessage] = useState("");
   const downloadUrl = useRef(null);
+  const saveController = useRef(null);
+  const [savingCodes, setSavingCodes] = useState(false);
   // A save dialog may stay open indefinitely. Keep its source alive until the
   // codes are dismissed, replaced, or this view is unmounted.
   useEffect(
     () => () => {
+      saveController.current?.abort();
       if (downloadUrl.current) URL.revokeObjectURL(downloadUrl.current);
       downloadUrl.current = null;
     },
@@ -79,6 +83,7 @@ function SecondFactor({ status, identity, sessionGeneration }) {
         setEnrollment(null);
         setCode("");
         setDownloadMessage("");
+        setSavingCodes(false);
         setCodes(result.recovery_codes ?? null);
       }
       await queryClient.invalidateQueries({
@@ -91,19 +96,31 @@ function SecondFactor({ status, identity, sessionGeneration }) {
       if (!abort.signal.aborted) setBusy(false);
     }
   }
-  function downloadCodes() {
+  async function downloadCodes() {
+    if (savingCodes) return;
+    const controller = new AbortController();
+    saveController.current = controller;
+    setSavingCodes(true);
+    setDownloadMessage("Choose where to save your recovery codes.");
+    const content =
+      "Bedrock Server Manager recovery codes\nEach code can be used once. Keep these private.\n\n" +
+      codes.join("\n") +
+      "\n";
     const anchor = document.createElement("a");
     try {
+      const saved = await saveTextFile(
+        "bsm-recovery-codes.txt",
+        content,
+        controller.signal,
+      );
+      if (controller.signal.aborted) return;
+      if (saved) {
+        setDownloadMessage("Recovery codes saved.");
+        return;
+      }
       if (!downloadUrl.current) {
         downloadUrl.current = URL.createObjectURL(
-          new Blob(
-            [
-              "Bedrock Server Manager recovery codes\nEach code can be used once. Keep these private.\n\n" +
-                codes.join("\n") +
-                "\n",
-            ],
-            { type: "text/plain;charset=utf-8" },
-          ),
+          new Blob([content], { type: "text/plain;charset=utf-8" }),
         );
       }
       anchor.href = downloadUrl.current;
@@ -113,12 +130,16 @@ function SecondFactor({ status, identity, sessionGeneration }) {
       setDownloadMessage(
         "Download requested. Keep these codes visible until the file has been saved.",
       );
-    } catch {
-      setDownloadMessage(
-        "The download could not be started. Try again or save the displayed codes manually.",
-      );
+    } catch (failure) {
+      if (!controller.signal.aborted)
+        setDownloadMessage(
+          failure.name === "AbortError"
+            ? "Save cancelled. Your recovery codes are still shown."
+            : "The codes could not be saved. Try again or save the displayed codes manually.",
+        );
     } finally {
       anchor.remove();
+      if (!controller.signal.aborted) setSavingCodes(false);
     }
   }
   return (
@@ -178,7 +199,10 @@ function SecondFactor({ status, identity, sessionGeneration }) {
                   required
                 />
               </label>
-              <button className="action-button primary-button" disabled={busy}>
+              <button
+                className="action-button primary-button"
+                disabled={busy || savingCodes}
+              >
                 Enable two-factor authentication
               </button>
             </form>
@@ -204,12 +228,16 @@ function SecondFactor({ status, identity, sessionGeneration }) {
               type="button"
               className="action-button secondary"
               onClick={downloadCodes}
+              disabled={savingCodes}
             >
-              Download recovery codes
+              {savingCodes
+                ? "Saving recovery codes…"
+                : "Download recovery codes"}
             </button>
             <button
               className="action-button secondary"
               type="button"
+              disabled={savingCodes}
               onClick={() => setCodes(null)}
             >
               I saved my codes
@@ -225,7 +253,7 @@ function SecondFactor({ status, identity, sessionGeneration }) {
         {!status?.enabled && !enrollment && (
           <button
             className="action-button primary-button"
-            disabled={busy}
+            disabled={busy || savingCodes}
             onClick={() => run("enroll")}
           >
             Set up authenticator
@@ -235,14 +263,14 @@ function SecondFactor({ status, identity, sessionGeneration }) {
           <>
             <button
               className="action-button secondary"
-              disabled={busy}
+              disabled={busy || savingCodes}
               onClick={() => run("rotate")}
             >
               Replace recovery codes
             </button>
             <button
               className="action-button danger"
-              disabled={busy || status.required}
+              disabled={busy || savingCodes || status.required}
               onClick={() => run("disable")}
             >
               Disable two-factor

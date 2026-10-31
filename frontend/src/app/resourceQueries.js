@@ -150,8 +150,11 @@ const resources = {
   },
   audit: {
     key: queryKeys.audit,
-    load: (_target, options) =>
-      callOperation("list_audit_logs", { ...options }),
+    load: (page, options) =>
+      callOperation("list_audit_logs", {
+        ...(page ? { query: page } : {}),
+        ...options,
+      }),
     select: (data) => array(data, "list"),
   },
   tasks: {

@@ -8,13 +8,20 @@ import { useToast } from "../contexts/ToastContext";
 import { RefreshCw, Activity, User, FileText } from "lucide-react";
 const AuditLog = () => {
   const [activeTab, setActiveTab] = useState("users");
-  const logsQuery = useResourceQuery("audit", undefined, {
-    enabled: activeTab === "users",
-  });
+  const [offset, setOffset] = useState(0);
+  const pageSize = 100;
+  const logsQuery = useResourceQuery(
+    "audit",
+    { limit: pageSize + 1, offset },
+    {
+      enabled: activeTab === "users",
+    },
+  );
   const tasksQuery = useResourceQuery("tasks", undefined, {
     enabled: activeTab === "tasks",
   });
-  const logs = logsQuery.data ?? [];
+  const logs = (logsQuery.data ?? []).slice(0, pageSize);
+  const hasOlder = (logsQuery.data?.length ?? 0) > pageSize;
   const tasks = tasksQuery.data ?? [];
   const loading =
     activeTab === "users" ? logsQuery.isFetching : tasksQuery.isFetching;
@@ -112,6 +119,37 @@ const AuditLog = () => {
         )}
         {activeTab === "users" && (
           <>
+            <nav className="form-actions" aria-label="Audit log pages">
+              <button
+                type="button"
+                className="action-button secondary"
+                disabled={offset === 0 || loading}
+                onClick={() =>
+                  setOffset((value) => Math.max(0, value - pageSize))
+                }
+              >
+                Newer events
+              </button>
+              <span role="status">
+                {logs.length
+                  ? `Events ${offset + 1}–${offset + logs.length}`
+                  : "No events on this page"}
+              </span>
+              <button
+                type="button"
+                className="action-button secondary"
+                disabled={!hasOlder || loading || logsQuery.isError}
+                onClick={() => setOffset((value) => value + pageSize)}
+              >
+                Older events
+              </button>
+            </nav>
+            {offset > 0 && (
+              <p className="help-text">
+                New events can shift pages. Return to the newest page to refresh
+                your view.
+              </p>
+            )}
             {loading && logs.length === 0 ? (
               <div
                 role="status"

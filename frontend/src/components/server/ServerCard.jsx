@@ -13,8 +13,7 @@ import {
   Download,
   Terminal,
 } from "lucide-react";
-import { resolveApiUrl } from "../../api/transport";
-import { resolveOperationUrl } from "../../api/operations";
+import ResourceIcon from "../ResourceIcon";
 import { getApiProxyBasePath, resolveAppAssetUrl } from "../../utils/basePath";
 
 const actionDefinitions = {
@@ -109,20 +108,13 @@ function ServerCard({
         aria-label={`Open ${server.name} monitor`}
       />
       <div className="card-header overview-card-header">
-        <img
+        <ResourceIcon
+          world
+          serverName={server.name}
           className="overview-world-icon"
-          src={resolveApiUrl(
-            resolveOperationUrl("get_world_icon", {
-              path: { server_name: server.name },
-            }),
+          fallback={resolveAppAssetUrl(
+            `${getApiProxyBasePath()}/app/image/icon/web-app-manifest-192x192.png`,
           )}
-          alt=""
-          onError={(event) => {
-            event.currentTarget.onerror = null;
-            event.currentTarget.src = resolveAppAssetUrl(
-              `${getApiProxyBasePath()}/app/image/icon/web-app-manifest-192x192.png`,
-            );
-          }}
         />
         <div className="overview-server-identity">
           <h3>{server.name}</h3>

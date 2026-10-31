@@ -2480,14 +2480,24 @@
     "responseType": "json"
   },
   "get_server_addon_icon": {
-    "security": [],
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["content:read"]
+      },
+      {
+        "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
+      }
+    ],
     "access": {
       "additional_checks": [],
-      "allowed_roles": [],
-      "authentication": "none",
-      "classification": "public",
-      "integration_tokens": "unsupported",
-      "required_permissions": [],
+      "allowed_roles": ["moderator", "admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "supported",
+      "required_permissions": ["content:read"],
       "resource_scope": "server",
       "version": 1
     },
@@ -2512,7 +2522,7 @@
     ],
     "bodyRequired": false,
     "bodyTypes": [],
-    "responseType": "json"
+    "responseType": "blob"
   },
   "install_addon": {
     "security": [
@@ -4280,14 +4290,24 @@
     "responseType": "json"
   },
   "get_world_icon": {
-    "security": [],
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["servers:read"]
+      },
+      {
+        "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
+      }
+    ],
     "access": {
       "additional_checks": [],
-      "allowed_roles": [],
-      "authentication": "none",
-      "classification": "public",
-      "integration_tokens": "unsupported",
-      "required_permissions": [],
+      "allowed_roles": ["user", "moderator", "admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "supported",
+      "required_permissions": ["servers:read"],
       "resource_scope": "server",
       "version": 1
     },
@@ -4302,7 +4322,7 @@
     ],
     "bodyRequired": false,
     "bodyTypes": [],
-    "responseType": "json"
+    "responseType": "blob"
   },
   "install_world": {
     "security": [
@@ -4773,7 +4793,18 @@
     },
     "method": "GET",
     "path": "/audit-log/list",
-    "parameters": [],
+    "parameters": [
+      {
+        "name": "limit",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "offset",
+        "in": "query",
+        "required": false
+      }
+    ],
     "bodyRequired": false,
     "bodyTypes": [],
     "responseType": "json"

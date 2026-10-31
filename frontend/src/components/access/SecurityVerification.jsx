@@ -96,11 +96,20 @@ export default function SecurityVerification() {
         five minutes and does not extend your login.
       </p>
       <form onSubmit={verify} className="security-form">
+        <input
+          type="text"
+          name="username"
+          autoComplete="username"
+          value={user?.username ?? ""}
+          readOnly
+          hidden
+        />
         <label className="form-label">
           Current password
           <input
             className="form-input"
             type="password"
+            name="current-password"
             autoComplete="current-password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}

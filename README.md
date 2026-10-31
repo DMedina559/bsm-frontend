@@ -259,3 +259,12 @@ and show the remaining recent-verification time. Current-device sign-out does
 not require another password prompt. Owned security notices appear in the
 existing notification history. New/reset passwords use a 15-character minimum;
 existing login passwords remain accepted. Passkeys are deferred.
+
+### Recovery-code saves
+
+The Account page uses direct text-file saving where the browser supports it.
+Other browsers and restricted embedded views use a download fallback. Codes stay
+visible when saving is cancelled or fails, and the fallback file remains valid
+until the codes are dismissed or the view closes. Direct saving reports success
+only after writing and closing the selected file. Saving already displayed codes
+does not require another backend request.

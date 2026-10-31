@@ -359,3 +359,37 @@ it("adds a session-bound CSRF header only to embedded cookie requests", async ()
     new Headers(fetch.mock.calls[2][1].headers).get("X-CSRF-Token"),
   ).toBeNull();
 });
+
+it.each([true, false])(
+  "only requests step-up for an explicit recent-auth challenge (%s)",
+  async (required) => {
+    setApiBaseUrl("");
+    setCredentials("test-session-token", false);
+    const prompt = vi.fn();
+    window.addEventListener("bsm:security-verification-required", prompt);
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          detail: required
+            ? "Verify your password and second factor to continue"
+            : "Permission denied",
+        }),
+        {
+          status: 403,
+          headers: {
+            "Content-Type": "application/json",
+            ...(required ? { "X-BSM-Recent-Auth": "required" } : {}),
+          },
+        },
+      ),
+    );
+    try {
+      await expect(
+        request("/api/account/security/mfa/enroll", { method: "POST" }),
+      ).rejects.toMatchObject({ status: 403 });
+      expect(prompt).toHaveBeenCalledTimes(required ? 1 : 0);
+    } finally {
+      window.removeEventListener("bsm:security-verification-required", prompt);
+    }
+  },
+);

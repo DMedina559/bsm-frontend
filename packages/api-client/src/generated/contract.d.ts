@@ -2608,7 +2608,10 @@ export interface paths {
     };
     /**
      * List Audit Logs Api
-     * @description Return audit logs as JSON.
+     * @description Return a bounded page of audit logs, newest first.
+     *
+     *     Defaults to 100 records; request subsequent pages with offset. Ordering uses
+     *     timestamp and ID descending. Concurrent new entries can shift offset pages.
      */
     get: operations["list_audit_logs"];
     put?: never;
@@ -14930,7 +14933,9 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": unknown;
+          "image/jpeg": string;
+          "image/png": string;
+          "image/vnd.microsoft.icon": string;
         };
       };
       /** @description Bad Request */
@@ -20185,7 +20190,11 @@ export interface operations {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "image/jpeg": string;
+          "image/png": string;
+          "image/vnd.microsoft.icon": string;
+        };
       };
       /** @description Bad Request */
       400: {
@@ -21817,7 +21826,10 @@ export interface operations {
   };
   list_audit_logs: {
     parameters: {
-      query?: never;
+      query?: {
+        limit?: number;
+        offset?: number;
+      };
       header?: never;
       path?: never;
       cookie?: never;
