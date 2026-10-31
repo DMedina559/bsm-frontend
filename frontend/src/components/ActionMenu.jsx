@@ -101,7 +101,7 @@ export default function ActionMenu({
       <button
         ref={trigger}
         type="button"
-        className={`icon-button action-menu-trigger ${triggerClassName}`}
+        className={`${children == null ? "icon-button " : ""}action-menu-trigger ${triggerClassName}`}
         disabled={disabled}
         aria-label={label}
         aria-haspopup="menu"
