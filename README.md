@@ -195,3 +195,67 @@ viewport, wraps paths, and displays a compact summary and capture timings.
 Start/stop/restart use the existing endpoints and allow long pre-start hooks to
 finish without the client's ordinary 30-second timeout. Explicit caller timeout
 overrides remain supported; server/proxy limits still apply.
+
+### HTTP access metadata and connection authentication
+
+The API Explorer displays the connected account's permissions, operation
+requirements, role labels, and contextual policy notices from `x-bsm-access`.
+Older servers remain usable and show unknown access metadata. Server responses,
+including 403, remain authoritative; static permissions do not resolve ownership
+or custom policies.
+
+Only the embedded default connection permits same-origin cookie recovery.
+Saved-instance workspaces and standalone connections omit cookies for all API
+requests, including login and uploads, and use backend-scoped bearer tokens.
+Their logout clears that instance's saved credentials. The embedded default
+logout also calls the backend to clear its cookie. Neither revokes JWTs retained
+elsewhere. Endpoint scopes describe role capabilities, not restricted token grants.
+
+### Integration credentials and server assignments
+
+Account settings can create named, expiring integration credentials with explicit
+capabilities and optional server limits. Copy the secret once; subsequent lists
+show metadata and a revoke action. The secret stays outside query caches and
+browser persistence. Each credential is bounded by the owner's current role and
+server assignments.
+
+Administrators can edit another non-admin account's server access in the Users
+editor. Assigned mode grants only selected capabilities on selected servers;
+new servers receive no automatic access. Existing accounts retain their role's
+all-server behavior. Account changes refresh access metadata, navigation, cached
+queries, and the live API explorer. Backends without this metadata keep their
+existing compatibility behavior.
+
+Account security now groups Sessions, Integrations, My access, Activity, and
+Password & MFA. Users can rename and revoke logins, sign out other sessions, rotate
+integration credentials, and enroll an authenticator with one-use recovery codes.
+Administrators can inspect and revoke account sessions and reset MFA.
+
+The embedded app uses an HttpOnly login cookie without copying the JWT into
+JavaScript storage. Cookie mutations send an in-memory CSRF proof. Saved instances
+and external clients use bearer mode. Passwords and one-time security secrets are
+excluded from the shared query/mutation cache. Sensitive changes prompt for recent
+password and factor verification, then ask users to retry the action explicitly.
+
+Choose **Never expire** when creating an integration credential to keep it valid
+until revoked (`expires_in_days: null` in the API). The default remains 30 days;
+rotation preserves a non-expiring credential's lack of a deadline. Login sessions
+retain their configured expiry limits. Login asks for an authenticator/recovery
+code only after the server validates the username/password and requires MFA.
+
+**Frontend settings** is the central home for themes/palettes/backgrounds,
+display and fleet preferences, browser recovery, connections, and frontend
+recording. It is available to every signed-in account from the sidebar, Account,
+and application Settings. Existing account/backend-scoped preferences are reused;
+`/appearance` redirects to the Appearance category. Account focuses on identity,
+sessions, integration credentials, and security. Frontend diagnostics keeps its
+history tools and links to the central recording controls.
+
+Saved instance connections use the same progressive MFA prompt as workspace
+login. Administrators required to enroll are guided to Account, with recovery
+codes kept visible until acknowledged. Sessions show the current login first,
+keep expired/revoked history collapsed, distinguish idle from absolute expiry,
+and show the remaining recent-verification time. Current-device sign-out does
+not require another password prompt. Owned security notices appear in the
+existing notification history. New/reset passwords use a 15-character minimum;
+existing login passwords remain accepted. Passkeys are deferred.

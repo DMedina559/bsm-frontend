@@ -11,6 +11,8 @@ const Login = () => {
   const [showRemoteModal, setShowRemoteModal] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [mfaRequired, setMfaRequired] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -21,6 +23,13 @@ const Login = () => {
     sessionSettings.getItem("show_hidden_flag") === "true" ||
     !!getApiBaseUrl();
   const location = useLocation();
+  const backend = getApiBaseUrl();
+  useEffect(() => {
+    setPassword("");
+    setOtp("");
+    setMfaRequired(false);
+    setError(null);
+  }, [backend]);
 
   // Where to redirect after login
   const from = location.state?.from?.pathname || "/";
@@ -38,14 +47,25 @@ const Login = () => {
     setError(null);
     setSubmitting(true);
     try {
-      await login(username, password, rememberMe);
+      await login(username, password, rememberMe, otp);
+      setPassword("");
+      setOtp("");
       navigate(from, {
         replace: true,
       });
     } catch (error) {
+      if (error.name === "AbortError") return;
+      if (error.mfaRequired) {
+        setMfaRequired(true);
+        setOtp("");
+        return;
+      }
+      if (mfaRequired) setOtp("");
       setError(
         error.status === 401
-          ? "Invalid username or password"
+          ? mfaRequired
+            ? "Invalid verification code. Try again or use a recovery code."
+            : "Invalid username or password"
           : error.message ||
               "Unable to sign in. Check your connection and try again.",
       );
@@ -69,7 +89,14 @@ const Login = () => {
           gap: "calc(10px * var(--bsm-spacing-scale))",
         }}
       >
-        <h1 className="auth-title">Login</h1>
+        <h1 className="auth-title">
+          {mfaRequired ? "Verify your sign-in" : "Welcome back"}
+        </h1>
+        <p className="help-text">
+          {mfaRequired
+            ? `Enter an authenticator or recovery code for ${username}.`
+            : "Sign in to Bedrock Server Manager."}
+        </p>
       </div>
 
       <form
@@ -81,62 +108,85 @@ const Login = () => {
           gap: "calc(15px * var(--bsm-spacing-scale))",
         }}
       >
-        <div>
-          <label htmlFor="username" className="form-label">
-            Username
-          </label>
-          <input
-            type="text"
-            id="username"
-            name="username"
-            className="form-input"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            autoComplete="username"
-            disabled={submitting}
-          />
-        </div>
-        <div>
-          <label htmlFor="password" className="form-label">
-            Password
-          </label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            className="form-input"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="current-password"
-            disabled={submitting}
-          />
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "calc(8px * var(--bsm-spacing-scale))",
-          }}
-        >
-          <input
-            type="checkbox"
-            id="rememberMe"
-            name="rememberMe"
-            checked={rememberMe}
-            onChange={(e) => setRememberMe(e.target.checked)}
-          />
-          <label
-            htmlFor="rememberMe"
+        {!mfaRequired && (
+          <>
+            <div>
+              <label htmlFor="username" className="form-label">
+                Username
+              </label>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                className="form-input"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                autoComplete="username"
+                disabled={submitting}
+              />
+            </div>
+            <div>
+              <label htmlFor="password" className="form-label">
+                Password
+              </label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                className="form-input"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                disabled={submitting}
+              />
+            </div>
+          </>
+        )}
+        {mfaRequired && (
+          <div>
+            <label htmlFor="otp" className="form-label">
+              Authenticator or recovery code
+            </label>
+            <input
+              id="otp"
+              className="form-input"
+              value={otp}
+              onChange={(event) => setOtp(event.target.value)}
+              autoComplete="one-time-code"
+              maxLength={128}
+              required
+              autoFocus
+              disabled={submitting}
+            />
+          </div>
+        )}
+        {!mfaRequired && (
+          <div
             style={{
-              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "calc(8px * var(--bsm-spacing-scale))",
             }}
           >
-            Remember me
-          </label>
-        </div>
+            <input
+              type="checkbox"
+              id="rememberMe"
+              name="rememberMe"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+            />
+            <label
+              htmlFor="rememberMe"
+              style={{
+                cursor: "pointer",
+              }}
+            >
+              Remember me
+            </label>
+          </div>
+        )}
 
         {error && (
           <div className="message message-error" role="alert">
@@ -149,8 +199,27 @@ const Login = () => {
           className="button button-primary"
           disabled={submitting}
         >
-          {submitting ? "Signing in…" : "Sign In"}
+          {submitting
+            ? "Signing in…"
+            : mfaRequired
+              ? "Verify and sign in"
+              : "Sign In"}
         </button>
+        {mfaRequired && (
+          <button
+            type="button"
+            className="action-button secondary"
+            disabled={submitting}
+            onClick={() => {
+              setMfaRequired(false);
+              setPassword("");
+              setOtp("");
+              setError(null);
+            }}
+          >
+            Back to sign in
+          </button>
+        )}
       </form>
 
       {showConfigButton && (

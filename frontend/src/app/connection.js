@@ -34,9 +34,18 @@ export function getConnectionIdentity() {
   );
   return `${url.origin}${url.pathname.replace(/\/+$/, "")}`;
 }
+/** Legacy mode name; the embedded default connection authenticates only by cookie. */
+export function getAuthenticationMode() {
+  return getAppConfig().mode === "embedded" &&
+    !getActiveInstance() &&
+    !getApiBaseUrl()
+    ? "cookie-recovery"
+    : "bearer";
+}
 const credentialKey = () =>
   `bsm.credentials:${encodeURIComponent(getConnectionIdentity())}`;
 export function getToken() {
+  if (getAuthenticationMode() === "cookie-recovery") return null;
   const key = credentialKey();
   const current = read("sessionStorage", key) || read("localStorage", key);
   if (current) return current;

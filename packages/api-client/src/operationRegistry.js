@@ -61,6 +61,11 @@ export function buildOperationRegistry(schema) {
         ),
       );
       registry[operation.operationId] = {
+        security: operation.security ?? schema.security ?? [],
+        access: operation["x-bsm-access"] ?? {
+          classification: "unknown",
+          authentication: "unknown",
+        },
         method: method.toUpperCase(),
         path,
         parameters: [...parameters.values()],

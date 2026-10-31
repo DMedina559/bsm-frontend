@@ -142,7 +142,7 @@ const Layout = () => {
           ref={mainRef}
           tabIndex={-1}
         >
-          {pathname !== "/" && (
+          {!["/", "/account", "/frontend-settings"].includes(pathname) && (
             <div className="page-context">
               <span>{description}</span>
               {group === "Selected server" && (

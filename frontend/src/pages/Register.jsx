@@ -1,4 +1,4 @@
-import { usePublicQuery, useScopedMutation } from "../app/publicRequests";
+import { usePublicQuery, useSensitiveMutation } from "../app/publicRequests";
 import { callOperation } from "../api/operations";
 import AuthBrand from "../components/AuthBrand";
 import React, { useState } from "react";
@@ -21,7 +21,7 @@ const Register = () => {
     : tokenQuery.isError
       ? false
       : null;
-  const write = useScopedMutation(`register:${token}`, (body, { signal }) =>
+  const write = useSensitiveMutation(`register:${token}`, (body, { signal }) =>
     callOperation("register_user", { path: { token }, body, signal }),
   );
   const loading = write.isPending;
@@ -110,6 +110,10 @@ const Register = () => {
       }}
     >
       <AuthBrand />
+      <p className="form-help-text">
+        Use at least 15 characters. Spaces and memorable passphrases are
+        welcome.
+      </p>
       <div className="header">
         <h1>Register</h1>
       </div>
@@ -145,6 +149,8 @@ const Register = () => {
           </label>
           <input
             type="password"
+            minLength={15}
+            maxLength={1024}
             id="password"
             className="form-input"
             value={password}
@@ -165,6 +171,8 @@ const Register = () => {
           </label>
           <input
             type="password"
+            minLength={15}
+            maxLength={1024}
             id="confirmPassword"
             className="form-input"
             value={confirmPassword}

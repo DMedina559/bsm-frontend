@@ -1,0 +1,278 @@
+.access-choice-list {
+  display: grid;
+  gap: 0.65rem;
+  margin-block: 1rem;
+  max-height: 20rem;
+  overflow: auto;
+}
+.access-choice-list label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.access-choice-list small {
+  opacity: 0.75;
+}
+.access-credentials-list {
+  display: grid;
+  gap: 0.75rem;
+  margin-block-start: 1.25rem;
+}
+.access-credential-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 0.75rem;
+  border-top: 1px solid var(--border-color, #8885);
+}
+.access-credential-row p {
+  margin-block: 0.25rem;
+}
+.settings-panel textarea[aria-label="New integration credential"] {
+  display: block;
+  width: 100%;
+  margin-block: 0.75rem;
+  font-family: monospace;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .access-credential-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+.settings-panel .alert-info .action-button {
+  margin-inline-end: 0.5rem;
+  margin-block-end: 0.75rem;
+}
+.settings-panel form > .form-label {
+  display: grid;
+  gap: 0.4rem;
+  margin-block: 1rem;
+}
+.settings-panel textarea[aria-label="New integration credential"] {
+  padding: 0.75rem;
+  color: var(--text-primary, inherit);
+  background: var(--input-bg, transparent);
+  border: 1px solid var(--border-color, #8885);
+  border-radius: 0.5rem;
+}
+.account-security {
+  min-width: 0;
+}
+.account-security > .section-heading {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+.account-security > .section-heading > div {
+  flex: 1;
+  min-width: 180px;
+}
+.security-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  border-bottom: 1px solid var(--bsm-border);
+  padding-bottom: 0.5rem;
+  margin-block: 1.2rem;
+}
+.security-tabs > button {
+  padding: 0.5rem 0.8rem;
+  border: 1px solid transparent;
+  border-radius: 0.4rem;
+  background: transparent;
+  color: var(--bsm-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.85rem;
+}
+.security-tabs > button[aria-selected="true"] {
+  color: var(--bsm-text);
+  background: var(--bsm-accent-soft);
+  border-color: var(--bsm-border);
+}
+.security-tab-panel {
+  min-width: 0;
+}
+.security-tab-panel > section {
+  margin-block: 1rem;
+}
+.security-form {
+  display: grid;
+  gap: 1rem;
+  max-width: 36rem;
+  margin-block: 1rem;
+}
+.security-form .form-label {
+  display: grid;
+  gap: 0.4rem;
+}
+.security-session-list {
+  display: grid;
+  gap: 0.8rem;
+  margin-block: 1.2rem;
+}
+.security-session {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--bsm-border);
+  border-radius: 0.6rem;
+  background: var(--bsm-surface-raised);
+}
+.security-session-icon {
+  color: var(--bsm-muted);
+  padding-top: 0.2rem;
+}
+.security-session-detail {
+  min-width: 0;
+  flex: 1;
+}
+.security-session-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  overflow-wrap: anywhere;
+}
+.security-session p {
+  margin-block: 0.35rem;
+  font-size: 0.8rem;
+}
+.security-state {
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.3rem;
+  color: var(--bsm-muted);
+  background: var(--bsm-surface);
+  font-size: 0.7rem;
+}
+.security-state.active,
+.security-live {
+  color: var(--bsm-success);
+}
+.security-live {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.security-session details {
+  font-size: 0.75rem;
+  color: var(--bsm-muted);
+  margin-top: 0.5rem;
+}
+.security-session summary {
+  cursor: pointer;
+}
+.security-connection {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr);
+  gap: 0.4rem;
+}
+.security-connection dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.security-session-actions,
+.security-rename {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.3rem;
+}
+.security-rename {
+  margin-top: 1rem;
+}
+.security-rename input {
+  flex: 1;
+  min-width: 130px;
+}
+.security-enrollment {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1.5rem;
+  margin-block: 1.2rem;
+}
+.security-enrollment > img {
+  padding: 0.6rem;
+  border-radius: 0.5rem;
+  background: white;
+  max-width: 100%;
+}
+.security-enrollment > div {
+  flex: 1;
+  min-width: 200px;
+}
+.security-recovery {
+  margin-block: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--bsm-warning);
+  border-radius: 0.5rem;
+}
+.security-recovery ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.7rem;
+  list-style: none;
+  padding: 0;
+}
+.security-recovery code {
+  overflow-wrap: anywhere;
+  font: 1rem var(--bsm-mono);
+}
+.security-permissions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  list-style: none;
+  padding: 0;
+}
+.security-permissions li {
+  padding: 0.3rem 0.45rem;
+  background: var(--bsm-input);
+  border: 1px solid var(--bsm-border);
+  border-radius: 0.3rem;
+  overflow-wrap: anywhere;
+  font-size: 0.75rem;
+}
+.security-access-servers {
+  display: grid;
+  gap: 0.8rem;
+  margin-block: 1.2rem;
+}
+.security-activity {
+  list-style: none;
+  padding: 0;
+}
+.security-activity li {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding-block: 0.8rem;
+  border-bottom: 1px solid var(--bsm-border);
+  font-size: 0.85rem;
+}
+.security-activity time {
+  color: var(--bsm-muted);
+}
+.security-activity strong {
+  text-transform: capitalize;
+}
+@media (max-width: 700px) {
+  .security-session {
+    flex-wrap: wrap;
+  }
+  .security-session-icon {
+    display: none;
+  }
+  .security-session-actions {
+    width: 100%;
+  }
+}

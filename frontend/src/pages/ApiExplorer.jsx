@@ -1,3 +1,4 @@
+import { useAuth } from "../contexts/AuthContext";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import {
@@ -33,12 +34,15 @@ import {
   DataView,
   CopyButton,
 } from "../features/api-explorer/views";
+import AccessPolicy from "../features/api-explorer/AccessPolicy";
 import "../styles/api-explorer.css";
 
 function Explorer() {
+  const { user } = useAuth();
   const [schema, setSchema] = useState(null);
   const [source, setSource] = useState("");
   const [sourceName, setSourceName] = useState("");
+  const [connectedSource, setConnectedSource] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [operations, setOperations] = useState(
     /** @type {ReturnType<typeof inspectSchema>} */ ([]),
@@ -58,6 +62,17 @@ function Explorer() {
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
   const controller = useRef(null);
+  const reloadSchema = useRef(null);
+  const connected = useRef(false);
+  useEffect(() => {
+    const changed = () => {
+      if (!connected.current) return;
+      controller.current?.abort();
+      void reloadSchema.current?.(true);
+    };
+    window.addEventListener("bsm:access-changed", changed);
+    return () => window.removeEventListener("bsm:access-changed", changed);
+  }, []);
   const fileInput = useRef(null);
   useEffect(() => () => controller.current?.abort(), []);
   const operation = operations.find((item) => item.id === selected);
@@ -78,36 +93,65 @@ function Explorer() {
     () => (schema ? createExplorerClient(schema) : null),
     [schema],
   );
-  function load(value, name = "Pasted JSON") {
+  function load(
+    value,
+    name = "Pasted JSON",
+    preserve = false,
+    isConnected = false,
+  ) {
     const next = inspectSchema(value);
+    if (!isConnected) {
+      controller.current?.abort();
+      controller.current = null;
+      setBusy(false);
+    }
+    connected.current = isConnected;
+    setConnectedSource(isConnected);
     setSchema(value);
     setOperations(next);
-    setSelected(next[0]?.id ?? "");
-    setModel("");
-    setValues({});
-    setBody("");
+    const keep =
+      preserve &&
+      next.some(
+        (item) =>
+          item.id === selected &&
+          item.path === operation?.path &&
+          item.method === operation?.method,
+      );
+    setSelected(keep ? selected : (next[0]?.id ?? ""));
+    if (!keep) {
+      setModel("");
+      setValues({});
+      setBody("");
+    }
     setResult(null);
     setError("");
     setImportOpen(false);
     setSourceName(name);
-    setTab("request");
-    setView("operations");
-    setTag("");
-    setSearch("");
+    if (!preserve) {
+      setTab("request");
+      setView("operations");
+      setTag("");
+      setSearch("");
+    }
   }
-  async function live() {
+  async function live(preserve = false) {
     setBusy(true);
     setError("");
     const abort = new AbortController();
     controller.current = abort;
     try {
-      load(await loadExplorerSchema(abort.signal), "Connected backend");
+      const value = await loadExplorerSchema(abort.signal);
+      if (abort.signal.aborted) return;
+      load(value, "Connected backend", preserve, true);
     } catch (e) {
-      setError(e.message);
+      if (controller.current === abort) setError(e.message);
     } finally {
-      setBusy(false);
+      if (controller.current === abort) setBusy(false);
     }
   }
+  useEffect(() => {
+    reloadSchema.current = live;
+  });
   function choose(id) {
     setSelected(id);
     setValues({});
@@ -148,6 +192,11 @@ function Explorer() {
         ...options,
         signal: abort.signal,
       });
+      if (abort.signal.aborted) {
+        if (controller.current === abort) setError("Cancelled");
+        return;
+      }
+      if (controller.current !== abort) return;
       if (response.error) setError(response.error);
       setResult({
         ...response,
@@ -163,9 +212,9 @@ function Explorer() {
       setTab("response");
       setResponseMode("body");
     } catch (e) {
-      setError(e.message);
+      if (controller.current === abort) setError(e.message);
     } finally {
-      setBusy(false);
+      if (controller.current === abort) setBusy(false);
     }
   }
   const bodySchema = operation?.request.content?.["application/json"]?.schema;
@@ -205,7 +254,7 @@ function Explorer() {
           <button
             className="ae-button ae-primary"
             disabled={busy}
-            onClick={live}
+            onClick={() => live()}
           >
             <RefreshCw size={15} className={busy ? "ae-spinning" : ""} />
             {schema ? "Refresh backend" : "Load connected backend"}
@@ -222,7 +271,9 @@ function Explorer() {
         onChange={async (event) => {
           try {
             const file = event.target.files[0];
-            if (file) load(JSON.parse(await file.text()), file.name);
+            if (file) {
+              load(JSON.parse(await file.text()), file.name);
+            }
           } catch (e) {
             setError(e.message);
           } finally {
@@ -447,6 +498,12 @@ function Explorer() {
                         <code>{operation.path}</code>
                       </div>
                       <div className="ae-operation-id">{operation.id}</div>
+                      <AccessPolicy
+                        key={operation.id}
+                        policy={operation.access}
+                        permissions={user?.permissions}
+                        connected={connectedSource}
+                      />
                       {operation.definition.description && (
                         <p className="ae-description">
                           {operation.definition.description}

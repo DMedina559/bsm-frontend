@@ -132,7 +132,7 @@ describe("AuthContext", () => {
     expect(screen.getByText("User: testuser")).toBeInTheDocument();
   });
 
-  it("handles login successfully (remember me)", async () => {
+  it("keeps a remembered embedded login out of browser token storage", async () => {
     api.get.mockResolvedValueOnce({ needs_setup: false });
     api.request.mockRejectedValueOnce(new Error("Unauthorized")); // Initial checkUser
 
@@ -152,12 +152,17 @@ describe("AuthContext", () => {
       screen.getByText("Login Remember").click();
     });
 
-    expect(getToken()).toBe("test_token");
+    expect(getToken()).toBeNull();
+    expect(
+      [...Object.keys(localStorage), ...Object.keys(sessionStorage)]
+        .filter((key) => key.startsWith("bsm.credentials:"))
+        .map((key) => localStorage.getItem(key) ?? sessionStorage.getItem(key)),
+    ).not.toContain("test_token");
     expect(sessionStorage.getItem("access_token")).toBeNull();
     expect(screen.getByText("User: testuser")).toBeInTheDocument();
   });
 
-  it("handles login successfully (session storage)", async () => {
+  it("keeps a non-remembered embedded login out of browser token storage", async () => {
     api.get.mockResolvedValueOnce({ needs_setup: false });
     api.request.mockRejectedValueOnce(new Error("Unauthorized")); // Initial checkUser
 
@@ -177,7 +182,12 @@ describe("AuthContext", () => {
       screen.getByText("Login Session").click();
     });
 
-    expect(getToken()).toBe("test_token");
+    expect(getToken()).toBeNull();
+    expect(
+      [...Object.keys(localStorage), ...Object.keys(sessionStorage)]
+        .filter((key) => key.startsWith("bsm.credentials:"))
+        .map((key) => localStorage.getItem(key) ?? sessionStorage.getItem(key)),
+    ).not.toContain("test_token");
     expect(localStorage.getItem("access_token")).toBeNull();
     expect(screen.getByText("User: testuser")).toBeInTheDocument();
   });
@@ -328,4 +338,24 @@ it("applies only the newest concurrent authentication check", async () => {
     requests[0]({ username: "obsolete" });
   });
   expect(screen.getByText("latest")).toBeInTheDocument();
+});
+
+it("requires sign-in for a saved remote workspace without recovering a cookie account", async () => {
+  vi.clearAllMocks();
+  queryClient.clear();
+  sessionRuntime.reset();
+  localStorage.clear();
+  sessionStorage.clear();
+  localStorage.setItem("api_base_url", "https://remote.example");
+  api.get.mockResolvedValueOnce({ needs_setup: false });
+  await act(async () => {
+    render(
+      <AuthProvider>
+        <TestComponent />
+      </AuthProvider>,
+    );
+  });
+  expect(screen.getByText("No User")).toBeInTheDocument();
+  expect(api.request).not.toHaveBeenCalled();
+  localStorage.clear();
 });

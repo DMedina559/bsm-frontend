@@ -71,7 +71,16 @@ export const PAGE_INFO = {
     "Logs & Tasks",
     "Review audit records, task results and application logs.",
   ],
-  "/account": ["Workspace", "Account", "Manage your profile and password."],
+  "/account": [
+    "Workspace",
+    "Account",
+    "Manage your profile, sign-ins, and account security.",
+  ],
+  "/frontend-settings": [
+    "Workspace",
+    "Frontend settings",
+    "Appearance, display, browser recovery, and connections.",
+  ],
   "/appearance": [
     "Workspace",
     "Appearance",

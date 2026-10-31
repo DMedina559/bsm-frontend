@@ -996,3 +996,133 @@
   overflow-y: auto;
   scrollbar-width: thin;
 }
+
+/* Access metadata is a compact summary; the account catalog stays opt-in. */
+.ae-access {
+  margin-top: 18px;
+  border: 1px solid var(--ae-line);
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 12px;
+}
+.ae-access-heading,
+.ae-access-heading > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.ae-access-heading {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  background: var(--bsm-surface-raised);
+  font-weight: 600;
+}
+.ae-access-kind,
+.ae-access-count {
+  border: 1px solid var(--ae-line);
+  border-radius: 5px;
+  padding: 2px 7px;
+  color: var(--bsm-muted);
+  font-size: 10px;
+  font-weight: 500;
+}
+.ae-access-facts {
+  margin: 0;
+  padding: 4px 12px;
+}
+.ae-access-facts > div {
+  display: grid;
+  grid-template-columns: minmax(110px, 29%) minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  padding-block: 8px;
+}
+.ae-access-facts dt,
+.ae-access-checks > span {
+  color: var(--bsm-muted);
+  font-size: 11px;
+}
+.ae-access-facts dd {
+  margin: 0;
+  min-width: 0;
+}
+.ae-access-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.ae-access-chips > li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  border: 1px solid var(--ae-line);
+  border-radius: 5px;
+  padding: 2px 6px;
+  background: var(--ae-inset);
+  overflow-wrap: anywhere;
+}
+.ae-access-chips code {
+  font-size: 10px;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.ae-access-chips .ae-capability-missing,
+.api-explorer .ae-access-note.ae-access-warning {
+  color: var(--bsm-warning);
+}
+.api-explorer .ae-access-note {
+  margin: 4px 12px 12px;
+  color: var(--bsm-muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.ae-access-checks {
+  display: grid;
+  gap: 6px;
+  margin: 4px 12px 12px;
+}
+.ae-account-capabilities {
+  border-top: 1px solid var(--ae-line);
+}
+.ae-account-capabilities > summary {
+  padding: 10px 12px;
+  cursor: pointer;
+  color: var(--bsm-muted);
+  font-size: 11px;
+}
+.ae-access-count {
+  margin-inline-start: 5px;
+}
+.ae-account-capabilities-body {
+  padding: 2px 12px 12px;
+}
+.ae-account-capabilities-body .ae-search {
+  margin: 0 0 10px;
+}
+.ae-capability-groups {
+  display: grid;
+  gap: 12px;
+  max-height: 260px;
+  overflow: auto;
+  scrollbar-width: thin;
+}
+.ae-capability-groups h4 {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 6px;
+  color: var(--bsm-muted);
+  font-size: 10px;
+  text-transform: capitalize;
+  font-weight: 500;
+}
+@media (max-width: 600px) {
+  .ae-access-facts > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 5px;
+  }
+}

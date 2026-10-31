@@ -123,3 +123,15 @@ it("does not show a ports row for other users", () => {
   mount();
   expect(screen.queryByLabelText("Test ports")).not.toBeInTheDocument();
 });
+
+it("checks update and control capabilities independently", () => {
+  const server = { name: "Test", status: "STOPPED" };
+  const { rerender } = render(
+    <ServerCard server={server} canControl={false} canManage={true} />,
+  );
+  expect(screen.getByRole("button", { name: "Update Test" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Start Test" })).toBeDisabled();
+  rerender(<ServerCard server={server} canControl={true} canManage={false} />);
+  expect(screen.getByRole("button", { name: "Update Test" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Start Test" })).toBeEnabled();
+});

@@ -1,5 +1,5 @@
 import ScopedPluginSettings from "../features/plugins/ScopedPluginSettings";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import BackupSettings from "../components/BackupSettings";
 import "../styles/backup-settings.css";
 import DraftConflictNotice from "../components/DraftConflictNotice";
@@ -28,7 +28,7 @@ const BSMSettings = () => {
     : "general";
   const tabGroups = {
     general: ["general", "monitoring", "lifecycle"],
-    web: ["web"],
+    web: ["web", "security"],
     storage: ["paths", "retention"],
     advanced: ["custom", "diagnostics"],
   };
@@ -141,6 +141,9 @@ const BSMSettings = () => {
       <QueryStatus query={resourceQuery} />
       <div className="header">
         <h1>Global Settings</h1>
+        <Link className="action-button secondary" to="/frontend-settings">
+          Frontend settings
+        </Link>
         <button
           className="action-button secondary"
           onClick={handleReload}

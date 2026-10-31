@@ -186,3 +186,43 @@ it("does not redirect a confirmed action to a connection changed while the dialo
     "connection changed",
   );
 });
+
+it("shows a second-factor step only after the selected instance requests MFA", async () => {
+  const profile = saveInstance({
+    name: "MFA instance",
+    url: "https://mfa.test",
+  });
+  render(
+    <MemoryRouter>
+      <Instances />
+    </MemoryRouter>,
+  );
+  await screen.findByRole("article", { name: "MFA instance" });
+  const session = sessions.get(profile.id);
+  session.login
+    .mockRejectedValueOnce(
+      Object.assign(new Error("MFA required"), { mfaRequired: true }),
+    )
+    .mockResolvedValueOnce(undefined);
+  fireEvent.click(screen.getByRole("button", { name: "Switch account" }));
+  expect(screen.queryByLabelText("Authenticator or recovery code")).toBeNull();
+  fireEvent.change(screen.getByLabelText("Username"), {
+    target: { value: "user" },
+  });
+  fireEvent.change(screen.getByLabelText("Password"), {
+    target: { value: "password" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Sign in", exact: true }));
+  const code = await screen.findByLabelText("Authenticator or recovery code");
+  expect(screen.queryByLabelText("Password")).toBeNull();
+  fireEvent.change(code, { target: { value: "123456" } });
+  fireEvent.click(screen.getByRole("button", { name: "Verify and sign in" }));
+  await waitFor(() =>
+    expect(session.login).toHaveBeenLastCalledWith(
+      "user",
+      "password",
+      false,
+      "123456",
+    ),
+  );
+});

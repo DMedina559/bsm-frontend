@@ -10,6 +10,10 @@ import {
 } from "../../../src/features/api-explorer/schema";
 import backend from "../../../../packages/api-client/src/generated/openapi.json";
 
+vi.mock("../../../src/contexts/AuthContext", () => ({
+  useAuth: () => ({ user: { permissions: ["servers:read"] } }),
+}));
+
 vi.mock("../../../src/api/transport", () => ({ request: vi.fn() }));
 import { request } from "../../../src/api/transport";
 const schema = {
@@ -219,5 +223,61 @@ it("allows a direct hidden=true URL before the application persists the flag", (
   );
   expect(
     screen.getByRole("heading", { name: "API Explorer" }),
+  ).toBeInTheDocument();
+});
+
+it("keeps the selected operation and request fields when the live policy refreshes", async () => {
+  sessionSettings.setItem("show_hidden_flag", "true");
+  const document = structuredClone(schema);
+  document.paths["/api/second"] = {
+    get: {
+      operationId: "second",
+      parameters: [{ in: "query", name: "search", schema: { type: "string" } }],
+      responses: { 200: { description: "OK" } },
+    },
+  };
+  request.mockResolvedValue(document);
+  render(
+    <MemoryRouter>
+      <ApiExplorer />
+    </MemoryRouter>,
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Load connected backend" }),
+  );
+  fireEvent.click(await screen.findByRole("button", { name: "GET second" }));
+  fireEvent.change(screen.getByLabelText(/search \(query\)/), {
+    target: { value: "keep my draft" },
+  });
+  window.dispatchEvent(new Event("bsm:access-changed"));
+  await waitFor(() => expect(request).toHaveBeenCalledTimes(2));
+  await waitFor(() =>
+    expect(screen.getByLabelText(/search \(query\)/)).toHaveValue(
+      "keep my draft",
+    ),
+  );
+  expect(screen.getByRole("button", { name: "GET second" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+});
+
+it("keeps imported documents when the connected account policy changes", async () => {
+  sessionSettings.setItem("show_hidden_flag", "true");
+  render(
+    <MemoryRouter>
+      <ApiExplorer />
+    </MemoryRouter>,
+  );
+  fireEvent.click(screen.getByRole("button", { name: /Import/ }));
+  fireEvent.change(screen.getByLabelText("OpenAPI JSON"), {
+    target: { value: JSON.stringify(schema) },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Load JSON" }));
+  await screen.findByRole("button", { name: "POST plugin_example" });
+  window.dispatchEvent(new Event("bsm:access-changed"));
+  expect(request).not.toHaveBeenCalled();
+  expect(
+    screen.getByRole("button", { name: "POST plugin_example" }),
   ).toBeInTheDocument();
 });

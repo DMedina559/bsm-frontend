@@ -1,4 +1,6 @@
+import { sessionRuntime } from "../app/sessionRuntime";
 import { createSharedSocketManager } from "../app/sharedSocketManager";
+import { getBackendIdentity } from "../app/backendIdentity";
 import { getPreferenceIdentity } from "../app/backendIdentity";
 import { coreEventTopics } from "../app/coreEvents";
 import { startResourceRecovery } from "../app/resourceRecovery";
@@ -43,6 +45,35 @@ export const WebSocketProvider = ({ children }) => {
         setConnectionState(state.connectionState);
       },
       onMessage: (message, ticket) => {
+        if (message.type === "security_event") {
+          window.dispatchEvent(
+            new CustomEvent("bsm:security-notice", {
+              detail: {
+                backend: getBackendIdentity(),
+                action: message.action,
+                eventId: message.event_id,
+                generation: sessionRuntime.capture().generation,
+              },
+            }),
+          );
+          return;
+        }
+
+        if (
+          ["access_changed", "policy_changed", "credentials_changed"].includes(
+            message.type,
+          )
+        ) {
+          window.dispatchEvent(
+            new CustomEvent(
+              message.type === "credentials_changed"
+                ? "bsm:credentials-changed"
+                : "bsm:access-changed",
+              { detail: { backend: getBackendIdentity() } },
+            ),
+          );
+          return;
+        }
         if (!reconcileSocketMessage(message, ticket)) return;
         listeners.forEach((listener) => {
           try {

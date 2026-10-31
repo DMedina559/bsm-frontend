@@ -46,10 +46,10 @@ describe("Account", () => {
     });
 
     fireEvent.change(screen.getByLabelText("New Password"), {
-      target: { value: "newpass" },
+      target: { value: "new secure passphrase" },
     });
     fireEvent.change(screen.getByLabelText("Confirm New Password"), {
-      target: { value: "newpass" },
+      target: { value: "new secure passphrase" },
     });
     fireEvent.change(screen.getByLabelText("Current Password"), {
       target: { value: "oldpass" },
