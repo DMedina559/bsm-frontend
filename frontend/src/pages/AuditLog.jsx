@@ -34,7 +34,6 @@ const AuditLog = () => {
       setLogRefreshKey((key) => key + 1);
     }
   };
-  const formatDate = (value) => <Timestamp value={value} />;
   return (
     <div className="container">
       <div className="header">
@@ -134,9 +133,7 @@ const AuditLog = () => {
                   >
                     <header>
                       <strong>{log.action}</strong>
-                      <time dateTime={log.timestamp}>
-                        {formatDate(log.timestamp)}
-                      </time>
+                      <Timestamp value={log.timestamp} />
                     </header>
                     <p>User ID: {log.user_id ?? "System"}</p>
                     <TaskOutcome

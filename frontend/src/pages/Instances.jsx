@@ -1,3 +1,4 @@
+import Timestamp from "../components/Timestamp";
 import SignInForm from "../components/auth/SignInForm";
 import TokenAccessNotice from "../components/auth/TokenAccessNotice";
 import ConnectionProbe from "../features/instances/ConnectionProbe";
@@ -280,9 +281,11 @@ function InstanceCard({
       <div className="instance-health">
         <span>
           Last successful refresh:{" "}
-          {snapshot.updatedAt
-            ? new Date(snapshot.updatedAt).toLocaleTimeString()
-            : "Never"}
+          {snapshot.updatedAt ? (
+            <Timestamp value={snapshot.updatedAt} kind="time" />
+          ) : (
+            "Never"
+          )}
         </span>
         <span>
           {" "}
@@ -314,17 +317,21 @@ function InstanceCard({
           </dd>
           <dt>Last success</dt>
           <dd>
-            {snapshot.updatedAt
-              ? new Date(snapshot.updatedAt).toLocaleString()
-              : "Never"}
+            {snapshot.updatedAt ? (
+              <Timestamp value={snapshot.updatedAt} />
+            ) : (
+              "Never"
+            )}
           </dd>
           <dt>Next refresh</dt>
           <dd>
-            {profile.paused
-              ? "Paused"
-              : snapshot.nextRefreshAt
-                ? new Date(snapshot.nextRefreshAt).toLocaleTimeString()
-                : "Not scheduled"}
+            {profile.paused ? (
+              "Paused"
+            ) : snapshot.nextRefreshAt ? (
+              <Timestamp value={snapshot.nextRefreshAt} kind="time" />
+            ) : (
+              "Not scheduled"
+            )}
           </dd>
           <dt>Certificate trust</dt>
           <dd>
@@ -379,7 +386,9 @@ function InstanceCard({
                 {operation.error?.message && (
                   <p role="alert">{operation.error.message}</p>
                 )}
-                <small>{new Date(operation.updatedAt).toLocaleString()}</small>
+                <small>
+                  <Timestamp value={operation.updatedAt} />
+                </small>
               </li>
             ))}
           </ol>

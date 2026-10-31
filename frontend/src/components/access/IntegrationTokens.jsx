@@ -367,7 +367,7 @@ export default function IntegrationTokens() {
                     ? "Never expires"
                     : token.expires_at * 1000 <= now
                       ? "Expired"
-                      : `Expires ${time.format(token.expires_at, { unit: "seconds", kind: "date" })}`}
+                      : `Expires ${time.format(token.expires_at, { unit: "seconds" })}`}
               </p>
               <details>
                 <summary>

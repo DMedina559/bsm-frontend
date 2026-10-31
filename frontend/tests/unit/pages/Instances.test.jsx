@@ -227,3 +227,51 @@ it("shows a second-factor step only after the selected instance requests MFA", a
     ),
   );
 });
+
+it("uses the selected display timezone for connection and task timestamps", async () => {
+  const { TimeContext } = await import("../../../src/contexts/TimeContext");
+  const profile = saveInstance({
+    name: "Timezone test",
+    url: "https://time.test",
+  });
+  writeInstanceToken(profile.url, "test-token");
+  const view = (timezone) => (
+    <TimeContext.Provider value={{ timezone }}>
+      <MemoryRouter>
+        <Instances />
+      </MemoryRouter>
+    </TimeContext.Provider>
+  );
+  const { container, rerender } = render(view("UTC"));
+  const snapshot = sessions.get(profile.id).getSnapshot();
+  const update = createInstanceConnection.mock.calls[0][1].onChange;
+  await act(async () =>
+    update({
+      ...snapshot,
+      updatedAt: "2026-01-02T02:00:00Z",
+      nextRefreshAt: "2026-01-02T02:01:00Z",
+      operations: [
+        {
+          id: "test-task",
+          kind: "start_server",
+          serverName: "survival",
+          status: "completed",
+          updatedAt: Date.parse("2026-01-02T02:00:00Z"),
+        },
+      ],
+    }),
+  );
+  const timestamps = () => [...container.querySelectorAll("time.timestamp")];
+  expect(timestamps()).toHaveLength(4);
+  expect(timestamps().every((node) => node.textContent.includes("UTC"))).toBe(
+    true,
+  );
+  rerender(view("America/Los_Angeles"));
+  expect(timestamps()).toHaveLength(4);
+  expect(timestamps().every((node) => node.textContent.includes("PST"))).toBe(
+    true,
+  );
+  expect(
+    timestamps().every((node) => node.title.includes("2026-01-02T02:")),
+  ).toBe(true);
+});

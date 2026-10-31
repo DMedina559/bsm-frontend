@@ -1,13 +1,15 @@
 import React from "react";
+import { useTimeFormat } from "../../app/useTimeFormat";
 
 export default function TokenAccessNotice({ account }) {
+  const time = useTimeFormat();
   if (!account?.credential_id) return null;
   const knownExpiry = Object.hasOwn(account, "credential_expires_at");
   const expiry = !knownExpiry
     ? "Expiry unavailable"
     : account.credential_expires_at == null
       ? "Never expires"
-      : `Expires ${new Date(account.credential_expires_at * 1000).toLocaleString()}`;
+      : `Expires ${time.format(account.credential_expires_at, { unit: "seconds" })}`;
   return (
     <aside
       className="token-access-notice"
