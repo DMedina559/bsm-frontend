@@ -156,27 +156,19 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
           label: "Settings",
           icon: Settings,
         },
-        ...(sessionSettings.getItem("show_hidden_flag") === "true"
-          ? [
-              {
-                path: "/instances",
-                label: "Instances",
-                icon: Server,
-              },
-              {
-                path: "/api-explorer",
-                label: "API Explorer",
-                icon: Code,
-              },
-              {
-                path: "/playground",
-                label: "Playground",
-                icon: Code,
-              },
-            ]
-          : []),
       ],
     },
+    ...(sessionSettings.getItem("show_hidden_flag") === "true"
+      ? [
+          {
+            label: "Experimental",
+            items: [
+              { path: "/api-explorer", label: "API Explorer", icon: Code },
+              { path: "/playground", label: "Playground", icon: Code },
+            ],
+          },
+        ]
+      : []),
     {
       label: "Administration",
       items: [
