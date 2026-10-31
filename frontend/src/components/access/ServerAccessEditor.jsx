@@ -84,7 +84,7 @@ export default function ServerAccessEditor({ userId, userRole }) {
         path: { user_id: userId },
         signal: abort.signal,
         body: {
-          mode,
+          mode: mode === "assigned" ? "assigned" : "all",
           grants: Object.entries(grants)
             .filter(([, permissions]) => permissions.length)
             .map(([server_id, permissions]) => ({ server_id, permissions })),
