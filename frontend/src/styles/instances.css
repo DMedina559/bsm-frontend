@@ -210,7 +210,7 @@
   cursor: not-allowed;
 }
 .instances-page :is(input, button, a, summary):focus-visible,
-.instance-switcher :is(select, a):focus-visible {
+.instance-switcher select:focus-visible {
   outline: 2px solid var(--bsm-focus);
   outline-offset: 3px;
 }
@@ -360,10 +360,6 @@
   color: var(--bsm-text);
   font-size: 11px;
 }
-.instance-switcher a {
-  font-size: 11px;
-  color: var(--bsm-muted);
-}
 .instances-login-link {
   display: block;
   text-align: center;
@@ -384,9 +380,6 @@
   }
   .instance-switcher select {
     max-width: 100px;
-  }
-  .instance-switcher a {
-    display: none;
   }
 }
 

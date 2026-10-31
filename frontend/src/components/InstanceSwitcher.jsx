@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   getActiveInstance,
   instancesEnabled,
@@ -29,6 +29,10 @@ function ActiveInstanceSwitcher() {
         aria-label="Active BSM instance"
         value={active}
         onChange={async (event) => {
+          if (event.target.value === "__manage_instances__") {
+            navigate("/instances");
+            return;
+          }
           const id = event.target.value || null;
           if (
             draftRegistry.dirty() &&
@@ -55,8 +59,10 @@ function ActiveInstanceSwitcher() {
             {profile.paused ? " (paused)" : ""}
           </option>
         ))}
+        <optgroup label="Management">
+          <option value="__manage_instances__">Manage instances…</option>
+        </optgroup>
       </select>
-      <Link to="/instances">Instances</Link>
     </div>
   );
 }
