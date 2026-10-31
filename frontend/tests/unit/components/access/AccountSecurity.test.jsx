@@ -178,3 +178,76 @@ it("opens MFA enrollment immediately when administrator policy requires it", asy
   );
   expect(screen.queryByText("Password panel")).not.toBeInTheDocument();
 });
+
+it.each(["dismiss", "leave"])(
+  "keeps the recovery download readable until %s",
+  async (exit) => {
+    vi.stubGlobal(
+      "URL",
+      class extends URL {
+        static createObjectURL() {
+          return "blob:recovery";
+        }
+        static revokeObjectURL() {}
+      },
+    );
+    const create = vi
+      .spyOn(URL, "createObjectURL")
+      .mockReturnValue("blob:recovery");
+    const revoke = vi
+      .spyOn(URL, "revokeObjectURL")
+      .mockImplementation(() => {});
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(function () {
+        expect(this.isConnected).toBe(true);
+        expect(this.download).toBe("bsm-recovery-codes.txt");
+      });
+    try {
+      const view = show();
+      fireEvent.click(screen.getByRole("tab", { name: "Password & MFA" }));
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Set up authenticator" }),
+      );
+      await screen.findByDisplayValue("synthetic-one-time-setup-key");
+      fireEvent.change(screen.getByLabelText("Six-digit authenticator code"), {
+        target: { value: "123456" },
+      });
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: "Enable two-factor authentication",
+        }),
+      );
+      await screen.findByText("synthetic-recovery-code");
+      const download = screen.getByRole("button", {
+        name: "Download recovery codes",
+      });
+      fireEvent.click(download);
+      expect(create).toHaveBeenCalledTimes(1);
+      expect(revoke).not.toHaveBeenCalled();
+      expect(screen.getByText(/Download requested/)).toHaveAttribute(
+        "role",
+        "status",
+      );
+      expect(
+        document.querySelector('a[download="bsm-recovery-codes.txt"]'),
+      ).toBeNull();
+      fireEvent.click(download);
+      expect(create).toHaveBeenCalledTimes(1);
+      expect(revoke).not.toHaveBeenCalled();
+      if (exit === "dismiss")
+        fireEvent.click(
+          screen.getByRole("button", { name: "I saved my codes" }),
+        );
+      else fireEvent.click(screen.getByRole("tab", { name: "Sessions" }));
+      expect(revoke).toHaveBeenCalledExactlyOnceWith("blob:recovery");
+      view.unmount();
+      expect(revoke).toHaveBeenCalledTimes(1);
+    } finally {
+      create.mockRestore();
+      revoke.mockRestore();
+      click.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  },
+);

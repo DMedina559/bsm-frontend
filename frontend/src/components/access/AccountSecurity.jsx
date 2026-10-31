@@ -22,6 +22,17 @@ function SecondFactor({ status, identity, sessionGeneration }) {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [downloadMessage, setDownloadMessage] = useState("");
+  const downloadUrl = useRef(null);
+  // A save dialog may stay open indefinitely. Keep its source alive until the
+  // codes are dismissed, replaced, or this view is unmounted.
+  useEffect(
+    () => () => {
+      if (downloadUrl.current) URL.revokeObjectURL(downloadUrl.current);
+      downloadUrl.current = null;
+    },
+    [codes],
+  );
   const controller = useRef(null);
   useEffect(() => () => controller.current?.abort(), []);
   async function run(action) {
@@ -67,6 +78,7 @@ function SecondFactor({ status, identity, sessionGeneration }) {
       else {
         setEnrollment(null);
         setCode("");
+        setDownloadMessage("");
         setCodes(result.recovery_codes ?? null);
       }
       await queryClient.invalidateQueries({
@@ -80,20 +92,34 @@ function SecondFactor({ status, identity, sessionGeneration }) {
     }
   }
   function downloadCodes() {
-    const url = URL.createObjectURL(
-      new Blob(
-        [
-          "Bedrock Server Manager recovery codes\nEach code can be used once. Keep these private.\n\n" +
-            codes.join("\n"),
-        ],
-        { type: "text/plain" },
-      ),
-    );
     const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "bsm-recovery-codes.txt";
-    anchor.click();
-    URL.revokeObjectURL(url);
+    try {
+      if (!downloadUrl.current) {
+        downloadUrl.current = URL.createObjectURL(
+          new Blob(
+            [
+              "Bedrock Server Manager recovery codes\nEach code can be used once. Keep these private.\n\n" +
+                codes.join("\n") +
+                "\n",
+            ],
+            { type: "text/plain;charset=utf-8" },
+          ),
+        );
+      }
+      anchor.href = downloadUrl.current;
+      anchor.download = "bsm-recovery-codes.txt";
+      document.body.appendChild(anchor);
+      anchor.click();
+      setDownloadMessage(
+        "Download requested. Keep these codes visible until the file has been saved.",
+      );
+    } catch {
+      setDownloadMessage(
+        "The download could not be started. Try again or save the displayed codes manually.",
+      );
+    } finally {
+      anchor.remove();
+    }
   }
   return (
     <section aria-label="Two-factor authentication">
@@ -174,16 +200,22 @@ function SecondFactor({ status, identity, sessionGeneration }) {
             ))}
           </ul>
           <div className="form-actions">
-            <button className="action-button secondary" onClick={downloadCodes}>
+            <button
+              type="button"
+              className="action-button secondary"
+              onClick={downloadCodes}
+            >
               Download recovery codes
             </button>
             <button
               className="action-button secondary"
+              type="button"
               onClick={() => setCodes(null)}
             >
               I saved my codes
             </button>
           </div>
+          {downloadMessage && <p role="status">{downloadMessage}</p>}
         </div>
       )}
       {status?.required && (

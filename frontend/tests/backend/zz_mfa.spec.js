@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 
 test("login asks for MFA after credentials and accepts a recovery code", async ({
@@ -200,6 +201,22 @@ test("login asks for MFA after credentials and accepts a recovery code", async (
         exact: true,
       }),
     ).toBeVisible();
+    const displayedCodes = await enrollmentPage
+      .locator(".security-recovery li code")
+      .allTextContents();
+    const downloaded = enrollmentPage.waitForEvent("download");
+    await enrollmentPage
+      .getByRole("button", { name: "Download recovery codes", exact: true })
+      .click();
+    const download = await downloaded;
+    expect(download.suggestedFilename()).toBe("bsm-recovery-codes.txt");
+    expect(await download.failure()).toBeNull();
+    const downloadedCodes = readFileSync(await download.path(), "utf8");
+    expect(displayedCodes).toHaveLength(10);
+    for (const recoveryCode of displayedCodes)
+      expect(downloadedCodes).toContain(recoveryCode);
+    await expect(enrollmentPage.getByText(/Download requested/)).toBeVisible();
+
     await enrollmentPage
       .getByRole("button", { name: "I saved my codes", exact: true })
       .click();
