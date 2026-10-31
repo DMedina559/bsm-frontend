@@ -11,6 +11,7 @@ import { application } from "./app/application";
 import { setApiBaseUrl } from "./app/connection";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./app/queryClient";
+import SecurityVerification from "./components/access/SecurityVerification";
 import DraftNavigationGuard from "./components/DraftNavigationGuard";
 import { DialogProvider } from "./contexts/DialogContext";
 import React, { Suspense, lazy } from "react";
@@ -216,6 +217,7 @@ const App = () => {
                 <ToastProvider>
                   <DialogProvider>
                     <DraftNavigationGuard />
+                    <SecurityVerification />
                     <WebSocketProvider>
                       <ServerProvider>
                         <ErrorBoundary>

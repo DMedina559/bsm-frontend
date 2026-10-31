@@ -1,6 +1,7 @@
 import React from "react";
 import { beforeEach, expect, it, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { DialogProvider } from "../../../../src/contexts/DialogContext";
 import IntegrationTokens from "../../../../src/components/access/IntegrationTokens";
 import ServerAccessEditor from "../../../../src/components/access/ServerAccessEditor";
 import { queryClient } from "../../../../src/app/queryClient";
@@ -42,7 +43,11 @@ beforeEach(() => {
   });
 });
 it("shows a new credential once without retaining its secret in query or mutation caches", async () => {
-  render(<IntegrationTokens />);
+  render(
+    <DialogProvider>
+      <IntegrationTokens />
+    </DialogProvider>,
+  );
   await screen.findByLabelText("Credential name");
   fireEvent.change(screen.getByLabelText("Credential name"), {
     target: { value: "Home Assistant" },

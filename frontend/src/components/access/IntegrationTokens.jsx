@@ -4,10 +4,13 @@ import { callOperation } from "../../api/operations";
 import { queryClient } from "../../app/queryClient";
 import { getPreferenceIdentity } from "../../app/backendIdentity";
 import { useTimeFormat } from "../../app/useTimeFormat";
+import { useDialog } from "../../contexts/DialogContext";
 import { useAuth } from "../../contexts/AuthContext";
 
 export default function IntegrationTokens() {
   const { user, sessionGeneration } = useAuth();
+  const { confirmAction } = useDialog();
+  const [preset, setPreset] = useState("monitoring");
   const time = useTimeFormat();
   const identity = getPreferenceIdentity(user);
   const key = ["integration-tokens", identity, sessionGeneration];
@@ -93,6 +96,12 @@ export default function IntegrationTokens() {
     }
   }
   async function revoke(id) {
+    if (
+      !(await confirmAction(
+        "Revoke this integration credential and close its live connections?",
+      ))
+    )
+      return;
     setBusy(true);
     setError("");
     const abort = new AbortController();
@@ -110,6 +119,73 @@ export default function IntegrationTokens() {
       if (!abort.signal.aborted) setBusy(false);
     }
   }
+  async function rotate(id) {
+    if (
+      !(await confirmAction(
+        "Replace this credential immediately? Its old secret will stop working. Copy the new secret before leaving this page.",
+      ))
+    )
+      return;
+    const abort = new AbortController();
+    controller.current = abort;
+    setBusy(true);
+    setError("");
+    try {
+      const result = await callOperation("rotate_integration_token", {
+        path: { token_id: id },
+        signal: abort.signal,
+      });
+      if (!abort.signal.aborted) setCreated(result.token);
+      await queryClient.invalidateQueries({ queryKey: key });
+    } catch (failure) {
+      if (!abort.signal.aborted) setError(failure.message);
+    } finally {
+      if (!abort.signal.aborted) setBusy(false);
+    }
+  }
+  async function revokeAll() {
+    if (
+      !(await confirmAction(
+        "Revoke every integration credential? Home Assistant, Supervisor, and other integrations using them will stop working. Your login sessions will remain signed in.",
+      ))
+    )
+      return;
+    const abort = new AbortController();
+    controller.current = abort;
+    setBusy(true);
+    setError("");
+    try {
+      await callOperation("revoke_all_integration_tokens", {
+        signal: abort.signal,
+      });
+      setCreated(null);
+      await queryClient.invalidateQueries({ queryKey: key });
+    } catch (failure) {
+      if (!abort.signal.aborted) setError(failure.message);
+    } finally {
+      if (!abort.signal.aborted) setBusy(false);
+    }
+  }
+  const presets = {
+    monitoring: ["account:read", "health:read", "servers:read", "tasks:read"],
+    operator: [
+      "account:read",
+      "health:read",
+      "servers:read",
+      "servers:inspect",
+      "servers:control",
+      "logs:read",
+      "tasks:read",
+    ],
+    backups: [
+      "account:read",
+      "health:read",
+      "servers:read",
+      "backups:read",
+      "backups:create",
+      "tasks:read",
+    ],
+  };
   const failure =
     error ||
     tokens.error?.message ||
@@ -191,6 +267,42 @@ export default function IntegrationTokens() {
               onChange={(event) => setDays(Number(event.target.value))}
             />
           </label>
+          <label className="form-label">
+            Permission preset
+            <select
+              className="form-input"
+              value={preset}
+              onChange={(event) => {
+                const value = event.target.value;
+                setPreset(value);
+                if (presets[value])
+                  setPermissions(
+                    presets[value].filter((permission) =>
+                      policy.data.token_permissions.includes(permission),
+                    ),
+                  );
+              }}
+            >
+              <option value="monitoring">Monitoring</option>
+              <option
+                value="operator"
+                disabled={
+                  !policy.data.token_permissions.includes("servers:control")
+                }
+              >
+                Server operator
+              </option>
+              <option
+                value="backups"
+                disabled={
+                  !policy.data.token_permissions.includes("backups:create")
+                }
+              >
+                Backup automation
+              </option>
+              <option value="custom">Custom</option>
+            </select>
+          </label>
           <details>
             <summary>Allowed capabilities ({permissions.length})</summary>
             <div className="access-choice-list">
@@ -199,9 +311,10 @@ export default function IntegrationTokens() {
                   <input
                     type="checkbox"
                     checked={permissions.includes(permission)}
-                    onChange={() =>
-                      setPermissions(toggle(permissions, permission))
-                    }
+                    onChange={() => {
+                      setPreset("custom");
+                      setPermissions(toggle(permissions, permission));
+                    }}
                   />
                   {permission}
                   <small>{policy.data.permissions[permission]}</small>
@@ -258,24 +371,65 @@ export default function IntegrationTokens() {
                     ? "Expired"
                     : `Expires ${time.format(token.expires_at, { unit: "seconds", kind: "date" })}`}
               </p>
+              <details>
+                <summary>
+                  {token.permissions.length} permissions ·{" "}
+                  {token.server_ids === null
+                    ? "All permitted servers"
+                    : `${token.server_ids?.length ?? 0} selected servers`}
+                </summary>
+                <ul className="security-permissions">
+                  {token.permissions.map((permission) => (
+                    <li key={permission}>
+                      <code>{permission}</code>
+                    </li>
+                  ))}
+                </ul>
+                {token.server_ids?.map((id) => (
+                  <p key={id} className="help-text">
+                    {servers.data?.find((server) => server.id === id)?.name ??
+                      `Removed or inaccessible server (${id})`}
+                  </p>
+                ))}
+              </details>
               <small>
                 {token.last_used_at
                   ? `Last used ${time.format(token.last_used_at, { unit: "seconds" })}`
                   : "Not used yet"}
               </small>
             </div>
-            <button
-              className="action-button danger"
-              type="button"
-              disabled={busy || Boolean(token.revoked_at)}
-              onClick={() => revoke(token.id)}
-            >
-              Revoke {token.name}
-            </button>
+            <div className="security-session-actions">
+              {!token.revoked_at && token.expires_at * 1000 > now && (
+                <button
+                  className="action-button secondary"
+                  disabled={busy}
+                  onClick={() => rotate(token.id)}
+                >
+                  Rotate {token.name}
+                </button>
+              )}
+              <button
+                className="action-button danger"
+                type="button"
+                disabled={busy || Boolean(token.revoked_at)}
+                onClick={() => revoke(token.id)}
+              >
+                Revoke {token.name}
+              </button>
+            </div>
           </div>
         ))}
         {tokens.data?.length === 0 && <p>No integration credentials.</p>}
       </div>
+      {tokens.data?.some((token) => !token.revoked_at) && (
+        <button
+          className="action-button danger"
+          disabled={busy}
+          onClick={revokeAll}
+        >
+          Revoke all integration credentials
+        </button>
+      )}
     </section>
   );
 }

@@ -1,15 +1,16 @@
+import { getAuthenticationMode, setCredentials } from "../app/connection";
 import AuthBrand from "../components/AuthBrand";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { callOperation } from "../api/operations";
-import { useScopedMutation } from "../app/publicRequests";
+import { useSensitiveMutation } from "../app/publicRequests";
 const Setup = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState(null);
-  const write = useScopedMutation("setup", (body, { signal }) =>
+  const write = useSensitiveMutation("setup", (body, { signal }) =>
     callOperation("create_first_user", { body, signal }),
   );
   const loading = write.isPending;
@@ -24,7 +25,9 @@ const Setup = () => {
       return;
     }
     try {
-      await write.mutateAsync({ username, password });
+      const result = await write.mutateAsync({ username, password });
+      if (getAuthenticationMode() === "bearer" && result.access_token)
+        setCredentials(result.access_token);
       // Setup successful
       // Refresh auth state since the backend logs us in
       await checkUser();

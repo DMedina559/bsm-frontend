@@ -28,6 +28,7 @@ test("Explorer presents access summaries and a searchable capability catalog at 
     (
       await request.post(`${origin}/auth/token`, {
         form: { username, password },
+        headers: { "X-BSM-Auth-Mode": "cookie" },
       })
     ).ok(),
   ).toBe(true);

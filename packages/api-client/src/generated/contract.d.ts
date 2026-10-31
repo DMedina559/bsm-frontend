@@ -33,6 +33,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/access/users/{user_id}/mfa": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Admin Reset Mfa */
+    delete: operations["reset_account_mfa"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/access/users/{user_id}/servers": {
     parameters: {
       query?: never;
@@ -46,6 +63,57 @@ export interface paths {
     put: operations["set_account_server_access"];
     post?: never;
     delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/access/users/{user_id}/sessions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Admin Sessions */
+    get: operations["list_account_login_sessions"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/access/users/{user_id}/sessions/revoke": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Admin Revoke All */
+    post: operations["revoke_account_login_sessions"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/access/users/{user_id}/sessions/{session_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Admin Revoke */
+    delete: operations["revoke_account_login_session"];
     options?: never;
     head?: never;
     patch?: never;
@@ -165,6 +233,177 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/account/security": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Status */
+    get: operations["get_account_security"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/account/security/activity": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Activity */
+    get: operations["list_security_activity"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/account/security/mfa": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Disable */
+    delete: operations["disable_account_mfa"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/account/security/mfa/confirm": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Confirm */
+    post: operations["confirm_account_mfa"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/account/security/mfa/enroll": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Enroll */
+    post: operations["enroll_account_mfa"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/account/security/mfa/recovery-codes": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Recovery */
+    post: operations["rotate_account_recovery_codes"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/account/security/verify": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Verify */
+    post: operations["verify_account_security"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/account/sessions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Sessions */
+    get: operations["list_login_sessions"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/account/sessions/revoke": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Revoke Many */
+    post: operations["revoke_login_sessions"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/account/sessions/{session_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Revoke */
+    delete: operations["revoke_login_session"];
+    options?: never;
+    head?: never;
+    /** Rename */
+    patch: operations["rename_login_session"];
+    trace?: never;
+  };
   "/api/account/theme": {
     parameters: {
       query?: never;
@@ -203,6 +442,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/account/tokens/revoke-all": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Revoke Credentials */
+    post: operations["revoke_all_integration_tokens"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/account/tokens/{token_id}": {
     parameters: {
       query?: never;
@@ -215,6 +471,23 @@ export interface paths {
     post?: never;
     /** Revoke Token */
     delete: operations["revoke_integration_token"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/account/tokens/{token_id}/rotate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Rotate Token */
+    post: operations["rotate_integration_token"];
+    delete?: never;
     options?: never;
     head?: never;
     patch?: never;
@@ -2346,15 +2619,15 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
+    get?: never;
+    put?: never;
     /**
      * Logout
      * @description Logs the current user out.
      *     Since we are using Bearer tokens, the client is responsible for discarding the token.
      *     This endpoint serves as an explicit logout action for auditing purposes.
      */
-    get: operations["logout"];
-    put?: never;
-    post?: never;
+    post: operations["logout"];
     delete?: never;
     options?: never;
     head?: never;
@@ -3098,6 +3371,11 @@ export interface components {
       /** Grant Type */
       grant_type?: string | null;
       /**
+       * Otp
+       * @default
+       */
+      otp?: string;
+      /**
        * Password
        * Format: password
        */
@@ -3311,6 +3589,8 @@ export interface components {
       server_permissions?: {
         [key: string]: string[];
       };
+      /** Session Id */
+      session_id?: string | null;
       /**
        * Theme
        * @default default
@@ -4014,6 +4294,20 @@ export interface components {
        */
       truncated?: boolean;
     };
+    /** FactorCode */
+    FactorCode: {
+      /** Code */
+      code: string;
+    };
+    /** FactorEnrollment */
+    FactorEnrollment: {
+      /** Provisioning Uri */
+      provisioning_uri: string;
+      /** Qr Svg */
+      qr_svg: string;
+      /** Secret */
+      secret: string;
+    };
     /** FailedItem */
     FailedItem: {
       error: components["schemas"]["FailureInfo"];
@@ -4450,6 +4744,31 @@ export interface components {
       has_more: boolean;
       /** Start */
       start: number;
+    };
+    /** LoginSessionInfo */
+    LoginSessionInfo: {
+      /** Active */
+      active: boolean;
+      /** Connected */
+      connected: boolean;
+      /** Created At */
+      created_at: number;
+      /** Current */
+      current: boolean;
+      /** Expires At */
+      expires_at: number;
+      /** Id */
+      id: string;
+      /** Ip Address */
+      ip_address: string;
+      /** Last Seen At */
+      last_seen_at: number;
+      /** Name */
+      name: string;
+      /** Revoked At */
+      revoked_at?: number | null;
+      /** User Agent */
+      user_agent: string;
     };
     /** MetricsDiagnostics */
     MetricsDiagnostics: {
@@ -5148,6 +5467,11 @@ export interface components {
        */
       window_seconds?: 300;
     };
+    /** RecoveryCodes */
+    RecoveryCodes: {
+      /** Recovery Codes */
+      recovery_codes: string[];
+    };
     /** RecoveryReport */
     RecoveryReport: {
       /** Archive Count */
@@ -5385,6 +5709,11 @@ export interface components {
        */
       status?: "success" | "skipped" | "partial";
     };
+    /** RenameSession */
+    RenameSession: {
+      /** Name */
+      name: string;
+    };
     /** ResourceFailure */
     ResourceFailure: {
       error: components["schemas"]["FailureInfo"];
@@ -5459,6 +5788,14 @@ export interface components {
       roles: string[];
       /** Sufficient */
       sufficient: boolean;
+    };
+    /** RevokeSessions */
+    RevokeSessions: {
+      /**
+       * Mode
+       * @enum {string}
+       */
+      mode: "others" | "all";
     };
     /** RuntimeDiagnostics */
     RuntimeDiagnostics: {
@@ -5648,6 +5985,34 @@ export interface components {
       timezone?: string;
       /** Weekdays */
       weekdays?: number[];
+    };
+    /** SecurityEventInfo */
+    SecurityEventInfo: {
+      /** Action */
+      action: string;
+      /** Details */
+      details: {
+        [key: string]: unknown;
+      };
+      /** Id */
+      id: string;
+      /** Timestamp */
+      timestamp: number;
+    };
+    /** SecurityStatus */
+    SecurityStatus: {
+      /** Enabled */
+      enabled: boolean;
+      /** Idle Timeout Seconds */
+      idle_timeout_seconds: number;
+      /** Max Session Days */
+      max_session_days: number;
+      /** Recent Until */
+      recent_until: number;
+      /** Recovery Codes Remaining */
+      recovery_codes_remaining: number;
+      /** Session Id */
+      session_id?: string | null;
     };
     /** SendCommandResponse */
     SendCommandResponse: {
@@ -5867,7 +6232,10 @@ export interface components {
      * @description First account creation returns the same session credentials as login.
      */
     SetupAccountResponse: {
-      /** Access Token */
+      /**
+       * Access Token
+       * @description Bearer JWT; empty in explicitly negotiated cookie mode, where the credential is HttpOnly
+       */
       access_token: string;
       /** Message */
       message: string;
@@ -6319,7 +6687,10 @@ export interface components {
      * @description Response model for successful authentication, providing an access token.
      */
     TokenResponse: {
-      /** Access Token */
+      /**
+       * Access Token
+       * @description Bearer JWT; empty in explicitly negotiated cookie mode, where the credential is HttpOnly
+       */
       access_token: string;
       /** Message */
       message?: string | null;
@@ -6498,6 +6869,24 @@ export interface components {
       /** Username */
       username: string;
     };
+    /** VerifiedSecurity */
+    VerifiedSecurity: {
+      /** Verified Until */
+      verified_until: number;
+    };
+    /** VerifySecurity */
+    VerifySecurity: {
+      /**
+       * Otp
+       * @default
+       */
+      otp?: string;
+      /**
+       * Password
+       * Format: password
+       */
+      password: string;
+    };
   };
   responses: never;
   parameters: never;
@@ -6572,6 +6961,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -6671,6 +7069,118 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  reset_account_mfa: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        user_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BaseApiResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -6758,6 +7268,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -6863,6 +7382,325 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  list_account_login_sessions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        user_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LoginSessionInfo"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  revoke_account_login_sessions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        user_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BaseApiResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  revoke_account_login_session: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        user_id: number;
+        session_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BaseApiResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -6950,6 +7788,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -7052,6 +7899,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -7137,6 +7993,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -7240,6 +8105,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -7325,6 +8199,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -7428,6 +8311,1146 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  get_account_security: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SecurityStatus"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  list_security_activity: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SecurityEventInfo"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  disable_account_mfa: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BaseApiResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  confirm_account_mfa: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["FactorCode"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RecoveryCodes"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  enroll_account_mfa: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["FactorEnrollment"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  rotate_account_recovery_codes: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RecoveryCodes"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  verify_account_security: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["VerifySecurity"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["VerifiedSecurity"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  list_login_sessions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LoginSessionInfo"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  revoke_login_sessions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RevokeSessions"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BaseApiResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  revoke_login_session: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        session_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BaseApiResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  rename_login_session: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        session_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RenameSession"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BaseApiResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -7524,6 +9547,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -7609,6 +9641,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -7712,6 +9753,116 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  revoke_all_integration_tokens: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BaseApiResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -7799,6 +9950,118 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  rotate_integration_token: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        token_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CreatedIntegrationToken"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -7900,6 +10163,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -7987,6 +10259,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -8088,6 +10369,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -8173,6 +10463,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -8272,6 +10571,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -8357,6 +10665,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -8476,6 +10793,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -8565,6 +10891,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -8674,6 +11009,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -8759,6 +11103,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -8853,6 +11206,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -8957,6 +11319,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -9051,6 +11422,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -9136,6 +11516,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -9239,6 +11628,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -9324,6 +11722,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -9443,6 +11850,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -9528,6 +11944,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -9627,6 +12052,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -9712,6 +12146,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -9815,6 +12258,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -9907,6 +12359,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -9990,6 +12451,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -10093,6 +12563,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -10178,6 +12657,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -10277,6 +12765,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -10362,6 +12859,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -10461,6 +12967,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -10546,6 +13061,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -10642,6 +13166,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -10747,6 +13280,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -10834,6 +13376,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -10931,6 +13482,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -11036,6 +13596,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -11132,6 +13701,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -11219,6 +13797,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -11324,6 +13911,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -11409,6 +14005,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -11512,6 +14117,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -11599,6 +14213,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -11704,6 +14327,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -11791,6 +14423,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -11896,6 +14537,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -11987,6 +14637,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -12092,6 +14751,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -12190,6 +14858,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -12280,6 +14957,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -12385,6 +15071,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -12476,6 +15171,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -12581,6 +15285,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -12679,6 +15392,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -12766,6 +15488,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -12871,6 +15602,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -12958,6 +15698,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -13056,6 +15805,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -13162,6 +15920,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -13253,6 +16020,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -13355,6 +16131,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -13442,6 +16227,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -13547,6 +16341,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -13634,6 +16437,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -13739,6 +16551,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -13826,6 +16647,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -13927,6 +16757,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -14014,6 +16853,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -14115,6 +16963,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -14203,6 +17060,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -14309,6 +17175,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -14401,6 +17276,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -14507,6 +17391,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -14599,6 +17492,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -14705,6 +17607,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -14797,6 +17708,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -14903,6 +17823,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -15001,6 +17930,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -15088,6 +18026,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -15193,6 +18140,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -15287,6 +18243,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -15374,6 +18339,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -15479,6 +18453,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -15566,6 +18549,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -15667,6 +18659,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -15754,6 +18755,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -15859,6 +18869,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -15946,6 +18965,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -16051,6 +19079,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -16149,6 +19186,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -16236,6 +19282,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -16341,6 +19396,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -16428,6 +19492,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -16529,6 +19602,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -16616,6 +19698,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -16717,6 +19808,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -16804,6 +19904,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -16905,6 +20014,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -16999,6 +20117,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -17084,6 +20211,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -17189,6 +20325,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -17276,6 +20421,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -17375,6 +20529,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -17467,6 +20630,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -17552,6 +20724,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -17655,6 +20836,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -17744,6 +20934,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -17843,6 +21042,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -17928,6 +21136,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -18029,6 +21246,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -18114,6 +21340,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -18215,6 +21450,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -18309,6 +21553,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -18396,6 +21649,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -18501,6 +21763,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -18593,6 +21864,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -18678,6 +21958,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };
@@ -18779,6 +22068,15 @@ export interface operations {
           "application/json": components["schemas"]["ErrorEnvelope"];
         };
       };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         headers: {
@@ -18868,6 +22166,15 @@ export interface operations {
       };
       /** @description Unprocessable Entity */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };

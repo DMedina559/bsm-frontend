@@ -156,7 +156,7 @@ it.each([400, 403, 404, 409, 422, 500])(
   },
 );
 
-it("uses the generated login and reauthentication contracts through the authenticated transport", async () => {
+it("keeps embedded login and reauthentication cookie-only", async () => {
   const { callOperation } = await import("../../../src/api/operations");
   globalThis.fetch = vi.fn().mockResolvedValue({
     ok: true,
@@ -179,7 +179,10 @@ it("uses the generated login and reauthentication contracts through the authenti
   const [reauthUrl, reauthRequest] = fetch.mock.calls[1];
   expect(reauthUrl).toBe("/auth/reauth?remember_me=false");
   expect(reauthRequest.body).toBeUndefined();
-  expect(reauthRequest.headers.Authorization).toBe("Bearer current-token");
+  expect(reauthRequest.headers.Authorization).toBeUndefined();
+  expect(new Headers(reauthRequest.headers).get("X-BSM-Auth-Mode")).toBe(
+    "cookie",
+  );
 });
 
 it("encodes server parameters and preserves task tracking for generated backup calls", async () => {
@@ -311,4 +314,48 @@ it("publishes policy revision changes after the response has been delivered", as
   } finally {
     window.removeEventListener("bsm:access-changed", changed);
   }
+});
+
+it("adds a session-bound CSRF header only to embedded cookie requests", async () => {
+  localStorage.clear();
+  sessionStorage.clear();
+  globalThis.fetch = vi
+    .fn()
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ id: 1 }), {
+        status: 200,
+        headers: {
+          "content-type": "application/json",
+          "X-BSM-CSRF-Token": "proof-for-cookie-session",
+        },
+      }),
+    )
+    .mockImplementation(
+      async () =>
+        new Response(JSON.stringify({ status: "success" }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+    );
+  await request("/api/account");
+  await request("/api/account/theme", {
+    method: "POST",
+    body: { theme: "default" },
+  });
+  expect(new Headers(fetch.mock.calls[1][1].headers).get("X-CSRF-Token")).toBe(
+    "proof-for-cookie-session",
+  );
+  expect(fetch.mock.calls[1][1].headers.Authorization).toBeUndefined();
+  setApiBaseUrl("https://remote.example");
+  setCredentials("explicit-bearer");
+  await request("/api/account/theme", {
+    method: "POST",
+    body: { theme: "default" },
+  });
+  expect(fetch.mock.calls[2][1].headers.Authorization).toBe(
+    "Bearer explicit-bearer",
+  );
+  expect(
+    new Headers(fetch.mock.calls[2][1].headers).get("X-CSRF-Token"),
+  ).toBeNull();
 });

@@ -28,7 +28,7 @@ const BSMSettings = () => {
     : "general";
   const tabGroups = {
     general: ["general", "monitoring", "lifecycle"],
-    web: ["web"],
+    web: ["web", "security"],
     storage: ["paths", "retention"],
     advanced: ["custom", "diagnostics"],
   };

@@ -41,11 +41,14 @@ test("Swagger bearer authentication is isolated from the embedded cookie session
   }
   const login = await request.post(`${origin}/auth/token`, {
     form: { username, password },
+    headers: { "X-BSM-Auth-Mode": "cookie" },
   });
   expect(login.ok()).toBe(true);
-  const { access_token: token } = await login.json();
+  const csrf = login.headers()["x-bsm-csrf-token"];
   const invite = await request.post(`${origin}/api/register/generate-token`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: csrf
+      ? { "X-CSRF-Token": csrf }
+      : { Authorization: `Bearer ${(await login.json()).access_token}` },
     data: { role: "user" },
   });
   expect(invite.ok()).toBe(true);
@@ -56,7 +59,10 @@ test("Swagger bearer authentication is isolated from the embedded cookie session
     .at(-1);
   const registered = await request.post(
     `${origin}/api/register/${registrationToken}`,
-    { data: { username: "swagger-user", password } },
+    {
+      data: { username: "swagger-user", password },
+      headers: csrf ? { "X-CSRF-Token": csrf } : {},
+    },
   );
   expect(registered.ok()).toBe(true);
   const cookieBefore = (await context.cookies()).find(

@@ -52,6 +52,7 @@ it("uses instance-local memory when persistence reads or writes are blocked", ()
   vi.spyOn(sessionStorage, "removeItem").mockImplementation(() => {
     throw Error("blocked");
   });
+  setApiBaseUrl("https://fallback.example");
   setCredentials("memory-token");
   expect(getToken()).toBe("memory-token");
   clearCredentials();

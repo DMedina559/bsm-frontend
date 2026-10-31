@@ -165,28 +165,6 @@ export const AuthProvider = ({ children }) => {
         userData,
       });
 
-      // If we authenticated successfully (likely via cookie in a new tab)
-      // but have no token in storage, grab a fresh token via reauth.
-      const hasToken = getToken();
-
-      if (!hasToken && getAuthenticationMode() === "cookie-recovery") {
-        logger.debug(
-          "[Auth] Authenticated via cookie but no token in storage. Fetching new token.",
-        );
-        try {
-          const reauthData = await callOperation("reauthenticate", {
-            query: { remember_me: false },
-          });
-          if (!current()) return;
-          if (reauthData.access_token) {
-            setCredentials(reauthData.access_token);
-            resetSession();
-          }
-        } catch (reauthError) {
-          logger.warn("[Auth] Failed to reauth token", { error: reauthError });
-        }
-      }
-
       if (!current()) return;
       // Clear session-owned state before publishing the authenticated identity.
       // Do not perform cache mutations inside a React state updater.
@@ -320,7 +298,7 @@ export const AuthProvider = ({ children }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const login = async (username, password, rememberMe = false) => {
+  const login = async (username, password, rememberMe = false, otp = "") => {
     checkGeneration.current += 1;
     resetSession();
     identityRef.current = null;
@@ -331,16 +309,19 @@ export const AuthProvider = ({ children }) => {
     formData.append("username", username);
     formData.append("password", password);
     formData.append("remember_me", rememberMe);
+    if (otp) formData.append("otp", otp);
 
     const attempt = checkGeneration.current;
     const data = await callOperation("login", { body: formData });
 
     if (attempt !== checkGeneration.current) return data;
-    if (data.access_token) {
+    if (data.access_token || getAuthenticationMode() === "cookie-recovery") {
       logger.info(`[Auth] Login successful`, { username });
-      setCredentials(data.access_token, rememberMe);
+      if (getAuthenticationMode() === "bearer")
+        setCredentials(data.access_token, rememberMe);
+      else clearCredentials();
     } else {
-      logger.warn(`[Auth] Login failed or token missing`, { username, data });
+      logger.warn(`[Auth] Login failed or token missing`, { username });
     }
 
     await checkUser();
@@ -349,18 +330,17 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     checkGeneration.current += 1;
-    resetSession();
     identityRef.current = null;
     setUser(null);
     const attempt = checkGeneration.current;
     try {
       logger.info("[Auth] Logging out user", { username: user?.username });
-      if (getAuthenticationMode() === "cookie-recovery")
-        await callOperation("logout");
+      if (!user?.credential_id) await callOperation("logout");
     } catch (e) {
       logger.warn("[Auth] Logout failed on server", { error: e });
     }
     if (attempt !== checkGeneration.current) return;
+    resetSession();
     clearCredentials();
     queryClient.clear();
     operationCoordinator.clear();

@@ -57,6 +57,38 @@
     "bodyTypes": [],
     "responseType": "json"
   },
+  "reset_account_mfa": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["sessions:admin"]
+      },
+      {
+        "APIKeyCookie": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "unsupported",
+      "required_permissions": ["sessions:admin"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "DELETE",
+    "path": "/api/access/users/{user_id}/mfa",
+    "parameters": [
+      {
+        "name": "user_id",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
   "get_account_server_access": {
     "security": [
       {
@@ -119,6 +151,107 @@
     ],
     "bodyRequired": true,
     "bodyTypes": ["application/json"],
+    "responseType": "json"
+  },
+  "list_account_login_sessions": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["sessions:admin"]
+      },
+      {
+        "APIKeyCookie": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "unsupported",
+      "required_permissions": ["sessions:admin"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "GET",
+    "path": "/api/access/users/{user_id}/sessions",
+    "parameters": [
+      {
+        "name": "user_id",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "revoke_account_login_sessions": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["sessions:admin"]
+      },
+      {
+        "APIKeyCookie": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "unsupported",
+      "required_permissions": ["sessions:admin"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "POST",
+    "path": "/api/access/users/{user_id}/sessions/revoke",
+    "parameters": [
+      {
+        "name": "user_id",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "revoke_account_login_session": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["sessions:admin"]
+      },
+      {
+        "APIKeyCookie": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "unsupported",
+      "required_permissions": ["sessions:admin"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "DELETE",
+    "path": "/api/access/users/{user_id}/sessions/{session_id}",
+    "parameters": [
+      {
+        "name": "user_id",
+        "in": "path",
+        "required": true
+      },
+      {
+        "name": "session_id",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
     "responseType": "json"
   },
   "list_account_integration_tokens": {
@@ -300,6 +433,304 @@
     "bodyTypes": ["application/json"],
     "responseType": "json"
   },
+  "get_account_security": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["sessions:manage"]
+      },
+      {
+        "APIKeyCookie": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["user", "moderator", "admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "unsupported",
+      "required_permissions": ["sessions:manage"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "GET",
+    "path": "/api/account/security",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "list_security_activity": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["sessions:manage"]
+      },
+      {
+        "APIKeyCookie": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["user", "moderator", "admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "unsupported",
+      "required_permissions": ["sessions:manage"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "GET",
+    "path": "/api/account/security/activity",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "disable_account_mfa": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["sessions:manage"]
+      },
+      {
+        "APIKeyCookie": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["user", "moderator", "admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "unsupported",
+      "required_permissions": ["sessions:manage"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "DELETE",
+    "path": "/api/account/security/mfa",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "confirm_account_mfa": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["sessions:manage"]
+      },
+      {
+        "APIKeyCookie": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["user", "moderator", "admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "unsupported",
+      "required_permissions": ["sessions:manage"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "POST",
+    "path": "/api/account/security/mfa/confirm",
+    "parameters": [],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
+  },
+  "enroll_account_mfa": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["sessions:manage"]
+      },
+      {
+        "APIKeyCookie": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["user", "moderator", "admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "unsupported",
+      "required_permissions": ["sessions:manage"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "POST",
+    "path": "/api/account/security/mfa/enroll",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "rotate_account_recovery_codes": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["sessions:manage"]
+      },
+      {
+        "APIKeyCookie": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["user", "moderator", "admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "unsupported",
+      "required_permissions": ["sessions:manage"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "POST",
+    "path": "/api/account/security/mfa/recovery-codes",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "verify_account_security": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["sessions:manage"]
+      },
+      {
+        "APIKeyCookie": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["user", "moderator", "admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "unsupported",
+      "required_permissions": ["sessions:manage"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "POST",
+    "path": "/api/account/security/verify",
+    "parameters": [],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
+  },
+  "list_login_sessions": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["sessions:manage"]
+      },
+      {
+        "APIKeyCookie": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["user", "moderator", "admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "unsupported",
+      "required_permissions": ["sessions:manage"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "GET",
+    "path": "/api/account/sessions",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "revoke_login_sessions": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["sessions:manage"]
+      },
+      {
+        "APIKeyCookie": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["user", "moderator", "admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "unsupported",
+      "required_permissions": ["sessions:manage"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "POST",
+    "path": "/api/account/sessions/revoke",
+    "parameters": [],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
+  },
+  "revoke_login_session": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["sessions:manage"]
+      },
+      {
+        "APIKeyCookie": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["user", "moderator", "admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "unsupported",
+      "required_permissions": ["sessions:manage"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "DELETE",
+    "path": "/api/account/sessions/{session_id}",
+    "parameters": [
+      {
+        "name": "session_id",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "rename_login_session": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["sessions:manage"]
+      },
+      {
+        "APIKeyCookie": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["user", "moderator", "admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "unsupported",
+      "required_permissions": ["sessions:manage"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "PATCH",
+    "path": "/api/account/sessions/{session_id}",
+    "parameters": [
+      {
+        "name": "session_id",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
+  },
   "update_account_theme": {
     "security": [
       {
@@ -378,6 +809,32 @@
     "bodyTypes": ["application/json"],
     "responseType": "json"
   },
+  "revoke_all_integration_tokens": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["tokens:manage"]
+      },
+      {
+        "APIKeyCookie": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["user", "moderator", "admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "unsupported",
+      "required_permissions": ["tokens:manage"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "POST",
+    "path": "/api/account/tokens/revoke-all",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
   "revoke_integration_token": {
     "security": [
       {
@@ -399,6 +856,38 @@
     },
     "method": "DELETE",
     "path": "/api/account/tokens/{token_id}",
+    "parameters": [
+      {
+        "name": "token_id",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "rotate_integration_token": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["tokens:manage"]
+      },
+      {
+        "APIKeyCookie": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["user", "moderator", "admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "unsupported",
+      "required_permissions": ["tokens:manage"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "POST",
+    "path": "/api/account/tokens/{token_id}/rotate",
     "parameters": [
       {
         "name": "token_id",
@@ -4308,7 +4797,7 @@
       "resource_scope": "global",
       "version": 1
     },
-    "method": "GET",
+    "method": "POST",
     "path": "/auth/logout",
     "parameters": [],
     "bodyRequired": false,

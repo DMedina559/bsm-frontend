@@ -27,10 +27,19 @@ test("named credentials are shown once, usable as bearer, and revocable", async 
     (
       await request.post(`${origin}/auth/token`, {
         form: { username, password },
+        headers: { "X-BSM-Auth-Mode": "cookie" },
       })
     ).ok(),
   ).toBe(true);
   await page.goto(`${origin}/app/account`);
+  const integrations = page.getByRole("tab", {
+    name: "Integrations",
+    exact: true,
+  });
+  if (schema.paths?.["/api/account/sessions"]) {
+    await expect(integrations).toBeVisible();
+    await integrations.click();
+  }
   await expect(
     page.getByRole("heading", { name: "Integration credentials" }),
   ).toBeVisible();
@@ -71,6 +80,7 @@ test("named credentials are shown once, usable as bearer, and revocable", async 
   await page
     .getByRole("button", { name: "Revoke Browser monitoring", exact: true })
     .click();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
   await expect
     .poll(async () =>
       (

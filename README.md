@@ -211,7 +211,6 @@ Their logout clears that instance's saved credentials. The embedded default
 logout also calls the backend to clear its cookie. Neither revokes JWTs retained
 elsewhere. Endpoint scopes describe role capabilities, not restricted token grants.
 
-
 ### Integration credentials and server assignments
 
 Account settings can create named, expiring integration credentials with explicit
@@ -226,3 +225,14 @@ new servers receive no automatic access. Existing accounts retain their role's
 all-server behavior. Account changes refresh access metadata, navigation, cached
 queries, and the live API explorer. Backends without this metadata keep their
 existing compatibility behavior.
+
+Account security now groups Sessions, Integrations, My access, Activity, and
+Password & MFA. Users can rename and revoke logins, sign out other sessions, rotate
+integration credentials, and enroll an authenticator with one-use recovery codes.
+Administrators can inspect and revoke account sessions and reset MFA.
+
+The embedded app uses an HttpOnly login cookie without copying the JWT into
+JavaScript storage. Cookie mutations send an in-memory CSRF proof. Saved instances
+and external clients use bearer mode. Passwords and one-time security secrets are
+excluded from the shared query/mutation cache. Sensitive changes prompt for recent
+password and factor verification, then ask users to retry the action explicitly.

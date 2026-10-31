@@ -1,4 +1,4 @@
-import { usePublicQuery, useScopedMutation } from "../app/publicRequests";
+import { usePublicQuery, useSensitiveMutation } from "../app/publicRequests";
 import { callOperation } from "../api/operations";
 import AuthBrand from "../components/AuthBrand";
 import React, { useState } from "react";
@@ -21,7 +21,7 @@ const Register = () => {
     : tokenQuery.isError
       ? false
       : null;
-  const write = useScopedMutation(`register:${token}`, (body, { signal }) =>
+  const write = useSensitiveMutation(`register:${token}`, (body, { signal }) =>
     callOperation("register_user", { path: { token }, body, signal }),
   );
   const loading = write.isPending;

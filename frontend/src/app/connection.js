@@ -34,7 +34,7 @@ export function getConnectionIdentity() {
   );
   return `${url.origin}${url.pathname.replace(/\/+$/, "")}`;
 }
-/** Cookie recovery belongs only to the embedded default connection. */
+/** Legacy mode name; the embedded default connection authenticates only by cookie. */
 export function getAuthenticationMode() {
   return getAppConfig().mode === "embedded" &&
     !getActiveInstance() &&
@@ -45,6 +45,7 @@ export function getAuthenticationMode() {
 const credentialKey = () =>
   `bsm.credentials:${encodeURIComponent(getConnectionIdentity())}`;
 export function getToken() {
+  if (getAuthenticationMode() === "cookie-recovery") return null;
   const key = credentialKey();
   const current = read("sessionStorage", key) || read("localStorage", key);
   if (current) return current;

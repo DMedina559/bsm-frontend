@@ -1537,6 +1537,12 @@
             ],
             "title": "Grant Type"
           },
+          "otp": {
+            "default": "",
+            "maxLength": 128,
+            "title": "Otp",
+            "type": "string"
+          },
           "password": {
             "format": "password",
             "title": "Password",
@@ -1966,6 +1972,17 @@
             },
             "title": "Server Permissions",
             "type": "object"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
           },
           "theme": {
             "default": "default",
@@ -3709,6 +3726,40 @@
         "title": "EventsDiagnostics",
         "type": "object"
       },
+      "FactorCode": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "maxLength": 128,
+            "minLength": 6,
+            "title": "Code",
+            "type": "string"
+          }
+        },
+        "required": ["code"],
+        "title": "FactorCode",
+        "type": "object"
+      },
+      "FactorEnrollment": {
+        "additionalProperties": false,
+        "properties": {
+          "provisioning_uri": {
+            "title": "Provisioning Uri",
+            "type": "string"
+          },
+          "qr_svg": {
+            "title": "Qr Svg",
+            "type": "string"
+          },
+          "secret": {
+            "title": "Secret",
+            "type": "string"
+          }
+        },
+        "required": ["secret", "provisioning_uri", "qr_svg"],
+        "title": "FactorEnrollment",
+        "type": "object"
+      },
       "FailedItem": {
         "additionalProperties": false,
         "properties": {
@@ -4684,6 +4735,77 @@
         },
         "required": ["data", "start", "end", "file_id", "has_more"],
         "title": "LogHistoryPage",
+        "type": "object"
+      },
+      "LoginSessionInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "connected": {
+            "title": "Connected",
+            "type": "boolean"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "integer"
+          },
+          "current": {
+            "title": "Current",
+            "type": "boolean"
+          },
+          "expires_at": {
+            "title": "Expires At",
+            "type": "integer"
+          },
+          "id": {
+            "pattern": "^[a-f0-9]{32}$",
+            "title": "Id",
+            "type": "string"
+          },
+          "ip_address": {
+            "title": "Ip Address",
+            "type": "string"
+          },
+          "last_seen_at": {
+            "title": "Last Seen At",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          },
+          "user_agent": {
+            "title": "User Agent",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "user_agent",
+          "ip_address",
+          "created_at",
+          "last_seen_at",
+          "expires_at",
+          "current",
+          "connected",
+          "active"
+        ],
+        "title": "LoginSessionInfo",
         "type": "object"
       },
       "MetricsDiagnostics": {
@@ -6196,6 +6318,21 @@
         "title": "RecentDiagnosticWindow",
         "type": "object"
       },
+      "RecoveryCodes": {
+        "additionalProperties": false,
+        "properties": {
+          "recovery_codes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Recovery Codes",
+            "type": "array"
+          }
+        },
+        "required": ["recovery_codes"],
+        "title": "RecoveryCodes",
+        "type": "object"
+      },
       "RecoveryReport": {
         "additionalProperties": false,
         "properties": {
@@ -6686,6 +6823,21 @@
         "title": "RemoveServerBanResponse",
         "type": "object"
       },
+      "RenameSession": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": ".*\\S.*",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": ["name"],
+        "title": "RenameSession",
+        "type": "object"
+      },
       "ResourceFailure": {
         "additionalProperties": false,
         "properties": {
@@ -6849,6 +7001,19 @@
           "sufficient"
         ],
         "title": "RestoreVolume",
+        "type": "object"
+      },
+      "RevokeSessions": {
+        "additionalProperties": false,
+        "properties": {
+          "mode": {
+            "enum": ["others", "all"],
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "required": ["mode"],
+        "title": "RevokeSessions",
         "type": "object"
       },
       "RuntimeDiagnostics": {
@@ -7289,6 +7454,76 @@
         },
         "required": ["task", "server_name"],
         "title": "ScheduledTask",
+        "type": "object"
+      },
+      "SecurityEventInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "details": {
+            "additionalProperties": true,
+            "title": "Details",
+            "type": "object"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "timestamp": {
+            "title": "Timestamp",
+            "type": "integer"
+          }
+        },
+        "required": ["id", "action", "timestamp", "details"],
+        "title": "SecurityEventInfo",
+        "type": "object"
+      },
+      "SecurityStatus": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "idle_timeout_seconds": {
+            "title": "Idle Timeout Seconds",
+            "type": "integer"
+          },
+          "max_session_days": {
+            "title": "Max Session Days",
+            "type": "integer"
+          },
+          "recent_until": {
+            "title": "Recent Until",
+            "type": "integer"
+          },
+          "recovery_codes_remaining": {
+            "title": "Recovery Codes Remaining",
+            "type": "integer"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          }
+        },
+        "required": [
+          "enabled",
+          "recovery_codes_remaining",
+          "recent_until",
+          "idle_timeout_seconds",
+          "max_session_days"
+        ],
+        "title": "SecurityStatus",
         "type": "object"
       },
       "SendCommandResponse": {
@@ -7843,6 +8078,7 @@
         "description": "First account creation returns the same session credentials as login.",
         "properties": {
           "access_token": {
+            "description": "Bearer JWT; empty in explicitly negotiated cookie mode, where the credential is HttpOnly",
             "title": "Access Token",
             "type": "string"
           },
@@ -8863,6 +9099,7 @@
         "description": "Response model for successful authentication, providing an access token.",
         "properties": {
           "access_token": {
+            "description": "Bearer JWT; empty in explicitly negotiated cookie mode, where the credential is HttpOnly",
             "title": "Access Token",
             "type": "string"
           },
@@ -9150,6 +9387,40 @@
         "required": ["id", "username", "role", "is_active"],
         "title": "UserResponse",
         "type": "object"
+      },
+      "VerifiedSecurity": {
+        "additionalProperties": false,
+        "properties": {
+          "verified_until": {
+            "title": "Verified Until",
+            "type": "integer"
+          }
+        },
+        "required": ["verified_until"],
+        "title": "VerifiedSecurity",
+        "type": "object"
+      },
+      "VerifySecurity": {
+        "additionalProperties": false,
+        "properties": {
+          "otp": {
+            "default": "",
+            "maxLength": 128,
+            "title": "Otp",
+            "type": "string"
+          },
+          "password": {
+            "format": "password",
+            "maxLength": 1024,
+            "minLength": 1,
+            "title": "Password",
+            "type": "string",
+            "writeOnly": true
+          }
+        },
+        "required": ["password"],
+        "title": "VerifySecurity",
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -9216,6 +9487,8 @@
               "servers:manage": "Servers manage",
               "servers:properties": "Servers properties",
               "servers:read": "Servers read",
+              "sessions:admin": "Inspect and revoke account login sessions",
+              "sessions:manage": "Manage your login sessions and security settings",
               "settings:manage": "Settings manage",
               "settings:read": "Settings read",
               "tasks:read": "Tasks read",
@@ -9309,6 +9582,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -9434,6 +9717,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -9476,6 +9769,144 @@
           "integration_tokens": "supported",
           "required_permissions": ["servers:read"],
           "resource_scope": "collection",
+          "version": 1
+        }
+      }
+    },
+    "/api/access/users/{user_id}/mfa": {
+      "delete": {
+        "operationId": "reset_account_mfa",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseApiResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["sessions:admin"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Admin Reset Mfa",
+        "tags": ["Account Security"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": ["admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "unsupported",
+          "required_permissions": ["sessions:admin"],
+          "resource_scope": "global",
           "version": 1
         }
       }
@@ -9564,6 +9995,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -9701,6 +10142,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -9739,6 +10190,433 @@
           "classification": "permission",
           "integration_tokens": "unsupported",
           "required_permissions": ["access:manage"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/api/access/users/{user_id}/sessions": {
+      "get": {
+        "operationId": "list_account_login_sessions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LoginSessionInfo"
+                  },
+                  "title": "Response List Account Login Sessions",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["sessions:admin"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Admin Sessions",
+        "tags": ["Account Security"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": ["admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "unsupported",
+          "required_permissions": ["sessions:admin"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/api/access/users/{user_id}/sessions/revoke": {
+      "post": {
+        "operationId": "revoke_account_login_sessions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseApiResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["sessions:admin"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Admin Revoke All",
+        "tags": ["Account Security"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": ["admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "unsupported",
+          "required_permissions": ["sessions:admin"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/api/access/users/{user_id}/sessions/{session_id}": {
+      "delete": {
+        "operationId": "revoke_account_login_session",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseApiResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["sessions:admin"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Admin Revoke",
+        "tags": ["Account Security"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": ["admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "unsupported",
+          "required_permissions": ["sessions:admin"],
           "resource_scope": "global",
           "version": 1
         }
@@ -9832,6 +10710,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -9970,6 +10858,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -10087,6 +10985,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -10219,6 +11127,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -10340,6 +11258,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -10472,6 +11400,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -10510,6 +11448,1471 @@
           "classification": "permission",
           "integration_tokens": "unsupported",
           "required_permissions": ["account:manage"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/api/account/security": {
+      "get": {
+        "operationId": "get_account_security",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecurityStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["sessions:manage"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Status",
+        "tags": ["Account Security"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": ["user", "moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "unsupported",
+          "required_permissions": ["sessions:manage"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/api/account/security/activity": {
+      "get": {
+        "operationId": "list_security_activity",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SecurityEventInfo"
+                  },
+                  "title": "Response List Security Activity",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["sessions:manage"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Activity",
+        "tags": ["Account Security"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": ["user", "moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "unsupported",
+          "required_permissions": ["sessions:manage"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/api/account/security/mfa": {
+      "delete": {
+        "operationId": "disable_account_mfa",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseApiResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["sessions:manage"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Disable",
+        "tags": ["Account Security"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": ["user", "moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "unsupported",
+          "required_permissions": ["sessions:manage"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/api/account/security/mfa/confirm": {
+      "post": {
+        "operationId": "confirm_account_mfa",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FactorCode"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoveryCodes"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["sessions:manage"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Confirm",
+        "tags": ["Account Security"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": ["user", "moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "unsupported",
+          "required_permissions": ["sessions:manage"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/api/account/security/mfa/enroll": {
+      "post": {
+        "operationId": "enroll_account_mfa",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FactorEnrollment"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["sessions:manage"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Enroll",
+        "tags": ["Account Security"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": ["user", "moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "unsupported",
+          "required_permissions": ["sessions:manage"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/api/account/security/mfa/recovery-codes": {
+      "post": {
+        "operationId": "rotate_account_recovery_codes",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoveryCodes"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["sessions:manage"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Recovery",
+        "tags": ["Account Security"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": ["user", "moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "unsupported",
+          "required_permissions": ["sessions:manage"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/api/account/security/verify": {
+      "post": {
+        "operationId": "verify_account_security",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifySecurity"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifiedSecurity"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["sessions:manage"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Verify",
+        "tags": ["Account Security"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": ["user", "moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "unsupported",
+          "required_permissions": ["sessions:manage"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/api/account/sessions": {
+      "get": {
+        "operationId": "list_login_sessions",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LoginSessionInfo"
+                  },
+                  "title": "Response List Login Sessions",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["sessions:manage"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Sessions",
+        "tags": ["Account Security"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": ["user", "moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "unsupported",
+          "required_permissions": ["sessions:manage"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/api/account/sessions/revoke": {
+      "post": {
+        "operationId": "revoke_login_sessions",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeSessions"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseApiResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["sessions:manage"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Revoke Many",
+        "tags": ["Account Security"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": ["user", "moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "unsupported",
+          "required_permissions": ["sessions:manage"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/api/account/sessions/{session_id}": {
+      "delete": {
+        "operationId": "revoke_login_session",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseApiResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["sessions:manage"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Revoke",
+        "tags": ["Account Security"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": ["user", "moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "unsupported",
+          "required_permissions": ["sessions:manage"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      },
+      "patch": {
+        "operationId": "rename_login_session",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenameSession"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseApiResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["sessions:manage"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Rename",
+        "tags": ["Account Security"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": ["user", "moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "unsupported",
+          "required_permissions": ["sessions:manage"],
           "resource_scope": "global",
           "version": 1
         }
@@ -10599,6 +13002,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -10720,6 +13133,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -10846,6 +13269,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -10877,6 +13310,133 @@
         ],
         "summary": "Create Token",
         "tags": ["Access Management"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": ["user", "moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "unsupported",
+          "required_permissions": ["tokens:manage"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/api/account/tokens/revoke-all": {
+      "post": {
+        "operationId": "revoke_all_integration_tokens",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseApiResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["tokens:manage"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Revoke Credentials",
+        "tags": ["Account Security"],
         "x-bsm-access": {
           "additional_checks": [],
           "allowed_roles": ["user", "moderator", "admin"],
@@ -10974,6 +13534,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -11004,6 +13574,144 @@
           }
         ],
         "summary": "Revoke Token",
+        "tags": ["Access Management"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": ["user", "moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "unsupported",
+          "required_permissions": ["tokens:manage"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/api/account/tokens/{token_id}/rotate": {
+      "post": {
+        "operationId": "rotate_integration_token",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token_id",
+            "required": true,
+            "schema": {
+              "title": "Token Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedIntegrationToken"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["tokens:manage"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Rotate Token",
         "tags": ["Access Management"],
         "x-bsm-access": {
           "additional_checks": [],
@@ -11093,6 +13801,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -11216,6 +13934,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -11349,6 +14077,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -11469,6 +14207,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -11591,6 +14339,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -11711,6 +14469,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -12015,6 +14783,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -12145,6 +14923,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -12416,6 +15204,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -12536,6 +15334,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -12670,6 +15478,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -12831,6 +15649,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -12962,6 +15790,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -13081,6 +15919,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -13213,6 +16061,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -13332,6 +16190,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -13635,6 +16503,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -13755,6 +16633,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -13883,6 +16771,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -13993,6 +16891,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -14151,6 +17059,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -14272,6 +17190,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -14385,6 +17313,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -14507,6 +17445,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -14627,6 +17575,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -14749,6 +17707,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -14869,6 +17837,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -14991,6 +17969,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -15111,6 +18099,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -15242,6 +18240,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -15385,6 +18393,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -15516,6 +18534,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -15675,6 +18703,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -15814,6 +18852,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -15945,6 +18993,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -16071,6 +19129,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -16202,6 +19270,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -16311,6 +19389,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -16441,6 +19529,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -16583,6 +19681,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -16713,6 +19821,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -16852,6 +19970,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -16994,6 +20122,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -17131,6 +20269,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -17275,6 +20423,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -17417,6 +20575,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -17567,6 +20735,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -17699,6 +20877,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -17843,6 +21031,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -17985,6 +21183,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -18129,6 +21337,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -18261,6 +21479,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -18404,6 +21632,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -18535,6 +21773,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -18677,6 +21925,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -18830,6 +22088,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -18973,6 +22241,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -19115,6 +22393,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -19247,6 +22535,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -19389,6 +22687,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -19521,6 +22829,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -19665,6 +22983,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -19797,6 +23125,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -19931,6 +23269,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -20061,6 +23409,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -20194,6 +23552,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -20337,6 +23705,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -20489,6 +23867,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -20643,6 +24031,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -20794,6 +24192,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -20947,6 +24355,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -21098,6 +24516,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -21251,6 +24679,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -21403,6 +24841,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -21546,6 +24994,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -21678,6 +25136,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -21822,6 +25290,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -21955,6 +25433,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -22086,6 +25574,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -22229,6 +25727,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -22362,6 +25870,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -22493,6 +26011,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -22626,6 +26154,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -22769,6 +26307,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -22901,6 +26449,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -23045,6 +26603,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -23188,6 +26756,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -23320,6 +26898,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -23464,6 +27052,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -23596,6 +27194,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -23730,6 +27338,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -23862,6 +27480,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -23996,6 +27624,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -24129,6 +27767,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -24260,6 +27908,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -24394,6 +28052,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -24519,6 +28187,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -24653,6 +28331,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -24786,6 +28474,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -24906,6 +28604,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -25028,6 +28736,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -25148,6 +28866,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -25280,6 +29008,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -25411,6 +29149,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -25521,6 +29269,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -25636,6 +29394,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -25769,6 +29537,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -25893,6 +29671,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -26026,6 +29814,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -26154,6 +29952,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -26281,6 +30089,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -26420,6 +30238,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -26542,6 +30370,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -26589,7 +30427,7 @@
       }
     },
     "/auth/logout": {
-      "get": {
+      "post": {
         "description": "Logs the current user out.\nSince we are using Bearer tokens, the client is responsible for discarding the token.\nThis endpoint serves as an explicit logout action for auditing purposes.",
         "operationId": "logout",
         "responses": {
@@ -26660,6 +30498,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {
@@ -26797,6 +30645,16 @@
             },
             "description": "Unprocessable Entity"
           },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -26924,6 +30782,16 @@
               }
             },
             "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
           },
           "500": {
             "content": {

@@ -1,3 +1,5 @@
+import { useSensitiveMutation } from "../app/publicRequests";
+import AccountSecurity from "../components/access/AccountSecurity";
 import IntegrationTokens from "../components/access/IntegrationTokens";
 import "../styles/access.css";
 import TimeDisplaySettings from "../components/appearance/TimeDisplaySettings";
@@ -5,7 +7,7 @@ import RecoverySettings from "../components/RecoverySettings";
 import "../styles/appearance.css";
 import { usePreference } from "../app/usePreference";
 import { DEFAULT_METRIC_UNITS } from "../utils/metricUnits";
-import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
+import { useResourceQuery } from "../app/resourceQueries";
 import { callOperation } from "../api/operations";
 import React, { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
@@ -49,10 +51,10 @@ const Account = ({ appearanceOnly = false }) => {
   const themesNotice = themesQuery.error
     ? "Custom themes could not be loaded. Built-in themes are available."
     : null;
-  const passwordWrite = useResourceMutation(
+  const passwordWrite = useSensitiveMutation(
+    "account-password",
     (passwords, { session }) =>
       callOperation("change_password", { body: passwords, session }),
-    [],
   );
   const passwordSaving = passwordWrite.isPending;
   const handleThemeChange = async (newTheme) => {
@@ -104,6 +106,74 @@ const Account = ({ appearanceOnly = false }) => {
       "new-password",
     ],
   ];
+  const passwordPanel = (
+    <section className="settings-panel">
+      <div className="section-heading">
+        <Save size={20} />
+        <div>
+          <h2>Change Password</h2>
+          <p>Use a unique password for your account.</p>
+        </div>
+      </div>
+      <form
+        onSubmit={handlePasswordChange}
+        className="password-form"
+        aria-busy={passwordSaving}
+      >
+        <input
+          className="form-input"
+          type="text"
+          name="username"
+          value={user?.username || ""}
+          autoComplete="username"
+          hidden
+          readOnly
+        />
+        {fields.map(([key, id, label, autoComplete]) => (
+          <div className="form-group" key={key}>
+            <label className="form-label" htmlFor={id}>
+              {label}
+            </label>
+            <input
+              className="form-input"
+              id={id}
+              name={id}
+              type="password"
+              value={passwords[key]}
+              onChange={(event) =>
+                setPasswords({
+                  ...passwords,
+                  [key]: event.target.value,
+                })
+              }
+              required
+              autoComplete={autoComplete}
+              disabled={passwordSaving}
+              aria-invalid={
+                key === "confirmPassword" && passwordError ? true : undefined
+              }
+              aria-describedby={passwordError ? "password-error" : undefined}
+            />
+          </div>
+        ))}
+        {passwordError && (
+          <p className="validation-error" role="alert" id="password-error">
+            {passwordError}
+          </p>
+        )}
+        <div className="form-actions">
+          <button
+            type="submit"
+            className="action-button primary-button"
+            disabled={passwordSaving}
+          >
+            <Save size={16} />
+            {passwordSaving ? "Updating…" : "Update Password"}
+          </button>
+        </div>
+      </form>
+    </section>
+  );
   return (
     <div
       className={`container account-page ${appearanceOnly ? "appearance-page" : ""}`}
@@ -145,9 +215,13 @@ const Account = ({ appearanceOnly = false }) => {
           </dl>
         </section>
       )}
-      {!appearanceOnly && user?.permissions?.includes("tokens:manage") && (
+      {!appearanceOnly && user?.permissions?.includes("sessions:manage") ? (
+        <AccountSecurity key={`${user.id}:${sessionGeneration}`}>
+          {passwordPanel}
+        </AccountSecurity>
+      ) : !appearanceOnly && user?.permissions?.includes("tokens:manage") ? (
         <IntegrationTokens key={`${user.id}:${sessionGeneration}`} />
-      )}
+      ) : null}
       {appearanceOnly && (
         <div id="appearance" className="appearance-sections">
           <section
@@ -420,78 +494,11 @@ const Account = ({ appearanceOnly = false }) => {
         </div>
       )}
       {appearanceOnly && <PaletteEditor />}
-      {!appearanceOnly && (
-        <section className="settings-panel">
-          <div className="section-heading">
-            <Save size={20} />
-            <div>
-              <h2>Change Password</h2>
-              <p>Use a unique password for your account.</p>
-            </div>
-          </div>
-          <form
-            onSubmit={handlePasswordChange}
-            className="password-form"
-            aria-busy={passwordSaving}
-          >
-            <input
-              className="form-input"
-              type="text"
-              name="username"
-              value={user?.username || ""}
-              autoComplete="username"
-              hidden
-              readOnly
-            />
-            {fields.map(([key, id, label, autoComplete]) => (
-              <div className="form-group" key={key}>
-                <label className="form-label" htmlFor={id}>
-                  {label}
-                </label>
-                <input
-                  className="form-input"
-                  id={id}
-                  name={id}
-                  type="password"
-                  value={passwords[key]}
-                  onChange={(event) =>
-                    setPasswords({
-                      ...passwords,
-                      [key]: event.target.value,
-                    })
-                  }
-                  required
-                  autoComplete={autoComplete}
-                  disabled={passwordSaving}
-                  aria-invalid={
-                    key === "confirmPassword" && passwordError
-                      ? true
-                      : undefined
-                  }
-                  aria-describedby={
-                    passwordError ? "password-error" : undefined
-                  }
-                />
-              </div>
-            ))}
-            {passwordError && (
-              <p className="validation-error" role="alert" id="password-error">
-                {passwordError}
-              </p>
-            )}
-            <div className="form-actions">
-              <button
-                type="submit"
-                className="action-button primary-button"
-                disabled={passwordSaving}
-              >
-                <Save size={16} />
-                {passwordSaving ? "Updating…" : "Update Password"}
-              </button>
-            </div>
-          </form>
-        </section>
-      )}
+      {!appearanceOnly &&
+        !user?.permissions?.includes("sessions:manage") &&
+        (!Array.isArray(user?.permissions) ||
+          user.permissions.includes("account:manage")) &&
+        passwordPanel}
     </div>
   );
 };

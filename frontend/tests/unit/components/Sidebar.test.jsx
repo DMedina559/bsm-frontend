@@ -217,7 +217,7 @@ describe("Sidebar", () => {
     const api = await import("../../../src/api/transport");
     expect(api.request).toHaveBeenCalledWith(
       "/auth/logout",
-      expect.objectContaining({ method: "GET" }),
+      expect.objectContaining({ method: "POST" }),
     );
   });
 

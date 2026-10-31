@@ -57,6 +57,7 @@ const transport = createHttpTransport({
   },
 });
 let lastPolicyRevision = null;
+const csrfTokens = new Map();
 export function request(url, options = {}) {
   if (
     navigator.onLine === false &&
@@ -70,11 +71,29 @@ export function request(url, options = {}) {
   const backend = getBackendIdentity();
   const generation = sessionRuntime.capture().generation;
   let revision;
+  let recentRequired = false;
+  const headers = new Headers(options.headers);
+  headers.set(
+    "X-BSM-Auth-Mode",
+    getAuthenticationMode() === "bearer" ? "bearer" : "cookie",
+  );
+  const csrf = csrfTokens.get(backend);
+  if (csrf && getAuthenticationMode() !== "bearer")
+    headers.set("X-CSRF-Token", csrf);
+
   return transport
     .request(url, {
       ...options,
+      headers: Object.fromEntries(headers),
       onResponseMetadata: (metadata) => {
         revision = metadata.headers["x-bsm-policy-revision"];
+        recentRequired = metadata.headers["x-bsm-recent-auth"] === "required";
+        if (
+          metadata.headers["x-bsm-csrf-token"] &&
+          getBackendIdentity() === backend &&
+          sessionRuntime.capture().generation === generation
+        )
+          csrfTokens.set(backend, metadata.headers["x-bsm-csrf-token"]);
         options.onResponseMetadata?.(metadata);
       },
       credentials:
@@ -104,6 +123,20 @@ export function request(url, options = {}) {
           }, 0);
       }
       return data;
+    })
+    .catch((error) => {
+      if (
+        error.status === 403 &&
+        recentRequired &&
+        sessionRuntime.capture().generation === generation &&
+        getBackendIdentity() === backend
+      )
+        window.dispatchEvent(
+          new CustomEvent("bsm:security-verification-required", {
+            detail: { backend },
+          }),
+        );
+      throw error;
     });
 }
 /** Binary responses share authentication, cancellation, timeouts and API errors. */

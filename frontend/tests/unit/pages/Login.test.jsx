@@ -102,7 +102,7 @@ describe("Login", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Invalid username or password"),
+        screen.getByText("Invalid username, password, or verification code"),
       ).toBeInTheDocument();
     });
   });

@@ -11,6 +11,7 @@ const Login = () => {
   const [showRemoteModal, setShowRemoteModal] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -38,14 +39,14 @@ const Login = () => {
     setError(null);
     setSubmitting(true);
     try {
-      await login(username, password, rememberMe);
+      await login(username, password, rememberMe, otp);
       navigate(from, {
         replace: true,
       });
     } catch (error) {
       setError(
         error.status === 401
-          ? "Invalid username or password"
+          ? "Invalid username, password, or verification code"
           : error.message ||
               "Unable to sign in. Check your connection and try again.",
       );
@@ -114,6 +115,20 @@ const Login = () => {
           />
         </div>
 
+        <div>
+          <label htmlFor="otp" className="form-label">
+            Authenticator or recovery code
+          </label>
+          <input
+            id="otp"
+            className="form-input"
+            value={otp}
+            onChange={(event) => setOtp(event.target.value)}
+            autoComplete="one-time-code"
+            maxLength={128}
+            placeholder="Only if two-factor authentication is enabled"
+          />
+        </div>
         <div
           style={{
             display: "flex",
