@@ -195,3 +195,18 @@ viewport, wraps paths, and displays a compact summary and capture timings.
 Start/stop/restart use the existing endpoints and allow long pre-start hooks to
 finish without the client's ordinary 30-second timeout. Explicit caller timeout
 overrides remain supported; server/proxy limits still apply.
+
+### HTTP access metadata and connection authentication
+
+The API Explorer displays the connected account's permissions, operation
+requirements, role labels, and contextual policy notices from `x-bsm-access`.
+Older servers remain usable and show unknown access metadata. Server responses,
+including 403, remain authoritative; static permissions do not resolve ownership
+or custom policies.
+
+Only the embedded default connection permits same-origin cookie recovery.
+Saved-instance workspaces and standalone connections omit cookies for all API
+requests, including login and uploads, and use backend-scoped bearer tokens.
+Their logout clears that instance's saved credentials. The embedded default
+logout also calls the backend to clear its cookie. Neither revokes JWTs retained
+elsewhere. Endpoint scopes describe role capabilities, not restricted token grants.

@@ -10,6 +10,10 @@ import {
 } from "../../../src/features/api-explorer/schema";
 import backend from "../../../../packages/api-client/src/generated/openapi.json";
 
+vi.mock("../../../src/contexts/AuthContext", () => ({
+  useAuth: () => ({ user: { permissions: ["servers:read"] } }),
+}));
+
 vi.mock("../../../src/api/transport", () => ({ request: vi.fn() }));
 import { request } from "../../../src/api/transport";
 const schema = {

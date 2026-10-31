@@ -70,3 +70,27 @@ it("validates deployment paths and preserves independent backend configuration",
   globalThis.BSM_CONFIG.appBase = "//foreign.example";
   expect(() => getAppConfig()).toThrow();
 });
+
+it("permits cookie recovery only for the embedded default connection", async () => {
+  const { getAuthenticationMode } = await import("../../../src/app/connection");
+  expect(getAuthenticationMode()).toBe("cookie-recovery");
+  globalThis.BSM_CONFIG = { mode: "standalone" };
+  expect(getAuthenticationMode()).toBe("bearer");
+  delete globalThis.BSM_CONFIG;
+  localStorage.setItem("api_base_url", window.location.origin);
+  expect(getAuthenticationMode()).toBe("bearer");
+});
+
+it("uses bearer-only authentication for a saved workspace at the embedded host", async () => {
+  const { getAuthenticationMode } = await import("../../../src/app/connection");
+  const { saveInstance, selectInstance } =
+    await import("../../../src/app/instanceProfiles");
+  const { sessionSettings } = await import("../../../src/app/browserStorage");
+  sessionSettings.setItem("show_hidden_flag", "true");
+  const instance = saveInstance({
+    name: "Same host",
+    url: window.location.origin,
+  });
+  selectInstance(instance.id);
+  expect(getAuthenticationMode()).toBe("bearer");
+});

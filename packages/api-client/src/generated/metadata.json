@@ -27,7 +27,7 @@
       "bsm_settings"
     ]
   },
-  "schemaHash": "544a86bfe3de7ea5c8b0fe2432671f2af305f65d62c2590610bfc48a401a1b54",
+  "schemaHash": "fd7c40d5177ce6100a1daf59ef3fe455eb988acc5d0006d76d8c4e9ae075a8a7",
   "openapiVersion": "3.1.0",
   "title": "Bedrock Server Manager",
   "source": "DMedina559/bedrock-server-manager: bedrock_server_manager.web.contract",
@@ -57,6 +57,7 @@
     "export_world",
     "generate_registration_token",
     "get_account",
+    "get_account_permissions",
     "get_allowlist",
     "get_application_diagnostics",
     "get_application_health",

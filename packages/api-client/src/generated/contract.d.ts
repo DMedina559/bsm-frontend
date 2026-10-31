@@ -8,7 +8,7 @@ export interface paths {
     };
     /**
      * Get Account Api
-     * @description Return the current user's account details.
+     * @description Return the current user's account details and role-derived permissions.
      */
     get: operations["get_account"];
     put?: never;
@@ -33,6 +33,26 @@ export interface paths {
      * @description Changes the current user's password.
      */
     post: operations["change_password"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/account/permissions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Account Permissions
+     * @description Return current role-derived capabilities, not resource-specific guarantees.
+     */
+    get: operations["get_account_permissions"];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -3078,6 +3098,32 @@ export interface components {
       action: "run_now" | "pause" | "resume" | "retry";
       /** Revision */
       revision?: string | null;
+    };
+    /**
+     * CurrentAccountResponse
+     * @description Current account with sorted role-derived HTTP capabilities.
+     */
+    CurrentAccountResponse: {
+      /** Id */
+      id: number;
+      /** Identity Type */
+      identity_type?: string | null;
+      /** Is Active */
+      is_active: boolean;
+      /** Permissions */
+      permissions?: string[];
+      /**
+       * Role
+       * @enum {string}
+       */
+      role: "admin" | "moderator" | "user";
+      /**
+       * Theme
+       * @default default
+       */
+      theme?: string;
+      /** Username */
+      username: string;
     };
     /**
      * CustomZipsResponse
@@ -6246,7 +6292,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["UserResponse"];
+          "application/json": components["schemas"]["CurrentAccountResponse"];
         };
       };
       /** @description Bad Request */
@@ -6343,6 +6389,98 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["BaseApiResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  get_account_permissions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": string[];
         };
       };
       /** @description Bad Request */

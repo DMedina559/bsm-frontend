@@ -329,3 +329,23 @@ it("applies only the newest concurrent authentication check", async () => {
   });
   expect(screen.getByText("latest")).toBeInTheDocument();
 });
+
+it("requires sign-in for a saved remote workspace without recovering a cookie account", async () => {
+  vi.clearAllMocks();
+  queryClient.clear();
+  sessionRuntime.reset();
+  localStorage.clear();
+  sessionStorage.clear();
+  localStorage.setItem("api_base_url", "https://remote.example");
+  api.get.mockResolvedValueOnce({ needs_setup: false });
+  await act(async () => {
+    render(
+      <AuthProvider>
+        <TestComponent />
+      </AuthProvider>,
+    );
+  });
+  expect(screen.getByText("No User")).toBeInTheDocument();
+  expect(api.request).not.toHaveBeenCalled();
+  localStorage.clear();
+});

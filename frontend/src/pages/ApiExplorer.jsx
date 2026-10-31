@@ -1,3 +1,4 @@
+import { useAuth } from "../contexts/AuthContext";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import {
@@ -36,6 +37,7 @@ import {
 import "../styles/api-explorer.css";
 
 function Explorer() {
+  const { user } = useAuth();
   const [schema, setSchema] = useState(null);
   const [source, setSource] = useState("");
   const [sourceName, setSourceName] = useState("");
@@ -447,6 +449,35 @@ function Explorer() {
                         <code>{operation.path}</code>
                       </div>
                       <div className="ae-operation-id">{operation.id}</div>
+                      <div
+                        className="ae-description"
+                        aria-label="Operation access"
+                      >
+                        <p>Access: {operation.access.classification}</p>
+                        <p>
+                          Required permissions:{" "}
+                          {operation.access.required_permissions?.join(", ") ||
+                            "Not specified"}
+                        </p>
+                        <p>
+                          Allowed roles:{" "}
+                          {operation.access.allowed_roles?.join(", ") ||
+                            "Unknown or contextual"}
+                        </p>
+                        {operation.access.additional_checks?.length > 0 && (
+                          <p>
+                            Additional checks:{" "}
+                            {operation.access.additional_checks.join(", ")}
+                          </p>
+                        )}
+                        <details>
+                          <summary>Current account permissions</summary>
+                          <p>
+                            {user?.permissions?.join(", ") ||
+                              "Unavailable from this backend"}
+                          </p>
+                        </details>
+                      </div>
                       {operation.definition.description && (
                         <p className="ae-description">
                           {operation.definition.description}

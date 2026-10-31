@@ -11,7 +11,11 @@ import { sessionRuntime } from "../app/sessionRuntime";
 
 import { logger } from "../utils/logger";
 
-import { getToken, resolveApiUrl } from "../app/connection";
+import {
+  getToken,
+  resolveApiUrl,
+  getAuthenticationMode,
+} from "../app/connection";
 export {
   getApiBaseUrl,
   setApiBaseUrl,
@@ -31,13 +35,19 @@ export {
 const transport = createHttpTransport({
   resolveApiUrl,
   logger,
-  captureSession: () => sessionRuntime.capture(),
+  captureSession: () => ({
+    ...sessionRuntime.capture(),
+    authenticationMode: getAuthenticationMode(),
+  }),
   getToken,
   prepareRequest: ({ session, signal }) => {
     const stateTicket = stateReconciler.capture(signal);
+    const authenticationMode =
+      session.authenticationMode ?? getAuthenticationMode();
     return () => {
       if (
         !sessionRuntime.isCurrent(session) ||
+        authenticationMode !== getAuthenticationMode() ||
         !stateReconciler.current(stateTicket) ||
         (session.backend && session.backend !== getBackendIdentity())
       )
@@ -56,7 +66,10 @@ export function request(url, options = {}) {
     return Promise.reject(
       new Error("Reconnect before making changes. Requests are not queued."),
     );
-  return transport.request(url, options);
+  return transport.request(url, {
+    ...options,
+    credentials: getAuthenticationMode() === "bearer" ? "omit" : "same-origin",
+  });
 }
 /** Binary responses share authentication, cancellation, timeouts and API errors. */
 export function getBlob(url, options = {}) {

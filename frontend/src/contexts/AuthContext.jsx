@@ -4,6 +4,7 @@ import {
 } from "../app/instanceProfiles";
 import {
   getToken,
+  getAuthenticationMode,
   setCredentials,
   clearCredentials,
   isSessionStorageEvent,
@@ -36,7 +37,9 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const identityRef = useRef(null);
+  const permissionRoleRef = useRef(null);
   const backendRef = useRef(getBackendIdentity());
+  const authenticationModeRef = useRef(getAuthenticationMode());
   const instanceIssueRef = useRef(getInstanceIssue());
   const checkGeneration = useRef(0);
   const [loading, setLoading] = useState(true);
@@ -47,7 +50,11 @@ export const AuthProvider = ({ children }) => {
   const [accountEnabled, setAccountEnabled] = useState(false);
   const accountKey = [
     ...queryKeys.account(),
-    { backend: getBackendIdentity(), generation: sessionGeneration },
+    {
+      backend: getBackendIdentity(),
+      generation: sessionGeneration,
+      authenticationMode: getAuthenticationMode(),
+    },
   ];
   const accountQuery = useQuery(
     {
@@ -71,6 +78,16 @@ export const AuthProvider = ({ children }) => {
     queryClient,
   );
   const user = accountQuery.data ?? null;
+  useEffect(() => {
+    const previous = permissionRoleRef.current;
+    const identity = JSON.stringify([
+      getBackendIdentity(),
+      user?.id ?? user?.username,
+    ]);
+    permissionRoleRef.current = user ? { identity, role: user.role } : null;
+    if (user && previous?.identity === identity && previous.role !== user.role)
+      void queryClient.invalidateQueries({ queryKey: queryKeys.account() });
+  }, [user?.id, user?.username, user?.role, user]);
   const setUser = (data) => {
     if (data === null) {
       setAccountEnabled(false);
@@ -82,6 +99,7 @@ export const AuthProvider = ({ children }) => {
         ...queryKeys.account(),
         {
           backend: getBackendIdentity(),
+          authenticationMode: getAuthenticationMode(),
           generation: sessionRuntime.capture().generation,
         },
       ],
@@ -136,6 +154,8 @@ export const AuthProvider = ({ children }) => {
       logger.debug("[Auth] Checking user status");
       // Check if we have a token in either storage (the transport handles retrieval)
       const ticket = captureStateRequest();
+      if (!getToken() && getAuthenticationMode() === "bearer")
+        throw new Error("Sign in to this instance.");
       let userData = await callOperation("get_account");
       if (!current()) return;
       if (userData?.id == null && !userData?.username)
@@ -148,7 +168,7 @@ export const AuthProvider = ({ children }) => {
       // but have no token in storage, grab a fresh token via reauth.
       const hasToken = getToken();
 
-      if (!hasToken) {
+      if (!hasToken && getAuthenticationMode() === "cookie-recovery") {
         logger.debug(
           "[Auth] Authenticated via cookie but no token in storage. Fetching new token.",
         );
@@ -180,6 +200,7 @@ export const AuthProvider = ({ children }) => {
             ...queryKeys.account(),
             {
               backend: getBackendIdentity(),
+              authenticationMode: getAuthenticationMode(),
               generation: sessionRuntime.capture().generation,
             },
           ],
@@ -235,11 +256,13 @@ export const AuthProvider = ({ children }) => {
         (isInstanceProfileKey(event.key) ||
           event.type === "bsm:instances-changed") &&
         backendRef.current === getBackendIdentity() &&
+        authenticationModeRef.current === getAuthenticationMode() &&
         instanceIssueRef.current === getInstanceIssue()
       )
         return;
       instanceIssueRef.current = getInstanceIssue();
       backendRef.current = getBackendIdentity();
+      authenticationModeRef.current = getAuthenticationMode();
       if (event.key === "api_base_url") {
         // Credentials are backend-scoped. Discard ambiguous legacy tokens in this tab.
         try {
@@ -314,7 +337,8 @@ export const AuthProvider = ({ children }) => {
     const attempt = checkGeneration.current;
     try {
       logger.info("[Auth] Logging out user", { username: user?.username });
-      await callOperation("logout");
+      if (getAuthenticationMode() === "cookie-recovery")
+        await callOperation("logout");
     } catch (e) {
       logger.warn("[Auth] Logout failed on server", { error: e });
     }

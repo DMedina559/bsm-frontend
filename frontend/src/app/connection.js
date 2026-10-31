@@ -34,6 +34,14 @@ export function getConnectionIdentity() {
   );
   return `${url.origin}${url.pathname.replace(/\/+$/, "")}`;
 }
+/** Cookie recovery belongs only to the embedded default connection. */
+export function getAuthenticationMode() {
+  return getAppConfig().mode === "embedded" &&
+    !getActiveInstance() &&
+    !getApiBaseUrl()
+    ? "cookie-recovery"
+    : "bearer";
+}
 const credentialKey = () =>
   `bsm.credentials:${encodeURIComponent(getConnectionIdentity())}`;
 export function getToken() {

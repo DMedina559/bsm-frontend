@@ -225,3 +225,57 @@ test("scheduler operations serialize server filters and configuration", async ()
   });
   assert.equal(seen.at(-1).options.method, "DELETE");
 });
+
+test("cookie-free uploads use fetch rather than same-origin XHR", async () => {
+  const previous = globalThis.XMLHttpRequest;
+  globalThis.XMLHttpRequest = class {
+    constructor() {
+      throw Error("XHR would send same-origin cookies");
+    }
+  };
+  try {
+    const transport = createHttpTransport({
+      baseUrl: "https://bsm.example",
+      fetch: async (_url, config) => {
+        assert.equal(config.credentials, "omit");
+        return Response.json({ ok: true });
+      },
+    });
+    assert.deepEqual(
+      await transport.request("/upload", {
+        method: "POST",
+        body: new FormData(),
+        credentials: "omit",
+        onUploadProgress() {},
+      }),
+      { ok: true },
+    );
+  } finally {
+    globalThis.XMLHttpRequest = previous;
+  }
+});
+
+test("operation discovery preserves security and access metadata with an unknown fallback", async () => {
+  const { buildOperationRegistry } =
+    await import("@bedrock-server-manager/api-client/operationRegistry");
+  const security = [{ bearer: ["servers:control"] }, { cookie: [] }];
+  const access = {
+    version: 1,
+    classification: "permission",
+    authentication: "required",
+    required_permissions: ["servers:control"],
+    allowed_roles: ["moderator", "admin"],
+    additional_checks: [],
+  };
+  const registry = buildOperationRegistry({
+    paths: {
+      "/one": {
+        post: { operationId: "one", security, "x-bsm-access": access },
+      },
+      "/old": { get: { operationId: "old" } },
+    },
+  });
+  assert.deepEqual(registry.one.security, security);
+  assert.deepEqual(registry.one.access, access);
+  assert.equal(registry.old.access.classification, "unknown");
+});

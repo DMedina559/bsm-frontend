@@ -264,3 +264,20 @@ it("classifies service outages separately from network failures", () => {
   expect(error.category).toBe("unavailable");
   expect(error.code).toBe("unavailable");
 });
+
+it("omits cookies on configured connections even on the same origin", async () => {
+  localStorage.clear();
+  sessionStorage.clear();
+  setApiBaseUrl(window.location.origin);
+  globalThis.fetch = vi.fn().mockResolvedValue(Response.json({}));
+  await request("/api/account", { credentials: "include" });
+  expect(fetch.mock.calls[0][1].credentials).toBe("omit");
+  setApiBaseUrl("");
+});
+
+it("accepts caller-captured sessions while retaining authentication mode checks", async () => {
+  const { sessionRuntime } = await import("../../../src/app/sessionRuntime");
+  globalThis.fetch = vi.fn().mockResolvedValue(Response.json({}));
+  await request("/api/account", { session: sessionRuntime.capture() });
+  expect(fetch).toHaveBeenCalledOnce();
+});

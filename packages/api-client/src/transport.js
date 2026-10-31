@@ -209,7 +209,9 @@ export function createHttpTransport({
       });
 
       const response =
-        onUploadProgress && typeof XMLHttpRequest !== "undefined"
+        onUploadProgress &&
+        config.credentials !== "omit" &&
+        typeof XMLHttpRequest !== "undefined"
           ? await uploadRequest(finalUrl, config, onUploadProgress, signal)
           : await fetcher(finalUrl, config);
       assertCurrent();
