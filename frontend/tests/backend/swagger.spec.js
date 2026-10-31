@@ -87,6 +87,19 @@ test("Swagger bearer authentication is isolated from the embedded cookie session
     has: page.locator('.opblock-summary-path[data-path="/api/account"]'),
   });
   await operation.locator(".opblock-summary").click();
+  if (
+    await page.evaluate(() => typeof window.SwaggerAccessPlugin === "function")
+  ) {
+    const policy = operation.locator(".bsm-doc-access");
+    await expect(
+      policy.getByRole("heading", { name: "Access policy" }),
+    ).toBeVisible();
+    await expect(
+      policy.getByText("account:read", { exact: true }),
+    ).toBeVisible();
+    await expect(policy.locator("details")).not.toHaveAttribute("open");
+    await policy.screenshot({ path: "/tmp/swagger-access-ui.png" });
+  }
   await operation.getByRole("button", { name: "Try it out" }).click();
   const authenticated = page.waitForResponse(
     (response) => new URL(response.url()).pathname === "/api/account",
