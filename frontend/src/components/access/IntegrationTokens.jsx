@@ -1,0 +1,281 @@
+import React, { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { callOperation } from "../../api/operations";
+import { queryClient } from "../../app/queryClient";
+import { getPreferenceIdentity } from "../../app/backendIdentity";
+import { useTimeFormat } from "../../app/useTimeFormat";
+import { useAuth } from "../../contexts/AuthContext";
+
+export default function IntegrationTokens() {
+  const { user, sessionGeneration } = useAuth();
+  const time = useTimeFormat();
+  const identity = getPreferenceIdentity(user);
+  const key = ["integration-tokens", identity, sessionGeneration];
+  const tokens = useQuery(
+    {
+      queryKey: key,
+      queryFn: ({ signal }) =>
+        callOperation("list_integration_tokens", { signal }),
+    },
+    queryClient,
+  );
+  const policy = useQuery(
+    {
+      queryKey: ["access-policy", identity, sessionGeneration],
+      queryFn: ({ signal }) => callOperation("get_access_policy", { signal }),
+    },
+    queryClient,
+  );
+  const servers = useQuery(
+    {
+      queryKey: ["access-servers", identity, sessionGeneration],
+      queryFn: ({ signal }) => callOperation("list_access_servers", { signal }),
+    },
+    queryClient,
+  );
+  const [name, setName] = useState("");
+  const [days, setDays] = useState(30);
+  const [permissions, setPermissions] = useState([
+    "account:read",
+    "health:read",
+    "servers:read",
+    "tasks:read",
+  ]);
+  const [allServers, setAllServers] = useState(true);
+  const [selected, setSelected] = useState([]);
+  const [created, setCreated] = useState(null);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const controller = useRef(null);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(interval);
+  }, []);
+  useEffect(() => () => controller.current?.abort(), []);
+  useEffect(() => {
+    const refresh = () =>
+      void queryClient.invalidateQueries({
+        queryKey: ["integration-tokens", identity],
+      });
+    window.addEventListener("bsm:credentials-changed", refresh);
+    return () => window.removeEventListener("bsm:credentials-changed", refresh);
+  }, [identity]);
+  const toggle = (values, value) =>
+    values.includes(value)
+      ? values.filter((item) => item !== value)
+      : [...values, value];
+  async function create(event) {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    setCreated(null);
+    const abort = new AbortController();
+    controller.current = abort;
+    try {
+      // The one-time secret deliberately stays outside query/mutation caches.
+      const result = await callOperation("create_integration_token", {
+        signal: abort.signal,
+        body: {
+          name,
+          expires_in_days: days,
+          permissions,
+          server_ids: allServers ? null : selected,
+        },
+      });
+      setCreated(result.token);
+      setName("");
+      await queryClient.invalidateQueries({ queryKey: key });
+    } catch (failure) {
+      if (failure.name !== "AbortError") setError(failure.message);
+    } finally {
+      if (!abort.signal.aborted) setBusy(false);
+    }
+  }
+  async function revoke(id) {
+    setBusy(true);
+    setError("");
+    const abort = new AbortController();
+    controller.current = abort;
+    try {
+      await callOperation("revoke_integration_token", {
+        path: { token_id: id },
+        signal: abort.signal,
+      });
+      setCreated(null);
+      await queryClient.invalidateQueries({ queryKey: key });
+    } catch (failure) {
+      if (failure.name !== "AbortError") setError(failure.message);
+    } finally {
+      if (!abort.signal.aborted) setBusy(false);
+    }
+  }
+  const failure =
+    error ||
+    tokens.error?.message ||
+    policy.error?.message ||
+    servers.error?.message;
+  return (
+    <section
+      className="settings-panel"
+      aria-labelledby="integration-credentials-heading"
+    >
+      <div className="section-heading">
+        <div>
+          <h2 id="integration-credentials-heading">Integration credentials</h2>
+          <p>
+            Give Home Assistant, Supervisor, or another integration its own
+            revocable credential.
+          </p>
+        </div>
+      </div>
+      {failure && <p role="alert">{failure}</p>}
+      {(tokens.isPending || policy.isPending || servers.isPending) && (
+        <p role="status">Loading access settings…</p>
+      )}
+      {created && (
+        <div className="alert alert-info">
+          <p>Copy this credential now. It will not be shown again.</p>
+          <textarea
+            aria-label="New integration credential"
+            readOnly
+            value={created}
+            rows={3}
+            autoComplete="off"
+            spellCheck={false}
+          />
+          <button
+            type="button"
+            className="action-button secondary"
+            onClick={() =>
+              navigator.clipboard
+                .writeText(created)
+                .catch(() =>
+                  setError("Copy the credential from the field above."),
+                )
+            }
+          >
+            Copy credential
+          </button>
+          <button
+            type="button"
+            className="action-button secondary"
+            onClick={() => setCreated(null)}
+          >
+            Dismiss credential
+          </button>
+        </div>
+      )}
+      {policy.data && (
+        <form onSubmit={create}>
+          <label className="form-label">
+            Credential name
+            <input
+              className="form-input"
+              required
+              maxLength={100}
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Home Assistant"
+            />
+          </label>
+          <label className="form-label">
+            Expires after days
+            <input
+              className="form-input"
+              type="number"
+              min={1}
+              max={365}
+              required
+              value={days}
+              onChange={(event) => setDays(Number(event.target.value))}
+            />
+          </label>
+          <details>
+            <summary>Allowed capabilities ({permissions.length})</summary>
+            <div className="access-choice-list">
+              {policy.data.token_permissions.map((permission) => (
+                <label key={permission}>
+                  <input
+                    type="checkbox"
+                    checked={permissions.includes(permission)}
+                    onChange={() =>
+                      setPermissions(toggle(permissions, permission))
+                    }
+                  />
+                  {permission}
+                  <small>{policy.data.permissions[permission]}</small>
+                </label>
+              ))}
+            </div>
+          </details>
+          <label>
+            <input
+              type="checkbox"
+              checked={allServers}
+              onChange={(event) => setAllServers(event.target.checked)}
+            />
+            All servers this account may access
+          </label>
+          {!allServers && (
+            <div className="access-choice-list">
+              {servers.data?.map((server) => (
+                <label key={server.id}>
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(server.id)}
+                    onChange={() => setSelected(toggle(selected, server.id))}
+                  />
+                  {server.name}
+                </label>
+              ))}
+            </div>
+          )}
+          <p>
+            Credentials cannot exceed your account’s role or server assignments.
+            They cannot manage accounts or create more credentials.
+          </p>
+          <button
+            className="action-button primary-button"
+            type="submit"
+            disabled={
+              busy || !permissions.length || (!allServers && !selected.length)
+            }
+          >
+            Create credential
+          </button>
+        </form>
+      )}
+      <div className="access-credentials-list">
+        {tokens.data?.map((token) => (
+          <div key={token.id} className="access-credential-row">
+            <div>
+              <strong>{token.name}</strong>
+              <p>
+                {token.revoked_at
+                  ? "Revoked"
+                  : token.expires_at * 1000 <= now
+                    ? "Expired"
+                    : `Expires ${time.format(token.expires_at, { unit: "seconds", kind: "date" })}`}
+              </p>
+              <small>
+                {token.last_used_at
+                  ? `Last used ${time.format(token.last_used_at, { unit: "seconds" })}`
+                  : "Not used yet"}
+              </small>
+            </div>
+            <button
+              className="action-button danger"
+              type="button"
+              disabled={busy || Boolean(token.revoked_at)}
+              onClick={() => revoke(token.id)}
+            >
+              Revoke {token.name}
+            </button>
+          </div>
+        ))}
+        {tokens.data?.length === 0 && <p>No integration credentials.</p>}
+      </div>
+    </section>
+  );
+}

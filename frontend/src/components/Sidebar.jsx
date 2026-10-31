@@ -1,3 +1,4 @@
+import { useAccess } from "../app/useAccess";
 import { sessionSettings } from "../app/browserStorage";
 import { useResourceQuery } from "../app/resourceQueries";
 import { usePreference } from "../app/usePreference";
@@ -38,6 +39,7 @@ import {
 import "../styles/sidebar.css";
 const Sidebar = ({ mobileOpen, setMobileOpen }) => {
   const location = useLocation();
+  const { can } = useAccess();
   const { logout, user } = useAuth();
   const { addToast } = useToast();
   const {
@@ -47,7 +49,9 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
     refreshServers,
     loading,
   } = useServer();
-  const pluginQuery = useResourceQuery("pluginPages");
+  const pluginQuery = useResourceQuery("pluginPages", undefined, {
+    enabled: can("plugins:pages"),
+  });
   const infoQuery = useResourceQuery("applicationInfo");
   const pluginPages = pluginQuery.data ?? [];
   const [isCollapsed, setIsCollapsed] = usePreference(
@@ -205,13 +209,37 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
       ],
     },
   ];
+  const required = {
+    "/application-monitor": "runtime:metrics",
+    "/server-install": "servers:manage",
+    "/monitor": "servers:read",
+    "/online-players": "servers:read",
+    "/server-config": "servers:read",
+    "/server-properties": "servers:properties",
+    "/access-control": "allowlist:read",
+    "/backups": "backups:read",
+    "/content": "content:manage",
+    "/global-players": "players:read",
+    "/bsm-settings": "settings:read",
+    "/scheduler": "scheduler:read",
+    "/users": "users:read",
+    "/audit-log": "audit:read",
+    "/plugins": "plugins:read",
+    "/plugin-settings": "plugins:read",
+  };
   const filtered = groups
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) =>
-        `${group.label} ${item.label}`
-          .toLowerCase()
-          .includes(query.trim().toLowerCase()),
+      items: group.items.filter(
+        (item) =>
+          (!required[item.path] ||
+            can(
+              required[item.path],
+              item.server ? selectedServer : undefined,
+            )) &&
+          `${group.label} ${item.label}`
+            .toLowerCase()
+            .includes(query.trim().toLowerCase()),
       ),
     }))
     .filter((group) => group.items.length);

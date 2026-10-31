@@ -38,6 +38,7 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const identityRef = useRef(null);
   const permissionRoleRef = useRef(null);
+  const policyRevisionRef = useRef(null);
   const backendRef = useRef(getBackendIdentity());
   const authenticationModeRef = useRef(getAuthenticationMode());
   const instanceIssueRef = useRef(getInstanceIssue());
@@ -190,7 +191,11 @@ export const AuthProvider = ({ children }) => {
       // Clear session-owned state before publishing the authenticated identity.
       // Do not perform cache mutations inside a React state updater.
       const nextIdentity = userData?.id ?? userData?.username ?? null;
-      if (identityRef.current !== nextIdentity) {
+      if (
+        identityRef.current !== nextIdentity ||
+        (policyRevisionRef.current !== null &&
+          policyRevisionRef.current !== userData.policy_revision)
+      ) {
         resetSession();
       } else if (stateReconciler.current(ticket)) {
         userData = reconcileResourceSnapshot(
@@ -209,6 +214,7 @@ export const AuthProvider = ({ children }) => {
         );
       }
       identityRef.current = nextIdentity;
+      policyRevisionRef.current = userData.policy_revision ?? null;
       setUser(userData);
     } catch (error) {
       if (!current()) return;
@@ -278,6 +284,14 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       void checkUser();
     };
+    const accessChanged = (event) => {
+      if (
+        !event.detail?.backend ||
+        event.detail.backend === getBackendIdentity()
+      )
+        changed(event);
+    };
+    const socketConnected = () => void checkUser();
     const instanceCredentials = (event) => {
       if (
         event.detail?.source !== "workspace" &&
@@ -285,11 +299,15 @@ export const AuthProvider = ({ children }) => {
       )
         changed(event);
     };
+    window.addEventListener("bsm:access-changed", accessChanged);
+    window.addEventListener("bsm:socket-connected", socketConnected);
     window.addEventListener("bsm:instance-credentials", instanceCredentials);
     window.addEventListener("bsm:instances-changed", changed);
     window.addEventListener("storage", changed);
     window.addEventListener("bsm:connection-changed", changed);
     return () => {
+      window.removeEventListener("bsm:access-changed", accessChanged);
+      window.removeEventListener("bsm:socket-connected", socketConnected);
       window.removeEventListener(
         "bsm:instance-credentials",
         instanceCredentials,

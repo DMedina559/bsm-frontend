@@ -60,6 +60,15 @@ function Explorer() {
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
   const controller = useRef(null);
+  const reloadSchema = useRef(null);
+  useEffect(() => {
+    const changed = () => {
+      controller.current?.abort();
+      void reloadSchema.current?.();
+    };
+    window.addEventListener("bsm:access-changed", changed);
+    return () => window.removeEventListener("bsm:access-changed", changed);
+  }, []);
   const fileInput = useRef(null);
   useEffect(() => () => controller.current?.abort(), []);
   const operation = operations.find((item) => item.id === selected);
@@ -110,6 +119,9 @@ function Explorer() {
       setBusy(false);
     }
   }
+  useEffect(() => {
+    reloadSchema.current = live;
+  });
   function choose(id) {
     setSelected(id);
     setValues({});

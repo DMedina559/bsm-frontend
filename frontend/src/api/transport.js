@@ -56,6 +56,7 @@ const transport = createHttpTransport({
     };
   },
 });
+let lastPolicyRevision = null;
 export function request(url, options = {}) {
   if (
     navigator.onLine === false &&
@@ -66,10 +67,44 @@ export function request(url, options = {}) {
     return Promise.reject(
       new Error("Reconnect before making changes. Requests are not queued."),
     );
-  return transport.request(url, {
-    ...options,
-    credentials: getAuthenticationMode() === "bearer" ? "omit" : "same-origin",
-  });
+  const backend = getBackendIdentity();
+  const generation = sessionRuntime.capture().generation;
+  let revision;
+  return transport
+    .request(url, {
+      ...options,
+      onResponseMetadata: (metadata) => {
+        revision = metadata.headers["x-bsm-policy-revision"];
+        options.onResponseMetadata?.(metadata);
+      },
+      credentials:
+        getAuthenticationMode() === "bearer" ? "omit" : "same-origin",
+    })
+    .then((data) => {
+      if (
+        revision &&
+        sessionRuntime.capture().generation === generation &&
+        getBackendIdentity() === backend
+      ) {
+        const previous = lastPolicyRevision;
+        lastPolicyRevision = { backend, generation, revision };
+        if (
+          previous?.backend === backend &&
+          previous.generation === generation &&
+          previous.revision !== revision
+        )
+          setTimeout(() => {
+            if (
+              sessionRuntime.capture().generation === generation &&
+              getBackendIdentity() === backend
+            )
+              window.dispatchEvent(
+                new CustomEvent("bsm:access-changed", { detail: { backend } }),
+              );
+          }, 0);
+      }
+      return data;
+    });
 }
 /** Binary responses share authentication, cancellation, timeouts and API errors. */
 export function getBlob(url, options = {}) {

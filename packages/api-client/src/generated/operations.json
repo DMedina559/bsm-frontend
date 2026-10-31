@@ -1,11 +1,14 @@
 {
-  "get_account": {
+  "get_access_policy": {
     "security": [
       {
         "OAuth2PasswordBearer": ["account:read"]
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -13,7 +16,200 @@
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["account:read"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "GET",
+    "path": "/api/access/policy",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "list_access_servers": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["servers:read"]
+      },
+      {
+        "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["user", "moderator", "admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "supported",
+      "required_permissions": ["servers:read"],
+      "resource_scope": "collection",
+      "version": 1
+    },
+    "method": "GET",
+    "path": "/api/access/servers",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "get_account_server_access": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["access:manage"]
+      },
+      {
+        "APIKeyCookie": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "unsupported",
+      "required_permissions": ["access:manage"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "GET",
+    "path": "/api/access/users/{user_id}/servers",
+    "parameters": [
+      {
+        "name": "user_id",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "set_account_server_access": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["access:manage"]
+      },
+      {
+        "APIKeyCookie": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "unsupported",
+      "required_permissions": ["access:manage"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "PUT",
+    "path": "/api/access/users/{user_id}/servers",
+    "parameters": [
+      {
+        "name": "user_id",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
+  },
+  "list_account_integration_tokens": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["access:manage"]
+      },
+      {
+        "APIKeyCookie": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "unsupported",
+      "required_permissions": ["access:manage"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "GET",
+    "path": "/api/access/users/{user_id}/tokens",
+    "parameters": [
+      {
+        "name": "user_id",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "revoke_account_integration_token": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["access:manage"]
+      },
+      {
+        "APIKeyCookie": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "unsupported",
+      "required_permissions": ["access:manage"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "DELETE",
+    "path": "/api/access/users/{user_id}/tokens/{token_id}",
+    "parameters": [
+      {
+        "name": "user_id",
+        "in": "path",
+        "required": true
+      },
+      {
+        "name": "token_id",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "get_account": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["account:read"]
+      },
+      {
+        "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["user", "moderator", "admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "supported",
+      "required_permissions": ["account:read"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -37,7 +233,9 @@
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "unsupported",
       "required_permissions": ["account:manage"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "POST",
@@ -54,6 +252,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -61,7 +262,9 @@
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["account:read"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -85,7 +288,9 @@
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "unsupported",
       "required_permissions": ["account:manage"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "POST",
@@ -109,7 +314,9 @@
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "unsupported",
       "required_permissions": ["account:manage"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "POST",
@@ -119,10 +326,10 @@
     "bodyTypes": ["application/json"],
     "responseType": "json"
   },
-  "list_backup_keys": {
+  "list_integration_tokens": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["backups:keys"]
+        "OAuth2PasswordBearer": ["tokens:manage"]
       },
       {
         "APIKeyCookie": []
@@ -130,10 +337,99 @@
     ],
     "access": {
       "additional_checks": [],
+      "allowed_roles": ["user", "moderator", "admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "unsupported",
+      "required_permissions": ["tokens:manage"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "GET",
+    "path": "/api/account/tokens",
+    "parameters": [],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "create_integration_token": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["tokens:manage"]
+      },
+      {
+        "APIKeyCookie": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["user", "moderator", "admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "unsupported",
+      "required_permissions": ["tokens:manage"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "POST",
+    "path": "/api/account/tokens",
+    "parameters": [],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
+  },
+  "revoke_integration_token": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["tokens:manage"]
+      },
+      {
+        "APIKeyCookie": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["user", "moderator", "admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "unsupported",
+      "required_permissions": ["tokens:manage"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "DELETE",
+    "path": "/api/account/tokens/{token_id}",
+    "parameters": [
+      {
+        "name": "token_id",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "list_backup_keys": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["backups:keys"]
+      },
+      {
+        "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["backups:keys"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -150,6 +446,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -157,7 +456,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["backups:keys"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "POST",
@@ -174,6 +475,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -181,7 +485,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["backups:keys"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -204,6 +510,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -211,7 +520,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["content:read"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -228,6 +539,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -235,7 +549,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["content:read"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -252,6 +568,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -259,7 +578,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["diagnostics:read"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -276,6 +597,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -283,7 +607,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["diagnostics:read"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -356,6 +682,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -363,7 +692,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["diagnostics:read"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "POST",
@@ -380,6 +711,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -387,7 +721,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["diagnostics:read"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -450,6 +786,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -457,7 +796,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["diagnostics:read"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -474,6 +815,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -481,7 +825,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["diagnostics:read"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -504,6 +850,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -511,7 +860,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["diagnostics:read"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -544,6 +895,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -551,7 +905,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["diagnostics:read"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -574,6 +930,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -581,7 +940,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["content:read"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -598,6 +959,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -605,7 +969,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["content:manage"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "PUT",
@@ -622,6 +988,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -629,7 +998,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["diagnostics:read"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -646,6 +1017,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -653,7 +1027,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["diagnostics:read"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -729,6 +1105,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -739,7 +1118,9 @@
       "allowed_roles": [],
       "authentication": "required",
       "classification": "custom",
+      "integration_tokens": "supported",
       "required_permissions": [],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -756,7 +1137,9 @@
       "allowed_roles": [],
       "authentication": "none",
       "classification": "public",
+      "integration_tokens": "unsupported",
       "required_permissions": [],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -773,7 +1156,9 @@
       "allowed_roles": [],
       "authentication": "none",
       "classification": "public",
+      "integration_tokens": "unsupported",
       "required_permissions": [],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -790,6 +1175,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -797,7 +1185,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["logs:read"],
+      "resource_scope": "collection",
       "version": 1
     },
     "method": "GET",
@@ -830,6 +1220,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -837,7 +1230,9 @@
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["runtime:metrics"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -854,7 +1249,9 @@
       "allowed_roles": [],
       "authentication": "none",
       "classification": "public",
+      "integration_tokens": "unsupported",
       "required_permissions": [],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -871,6 +1268,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -878,7 +1278,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["players:manage"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "POST",
@@ -895,6 +1297,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -902,7 +1307,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["players:read"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -919,6 +1326,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -926,7 +1336,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["players:manage"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "PUT",
@@ -943,6 +1355,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -950,7 +1365,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["plugins:read"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -967,6 +1384,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -974,7 +1394,9 @@
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["plugins:pages"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -991,6 +1413,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -998,7 +1423,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["plugins:manage"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "PUT",
@@ -1015,6 +1442,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1022,7 +1452,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["plugins:manage"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "POST",
@@ -1039,6 +1471,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1046,7 +1481,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["plugins:manage"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "POST",
@@ -1069,6 +1506,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1076,7 +1516,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["plugins:manage"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "POST",
@@ -1099,6 +1541,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1106,7 +1551,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["plugins:read"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -1139,6 +1586,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1146,7 +1596,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["plugins:manage"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "PUT",
@@ -1176,7 +1628,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "unsupported",
       "required_permissions": ["users:manage"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "POST",
@@ -1193,7 +1647,9 @@
       "allowed_roles": [],
       "authentication": "none",
       "classification": "custom",
+      "integration_tokens": "unsupported",
       "required_permissions": [],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -1216,7 +1672,9 @@
       "allowed_roles": [],
       "authentication": "none",
       "classification": "custom",
+      "integration_tokens": "unsupported",
       "required_permissions": [],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "POST",
@@ -1239,6 +1697,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1246,7 +1707,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["runtime:read"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -1266,6 +1729,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1273,7 +1739,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "custom",
+      "integration_tokens": "supported",
       "required_permissions": [],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "POST",
@@ -1290,6 +1758,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1297,7 +1768,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["scheduler:manage"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -1320,6 +1793,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1327,7 +1803,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["scheduler:manage"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "DELETE",
@@ -1350,6 +1828,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1357,7 +1838,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["scheduler:manage"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "PUT",
@@ -1380,6 +1863,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1387,7 +1873,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["scheduler:manage"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "POST",
@@ -1410,6 +1898,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1417,7 +1908,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["servers:manage"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "POST",
@@ -1434,6 +1927,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1441,7 +1937,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["content:manage"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -1464,6 +1962,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1471,7 +1972,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["content:manage"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -1494,7 +1997,9 @@
       "allowed_roles": [],
       "authentication": "none",
       "classification": "public",
+      "integration_tokens": "unsupported",
       "required_permissions": [],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "GET",
@@ -1527,6 +2032,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1534,7 +2042,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["content:manage"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -1557,6 +2067,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1564,7 +2077,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["content:manage"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -1587,6 +2102,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1594,7 +2112,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["content:manage"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -1617,6 +2137,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1624,7 +2147,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["content:manage"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "DELETE",
@@ -1647,6 +2172,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1654,7 +2182,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["content:manage"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "GET",
@@ -1677,6 +2207,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1684,7 +2217,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["allowlist:manage"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -1707,6 +2242,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1714,7 +2252,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["allowlist:read"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "GET",
@@ -1737,6 +2277,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1744,7 +2287,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["allowlist:manage"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "DELETE",
@@ -1767,6 +2312,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1774,7 +2322,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["backups:destinations"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -1802,6 +2352,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1809,7 +2362,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["backups:create"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -1832,6 +2387,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1839,7 +2397,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["backups:read"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "GET",
@@ -1867,6 +2427,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1874,7 +2437,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["backups:read"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "GET",
@@ -1897,6 +2462,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1904,7 +2472,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["backups:create"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -1927,6 +2497,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1934,7 +2507,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["backups:read"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "GET",
@@ -1957,6 +2532,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1964,7 +2542,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["backups:manage"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -1987,6 +2567,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -1994,7 +2577,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["backups:manage"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "PUT",
@@ -2017,6 +2602,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2024,7 +2612,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["backups:read"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "GET",
@@ -2047,6 +2637,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2054,7 +2647,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["backups:restore"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -2077,6 +2672,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2084,7 +2682,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["backups:read"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "GET",
@@ -2107,6 +2707,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2114,7 +2717,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["backups:read"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "GET",
@@ -2142,6 +2747,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2149,7 +2757,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["backups:restore"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -2177,6 +2787,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2184,7 +2797,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["backups:export"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -2212,6 +2827,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2219,7 +2837,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["backups:read"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -2247,6 +2867,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2254,7 +2877,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["backups:manage"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -2282,6 +2907,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2289,7 +2917,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["backups:restore"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -2317,6 +2947,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2324,7 +2957,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["backups:destinations"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -2352,6 +2987,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2359,7 +2997,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["backups:restore"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -2387,6 +3027,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2394,7 +3037,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["bans:manage"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -2417,6 +3062,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2424,7 +3072,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["bans:manage"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "GET",
@@ -2447,6 +3097,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2454,7 +3107,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["bans:manage"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "DELETE",
@@ -2477,6 +3132,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2484,7 +3142,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["servers:manage"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "DELETE",
@@ -2507,6 +3167,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2514,7 +3177,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["permissions:read"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "GET",
@@ -2537,6 +3202,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2544,7 +3212,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["permissions:manage"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -2567,6 +3237,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2574,7 +3247,9 @@
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["servers:read"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "GET",
@@ -2597,6 +3272,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2604,7 +3282,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["servers:properties"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "GET",
@@ -2627,6 +3307,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2634,7 +3317,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["servers:properties"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "GET",
@@ -2657,6 +3342,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2664,7 +3352,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["servers:properties"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -2687,6 +3377,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2694,7 +3387,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["servers:control"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -2717,6 +3412,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2724,7 +3422,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["backups:restore"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -2747,6 +3447,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2754,7 +3457,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["servers:control"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -2777,6 +3482,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2784,7 +3492,9 @@
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["servers:read"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "GET",
@@ -2807,6 +3517,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2814,7 +3527,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["servers:configure"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -2837,6 +3552,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2844,7 +3562,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["servers:control"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -2867,6 +3587,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2874,7 +3597,9 @@
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["servers:read"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "GET",
@@ -2897,6 +3622,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2904,7 +3632,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["servers:control"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -2927,6 +3657,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2934,7 +3667,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["servers:inspect"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "GET",
@@ -2957,6 +3692,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2964,7 +3702,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["servers:manage"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -2987,6 +3727,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -2994,7 +3737,9 @@
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["servers:read"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "GET",
@@ -3017,6 +3762,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -3024,7 +3772,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["content:manage"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -3047,7 +3797,9 @@
       "allowed_roles": [],
       "authentication": "none",
       "classification": "public",
+      "integration_tokens": "unsupported",
       "required_permissions": [],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "GET",
@@ -3070,6 +3822,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -3077,7 +3832,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["content:manage"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "POST",
@@ -3100,6 +3857,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -3107,7 +3867,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["content:manage"],
+      "resource_scope": "server",
       "version": 1
     },
     "method": "DELETE",
@@ -3130,6 +3892,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -3137,7 +3902,9 @@
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["servers:read"],
+      "resource_scope": "collection",
       "version": 1
     },
     "method": "GET",
@@ -3154,6 +3921,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -3161,7 +3931,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["settings:read"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -3178,6 +3950,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -3185,7 +3960,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["settings:manage"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "PUT",
@@ -3202,6 +3979,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -3209,7 +3989,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["settings:manage"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "POST",
@@ -3226,7 +4008,9 @@
       "allowed_roles": [],
       "authentication": "none",
       "classification": "custom",
+      "integration_tokens": "unsupported",
       "required_permissions": [],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "POST",
@@ -3243,7 +4027,9 @@
       "allowed_roles": [],
       "authentication": "none",
       "classification": "public",
+      "integration_tokens": "unsupported",
       "required_permissions": [],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -3260,6 +4046,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -3267,7 +4056,9 @@
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["tasks:read"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -3284,6 +4075,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -3291,7 +4085,9 @@
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["tasks:read"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -3314,6 +4110,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -3321,7 +4120,9 @@
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["users:read"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -3345,7 +4146,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "unsupported",
       "required_permissions": ["users:manage"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "POST",
@@ -3375,7 +4178,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "unsupported",
       "required_permissions": ["users:manage"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "POST",
@@ -3405,7 +4210,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "unsupported",
       "required_permissions": ["users:manage"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "POST",
@@ -3435,7 +4242,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "unsupported",
       "required_permissions": ["users:manage"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "POST",
@@ -3458,6 +4267,9 @@
       },
       {
         "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
@@ -3465,7 +4277,9 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "integration_tokens": "supported",
       "required_permissions": ["audit:read"],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -3489,7 +4303,9 @@
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "authenticated",
+      "integration_tokens": "unsupported",
       "required_permissions": [],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "GET",
@@ -3513,7 +4329,9 @@
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "authenticated",
+      "integration_tokens": "unsupported",
       "required_permissions": [],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "POST",
@@ -3536,7 +4354,9 @@
       "allowed_roles": [],
       "authentication": "none",
       "classification": "public",
+      "integration_tokens": "unsupported",
       "required_permissions": [],
+      "resource_scope": "global",
       "version": 1
     },
     "method": "POST",

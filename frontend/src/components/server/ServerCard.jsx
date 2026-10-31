@@ -1,3 +1,4 @@
+import { useAccess } from "../../app/useAccess";
 import { memo } from "react";
 import { useOnline } from "../../app/useOnline";
 import { useServerSnapshot } from "../../app/useServerSnapshot";
@@ -52,6 +53,7 @@ const actionDefinitions = {
 function ServerCard({
   server,
   isAdmin = false,
+  canControl = true,
   busy,
   onOpen,
   onAction,
@@ -177,6 +179,7 @@ function ServerCard({
           const { Icon, label, title, className } = actionDefinitions[action];
           const disabled =
             !online ||
+            (action === "update" ? !isAdmin : !canControl) ||
             busy ||
             (action === "update" && !stable) ||
             (action === "command" && !running);
@@ -209,6 +212,14 @@ export const ConnectedServerCard = memo(function ConnectedServerCard({
   ...props
 }) {
   const server = useServerSnapshot(serverName);
-  return server ? <MemoServerCard server={server} {...props} /> : null;
+  const { can } = useAccess();
+  return server ? (
+    <MemoServerCard
+      server={server}
+      {...props}
+      isAdmin={props.isAdmin && can("servers:manage", serverName)}
+      canControl={can("servers:control", serverName)}
+    />
+  ) : null;
 });
 export default MemoServerCard;

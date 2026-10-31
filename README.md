@@ -210,3 +210,19 @@ requests, including login and uploads, and use backend-scoped bearer tokens.
 Their logout clears that instance's saved credentials. The embedded default
 logout also calls the backend to clear its cookie. Neither revokes JWTs retained
 elsewhere. Endpoint scopes describe role capabilities, not restricted token grants.
+
+
+### Integration credentials and server assignments
+
+Account settings can create named, expiring integration credentials with explicit
+capabilities and optional server limits. Copy the secret once; subsequent lists
+show metadata and a revoke action. The secret stays outside query caches and
+browser persistence. Each credential is bounded by the owner's current role and
+server assignments.
+
+Administrators can edit another non-admin account's server access in the Users
+editor. Assigned mode grants only selected capabilities on selected servers;
+new servers receive no automatic access. Existing accounts retain their role's
+all-server behavior. Account changes refresh access metadata, navigation, cached
+queries, and the live API explorer. Backends without this metadata keep their
+existing compatibility behavior.

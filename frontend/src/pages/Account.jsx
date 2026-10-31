@@ -1,3 +1,5 @@
+import IntegrationTokens from "../components/access/IntegrationTokens";
+import "../styles/access.css";
 import TimeDisplaySettings from "../components/appearance/TimeDisplaySettings";
 import RecoverySettings from "../components/RecoverySettings";
 import "../styles/appearance.css";
@@ -17,7 +19,7 @@ import MetricUnitSettings from "../components/metrics/MetricUnitSettings";
 import PanoramaSettings from "../components/appearance/PanoramaSettings";
 import PaletteEditor from "../components/PaletteEditor";
 const Account = ({ appearanceOnly = false }) => {
-  const { user } = useAuth();
+  const { user, sessionGeneration } = useAuth();
   const [, setMetricUnits] = usePreference("metricUnits", DEFAULT_METRIC_UNITS);
   const {
     theme,
@@ -142,6 +144,9 @@ const Account = ({ appearanceOnly = false }) => {
             </div>
           </dl>
         </section>
+      )}
+      {!appearanceOnly && user?.permissions?.includes("tokens:manage") && (
+        <IntegrationTokens key={`${user.id}:${sessionGeneration}`} />
       )}
       {appearanceOnly && (
         <div id="appearance" className="appearance-sections">

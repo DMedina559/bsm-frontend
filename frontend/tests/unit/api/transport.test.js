@@ -115,7 +115,9 @@ it("bound session transport refuses later requests after logout before fetch", a
   expect(fetch).not.toHaveBeenCalled();
 });
 it("serializes explicit JSON objects and scalar zero without losing the request body", async () => {
-  globalThis.fetch = vi.fn().mockResolvedValue({ status: 204 });
+  globalThis.fetch = vi
+    .fn()
+    .mockResolvedValue(new Response(null, { status: 204 }));
   await request("/api/example", {
     method: "POST",
     body: { value: 1 },
@@ -280,4 +282,33 @@ it("accepts caller-captured sessions while retaining authentication mode checks"
   globalThis.fetch = vi.fn().mockResolvedValue(Response.json({}));
   await request("/api/account", { session: sessionRuntime.capture() });
   expect(fetch).toHaveBeenCalledOnce();
+});
+
+it("publishes policy revision changes after the response has been delivered", async () => {
+  const { sessionRuntime } = await import("../../../src/app/sessionRuntime");
+  sessionRuntime.reset();
+  let received;
+  const changed = vi.fn(() => expect(received).toEqual({ value: 2 }));
+  window.addEventListener("bsm:access-changed", changed);
+  try {
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json(
+          { value: 1 },
+          { headers: { "X-BSM-Policy-Revision": "first" } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        Response.json(
+          { value: 2 },
+          { headers: { "X-BSM-Policy-Revision": "second" } },
+        ),
+      );
+    await request("/api/example");
+    received = await request("/api/example");
+    await vi.waitFor(() => expect(changed).toHaveBeenCalledOnce());
+  } finally {
+    window.removeEventListener("bsm:access-changed", changed);
+  }
 });
