@@ -91,3 +91,15 @@ describe("credential redaction", () => {
     expect(value.password).toBe("hidden");
   });
 });
+
+it("redacts second-factor setup and recovery material", async () => {
+  const { redactLogValue } = await import("../../../src/utils/logger");
+  const value = redactLogValue({
+    otp: "123456",
+    recovery_codes: ["private-one", "private-two"],
+    provisioning_uri: "otpauth://private",
+    qr_svg: "data:private",
+  });
+  expect(JSON.stringify(value)).not.toContain("123456");
+  expect(JSON.stringify(value)).not.toContain("private");
+});

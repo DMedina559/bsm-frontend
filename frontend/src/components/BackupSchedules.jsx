@@ -156,10 +156,7 @@ export default function BackupSchedules({
                 <dt>Next run</dt>
                 <dd>
                   {entry.next_run_at ? (
-                    <Timestamp
-                      value={entry.next_run_at}
-                      timezone={entry.configuration.timezone}
-                    />
+                    <Timestamp value={entry.next_run_at} />
                   ) : (
                     "None"
                   )}

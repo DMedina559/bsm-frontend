@@ -1,0 +1,388 @@
+import React from "react";
+import { beforeEach, expect, it, vi } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { DialogProvider } from "../../../../src/contexts/DialogContext";
+import AccountSecurity from "../../../../src/components/access/AccountSecurity";
+import SecurityVerification from "../../../../src/components/access/SecurityVerification";
+import { queryClient } from "../../../../src/app/queryClient";
+import { callOperation } from "../../../../src/api/operations";
+const authPolicy = vi.hoisted(() => ({ required: false }));
+vi.mock("../../../../src/api/operations", () => ({ callOperation: vi.fn() }));
+vi.mock("../../../../src/contexts/AuthContext", () => ({
+  useAuth: () => ({
+    user: {
+      mfa_enrollment_required: authPolicy.required,
+      id: 1,
+      username: "admin",
+      role: "admin",
+      permissions: [
+        "sessions:manage",
+        "tokens:manage",
+        "servers:read",
+        "account:read",
+      ],
+      session_id: "current",
+      server_access: "assigned",
+    },
+    sessionGeneration: 1,
+    logout: vi.fn(),
+  }),
+}));
+vi.mock("../../../../src/contexts/ToastContext", () => ({
+  useToast: () => ({ addToast: vi.fn() }),
+}));
+let enabled;
+beforeEach(() => {
+  queryClient.clear();
+  vi.clearAllMocks();
+  enabled = false;
+  authPolicy.required = false;
+  callOperation.mockImplementation(async (id) => {
+    if (id === "get_account_security")
+      return {
+        enabled,
+        recovery_codes_remaining: enabled ? 10 : 0,
+        idle_timeout_seconds: 3600,
+        max_session_days: 28,
+      };
+    if (id === "list_login_sessions")
+      return [
+        {
+          id: "current",
+          name: "Firefox · Linux",
+          current: true,
+          active: true,
+          created_at: 100,
+          last_seen_at: 200,
+          expires_at: 400,
+          revoked_at: null,
+          user_agent: "Firefox",
+          ip_address: "127.0.0.1",
+          connected: true,
+        },
+      ];
+    if (id === "list_access_servers")
+      return [{ id: "alpha", name: "Alpha", permissions: ["servers:read"] }];
+    if (id === "enroll_account_mfa")
+      return {
+        secret: "synthetic-one-time-setup-key",
+        qr_svg: "data:image/svg+xml;base64,PHN2Zy8+",
+        provisioning_uri: "otpauth://totp/test",
+      };
+    if (id === "confirm_account_mfa") {
+      enabled = true;
+      return { recovery_codes: ["synthetic-recovery-code"] };
+    }
+    if (id === "verify_account_security") return { verified_until: 999 };
+    return [];
+  });
+});
+const show = () =>
+  render(
+    <DialogProvider>
+      <AccountSecurity>
+        <p>Password panel</p>
+      </AccountSecurity>
+      <SecurityVerification />
+    </DialogProvider>,
+  );
+
+it("shows current-session metadata and keeps bulk session revocation separate from credentials", async () => {
+  show();
+  await screen.findByText("Firefox · Linux");
+  expect(screen.getByText("This session")).toBeInTheDocument();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Sign out other sessions" }),
+  );
+  expect(
+    screen.getByText(/Integration credentials will keep working/),
+  ).toBeInTheDocument();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Continue", exact: true }),
+  );
+  await waitFor(() =>
+    expect(callOperation).toHaveBeenCalledWith(
+      "revoke_login_sessions",
+      expect.objectContaining({ body: { mode: "others" } }),
+    ),
+  );
+  expect(
+    callOperation.mock.calls.some(
+      ([id]) => id === "revoke_all_integration_tokens",
+    ),
+  ).toBe(false);
+});
+
+it("keeps enrollment and recovery material out of query and mutation caches", async () => {
+  show();
+  fireEvent.click(screen.getByRole("tab", { name: "Password & MFA" }));
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Set up authenticator" }),
+  );
+  expect(
+    await screen.findByDisplayValue("synthetic-one-time-setup-key"),
+  ).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText("Six-digit authenticator code"), {
+    target: { value: "123456" },
+  });
+  fireEvent.click(
+    screen.getByRole("button", { name: "Enable two-factor authentication" }),
+  );
+  expect(
+    await screen.findByText("synthetic-recovery-code"),
+  ).toBeInTheDocument();
+  const cache = JSON.stringify({
+    queries: queryClient
+      .getQueryCache()
+      .getAll()
+      .map((query) => query.state.data),
+    mutations: queryClient.getMutationCache().getAll(),
+  });
+  expect(cache).not.toContain("synthetic-one-time-setup-key");
+  expect(cache).not.toContain("synthetic-recovery-code");
+  fireEvent.click(screen.getByRole("button", { name: "I saved my codes" }));
+  expect(screen.queryByText("synthetic-recovery-code")).not.toBeInTheDocument();
+});
+
+it("explains capability restrictions and supports recent verification without caching the password", async () => {
+  show();
+  fireEvent.click(screen.getByRole("tab", { name: "My access" }));
+  fireEvent.change(screen.getByLabelText("Check a permission"), {
+    target: { value: "servers:control" },
+  });
+  expect(
+    screen.getByText(/does not include this permission/),
+  ).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Verify password" }));
+  fireEvent.change(screen.getByLabelText("Current password"), {
+    target: { value: "synthetic-private-password" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Verify identity" }));
+  await waitFor(() =>
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+  );
+  expect(JSON.stringify(queryClient.getMutationCache().getAll())).not.toContain(
+    "synthetic-private-password",
+  );
+});
+
+it("opens MFA enrollment immediately when administrator policy requires it", async () => {
+  authPolicy.required = true;
+  show();
+  expect(
+    await screen.findByRole("button", { name: "Set up authenticator" }),
+  ).toBeVisible();
+  expect(screen.getByRole("tab", { name: "Password & MFA" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  expect(screen.queryByText("Password panel")).not.toBeInTheDocument();
+});
+
+it.each(["dismiss", "leave"])(
+  "keeps the recovery download readable until %s",
+  async (exit) => {
+    vi.stubGlobal(
+      "URL",
+      class extends URL {
+        static createObjectURL() {
+          return "blob:recovery";
+        }
+        static revokeObjectURL() {}
+      },
+    );
+    const create = vi
+      .spyOn(URL, "createObjectURL")
+      .mockReturnValue("blob:recovery");
+    const revoke = vi
+      .spyOn(URL, "revokeObjectURL")
+      .mockImplementation(() => {});
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(function () {
+        expect(this.isConnected).toBe(true);
+        expect(this.download).toBe("bsm-recovery-codes.txt");
+      });
+    try {
+      const view = show();
+      fireEvent.click(screen.getByRole("tab", { name: "Password & MFA" }));
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Set up authenticator" }),
+      );
+      await screen.findByDisplayValue("synthetic-one-time-setup-key");
+      fireEvent.change(screen.getByLabelText("Six-digit authenticator code"), {
+        target: { value: "123456" },
+      });
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: "Enable two-factor authentication",
+        }),
+      );
+      await screen.findByText("synthetic-recovery-code");
+      const download = screen.getByRole("button", {
+        name: "Download recovery codes",
+      });
+      fireEvent.click(download);
+      await waitFor(() => expect(create).toHaveBeenCalledTimes(1));
+      expect(revoke).not.toHaveBeenCalled();
+      expect(screen.getByText(/Download requested/)).toHaveAttribute(
+        "role",
+        "status",
+      );
+      expect(
+        document.querySelector('a[download="bsm-recovery-codes.txt"]'),
+      ).toBeNull();
+      fireEvent.click(download);
+      await waitFor(() => expect(create).toHaveBeenCalledTimes(1));
+      expect(revoke).not.toHaveBeenCalled();
+      if (exit === "dismiss")
+        fireEvent.click(
+          screen.getByRole("button", { name: "I saved my codes" }),
+        );
+      else fireEvent.click(screen.getByRole("tab", { name: "Sessions" }));
+      expect(revoke).toHaveBeenCalledExactlyOnceWith("blob:recovery");
+      view.unmount();
+      expect(revoke).toHaveBeenCalledTimes(1);
+    } finally {
+      create.mockRestore();
+      revoke.mockRestore();
+      click.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  },
+);
+
+it("uses remembered trust for password reauthentication without asking for OTP", async () => {
+  callOperation.mockImplementation(async (id) =>
+    id === "get_account_security"
+      ? {
+          enabled: true,
+          trusted_device: true,
+          trusted_device_expires_at: 2000000000,
+        }
+      : id === "verify_account_security"
+        ? { verified_until: 999 }
+        : [],
+  );
+  show();
+  fireEvent.click(screen.getByRole("button", { name: "Verify password" }));
+  await screen.findByText(/This device is remembered until/);
+  expect(screen.queryByLabelText("Authenticator or recovery code")).toBeNull();
+  fireEvent.change(screen.getByLabelText("Current password"), {
+    target: { value: "password" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Verify identity" }));
+  await waitFor(() =>
+    expect(callOperation).toHaveBeenCalledWith(
+      "verify_account_security",
+      expect.objectContaining({ body: { password: "password", otp: "" } }),
+    ),
+  );
+});
+
+it("lists remembered devices separately and revokes a selected device", async () => {
+  const original = callOperation.getMockImplementation();
+  callOperation.mockImplementation(async (id, options) =>
+    id === "list_trusted_devices"
+      ? [
+          {
+            id: "remembered",
+            name: "Chrome · Windows",
+            current: true,
+            status: "active",
+            created_at: 100,
+            last_used_at: 200,
+            expires_at: 300,
+          },
+        ]
+      : original(id, options),
+  );
+  show();
+  await screen.findByText("Chrome · Windows");
+  fireEvent.click(screen.getByRole("button", { name: "Forget this device" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Continue", exact: true }),
+  );
+  await waitFor(() =>
+    expect(callOperation).toHaveBeenCalledWith(
+      "revoke_trusted_device",
+      expect.objectContaining({ path: { device_id: "remembered" } }),
+    ),
+  );
+});
+
+it.each(["success", "failure"])(
+  "copies recovery codes with explicit feedback and a manual fallback: %s",
+  async (outcome) => {
+    const writeText = vi.fn();
+    if (outcome === "success") writeText.mockResolvedValue();
+    else writeText.mockRejectedValue(new Error("Clipboard unavailable"));
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    show();
+    fireEvent.click(screen.getByRole("tab", { name: "Password & MFA" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Set up authenticator" }),
+    );
+    fireEvent.change(
+      await screen.findByLabelText("Six-digit authenticator code"),
+      { target: { value: "123456" } },
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Enable two-factor authentication" }),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Copy recovery codes" }),
+    );
+    await waitFor(() =>
+      expect(writeText).toHaveBeenCalledWith("synthetic-recovery-code"),
+    );
+    if (outcome === "success")
+      await screen.findByText("Recovery codes copied.");
+    else {
+      const field = await screen.findByLabelText("Recovery codes to copy");
+      expect(field).toHaveValue("synthetic-recovery-code");
+      expect(field).toHaveFocus();
+    }
+    expect(
+      JSON.stringify(queryClient.getMutationCache().getAll()),
+    ).not.toContain("synthetic-recovery-code");
+  },
+);
+
+it("can choose a fresh authenticator and opt into renewed device trust", async () => {
+  callOperation.mockImplementation(async (id) =>
+    id === "get_account_security"
+      ? {
+          enabled: true,
+          trusted_device: true,
+          trusted_device_expires_at: 2000000000,
+        }
+      : id === "verify_account_security"
+        ? { verified_until: 999 }
+        : [],
+  );
+  show();
+  fireEvent.click(screen.getByRole("button", { name: "Verify password" }));
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Use an authenticator instead" }),
+  );
+  fireEvent.change(screen.getByLabelText("Current password"), {
+    target: { value: "password" },
+  });
+  fireEvent.change(screen.getByLabelText("Authenticator or recovery code"), {
+    target: { value: "123456" },
+  });
+  fireEvent.click(screen.getByLabelText("Remember this device for 30 days"));
+  fireEvent.click(screen.getByRole("button", { name: "Verify identity" }));
+  await waitFor(() =>
+    expect(callOperation).toHaveBeenCalledWith(
+      "verify_account_security",
+      expect.objectContaining({
+        body: { password: "password", otp: "123456", remember_device: true },
+      }),
+    ),
+  );
+});

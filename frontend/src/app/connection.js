@@ -34,9 +34,32 @@ export function getConnectionIdentity() {
   );
   return `${url.origin}${url.pathname.replace(/\/+$/, "")}`;
 }
+/** Legacy mode name; the embedded default connection authenticates only by cookie. */
+export function getAuthenticationMode() {
+  return getAppConfig().mode === "embedded" &&
+    !getActiveInstance() &&
+    !getApiBaseUrl() &&
+    !isTokenAuthentication()
+    ? "cookie-recovery"
+    : "bearer";
+}
+const tokenModeKey = () =>
+  `bsm.workspace-token:${encodeURIComponent(getConnectionIdentity())}`;
+export function isTokenAuthentication() {
+  return (
+    read("sessionStorage", tokenModeKey()) === "true" ||
+    read("localStorage", tokenModeKey()) === "true"
+  );
+}
+export function setTokenCredentials(token, remember = false) {
+  clearCredentials();
+  write(remember ? "localStorage" : "sessionStorage", tokenModeKey(), "true");
+  writeInstanceToken(getConnectionIdentity(), token, remember, "workspace");
+}
 const credentialKey = () =>
   `bsm.credentials:${encodeURIComponent(getConnectionIdentity())}`;
 export function getToken() {
+  if (getAuthenticationMode() === "cookie-recovery") return null;
   const key = credentialKey();
   const current = read("sessionStorage", key) || read("localStorage", key);
   if (current) return current;
@@ -45,6 +68,8 @@ export function getToken() {
   return null;
 }
 export function clearCredentials() {
+  write("sessionStorage", tokenModeKey(), null);
+  write("localStorage", tokenModeKey(), null);
   writeInstanceToken(getConnectionIdentity(), null, false, "workspace");
   for (const area of ["sessionStorage", "localStorage"]) {
     write(area, credentialKey(), null);
@@ -86,6 +111,7 @@ export function isSessionStorageEvent(event) {
     event.key === "api_base_url" ||
     isInstanceProfileKey(event.key) ||
     event.key === "access_token" ||
-    event.key === credentialKey()
+    event.key === credentialKey() ||
+    event.key === tokenModeKey()
   );
 }

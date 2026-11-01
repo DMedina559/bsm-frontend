@@ -186,3 +186,93 @@ it("does not redirect a confirmed action to a connection changed while the dialo
     "connection changed",
   );
 });
+
+it("shows a second-factor step only after the selected instance requests MFA", async () => {
+  const profile = saveInstance({
+    name: "MFA instance",
+    url: "https://mfa.test",
+  });
+  render(
+    <MemoryRouter>
+      <Instances />
+    </MemoryRouter>,
+  );
+  await screen.findByRole("article", { name: "MFA instance" });
+  const session = sessions.get(profile.id);
+  session.login
+    .mockRejectedValueOnce(
+      Object.assign(new Error("MFA required"), { mfaRequired: true }),
+    )
+    .mockResolvedValueOnce(undefined);
+  fireEvent.click(screen.getByRole("button", { name: "Switch account" }));
+  expect(screen.queryByLabelText("Authenticator or recovery code")).toBeNull();
+  fireEvent.change(screen.getByLabelText("Username"), {
+    target: { value: "user" },
+  });
+  fireEvent.change(screen.getByLabelText("Password"), {
+    target: { value: "password" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Sign in", exact: true }));
+  const code = await screen.findByLabelText("Authenticator or recovery code");
+  expect(screen.queryByLabelText("Password")).toBeNull();
+  fireEvent.change(code, { target: { value: "123456" } });
+  fireEvent.click(screen.getByRole("button", { name: "Verify and sign in" }));
+  await waitFor(() =>
+    expect(session.login).toHaveBeenLastCalledWith(
+      "user",
+      "password",
+      false,
+      "123456",
+      expect.any(AbortSignal),
+      false,
+    ),
+  );
+});
+
+it("uses the selected display timezone for connection and task timestamps", async () => {
+  const { TimeContext } = await import("../../../src/contexts/TimeContext");
+  const profile = saveInstance({
+    name: "Timezone test",
+    url: "https://time.test",
+  });
+  writeInstanceToken(profile.url, "test-token");
+  const view = (timezone) => (
+    <TimeContext.Provider value={{ timezone }}>
+      <MemoryRouter>
+        <Instances />
+      </MemoryRouter>
+    </TimeContext.Provider>
+  );
+  const { container, rerender } = render(view("UTC"));
+  const snapshot = sessions.get(profile.id).getSnapshot();
+  const update = createInstanceConnection.mock.calls[0][1].onChange;
+  await act(async () =>
+    update({
+      ...snapshot,
+      updatedAt: "2026-01-02T02:00:00Z",
+      nextRefreshAt: "2026-01-02T02:01:00Z",
+      operations: [
+        {
+          id: "test-task",
+          kind: "start_server",
+          serverName: "survival",
+          status: "completed",
+          updatedAt: Date.parse("2026-01-02T02:00:00Z"),
+        },
+      ],
+    }),
+  );
+  const timestamps = () => [...container.querySelectorAll("time.timestamp")];
+  expect(timestamps()).toHaveLength(4);
+  expect(timestamps().every((node) => node.textContent.includes("UTC"))).toBe(
+    true,
+  );
+  rerender(view("America/Los_Angeles"));
+  expect(timestamps()).toHaveLength(4);
+  expect(timestamps().every((node) => node.textContent.includes("PST"))).toBe(
+    true,
+  );
+  expect(
+    timestamps().every((node) => node.title.includes("2026-01-02T02:")),
+  ).toBe(true);
+});

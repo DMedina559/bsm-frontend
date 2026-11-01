@@ -1,3 +1,7 @@
+import Sessions from "../components/access/Sessions";
+import Passkeys from "../components/access/Passkeys";
+import ServerAccessEditor from "../components/access/ServerAccessEditor";
+import "../styles/access.css";
 import { callOperation } from "../api/operations";
 import QueryStatus from "../components/QueryStatus";
 import { queryKeys } from "../app/queryKeys";
@@ -569,6 +573,28 @@ const Users = () => {
           onClose={() => setShowEditModal(false)}
           closeDisabled={actionLoading}
         >
+          {currentUser?.permissions?.includes("sessions:admin") &&
+            editingUser.id !== currentUser.id && (
+              <>
+                <Sessions
+                  key={`sessions-${editingUser.id}`}
+                  userId={editingUser.id}
+                />
+                <Passkeys
+                  key={`passkeys-${editingUser.id}`}
+                  userId={editingUser.id}
+                />
+              </>
+            )}
+          {currentUser?.permissions?.includes("access:manage") &&
+            editingUser.role !== "admin" &&
+            editingUser.id !== currentUser.id && (
+              <ServerAccessEditor
+                key={editingUser.id}
+                userId={editingUser.id}
+                userRole={editingUser.role}
+              />
+            )}
           <div
             style={{
               marginBottom: "calc(20px * var(--bsm-spacing-scale))",

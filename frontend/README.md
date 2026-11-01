@@ -245,6 +245,17 @@ memory if browser persistence is blocked. A compatibility notice compares the
 backend's advertised operation IDs to the UI's pinned contract; it does not
 infer compatibility from unrelated frontend and backend version numbers.
 
+The main login and saved-instance forms support username/password and API token
+sign-in. Embedded login keeps the usual password form first; **Other sign-in
+methods** reveals the token option. Tokens require `account:read`, are validated
+against the selected backend before saving, and default to **This tab only**.
+**Remember on this browser** explicitly opts into persistent storage. Token access
+shows the credential name, expiry and effective permissions. Signing out forgets
+the stored credential without revoking it; revoke it from the issuing account.
+The login connection dropdown also contains remote-server configuration and,
+when enabled, saved instances and **Manage Instances…**. **Default** selects the
+normal connection. Custom instance names retain their original capitalization.
+
 The `application` instance in `src/app/application.js` owns the runtime and cache
 lifecycle. Thin module adapters preserve convenient imports for React hooks.
 Use `application.reset()` at session boundaries and `application.dispose()` when
@@ -358,7 +369,7 @@ frontend package itself must be editable, even if the backend already is.
 
 ### Hidden multi-instance workspace
 
-Enable `?hidden=true` and open **Global → Instances**, or open `/instances` under
+Enable `?hidden=true` and choose **Manage Instances…** in the connection dropdown, or open `/instances` under
 the app base path. The instance hub is available even when the default backend is
 signed out or unreachable. Save names and backend root URLs (including ingress
 prefixes), then sign in to each independently. **Save current connection** adds

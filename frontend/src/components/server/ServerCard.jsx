@@ -1,3 +1,4 @@
+import { useAccess } from "../../app/useAccess";
 import { memo } from "react";
 import { useOnline } from "../../app/useOnline";
 import { useServerSnapshot } from "../../app/useServerSnapshot";
@@ -12,8 +13,7 @@ import {
   Download,
   Terminal,
 } from "lucide-react";
-import { resolveApiUrl } from "../../api/transport";
-import { resolveOperationUrl } from "../../api/operations";
+import ResourceIcon from "../ResourceIcon";
 import { getApiProxyBasePath, resolveAppAssetUrl } from "../../utils/basePath";
 
 const actionDefinitions = {
@@ -52,6 +52,8 @@ const actionDefinitions = {
 function ServerCard({
   server,
   isAdmin = false,
+  canControl = true,
+  canManage = true,
   busy,
   onOpen,
   onAction,
@@ -106,20 +108,13 @@ function ServerCard({
         aria-label={`Open ${server.name} monitor`}
       />
       <div className="card-header overview-card-header">
-        <img
+        <ResourceIcon
+          world
+          serverName={server.name}
           className="overview-world-icon"
-          src={resolveApiUrl(
-            resolveOperationUrl("get_world_icon", {
-              path: { server_name: server.name },
-            }),
+          fallback={resolveAppAssetUrl(
+            `${getApiProxyBasePath()}/app/image/icon/web-app-manifest-192x192.png`,
           )}
-          alt=""
-          onError={(event) => {
-            event.currentTarget.onerror = null;
-            event.currentTarget.src = resolveAppAssetUrl(
-              `${getApiProxyBasePath()}/app/image/icon/web-app-manifest-192x192.png`,
-            );
-          }}
         />
         <div className="overview-server-identity">
           <h3>{server.name}</h3>
@@ -177,6 +172,7 @@ function ServerCard({
           const { Icon, label, title, className } = actionDefinitions[action];
           const disabled =
             !online ||
+            (action === "update" ? !canManage : !canControl) ||
             busy ||
             (action === "update" && !stable) ||
             (action === "command" && !running);
@@ -209,6 +205,15 @@ export const ConnectedServerCard = memo(function ConnectedServerCard({
   ...props
 }) {
   const server = useServerSnapshot(serverName);
-  return server ? <MemoServerCard server={server} {...props} /> : null;
+  const { can } = useAccess();
+  return server ? (
+    <MemoServerCard
+      server={server}
+      {...props}
+      isAdmin={props.isAdmin && can("servers:properties", serverName)}
+      canControl={can("servers:control", serverName)}
+      canManage={can("servers:manage", serverName)}
+    />
+  ) : null;
 });
 export default MemoServerCard;

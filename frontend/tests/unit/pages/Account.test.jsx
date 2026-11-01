@@ -45,11 +45,15 @@ describe("Account", () => {
       expect(screen.getByText("My Account")).toBeInTheDocument();
     });
 
+    expect(screen.getByLabelText("New Password")).toHaveAttribute(
+      "minlength",
+      "8",
+    );
     fireEvent.change(screen.getByLabelText("New Password"), {
-      target: { value: "newpass" },
+      target: { value: "Otter42!" },
     });
     fireEvent.change(screen.getByLabelText("Confirm New Password"), {
-      target: { value: "newpass" },
+      target: { value: "Otter42!" },
     });
     fireEvent.change(screen.getByLabelText("Current Password"), {
       target: { value: "oldpass" },

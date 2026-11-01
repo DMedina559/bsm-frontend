@@ -449,3 +449,36 @@ it("records a definite rejected action as failed and unlocks controls", async ()
     uncertain: false,
   });
 });
+
+it("preserves an MFA challenge and sends the code only to the selected backend", async () => {
+  const writeToken = vi.fn();
+  const requests = [];
+  const fetch = vi.fn(async (url, options) => {
+    requests.push({ url, options });
+    return requests.length === 1
+      ? Response.json(
+          { detail: "Authenticator or recovery code required" },
+          { status: 401, headers: { "X-BSM-MFA": "required" } },
+        )
+      : Response.json({ access_token: "mfa-token", token_type: "bearer" });
+  });
+  const session = create("https://mfa.test", fetch, { writeToken });
+  await expect(session.login("user", "password", true)).rejects.toMatchObject({
+    mfaRequired: true,
+  });
+  expect(writeToken).not.toHaveBeenCalled();
+  await session.login("user", "password", true, "one-time-recovery-code");
+  expect(requests[1].url).toBe("https://mfa.test/auth/token");
+  expect(new URLSearchParams(requests[1].options.body).get("otp")).toBe(
+    "one-time-recovery-code",
+  );
+  expect(requests[1].options.credentials).toBe("omit");
+  expect(
+    new Headers(requests[1].options.headers).get("Authorization"),
+  ).toBeNull();
+  expect(writeToken).toHaveBeenCalledWith(
+    "https://mfa.test",
+    "mfa-token",
+    true,
+  );
+});

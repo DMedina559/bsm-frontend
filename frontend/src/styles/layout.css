@@ -46,6 +46,9 @@
   gap: calc(6px * var(--bsm-spacing-scale));
   font-size: calc(11px * var(--bsm-type-scale));
 }
+.workspace-topbar .connection-indicator {
+  background: transparent;
+}
 .account-chip {
   display: flex;
   align-items: center;

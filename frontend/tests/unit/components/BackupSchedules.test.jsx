@@ -1,3 +1,4 @@
+import { TimeContext } from "../../../src/contexts/TimeContext";
 import { render, screen, fireEvent, waitFor } from "../../support/utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import BackupSchedules from "../../../src/components/BackupSchedules";
@@ -122,6 +123,7 @@ describe("Backup schedules", () => {
           available: true,
           revision: "current",
           last_status: "failed",
+          next_run_at: "2026-10-28T03:00:00Z",
           next_attempt_at: "2026-10-27T03:02:00Z",
           retry_exhausted: true,
           blocked_reason: "retry_exhausted",
@@ -130,13 +132,23 @@ describe("Backup schedules", () => {
       ],
       task_types: ["backup", "verify"],
     });
-    render(<BackupSchedules serverName="alpha" />);
+    const { container } = render(
+      <TimeContext.Provider value={{ timezone: "America/Los_Angeles" }}>
+        <BackupSchedules serverName="alpha" />
+      </TimeContext.Provider>,
+    );
     expect(
       await screen.findByText(/Automatic retries exhausted/),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Retry now", exact: true }),
     ).toBeInTheDocument();
+    const timestamps = [...container.querySelectorAll("time.timestamp")];
+    expect(timestamps).toHaveLength(2);
+    expect(timestamps.every((node) => node.textContent.includes("PDT"))).toBe(
+      true,
+    );
+    expect(screen.getByText("UTC", { exact: true })).toBeVisible();
   });
 });
 

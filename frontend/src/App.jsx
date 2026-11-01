@@ -11,6 +11,7 @@ import { application } from "./app/application";
 import { setApiBaseUrl } from "./app/connection";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./app/queryClient";
+import SecurityVerification from "./components/access/SecurityVerification";
 import DraftNavigationGuard from "./components/DraftNavigationGuard";
 import { DialogProvider } from "./contexts/DialogContext";
 import React, { Suspense, lazy } from "react";
@@ -36,6 +37,7 @@ const Content = lazy(() => import("./pages/Content"));
 const Users = lazy(() => import("./pages/Users"));
 const AuditLog = lazy(() => import("./pages/AuditLog"));
 const Account = lazy(() => import("./pages/Account"));
+const FrontendSettings = lazy(() => import("./pages/FrontendSettings"));
 const PluginSettings = lazy(() => import("./pages/PluginSettings"));
 const Plugins = lazy(() => import("./pages/Plugins"));
 const ServerConfig = lazy(() => import("./pages/ServerConfig"));
@@ -64,6 +66,8 @@ const PrivateRoute = ({ children }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  if (user.mfa_enrollment_required && location.pathname !== "/account")
+    return <Navigate to="/account" replace />;
   return children;
 };
 
@@ -137,7 +141,11 @@ const AppRoutes = () => {
         <Route path="global-players" element={<GlobalPlayers />} />
         <Route path="audit-log" element={<AuditLog />} />
         <Route path="account" element={<Account />} />
-        <Route path="appearance" element={<Account appearanceOnly />} />
+        <Route path="frontend-settings" element={<FrontendSettings />} />
+        <Route
+          path="appearance"
+          element={<Navigate to="/frontend-settings?tab=appearance" replace />}
+        />
         <Route path="server-install" element={<ServerInstall />} />
         <Route path="plugin-native-view" element={<DynamicPage />} />
         <Route path="api-explorer" element={<ApiExplorer />} />
@@ -216,6 +224,7 @@ const App = () => {
                 <ToastProvider>
                   <DialogProvider>
                     <DraftNavigationGuard />
+                    <SecurityVerification />
                     <WebSocketProvider>
                       <ServerProvider>
                         <ErrorBoundary>

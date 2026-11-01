@@ -28,16 +28,42 @@ async function backend(context, role = "admin") {
     async (route) => {
       const request = route.request();
       const path = new URL(request.url()).pathname;
-      const identity = request.headers().authorization?.replace("Bearer ", "");
+      const requestHeaders = await request.allHeaders();
+      // WebKit's intercepted request headers omit HttpOnly cookies. Read the
+      // browser-managed jar for cookie-mode requests, scoped to this exact URL.
+      const sessionCookie =
+        requestHeaders["x-bsm-auth-mode"] === "cookie"
+          ? (await context.cookies(request.url())).find(
+              (cookie) => cookie.name === "access_token_cookie",
+            )?.value
+          : undefined;
+      const identity =
+        requestHeaders.authorization?.replace("Bearer ", "") ??
+        requestHeaders.cookie?.match(
+          /(?:^|;\s*)access_token_cookie=([^;]+)/,
+        )?.[1] ??
+        sessionCookie;
       let data = { status: "success" };
       let status = 200;
+      const headers = {};
       if (path === "/api/setup/status") data = { needs_setup: false };
-      else if (path === "/auth/token")
+      else if (path === "/auth/token") {
+        const username = new URLSearchParams(request.postData()).get(
+          "username",
+        );
+        const cookieMode = requestHeaders["x-bsm-auth-mode"] === "cookie";
         data = {
-          access_token: new URLSearchParams(request.postData()).get("username"),
+          access_token: cookieMode ? "" : username,
           token_type: "bearer",
         };
-      else if (path === "/api/account") {
+        if (cookieMode) {
+          headers["Set-Cookie"] =
+            `access_token_cookie=${username}; Path=/; HttpOnly; SameSite=Lax`;
+        }
+      } else if (path === "/auth/logout") {
+        headers["Set-Cookie"] =
+          "access_token_cookie=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax";
+      } else if (path === "/api/account") {
         if (!identity) {
           status = 401;
           data = { detail: "Sign in" };
@@ -102,12 +128,25 @@ async function backend(context, role = "admin") {
         };
       else if (path.includes("themes")) data = { themes: [] };
       else if (path.includes("plugins")) data = { plugins: {} };
-      await route.fulfill({ status, json: data });
+      await route.fulfill({ status, headers, json: data });
     },
   );
   return state;
 }
 async function login(page, name) {
+  const cookie = (await page.context().cookies()).find(
+    (item) => item.name === "access_token_cookie",
+  );
+  if (cookie?.value === name) {
+    await page.goto("./");
+    await expect(
+      page.getByRole("button", {
+        name: `Open ${name}-server monitor`,
+        exact: true,
+      }),
+    ).toBeVisible();
+    return;
+  }
   await page.goto("login");
   await page.getByLabel("Username", { exact: true }).fill(name);
   await page.getByLabel("Password", { exact: true }).fill("password");
@@ -652,46 +691,59 @@ test("restores opt-in drafts after reload without persisting secrets or writing 
       json: {
         settings: {
           monitoring: { app_metrics_interval_sec: 3 },
-          web: { jwt_secret_key: "private-secret" },
+          web: { jwt_secret_key: "private-secret", jwt_key_initialized: true },
+          custom: { draft_probe: { api_token: "private-integration-token" } },
         },
       },
     });
   });
   await login(page, "alice");
-  await page.goto("account");
+  await page.goto("frontend-settings?tab=recovery");
   await page.getByLabel("Recover unsaved settings and properties").check();
   await page.goto("bsm-settings");
   await page
     .getByLabel("Application metrics interval", { exact: true })
     .fill("12");
   await page.getByRole("tab", { name: "Web & access", exact: true }).click();
-  await page
-    .getByLabel("jwt secret key", { exact: true })
-    .fill("changed-secret");
-  await expect
-    .poll(() =>
-      page.evaluate(async () => {
-        const db = await new Promise((resolve) => {
-          const request = indexedDB.open("bsm-view-state", 2);
-          request.onsuccess = () => resolve(request.result);
-        });
-        return new Promise((resolve) => {
-          const request = db
-            .transaction("records")
-            .objectStore("records")
-            .getAll();
-          request.onsuccess = () => {
-            db.close();
-            resolve(
-              JSON.stringify(
-                request.result.filter((record) => record.kind === "draft"),
-              ),
-            );
-          };
-        });
-      }),
-    )
-    .toContain('"value":12');
+  await expect(page.getByLabel("jwt secret key", { exact: true })).toHaveCount(
+    0,
+  );
+  await expect(
+    page.getByLabel("jwt key initialized", { exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("tab", { name: "Advanced", exact: true }).click();
+  await page.getByLabel("api token", { exact: true }).fill("changed-secret");
+  const storedDrafts = () =>
+    page.evaluate(async () => {
+      const db = await new Promise((resolve) => {
+        const request = indexedDB.open("bsm-view-state", 2);
+        request.onsuccess = () => resolve(request.result);
+      });
+      return new Promise((resolve) => {
+        const request = db
+          .transaction("records")
+          .objectStore("records")
+          .getAll();
+        request.onsuccess = () => {
+          db.close();
+          resolve(
+            JSON.stringify(
+              request.result.filter((record) => record.kind === "draft"),
+            ),
+          );
+        };
+      });
+    });
+  await expect.poll(storedDrafts).toContain('"value":12');
+  const stored = await storedDrafts();
+  for (const secret of [
+    "private-secret",
+    "private-integration-token",
+    "changed-secret",
+    "jwt_secret_key",
+    "jwt_key_initialized",
+  ])
+    expect(stored).not.toContain(secret);
   page.once("dialog", (dialog) => dialog.accept());
   await page.reload();
   await expect(
@@ -708,8 +760,12 @@ test("restores opt-in drafts after reload without persisting secrets or writing 
     page.getByLabel("Application metrics interval", { exact: true }),
   ).toHaveValue("12");
   await page.getByRole("tab", { name: "Web & access", exact: true }).click();
-  await expect(page.getByLabel("jwt secret key", { exact: true })).toHaveValue(
-    "private-secret",
+  await expect(page.getByLabel("jwt secret key", { exact: true })).toHaveCount(
+    0,
+  );
+  await page.getByRole("tab", { name: "Advanced", exact: true }).click();
+  await expect(page.getByLabel("api token", { exact: true })).toHaveValue(
+    "private-integration-token",
   );
   expect(saved).toBe(0);
 });
@@ -725,10 +781,12 @@ test("administrators can inspect bounded frontend rejection diagnostics without 
   await page
     .getByRole("button", { name: "Frontend runtime", exact: true })
     .click();
+  await page.goto("frontend-settings?tab=diagnostics");
   await page
     .getByLabel("Record frontend observations", { exact: true })
     .check();
   await page.getByLabel("Keep history across reloads", { exact: true }).check();
+  await page.goto("application-monitor?view=diagnostics&category=frontend");
   await expect(page.getByLabel("WebSocket health")).toHaveText("Live");
   state.sockets.at(-1).send(
     JSON.stringify({
@@ -748,11 +806,12 @@ test("administrators can inspect bounded frontend rejection diagnostics without 
   await page.goto("application-monitor?view=diagnostics&category=frontend");
   await expect(page.getByRole("cell", { name: /invalid-task/ })).toBeVisible();
   await expect(
-    page.getByRole("cell", { name: "Previous session", exact: true }),
+    page
+      .getByRole("row")
+      .filter({ has: page.getByRole("cell", { name: /invalid-task/ }) })
+      .getByRole("cell", { name: "Previous session", exact: true }),
   ).toBeVisible();
-  await expect(
-    page.getByLabel("Record frontend observations", { exact: true }),
-  ).toBeChecked();
+  await expect(page.getByText("Recording", { exact: true })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   const recordingControl = page.getByRole("link", {
     name: "Frontend diagnostics recording is enabled",

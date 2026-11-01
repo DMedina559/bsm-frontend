@@ -79,6 +79,8 @@ export default function SettingsField({
       ) : (
         <input
           id={id}
+          name={id}
+          autoComplete={metadata.type === "password" ? "off" : undefined}
           className="form-input"
           type={numeric ? "number" : metadata.type || "text"}
           step={numeric ? (metadata.step ?? "any") : undefined}

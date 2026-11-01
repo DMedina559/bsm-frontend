@@ -1,7 +1,10 @@
+import { useAccess } from "./useAccess";
 import { useEffect } from "react";
 import { useWebSocket } from "../contexts/WebSocketContext";
 import { useResourceQuery } from "./resourceQueries";
 export function useApplicationMetrics(enabled = true) {
+  const { can } = useAccess();
+  enabled = enabled && can("runtime:metrics");
   const { isConnected, subscribe, unsubscribe } = useWebSocket();
   const query = useResourceQuery("applicationMetrics", undefined, {
     enabled,

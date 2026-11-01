@@ -1,11 +1,9 @@
+import { MemoryRouter } from "react-router-dom";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, expect, it } from "vitest";
 import RuntimeDiagnostics from "../../../../src/components/diagnostics/RuntimeDiagnostics";
 import { application } from "../../../../src/app/application";
 import { runtimeHistory } from "../../../../src/app/runtimeHistoryStore";
-vi.mock("../../../../src/app/usePreference", () => ({
-  usePreference: () => [{ recording: true, persist: false }, vi.fn()],
-}));
 afterEach(() => {
   cleanup();
   runtimeHistory.close();
@@ -18,7 +16,11 @@ it("filters retained observations, inspects metadata and clears history", () => 
     reason: "recovery-or-event",
     family: "servers",
   });
-  render(<RuntimeDiagnostics />);
+  render(
+    <MemoryRouter>
+      <RuntimeDiagnostics />
+    </MemoryRouter>,
+  );
   expect(screen.getByText("Recording", { exact: true })).toBeInTheDocument();
   fireEvent.change(screen.getByLabelText("Observation", { exact: true }), {
     target: { value: "rejected" },

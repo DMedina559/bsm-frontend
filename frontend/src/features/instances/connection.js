@@ -1,3 +1,10 @@
+import {
+  readTrustedDevice,
+  rememberTrustedDevice,
+  forgetTrustedDevice,
+} from "../../app/trustedDevices";
+import { getPasskeyAssertion } from "../../app/passkeys";
+import { authenticateIntegrationToken } from "./tokenAuthentication";
 import { connectionFailure } from "./probe";
 import { sessionSettings } from "../../app/browserStorage";
 import { createSharedSocketManager } from "../../app/sharedSocketManager";
@@ -135,6 +142,15 @@ export function createInstanceConnection(
         throw new Error("Invalid account response from this instance.");
       if (disposed) return;
       publish({ user });
+      if (user.mfa_enrollment_required) {
+        publish({
+          status: "enrollment-required",
+          servers: [],
+          error:
+            "MFA enrollment is required. Open this instance workspace to set up your authenticator.",
+        });
+        return;
+      }
       if (!historyKey) {
         historyKey = `bsm.instance-tasks.v1:${JSON.stringify([profile.url, String(user.id ?? user.username)])}`;
         try {
@@ -153,8 +169,15 @@ export function createInstanceConnection(
         }
       }
       const results = await Promise.allSettled([
-        client.callOperation("list_servers"),
+        !Array.isArray(user.permissions) ||
+        user.permissions.includes("servers:read")
+          ? client.callOperation("list_servers")
+          : Promise.resolve({ servers: [] }),
         client.callOperation("get_system_info"),
+        user.server_access === "assigned" &&
+        user.permissions?.includes("servers:read")
+          ? client.callOperation("list_access_servers")
+          : Promise.resolve([]),
       ]);
       if (disposed) return;
       const fleet = results[0];
@@ -217,6 +240,10 @@ export function createInstanceConnection(
       publish({
         status: "online",
         user,
+        serverAccess:
+          results[2].status === "fulfilled" && Array.isArray(results[2].value)
+            ? results[2].value
+            : [],
         servers: fleet.value.servers,
         info:
           results[1].status === "fulfilled"
@@ -387,7 +414,23 @@ export function createInstanceConnection(
         fetch: fetcher,
         captureSession: () => runtime.sessionRuntime.capture(),
       });
-      return publicTransport.request(url, { ...options, credentials: "omit" });
+      let mfaRequired = false;
+      let passkeyRequired = false;
+      return publicTransport
+        .request(url, {
+          ...options,
+          credentials: "omit",
+          onResponseMetadata: (metadata) => {
+            mfaRequired = metadata.headers["x-bsm-mfa"] === "required";
+            passkeyRequired = metadata.headers["x-bsm-mfa"] === "passkey";
+          },
+        })
+        .catch((error) => {
+          if (error.status === 401 && mfaRequired) error.mfaRequired = true;
+          if (error.status === 401 && passkeyRequired)
+            error.passkeyRequired = true;
+          throw error;
+        });
     },
   });
   return {
@@ -400,7 +443,14 @@ export function createInstanceConnection(
       await refresh();
     },
     refresh,
-    async login(username, password, remember = false) {
+    async login(
+      username,
+      password,
+      remember = false,
+      otp = "",
+      signal,
+      rememberDevice = false,
+    ) {
       if (profile.paused || disposed)
         throw new Error("Resume this connection before signing in.");
       const body = new URLSearchParams({
@@ -409,9 +459,68 @@ export function createInstanceConnection(
         grant_type: "password",
         remember_me: String(remember),
       });
+      if (otp) body.set("otp", otp);
+      if (rememberDevice) body.set("remember_device", "true");
+      const device = readTrustedDevice(username, profile.url);
+      if (device) body.set("trusted_device_token", device);
       let result;
       try {
-        result = await loginClient.callOperation("login", { body });
+        result = await loginClient.callOperation("login", { body, signal });
+      } catch (error) {
+        if (error.mfaRequired) {
+          if (device) forgetTrustedDevice(username, profile.url);
+          throw error;
+        }
+        throw new Error(connectionError(error));
+      }
+      if (disposed)
+        throw new DOMException("Instance session changed", "AbortError");
+      if (typeof result?.access_token !== "string" || !result.access_token)
+        throw new Error("This instance did not return an access token.");
+      if (rememberDevice) rememberTrustedDevice(username, result, profile.url);
+      writeToken(profile.url, result.access_token, remember);
+    },
+    async loginWithToken(candidate, remember = false, signal) {
+      if (profile.paused || disposed)
+        throw new Error("Resume this connection before signing in.");
+      const result = await authenticateIntegrationToken(
+        profile.url,
+        candidate,
+        { signal, fetch: fetcher },
+      );
+      if (disposed || signal?.aborted)
+        throw new DOMException("Instance session changed", "AbortError");
+      writeToken(profile.url, result.token, remember);
+      return result.account;
+    },
+    async loginWithPasskey(username = "", remember = false, signal) {
+      if (profile.paused || disposed)
+        throw new Error("Resume this connection before signing in.");
+      const trimmedUsername = username.trim() || null;
+      let options;
+      try {
+        options = await loginClient.callOperation("begin_passkey_login", {
+          body: { username: trimmedUsername },
+          signal,
+        });
+      } catch (error) {
+        throw new Error(connectionError(error));
+      }
+      if (disposed || signal?.aborted)
+        throw new DOMException("Instance session changed", "AbortError");
+      const credential = await getPasskeyAssertion(options.public_key, signal);
+      if (disposed || signal?.aborted)
+        throw new DOMException("Instance session changed", "AbortError");
+      let result;
+      try {
+        result = await loginClient.callOperation("complete_passkey_login", {
+          body: {
+            challenge_id: options.challenge_id,
+            credential,
+            remember_me: remember,
+          },
+          signal,
+        });
       } catch (error) {
         throw new Error(connectionError(error));
       }
@@ -423,7 +532,8 @@ export function createInstanceConnection(
     },
     async logout() {
       try {
-        if (token) await client.callOperation("logout");
+        if (token && !token.startsWith("bsm_it_"))
+          await client.callOperation("logout");
       } finally {
         if (!disposed) writeToken(profile.url, null);
       }

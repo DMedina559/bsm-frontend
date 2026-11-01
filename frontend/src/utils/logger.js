@@ -40,7 +40,7 @@ export function redactLogValue(value, seen = new WeakSet()) {
   return Object.fromEntries(
     Object.entries(value).map(([key, item]) => [
       key,
-      /token|password|secret|authorization|credential|registration_url|command/i.test(
+      /token|password|secret|authorization|credential|registration_url|command|otp|recovery_codes|provisioning_uri|qr_svg|csrf/i.test(
         key,
       )
         ? "[REDACTED]"

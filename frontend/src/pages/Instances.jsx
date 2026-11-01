@@ -1,3 +1,6 @@
+import Timestamp from "../components/Timestamp";
+import SignInForm from "../components/auth/SignInForm";
+import TokenAccessNotice from "../components/auth/TokenAccessNotice";
 import ConnectionProbe from "../features/instances/ConnectionProbe";
 import ProfileEditor from "../features/instances/ProfileEditor";
 import { sessionSettings } from "../app/browserStorage";
@@ -51,11 +54,6 @@ function InstanceCard({
     info: null,
     updatedAt: null,
   });
-  const [credentials, setCredentials] = useState({
-    username: "",
-    password: "",
-    remember: false,
-  });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [showLogin, setShowLogin] = useState(false);
@@ -83,24 +81,6 @@ function InstanceCard({
       connection.current = null;
     };
   }, [profile.id, profile.url, profile.paused, token]);
-  async function login(event) {
-    event.preventDefault();
-    setBusy(true);
-    setError("");
-    try {
-      await connection.current.login(
-        credentials.username,
-        credentials.password,
-        credentials.remember,
-      );
-      setShowLogin(false);
-    } catch (failure) {
-      setError(failure.message);
-    } finally {
-      setBusy(false);
-      setCredentials((value) => ({ ...value, password: "" }));
-    }
-  }
   const { confirmAction } = useDialog();
   async function action(server, operation) {
     const session = connection.current;
@@ -130,11 +110,19 @@ function InstanceCard({
   const blocked =
     window.location.protocol === "https:" &&
     new URL(profile.url).protocol === "http:";
-  const canManage = ["admin", "moderator"].includes(snapshot.user?.role);
+  const canManage = Array.isArray(snapshot.user?.permissions)
+    ? snapshot.user.permissions.includes("servers:control")
+    : ["admin", "moderator"].includes(snapshot.user?.role);
+  const canControl = (server) =>
+    canManage &&
+    (snapshot.user?.server_access !== "assigned" ||
+      snapshot.serverAccess
+        ?.find((resource) => resource.name === server.name)
+        ?.permissions.includes("servers:control"));
   return (
     <article
       hidden={hidden}
-      className="instance-card"
+      className={`instance-card${profile.color ? " has-instance-color" : ""}`}
       aria-label={profile.name}
       style={
         profile.color
@@ -157,7 +145,11 @@ function InstanceCard({
           <code title={profile.url}>{profile.url}</code>
         </div>
         <span className={`instance-state instance-state-${snapshot.status}`}>
-          {snapshot.status === "signed-out" ? "Sign in" : snapshot.status}
+          {snapshot.status === "signed-out"
+            ? "Sign in"
+            : snapshot.status === "enrollment-required"
+              ? "Set up MFA"
+              : snapshot.status}
         </span>
       </div>
       {profile.paused && (
@@ -191,52 +183,44 @@ function InstanceCard({
         <ConnectionProbe key={profile.url} url={profile.url} />
       )}
       {!profile.paused && (snapshot.status === "signed-out" || showLogin) && (
-        <form className="instance-login" onSubmit={login}>
-          <div className="instance-login-fields">
-            <label>
-              Username
-              <input
-                autoComplete="username"
-                required
-                value={credentials.username}
-                onChange={(e) =>
-                  setCredentials({ ...credentials, username: e.target.value })
-                }
-              />
-            </label>
-            <label>
-              Password
-              <input
-                type="password"
-                autoComplete="current-password"
-                required
-                value={credentials.password}
-                onChange={(e) =>
-                  setCredentials({ ...credentials, password: e.target.value })
-                }
-              />
-            </label>
-          </div>
-          <div className="instance-login-actions">
-            <label>
-              <input
-                type="checkbox"
-                checked={credentials.remember}
-                onChange={(e) =>
-                  setCredentials({ ...credentials, remember: e.target.checked })
-                }
-              />
-              Remember this instance
-            </label>
-            <button
-              className="instance-button primary"
-              disabled={busy || blocked || profile.paused}
-            >
-              {busy ? "Signing in…" : "Sign in"}
-            </button>
-          </div>
-        </form>
+        <SignInForm
+          key={`${profile.id}:${profile.url}:${profile.paused}:${!!token}`}
+          variant="instance"
+          disabled={busy || blocked || profile.paused}
+          onPassword={async (
+            { username, password, remember, otp, rememberDevice = false },
+            signal,
+          ) => {
+            await connection.current.login(
+              username,
+              password,
+              remember,
+              otp,
+              signal,
+              rememberDevice,
+            );
+            setShowLogin(false);
+          }}
+          onToken={async (candidate, remember, signal) => {
+            await connection.current.loginWithToken(
+              candidate,
+              remember,
+              signal,
+            );
+            setShowLogin(false);
+          }}
+          onPasskey={async ({ username, remember }, signal) => {
+            await connection.current.loginWithPasskey(
+              username,
+              remember,
+              signal,
+            );
+            setShowLogin(false);
+          }}
+        />
       )}
+      <TokenAccessNotice account={snapshot.user} />
+
       {snapshot.servers.length > 0 ? (
         <div className="instance-fleet">
           <div className="instance-fleet-heading">
@@ -270,7 +254,7 @@ function InstanceCard({
                     {server.version ? ` · ${server.version}` : ""}
                   </small>
                 </div>
-                {canManage && (
+                {canControl(server) && (
                   <button
                     className="instance-button"
                     disabled={
@@ -309,9 +293,11 @@ function InstanceCard({
       <div className="instance-health">
         <span>
           Last successful refresh:{" "}
-          {snapshot.updatedAt
-            ? new Date(snapshot.updatedAt).toLocaleTimeString()
-            : "Never"}
+          {snapshot.updatedAt ? (
+            <Timestamp value={snapshot.updatedAt} kind="time" />
+          ) : (
+            "Never"
+          )}
         </span>
         <span>
           {" "}
@@ -343,17 +329,21 @@ function InstanceCard({
           </dd>
           <dt>Last success</dt>
           <dd>
-            {snapshot.updatedAt
-              ? new Date(snapshot.updatedAt).toLocaleString()
-              : "Never"}
+            {snapshot.updatedAt ? (
+              <Timestamp value={snapshot.updatedAt} />
+            ) : (
+              "Never"
+            )}
           </dd>
           <dt>Next refresh</dt>
           <dd>
-            {profile.paused
-              ? "Paused"
-              : snapshot.nextRefreshAt
-                ? new Date(snapshot.nextRefreshAt).toLocaleTimeString()
-                : "Not scheduled"}
+            {profile.paused ? (
+              "Paused"
+            ) : snapshot.nextRefreshAt ? (
+              <Timestamp value={snapshot.nextRefreshAt} kind="time" />
+            ) : (
+              "Not scheduled"
+            )}
           </dd>
           <dt>Certificate trust</dt>
           <dd>
@@ -408,7 +398,9 @@ function InstanceCard({
                 {operation.error?.message && (
                   <p role="alert">{operation.error.message}</p>
                 )}
-                <small>{new Date(operation.updatedAt).toLocaleString()}</small>
+                <small>
+                  <Timestamp value={operation.updatedAt} />
+                </small>
               </li>
             ))}
           </ol>
@@ -464,7 +456,10 @@ function InstanceCard({
           <button
             className="instance-button"
             disabled={profile.paused}
-            onClick={() => setShowLogin(!showLogin)}
+            onClick={() => {
+              setShowLogin(!showLogin);
+              setError("");
+            }}
           >
             Switch account
           </button>

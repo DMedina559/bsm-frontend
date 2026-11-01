@@ -1,3 +1,4 @@
+import { useAccess } from "../app/useAccess";
 import { useStableCallback } from "../app/useStableCallback";
 import { callOperation } from "../api/operations";
 import { useResourceMutation } from "../app/resourceQueries";
@@ -27,6 +28,7 @@ const LAYOUTS = [
 ];
 
 const Overview = () => {
+  const { can } = useAccess();
   const { confirmAction, promptAction } = useDialog();
   const {
     servers,
@@ -230,7 +232,7 @@ const Overview = () => {
           </Link>
           <h2>Bedrock Server Manager</h2>
           <ApplicationHealth />
-          <ApplicationMetricsSummary />
+          {can("runtime:metrics") && <ApplicationMetricsSummary />}
         </section>
         <OverviewFleetMetrics servers={servers} unavailable={unavailable} />
       </div>

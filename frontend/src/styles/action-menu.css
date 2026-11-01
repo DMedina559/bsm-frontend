@@ -38,3 +38,9 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.action-menu-separator {
+  height: 1px;
+  margin: var(--bsm-space-1) 0;
+  background: var(--border-color);
+}

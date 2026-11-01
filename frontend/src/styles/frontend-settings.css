@@ -1,0 +1,159 @@
+.account-page,
+.frontend-settings-page {
+  max-width: 1180px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  box-shadow: none;
+}
+.account-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--bsm-space-4);
+  margin-bottom: var(--bsm-space-4);
+}
+.account-heading h1 {
+  margin: var(--bsm-space-1) 0;
+  font-size: clamp(1.5rem, 2.3vw, 2rem);
+}
+.account-heading .form-help-text {
+  margin-bottom: 0;
+  max-width: 72ch;
+}
+.account-heading > .action-button {
+  flex-shrink: 0;
+  margin-top: var(--bsm-space-2);
+}
+.account-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--bsm-space-4);
+  padding: var(--bsm-space-3) var(--bsm-space-4);
+  border: 1px solid var(--border-color);
+  border-radius: var(--bsm-radius-lg, 12px);
+  background: var(--bsm-surface);
+  margin-bottom: var(--bsm-space-4);
+}
+.account-identity > svg {
+  color: var(--bsm-accent);
+  flex-shrink: 0;
+}
+.account-identity .profile-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bsm-space-5);
+  margin: 0;
+}
+.account-identity .profile-details dd {
+  margin: var(--bsm-space-1) 0 0;
+  font-weight: 600;
+}
+.account-page .account-security {
+  margin-top: 0;
+}
+.frontend-settings-layout {
+  display: grid;
+  grid-template-columns: 235px minmax(0, 1fr);
+  gap: var(--bsm-space-4);
+  align-items: start;
+}
+.frontend-settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bsm-space-2);
+  position: sticky;
+  top: var(--bsm-space-4);
+}
+.frontend-settings-nav button {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--bsm-space-3);
+  text-align: left;
+  padding: var(--bsm-space-3);
+  border-radius: var(--bsm-radius-lg, 12px);
+  border: 1px solid transparent;
+  color: var(--text-color);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+.frontend-settings-nav button[aria-selected="true"] {
+  background: var(--bsm-surface);
+  border-color: var(--border-color);
+}
+.frontend-settings-nav button:hover {
+  background: var(--bsm-surface);
+}
+.frontend-settings-nav svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--bsm-accent);
+}
+.frontend-settings-nav strong,
+.frontend-settings-nav small {
+  display: block;
+}
+.frontend-settings-nav small {
+  color: var(--text-color-secondary);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  margin-top: var(--bsm-space-1);
+}
+.frontend-settings-content {
+  min-width: 0;
+  display: grid;
+  gap: var(--bsm-space-4);
+}
+.frontend-settings-content > .settings-panel {
+  margin: 0;
+  padding: var(--bsm-space-4);
+}
+.frontend-settings-content h2 {
+  margin-top: 0;
+  font-size: 1rem;
+}
+.frontend-settings-content .checkbox-wrapper {
+  margin-top: var(--bsm-space-3);
+}
+.frontend-backend-address {
+  margin-left: 0;
+  overflow-wrap: anywhere;
+  font-family: monospace;
+  margin-top: var(--bsm-space-2);
+}
+@media (max-width: 850px) {
+  .frontend-settings-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .frontend-settings-nav {
+    position: static;
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: var(--bsm-space-1);
+  }
+  .frontend-settings-nav button {
+    flex-shrink: 0;
+    align-items: center;
+  }
+  .frontend-settings-nav small {
+    display: none;
+  }
+  .account-heading {
+    flex-wrap: wrap;
+  }
+  .account-heading > .action-button {
+    margin-top: 0;
+  }
+}
+
+.frontend-settings-content > .settings-panel > label {
+  display: flex;
+  align-items: center;
+  gap: var(--bsm-space-2);
+  margin-block: var(--bsm-space-3);
+}
+
+.frontend-settings-content .appearance-preference-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+}

@@ -1,3 +1,4 @@
+import { useAccess } from "../app/useAccess";
 import { useTimeFormat } from "../app/useTimeFormat";
 import { useMetricFormat } from "../app/useMetricFormat";
 import { callOperation } from "../api/operations";
@@ -31,6 +32,7 @@ import {
 } from "lucide-react";
 import { logger } from "../utils/logger";
 const Monitor = () => {
+  const { can } = useAccess();
   const { format } = useTimeFormat();
   const { memory, number, scale, units } = useMetricFormat();
   const {
@@ -266,7 +268,11 @@ const Monitor = () => {
             type="button"
             className="action-button start-button"
             onClick={() => sendAction("start")}
-            disabled={loadingAction || isRunning}
+            disabled={
+              loadingAction ||
+              isRunning ||
+              !can("servers:control", selectedServer)
+            }
           >
             <Play size={16} aria-hidden="true" /> Start
           </button>
@@ -274,7 +280,11 @@ const Monitor = () => {
             type="button"
             className="action-button danger-button"
             onClick={() => sendAction("stop")}
-            disabled={loadingAction || !isRunning}
+            disabled={
+              loadingAction ||
+              !isRunning ||
+              !can("servers:control", selectedServer)
+            }
           >
             <Square size={16} aria-hidden="true" /> Stop
           </button>
@@ -282,7 +292,7 @@ const Monitor = () => {
             type="button"
             className="action-button warning-button"
             onClick={() => sendAction("restart")}
-            disabled={loadingAction}
+            disabled={loadingAction || !can("servers:control", selectedServer)}
           >
             <RotateCcw size={16} aria-hidden="true" /> Restart
           </button>
@@ -456,13 +466,22 @@ const Monitor = () => {
                     : "Start the server to send commands"
                 }
                 aria-label="Console command"
-                disabled={loadingAction || !isRunning}
+                disabled={
+                  loadingAction ||
+                  !isRunning ||
+                  !can("servers:control", selectedServer)
+                }
               />
             </div>
             <button
               type="submit"
               className="action-button"
-              disabled={loadingAction || !command.trim() || !isRunning}
+              disabled={
+                loadingAction ||
+                !command.trim() ||
+                !isRunning ||
+                !can("servers:control", selectedServer)
+              }
             >
               Send
             </button>

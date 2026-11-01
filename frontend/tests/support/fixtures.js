@@ -25,6 +25,8 @@ export const user = {
   is_active: true,
 };
 export function fixtureResponse(url) {
+  if (url.pathname === "/api/account/security/devices") return [];
+
   const p = url.pathname;
   if (p === "/api/setup/status") return { needs_setup: false };
   if (p === "/api/account") return user;
