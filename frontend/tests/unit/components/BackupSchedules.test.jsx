@@ -18,7 +18,33 @@ describe("Backup schedules", () => {
     );
     api.get.mockResolvedValue({
       schedules: [],
-      task_types: ["backup", "verify"],
+      task_types: ["backup:create", "backup:verify", "server:send_command"],
+      task_definitions: {
+        "backup:create": {
+          description: "Create a scheduled server snapshot archive.",
+          options_schema: { type: "object", properties: {} },
+        },
+        "backup:verify": {
+          description:
+            "Verify snapshot archive integrity for backups older than minimum_age_hours.",
+          options_schema: {
+            type: "object",
+            properties: {
+              minimum_age_hours: { type: "integer", default: 168 },
+            },
+          },
+        },
+        "server:send_command": {
+          description: "Send a console command to a running Bedrock server.",
+          options_schema: {
+            type: "object",
+            required: ["command"],
+            properties: {
+              command: { type: "string", description: "Command to execute" },
+            },
+          },
+        },
+      },
     });
     api.put.mockResolvedValue({ status: "success", message: "Saved" });
   });
@@ -37,7 +63,7 @@ describe("Backup schedules", () => {
     fireEvent.change(
       screen.getByRole("combobox", { name: "Task", exact: true }),
       {
-        target: { value: "verify" },
+        target: { value: "backup:verify" },
       },
     );
     expect(
@@ -49,9 +75,43 @@ describe("Backup schedules", () => {
       expect(api.put).toHaveBeenCalledWith(
         "/api/scheduler/schedules/backup-schedule-test",
         expect.objectContaining({
-          task: "verify",
+          task: "backup:verify",
           enabled: false,
           server_name: "alpha",
+        }),
+      ),
+    );
+  });
+  it("renders dynamic options from task_definitions for built-in and plugin tasks", async () => {
+    render(<BackupSchedules serverName="alpha" />);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Add schedule" }),
+    );
+    await screen.findByRole("option", { name: "Send console command" });
+    fireEvent.change(
+      screen.getByRole("combobox", { name: "Task", exact: true }),
+      {
+        target: { value: "server:send_command" },
+      },
+    );
+    expect(
+      await screen.findByText(
+        "Send a console command to a running Bedrock server.",
+      ),
+    ).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("command"), {
+      target: { value: "say Hello" },
+    });
+    fireEvent.change(screen.getByLabelText("Name"), {
+      target: { value: "announce" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save", exact: true }));
+    await waitFor(() =>
+      expect(api.put).toHaveBeenCalledWith(
+        "/api/scheduler/schedules/announce",
+        expect.objectContaining({
+          task: "server:send_command",
+          options: { command: "say Hello" },
         }),
       ),
     );
@@ -83,7 +143,7 @@ describe("Backup schedules", () => {
         {
           schedule_id: "nightly",
           configuration: {
-            task: "verify",
+            task: "backup:verify",
             server_name: "alpha",
             enabled: true,
             time: "03:00",
@@ -94,7 +154,7 @@ describe("Backup schedules", () => {
           runs: [],
         },
       ],
-      task_types: ["backup", "verify"],
+      task_types: ["backup:create", "backup:verify"],
     });
     api.post.mockResolvedValue({ status: "success" });
     render(<BackupSchedules serverName="alpha" />);
@@ -114,7 +174,7 @@ describe("Backup schedules", () => {
         {
           schedule_id: "nightly",
           configuration: {
-            task: "verify",
+            task: "backup:verify",
             server_name: "alpha",
             enabled: true,
             time: "03:00",
@@ -130,7 +190,7 @@ describe("Backup schedules", () => {
           runs: [],
         },
       ],
-      task_types: ["backup", "verify"],
+      task_types: ["backup:create", "backup:verify"],
     });
     const { container } = render(
       <TimeContext.Provider value={{ timezone: "America/Los_Angeles" }}>
@@ -160,7 +220,7 @@ it("offers Pacific Time as a regional timezone instead of PDT", async () => {
   );
   api.get.mockResolvedValue({
     schedules: [],
-    task_types: ["backup", "verify"],
+    task_types: ["backup:create", "backup:verify"],
     timezones: ["UTC", "America/Los_Angeles"],
     timezone_database_available: true,
   });

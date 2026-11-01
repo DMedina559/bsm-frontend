@@ -202,7 +202,7 @@ test("scheduler is an administrator page with independent verification jobs", as
   await recoveryBackend(context);
   await context.route("**/api/scheduler/schedules*", (route) =>
     route.fulfill({
-      json: { schedules: [], task_types: ["backup", "verify"] },
+      json: { schedules: [], task_types: ["backup:create", "backup:verify"] },
     }),
   );
   await page.goto("scheduler");
@@ -210,7 +210,7 @@ test("scheduler is an administrator page with independent verification jobs", as
     page.getByRole("heading", { name: "Scheduler", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Add schedule" }).click();
-  await page.getByLabel("Task", { exact: true }).selectOption("verify");
+  await page.getByLabel("Task", { exact: true }).selectOption("backup:verify");
   await expect(page.getByLabel("Enabled", { exact: true })).not.toBeChecked();
   await expect(page.getByLabel("Recheck after (hours)")).toBeVisible();
   const name = page.getByLabel("Name", { exact: true });
@@ -228,7 +228,7 @@ test("scheduler is an administrator page with independent verification jobs", as
   );
   await page.getByRole("button", { name: "Save", exact: true }).click();
   expect((await saved).postDataJSON()).toMatchObject({
-    task: "verify",
+    task: "backup:verify",
     enabled: false,
   });
   await expect(

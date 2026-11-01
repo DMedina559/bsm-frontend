@@ -12,8 +12,24 @@ import QueryStatus from "./QueryStatus";
 import { useToast } from "../contexts/ToastContext";
 import { useDialog } from "../contexts/DialogContext";
 
-const initial = (serverName, timezone = "UTC") => ({
-  task: "backup",
+const TASK_LABELS = {
+  "backup:create": "Backup",
+  backup: "Backup",
+  "backup:verify": "Verify backups",
+  verify: "Verify backups",
+  "backup:prune": "Prune old backups",
+  "server:start": "Start server",
+  "server:stop": "Stop server",
+  "server:restart": "Restart server",
+  "server:send_command": "Send console command",
+  "world:export": "Export world",
+};
+const isBackupTask = (task) => task === "backup" || task === "backup:create";
+const isVerifyTask = (task) => task === "verify" || task === "backup:verify";
+const formatTaskLabel = (task) => TASK_LABELS[task] ?? task;
+
+const initial = (serverName, timezone = "UTC", task = "backup:create") => ({
+  task,
   server_name: serverName,
   enabled: false,
   time: "03:00",
@@ -99,8 +115,17 @@ export default function BackupSchedules({
             onClick={() => {
               setScheduleId("");
               setExisting(false);
+              const defaultTask =
+                query.data?.task_types?.includes("backup:create") ||
+                !query.data?.task_types?.includes("backup")
+                  ? "backup:create"
+                  : "backup";
               setConfig(
-                initial(serverName || defaultServer || "", defaultZone),
+                initial(
+                  serverName || defaultServer || "",
+                  defaultZone,
+                  defaultTask,
+                ),
               );
               setEditing(true);
             }}
@@ -127,9 +152,7 @@ export default function BackupSchedules({
                 <h3>{entry.schedule_id}</h3>
                 <span className="schedule-muted">
                   {entry.configuration.server_name} ·{" "}
-                  {entry.configuration.task === "verify"
-                    ? "Verify backups"
-                    : entry.configuration.task}
+                  {formatTaskLabel(entry.configuration.task)}
                 </span>
               </div>
               <span
@@ -375,21 +398,23 @@ export default function BackupSchedules({
                 >
                   {[
                     ...new Set([
-                      "backup",
-                      "verify",
-                      ...(query.data?.task_types ?? []),
-                      config.task,
+                      ...(query.data?.task_types?.length
+                        ? query.data.task_types
+                        : ["backup:create", "backup:verify"]),
+                      ...Object.keys(query.data?.task_definitions ?? {}),
+                      ...(config.task ? [config.task] : []),
                     ]),
                   ].map((task) => (
                     <option key={task} value={task}>
-                      {task === "backup"
-                        ? "Backup"
-                        : task === "verify"
-                          ? "Verify backups"
-                          : task}
+                      {formatTaskLabel(task)}
                     </option>
                   ))}
                 </select>
+                {query.data?.task_definitions?.[config.task]?.description && (
+                  <small className="form-help-text">
+                    {query.data.task_definitions[config.task].description}
+                  </small>
+                )}
               </div>
               <label>
                 Time in selected timezone
@@ -436,7 +461,7 @@ export default function BackupSchedules({
                   }
                 />
               </label>
-              {config.task === "backup" && (
+              {isBackupTask(config.task) && (
                 <BackupContents
                   mode={config.options.mode ?? "default"}
                   components={
@@ -453,22 +478,34 @@ export default function BackupSchedules({
                   }
                 />
               )}
-              {config.task.includes(":") && (
-                <PluginSettingsFields
-                  key={config.task}
-                  values={config.options}
-                  schema={
-                    query.data?.task_definitions?.[config.task]?.options_schema
-                  }
-                  onChange={(path, value) =>
-                    change(
-                      "options",
-                      path ? updateSetting(config.options, path, value) : value,
-                    )
-                  }
-                />
-              )}
-              {config.task === "verify" && (
+              {!isBackupTask(config.task) &&
+                !isVerifyTask(config.task) &&
+                config.task.includes(":") &&
+                (() => {
+                  const schema =
+                    query.data?.task_definitions?.[config.task]?.options_schema;
+                  if (
+                    schema?.properties &&
+                    Object.keys(schema.properties).length === 0
+                  )
+                    return null;
+                  return (
+                    <PluginSettingsFields
+                      key={config.task}
+                      values={config.options}
+                      schema={schema}
+                      onChange={(path, value) =>
+                        change(
+                          "options",
+                          path
+                            ? updateSetting(config.options, path, value)
+                            : value,
+                        )
+                      }
+                    />
+                  );
+                })()}
+              {isVerifyTask(config.task) && (
                 <label>
                   Recheck after (hours)
                   <input

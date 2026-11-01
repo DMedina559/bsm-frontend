@@ -18,7 +18,7 @@ describe("Scheduler page", () => {
     api.get.mockImplementation((url) =>
       Promise.resolve(
         url.includes("/scheduler/schedules")
-          ? { schedules: [], task_types: ["backup", "verify"] }
+          ? { schedules: [], task_types: ["backup:create", "backup:verify"] }
           : { servers: [{ name: "alpha" }] },
       ),
     );

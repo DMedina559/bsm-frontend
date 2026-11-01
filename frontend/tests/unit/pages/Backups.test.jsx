@@ -302,7 +302,7 @@ describe("Backups", () => {
       if (url.includes("/scheduler/schedules"))
         return Promise.resolve({
           schedules: [],
-          task_types: ["backup", "verify"],
+          task_types: ["backup:create", "backup:verify"],
         });
       return Promise.resolve({});
     });
