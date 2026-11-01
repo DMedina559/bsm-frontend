@@ -6,6 +6,11 @@ test("token sign-in is scoped, explicit about storage, and shared with saved con
 }) => {
   test.setTimeout(90000);
   const origin = "http://127.0.0.1:4180";
+  const schema = await (await request.get(`${origin}/api/openapi.json`)).json();
+  test.skip(
+    !schema.paths?.["/api/account/tokens"]?.post,
+    "Backend predates named credentials",
+  );
   const credentials = {
     username: "smoke-admin",
     password: "temporary-smoke-password",
