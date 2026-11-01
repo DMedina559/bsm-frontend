@@ -68,7 +68,16 @@ export default function SignInForm({
       onSuccess?.(result);
     } catch (failure) {
       if (signal.aborted || failure.name === "AbortError") return;
-      if (method === "password" && failure.mfaRequired) {
+      if (failure.passkeyRequired) {
+        setMethod("passkey");
+        setChallenge(false);
+        setPassword("");
+        setOtp("");
+        onChallengeChange?.("");
+        setError(
+          "This account requires a passkey. Choose Sign in with passkey to continue.",
+        );
+      } else if (method === "password" && failure.mfaRequired) {
         retainPassword = true;
         setChallenge(true);
         onChallengeChange?.(username);

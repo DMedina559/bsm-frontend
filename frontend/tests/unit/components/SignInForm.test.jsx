@@ -127,3 +127,32 @@ it("only offers remembering after the OTP challenge and submits explicit opt-in"
     ),
   );
 });
+
+it("directs passkey-only accounts to passkey sign-in without retaining password or asking for OTP", async () => {
+  const passwordLogin = vi
+    .fn()
+    .mockRejectedValue(
+      Object.assign(new Error("Use passkey"), { passkeyRequired: true }),
+    );
+  render(
+    <SignInForm
+      onPassword={passwordLogin}
+      onPasskey={vi.fn()}
+      onToken={vi.fn()}
+    />,
+  );
+  fireEvent.change(screen.getByLabelText("Username", { exact: true }), {
+    target: { value: "owner" },
+  });
+  fireEvent.change(screen.getByLabelText("Password", { exact: true }), {
+    target: { value: "private-password" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Sign In", exact: true }));
+  await screen.findByText(/This account requires a passkey/);
+  expect(screen.queryByLabelText("Authenticator or recovery code")).toBeNull();
+  expect(screen.queryByLabelText("Password", { exact: true })).toBeNull();
+  fireEvent.change(screen.getByLabelText("Sign in with", { exact: true }), {
+    target: { value: "password" },
+  });
+  expect(screen.getByLabelText("Password", { exact: true })).toHaveValue("");
+});

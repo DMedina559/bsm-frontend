@@ -124,6 +124,12 @@ export default function SecurityVerification() {
       );
     } catch (failure) {
       if (!abort.signal.aborted) {
+        if (failure.passkeyRequired) {
+          setPasskeysEnabled(true);
+          setNeedsFactor(false);
+          setPassword("");
+          setOtp("");
+        }
         if (failure.mfaRequired) {
           setNeedsFactor(true);
           setTrustedUntil(null);

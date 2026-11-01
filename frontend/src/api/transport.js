@@ -73,6 +73,7 @@ export function request(url, options = {}) {
   let revision;
   let recentRequired = false;
   let mfaRequired = false;
+  let passkeyRequired = false;
   let enrollmentRequired = false;
   const headers = new Headers(options.headers);
   headers.set(
@@ -91,6 +92,7 @@ export function request(url, options = {}) {
         revision = metadata.headers["x-bsm-policy-revision"];
         recentRequired = metadata.headers["x-bsm-recent-auth"] === "required";
         mfaRequired = metadata.headers["x-bsm-mfa"] === "required";
+        passkeyRequired = metadata.headers["x-bsm-mfa"] === "passkey";
         enrollmentRequired =
           metadata.headers["x-bsm-mfa-enrollment"] === "required";
         if (
@@ -131,6 +133,7 @@ export function request(url, options = {}) {
     })
     .catch((error) => {
       if (error.status === 401 && mfaRequired) error.mfaRequired = true;
+      if (error.status === 401 && passkeyRequired) error.passkeyRequired = true;
       if (
         error.status === 403 &&
         enrollmentRequired &&

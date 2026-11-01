@@ -415,16 +415,20 @@ export function createInstanceConnection(
         captureSession: () => runtime.sessionRuntime.capture(),
       });
       let mfaRequired = false;
+      let passkeyRequired = false;
       return publicTransport
         .request(url, {
           ...options,
           credentials: "omit",
           onResponseMetadata: (metadata) => {
             mfaRequired = metadata.headers["x-bsm-mfa"] === "required";
+            passkeyRequired = metadata.headers["x-bsm-mfa"] === "passkey";
           },
         })
         .catch((error) => {
           if (error.status === 401 && mfaRequired) error.mfaRequired = true;
+          if (error.status === 401 && passkeyRequired)
+            error.passkeyRequired = true;
           throw error;
         });
     },
