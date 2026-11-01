@@ -13,7 +13,7 @@ import InstanceSwitcher from "../components/InstanceSwitcher";
 const Login = () => {
   const [showRemoteModal, setShowRemoteModal] = useState(false);
   const [challenge, setChallenge] = useState("");
-  const { login, loginWithToken, user } = useAuth();
+  const { login, loginWithPasskey, loginWithToken, user } = useAuth();
   const navigate = useNavigate();
   const showConfigButton =
     getAppConfig().mode === "standalone" ||
@@ -68,6 +68,9 @@ const Login = () => {
           { username, password, remember, otp, rememberDevice = false },
           signal,
         ) => login(username, password, remember, otp, signal, rememberDevice)}
+        onPasskey={({ username, remember }, signal) =>
+          loginWithPasskey(username, remember, signal)
+        }
         onToken={(token, remember, signal) =>
           loginWithToken(token, remember, signal)
         }

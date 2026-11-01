@@ -27,7 +27,7 @@
       "bsm_settings"
     ]
   },
-  "schemaHash": "718d67e60537893c0b5bc49cafee2cb5264c20d2928479498f872dc21d12a143",
+  "schemaHash": "69b3595571ca9e74c2040cb2e7215522b32c8a460966bfbacc3ad38bdd6a956b",
   "openapiVersion": "3.1.0",
   "title": "Bedrock Server Manager",
   "source": "DMedina559/bedrock-server-manager: bedrock_server_manager.web.contract",
@@ -35,9 +35,12 @@
     "add_allowlist_players",
     "add_players",
     "add_server_ban",
+    "begin_passkey_registration",
+    "begin_passkey_step_up",
     "change_password",
     "cleanup_backup_destination",
     "compare_diagnostic_snapshots",
+    "complete_passkey_registration",
     "confirm_account_mfa",
     "control_schedule",
     "create_backup",
@@ -105,6 +108,7 @@
     "list_access_servers",
     "list_account_integration_tokens",
     "list_account_login_sessions",
+    "list_account_passkeys",
     "list_application_events",
     "list_audit_logs",
     "list_available_addons",
@@ -124,10 +128,13 @@
     "list_tasks",
     "list_themes",
     "list_trusted_devices",
+    "list_user_passkeys",
     "list_users",
     "login",
     "logout",
     "manage_server_snapshot",
+    "passkey_login_options",
+    "passkey_login_verify",
     "plan_snapshot_restore",
     "prepare_backup_copy",
     "preview_account_server_access",
@@ -142,6 +149,7 @@
     "reload_settings",
     "remove_allowlist_players",
     "remove_server_ban",
+    "rename_account_passkey",
     "rename_login_session",
     "reorder_addons",
     "reset_account_mfa",
@@ -152,6 +160,7 @@
     "revoke_account_integration_token",
     "revoke_account_login_session",
     "revoke_account_login_sessions",
+    "revoke_account_passkey",
     "revoke_all_integration_tokens",
     "revoke_integration_token",
     "revoke_login_session",
@@ -183,6 +192,7 @@
     "update_user_role",
     "validate_registration_token",
     "validate_server",
-    "verify_account_security"
+    "verify_account_security",
+    "verify_account_security_passkey"
   ]
 }

@@ -2,6 +2,7 @@ import {
   trustedDeviceOptions,
   rememberTrustedDevice,
 } from "../../app/trustedDevices";
+import { getPasskeyAssertion, isPasskeySupported } from "../../app/passkeys";
 import { getConnectionIdentity } from "../../app/connection";
 import { useTimeFormat } from "../../app/useTimeFormat";
 import React, { useEffect, useRef, useState } from "react";
@@ -28,6 +29,7 @@ export default function SecurityVerification() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [needsFactor, setNeedsFactor] = useState(false);
+  const [passkeysEnabled, setPasskeysEnabled] = useState(false);
   const controller = useRef(null);
   useEffect(() => {
     setOpen(false);
@@ -35,6 +37,7 @@ export default function SecurityVerification() {
     setOtp("");
     setError("");
     setBusy(false);
+    setPasskeysEnabled(false);
     const show = (event) => {
       if (
         userId != null &&
@@ -46,6 +49,7 @@ export default function SecurityVerification() {
         setOtp("");
         setOpen(true);
         setNeedsFactor(false);
+        setPasskeysEnabled(false);
         setRememberDevice(false);
         setTrustedUntil(null);
         controller.current?.abort();
@@ -60,6 +64,7 @@ export default function SecurityVerification() {
               setNeedsFactor(
                 status.enabled === true && status.trusted_device !== true,
               );
+              setPasskeysEnabled(status.passkeys_enabled === true);
               setTrustedUntil(
                 status.trusted_device ? status.trusted_device_expires_at : null,
               );
@@ -129,12 +134,71 @@ export default function SecurityVerification() {
       if (!abort.signal.aborted) setBusy(false);
     }
   }
+  async function verifyWithPasskey() {
+    setBusy(true);
+    setError("");
+    const abort = new AbortController();
+    controller.current?.abort();
+    controller.current = abort;
+    try {
+      const options = await callOperation("begin_passkey_step_up", {
+        signal: abort.signal,
+        ...trustedDeviceOptions(user?.username),
+      });
+      if (abort.signal.aborted) return;
+      const credential = await getPasskeyAssertion(
+        options.public_key,
+        abort.signal,
+      );
+      if (abort.signal.aborted) return;
+      await callOperation("verify_account_security_passkey", {
+        body: {
+          challenge_id: options.challenge_id,
+          credential,
+        },
+        signal: abort.signal,
+        ...trustedDeviceOptions(user?.username),
+      });
+      if (abort.signal.aborted) return;
+      await queryClient.invalidateQueries({
+        queryKey: ["account-security", getPreferenceIdentity(user)],
+      });
+      window.dispatchEvent(
+        new CustomEvent("bsm:security-verified", {
+          detail: { backend: getBackendIdentity() },
+        }),
+      );
+      close();
+      addToast(
+        "Identity verified with passkey. You can retry the security action.",
+        "success",
+      );
+    } catch (failure) {
+      if (!abort.signal.aborted && failure?.name !== "AbortError") {
+        setError(failure.message);
+      }
+    } finally {
+      if (!abort.signal.aborted) setBusy(false);
+    }
+  }
   return open ? (
     <Modal title="Verify your identity" onClose={close} closeDisabled={busy}>
       <p>
-        Security changes require a recent password check. Verification lasts
+        Security changes require a recent identity check. Verification lasts
         five minutes and does not extend your login.
       </p>
+      {passkeysEnabled && isPasskeySupported() && (
+        <div className="form-actions">
+          <button
+            type="button"
+            className="action-button secondary"
+            disabled={busy}
+            onClick={verifyWithPasskey}
+          >
+            {busy ? "Verifying…" : "Verify with passkey"}
+          </button>
+        </div>
+      )}
       {trustedUntil && (
         <p>
           This device is remembered until{" "}

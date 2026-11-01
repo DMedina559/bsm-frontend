@@ -3,6 +3,7 @@ import {
   rememberTrustedDevice,
   forgetTrustedDevice,
 } from "../app/trustedDevices";
+import { getPasskeyAssertion } from "../app/passkeys";
 import { authenticateIntegrationToken } from "../features/instances/tokenAuthentication";
 import {
   isInstanceProfileKey,
@@ -392,6 +393,50 @@ export const AuthProvider = ({ children }) => {
     return result.account;
   };
 
+  const loginWithPasskey = async (
+    username = "",
+    rememberMe = false,
+    signal,
+  ) => {
+    if (isTokenAuthentication()) clearCredentials();
+    checkGeneration.current += 1;
+    resetSession();
+    identityRef.current = null;
+    setUser(null);
+    const trimmedUsername = username.trim() || null;
+    logger.debug("[Auth] Attempting passkey login", {
+      username: trimmedUsername,
+      rememberMe,
+    });
+    const attempt = checkGeneration.current;
+    const options = await callOperation("passkey_login_options", {
+      body: { username: trimmedUsername },
+      signal,
+    });
+    if (attempt !== checkGeneration.current || signal?.aborted) return null;
+    const credential = await getPasskeyAssertion(options.public_key, signal);
+    if (attempt !== checkGeneration.current || signal?.aborted) return null;
+    const data = await callOperation("passkey_login_verify", {
+      body: {
+        challenge_id: options.challenge_id,
+        credential,
+        remember_me: rememberMe,
+      },
+      signal,
+    });
+    if (attempt !== checkGeneration.current) return data;
+    if (data.access_token || getAuthenticationMode() === "cookie-recovery") {
+      logger.info("[Auth] Passkey login successful");
+      if (getAuthenticationMode() === "bearer")
+        setCredentials(data.access_token, rememberMe);
+      else clearCredentials();
+    } else {
+      logger.warn("[Auth] Passkey login failed or token missing");
+    }
+    await checkUser();
+    return data;
+  };
+
   const logout = async ({ server = true } = {}) => {
     checkGeneration.current += 1;
     identityRef.current = null;
@@ -418,6 +463,7 @@ export const AuthProvider = ({ children }) => {
         user,
         login,
         loginWithToken,
+        loginWithPasskey,
         logout,
         loading,
         checkUser,

@@ -209,6 +209,14 @@ function InstanceCard({
             );
             setShowLogin(false);
           }}
+          onPasskey={async ({ username, remember }, signal) => {
+            await connection.current.loginWithPasskey(
+              username,
+              remember,
+              signal,
+            );
+            setShowLogin(false);
+          }}
         />
       )}
       <TokenAccessNotice account={snapshot.user} />

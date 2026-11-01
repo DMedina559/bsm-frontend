@@ -3,6 +3,7 @@ import {
   rememberTrustedDevice,
   forgetTrustedDevice,
 } from "../../app/trustedDevices";
+import { getPasskeyAssertion } from "../../app/passkeys";
 import { authenticateIntegrationToken } from "./tokenAuthentication";
 import { connectionFailure } from "./probe";
 import { sessionSettings } from "../../app/browserStorage";
@@ -487,6 +488,43 @@ export function createInstanceConnection(
         throw new DOMException("Instance session changed", "AbortError");
       writeToken(profile.url, result.token, remember);
       return result.account;
+    },
+    async loginWithPasskey(username = "", remember = false, signal) {
+      if (profile.paused || disposed)
+        throw new Error("Resume this connection before signing in.");
+      const trimmedUsername = username.trim() || null;
+      let options;
+      try {
+        options = await loginClient.callOperation("passkey_login_options", {
+          body: { username: trimmedUsername },
+          signal,
+        });
+      } catch (error) {
+        throw new Error(connectionError(error));
+      }
+      if (disposed || signal?.aborted)
+        throw new DOMException("Instance session changed", "AbortError");
+      const credential = await getPasskeyAssertion(options.public_key, signal);
+      if (disposed || signal?.aborted)
+        throw new DOMException("Instance session changed", "AbortError");
+      let result;
+      try {
+        result = await loginClient.callOperation("passkey_login_verify", {
+          body: {
+            challenge_id: options.challenge_id,
+            credential,
+            remember_me: remember,
+          },
+          signal,
+        });
+      } catch (error) {
+        throw new Error(connectionError(error));
+      }
+      if (disposed)
+        throw new DOMException("Instance session changed", "AbortError");
+      if (typeof result?.access_token !== "string" || !result.access_token)
+        throw new Error("This instance did not return an access token.");
+      writeToken(profile.url, result.access_token, remember);
     },
     async logout() {
       try {

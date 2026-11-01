@@ -15,6 +15,7 @@ import { useDialog } from "../../contexts/DialogContext";
 import { saveTextFile } from "../../utils/saveTextFile";
 import { sessionRuntime } from "../../app/sessionRuntime";
 import IntegrationTokens from "./IntegrationTokens";
+import Passkeys from "./Passkeys";
 import Sessions from "./Sessions";
 import "../../styles/access.css";
 
@@ -332,7 +333,16 @@ function SecondFactor({ status, identity, sessionGeneration }) {
             </button>
             <button
               className="action-button danger"
-              disabled={busy || savingCodes || status.required}
+              disabled={
+                busy ||
+                savingCodes ||
+                (status.required && !status.passkeys_enabled)
+              }
+              title={
+                status.required && !status.passkeys_enabled
+                  ? "Administrator MFA is required. Register a passkey before disabling your authenticator app."
+                  : undefined
+              }
               onClick={() => run("disable")}
             >
               Disable two-factor
@@ -444,6 +454,7 @@ export default function AccountSecurity({ children }) {
         return;
       for (const group of [
         "account-security",
+        "account-passkeys",
         "trusted-devices",
         "security-activity",
         "login-sessions",
@@ -489,8 +500,8 @@ export default function AccountSecurity({ children }) {
     >
       {user?.mfa_enrollment_required && (
         <p className="message warning" role="alert">
-          Your administrator requires MFA. Set up an authenticator below to
-          unlock this account.
+          Your administrator requires MFA. Set up an authenticator or register a
+          passkey below to unlock this account.
         </p>
       )}
       {status.data?.recent_until * 1000 > clock && (
@@ -598,6 +609,7 @@ export default function AccountSecurity({ children }) {
         )}
         {tab === "sign-in" && (
           <>
+            <Passkeys status={status.data} />
             <SecondFactor
               status={status.data}
               {...{ identity, sessionGeneration }}

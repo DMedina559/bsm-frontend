@@ -1,4 +1,5 @@
 import Sessions from "../components/access/Sessions";
+import Passkeys from "../components/access/Passkeys";
 import ServerAccessEditor from "../components/access/ServerAccessEditor";
 import "../styles/access.css";
 import { callOperation } from "../api/operations";
@@ -574,10 +575,16 @@ const Users = () => {
         >
           {currentUser?.permissions?.includes("sessions:admin") &&
             editingUser.id !== currentUser.id && (
-              <Sessions
-                key={`sessions-${editingUser.id}`}
-                userId={editingUser.id}
-              />
+              <>
+                <Sessions
+                  key={`sessions-${editingUser.id}`}
+                  userId={editingUser.id}
+                />
+                <Passkeys
+                  key={`passkeys-${editingUser.id}`}
+                  userId={editingUser.id}
+                />
+              </>
             )}
           {currentUser?.permissions?.includes("access:manage") &&
             editingUser.role !== "admin" &&

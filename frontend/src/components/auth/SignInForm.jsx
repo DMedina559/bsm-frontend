@@ -1,8 +1,10 @@
 import React, { useEffect, useId, useRef, useState } from "react";
+import { isPasskeySupported } from "../../app/passkeys";
 
 /** Secrets live only in this form; connection changes unmount it and abort requests. */
 export default function SignInForm({
   onPassword,
+  onPasskey,
   onToken,
   onSuccess,
   onChallengeChange,
@@ -10,6 +12,7 @@ export default function SignInForm({
   variant = "main",
   disabled = false,
 }) {
+  const passkeyAvailable = Boolean(onPasskey) && isPasskeySupported();
   const [method, setMethod] = useState("password");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -49,16 +52,18 @@ export default function SignInForm({
       const result =
         method === "token"
           ? await onToken(token, remember, signal)
-          : await onPassword(
-              {
-                username,
-                password,
-                remember,
-                otp,
-                ...(rememberDevice ? { rememberDevice: true } : {}),
-              },
-              signal,
-            );
+          : method === "passkey"
+            ? await onPasskey({ username, remember }, signal)
+            : await onPassword(
+                {
+                  username,
+                  password,
+                  remember,
+                  otp,
+                  ...(rememberDevice ? { rememberDevice: true } : {}),
+                },
+                signal,
+              );
       if (signal.aborted) return;
       onSuccess?.(result);
     } catch (failure) {
@@ -100,11 +105,13 @@ export default function SignInForm({
         onChange={(event) => changeMethod(event.target.value)}
       >
         <option value="password">Username &amp; password</option>
+        {Boolean(onPasskey) && <option value="passkey">Passkey</option>}
         <option value="token">API token</option>
       </select>
     </>
   );
-  const unavailable = busy || disabled;
+  const unavailable =
+    busy || disabled || (method === "passkey" && !passkeyAvailable);
   return (
     <form
       onSubmit={submit}
@@ -155,6 +162,31 @@ export default function SignInForm({
               disabled={unavailable}
             />
           </label>
+        </div>
+      )}
+      {method === "passkey" && !challenge && (
+        <div
+          className={
+            variant === "instance" ? "instance-login-fields" : "sign-in-fields"
+          }
+        >
+          <label className="form-label" htmlFor={`${id}-passkey-username`}>
+            Username (optional)
+            <input
+              className="form-input"
+              id={`${id}-passkey-username`}
+              name="username"
+              autoComplete="username webauthn"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              disabled={unavailable}
+            />
+          </label>
+          <p className="help-text">
+            {passkeyAvailable
+              ? "Optional for discoverable passkeys. Enter your username if using a security key without a resident credential."
+              : "This browser or connection does not support WebAuthn passkeys."}
+          </p>
         </div>
       )}
       {method === "token" && (
@@ -221,7 +253,7 @@ export default function SignInForm({
           Remember this device for 30 days
         </label>
       )}
-      {method === "password" && !challenge && (
+      {(method === "password" || method === "passkey") && !challenge && (
         <label className="sign-in-remember">
           <input
             type="checkbox"
@@ -250,9 +282,11 @@ export default function SignInForm({
           ? "Signing in…"
           : challenge
             ? "Verify and sign in"
-            : variant === "instance"
-              ? "Sign in"
-              : "Sign In"}
+            : method === "passkey"
+              ? "Sign in with passkey"
+              : variant === "instance"
+                ? "Sign in"
+                : "Sign In"}
       </button>
       {challenge && (
         <button

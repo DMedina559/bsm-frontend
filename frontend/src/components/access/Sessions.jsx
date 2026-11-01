@@ -158,12 +158,15 @@ export default function Sessions({ userId }) {
           path: { user_id: userId },
           signal: abort.signal,
         });
-      else if (action === "reset-mfa")
+      else if (action === "reset-mfa") {
         await callOperation("reset_account_mfa", {
           path: { user_id: userId },
           signal: abort.signal,
         });
-      else if (action === "rename")
+        await queryClient.invalidateQueries({
+          queryKey: ["account-passkeys", identity, sessionGeneration, userId],
+        });
+      } else if (action === "rename")
         await callOperation("rename_login_session", {
           path: { session_id: id },
           body: { name },

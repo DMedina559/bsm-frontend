@@ -1854,6 +1854,37 @@
         "title": "CompareDiagnosticSnapshotsRequest",
         "type": "object"
       },
+      "CompletePasskeyRegistration": {
+        "additionalProperties": false,
+        "properties": {
+          "challenge_id": {
+            "pattern": "^[a-f0-9]{32}$",
+            "title": "Challenge Id",
+            "type": "string"
+          },
+          "credential": {
+            "additionalProperties": true,
+            "title": "Credential",
+            "type": "object"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "required": ["challenge_id", "credential"],
+        "title": "CompletePasskeyRegistration",
+        "type": "object"
+      },
       "CompletedItem": {
         "additionalProperties": false,
         "properties": {
@@ -5470,6 +5501,150 @@
         "title": "OperationSnapshot",
         "type": "object"
       },
+      "PasskeyInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "aaguid": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aaguid"
+          },
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "backup_eligible": {
+            "default": false,
+            "title": "Backup Eligible",
+            "type": "boolean"
+          },
+          "backup_state": {
+            "default": false,
+            "title": "Backup State",
+            "type": "boolean"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "integer"
+          },
+          "id": {
+            "pattern": "^[a-f0-9]{32}$",
+            "title": "Id",
+            "type": "string"
+          },
+          "last_used_at": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Used At"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          },
+          "transports": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Transports",
+            "type": "array"
+          },
+          "user_verified": {
+            "default": false,
+            "title": "User Verified",
+            "type": "boolean"
+          }
+        },
+        "required": ["id", "name", "created_at", "active"],
+        "title": "PasskeyInfo",
+        "type": "object"
+      },
+      "PasskeyLoginOptionsRequest": {
+        "additionalProperties": false,
+        "description": "Optional username hint when requesting WebAuthn authentication options.",
+        "properties": {
+          "username": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          }
+        },
+        "title": "PasskeyLoginOptionsRequest",
+        "type": "object"
+      },
+      "PasskeyLoginVerifyRequest": {
+        "additionalProperties": false,
+        "description": "WebAuthn assertion payload for passwordless passkey login.",
+        "properties": {
+          "challenge_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "pattern": "^[0-9a-f]{32}$",
+            "title": "Challenge Id",
+            "type": "string"
+          },
+          "credential": {
+            "additionalProperties": true,
+            "title": "Credential",
+            "type": "object"
+          },
+          "remember_me": {
+            "default": false,
+            "title": "Remember Me",
+            "type": "boolean"
+          }
+        },
+        "required": ["challenge_id", "credential"],
+        "title": "PasskeyLoginVerifyRequest",
+        "type": "object"
+      },
+      "PasskeyOptionsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "challenge_id": {
+            "pattern": "^[a-f0-9]{32}$",
+            "title": "Challenge Id",
+            "type": "string"
+          },
+          "public_key": {
+            "additionalProperties": true,
+            "title": "Public Key",
+            "type": "object"
+          }
+        },
+        "required": ["challenge_id", "public_key"],
+        "title": "PasskeyOptionsResponse",
+        "type": "object"
+      },
       "PermissionsSetPayload": {
         "additionalProperties": false,
         "description": "Request model for setting multiple player permissions.",
@@ -6986,6 +7161,21 @@
         "title": "RemoveServerBanResponse",
         "type": "object"
       },
+      "RenamePasskey": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": ".*\\S.*",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": ["name"],
+        "title": "RenamePasskey",
+        "type": "object"
+      },
       "RenameSession": {
         "additionalProperties": false,
         "properties": {
@@ -7671,6 +7861,16 @@
           "max_session_days": {
             "title": "Max Session Days",
             "type": "integer"
+          },
+          "passkey_count": {
+            "default": 0,
+            "title": "Passkey Count",
+            "type": "integer"
+          },
+          "passkeys_enabled": {
+            "default": false,
+            "title": "Passkeys Enabled",
+            "type": "boolean"
           },
           "recent_until": {
             "title": "Recent Until",
@@ -9722,6 +9922,24 @@
         "title": "VerifiedSecurity",
         "type": "object"
       },
+      "VerifyPasskeyAssertion": {
+        "additionalProperties": false,
+        "properties": {
+          "challenge_id": {
+            "pattern": "^[a-f0-9]{32}$",
+            "title": "Challenge Id",
+            "type": "string"
+          },
+          "credential": {
+            "additionalProperties": true,
+            "title": "Credential",
+            "type": "object"
+          }
+        },
+        "required": ["challenge_id", "credential"],
+        "title": "VerifyPasskeyAssertion",
+        "type": "object"
+      },
       "VerifySecurity": {
         "additionalProperties": false,
         "properties": {
@@ -10241,6 +10459,148 @@
         "tags": ["Account Security"],
         "x-bsm-access": {
           "additional_checks": ["recent-interactive-verification"],
+          "allowed_roles": ["admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "unsupported",
+          "required_permissions": ["sessions:admin"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/api/access/users/{user_id}/passkeys": {
+      "get": {
+        "operationId": "list_user_passkeys",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PasskeyInfo"
+                  },
+                  "title": "Response List User Passkeys",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["sessions:admin"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Admin List Passkeys",
+        "tags": ["Account Security"],
+        "x-bsm-access": {
+          "additional_checks": [],
           "allowed_roles": ["admin"],
           "authentication": "required",
           "classification": "permission",
@@ -13181,6 +13541,965 @@
         }
       }
     },
+    "/api/account/security/passkeys": {
+      "get": {
+        "operationId": "list_account_passkeys",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PasskeyInfo"
+                  },
+                  "title": "Response List Account Passkeys",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["sessions:manage"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "List Passkeys",
+        "tags": ["Account Security"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": ["user", "moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "unsupported",
+          "required_permissions": ["sessions:manage"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/api/account/security/passkeys/register/options": {
+      "post": {
+        "operationId": "begin_passkey_registration",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyOptionsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["sessions:manage"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Begin Passkey Registration",
+        "tags": ["Account Security"],
+        "x-bsm-access": {
+          "additional_checks": [
+            "account-owner",
+            "recent-interactive-verification"
+          ],
+          "allowed_roles": ["user", "moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "credential_alternatives": [],
+          "integration_tokens": "unsupported",
+          "required_permissions": ["sessions:manage"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/api/account/security/passkeys/register/verify": {
+      "post": {
+        "operationId": "complete_passkey_registration",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompletePasskeyRegistration"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["sessions:manage"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Complete Passkey Registration",
+        "tags": ["Account Security"],
+        "x-bsm-access": {
+          "additional_checks": [
+            "account-owner",
+            "recent-interactive-verification"
+          ],
+          "allowed_roles": ["user", "moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "credential_alternatives": [],
+          "integration_tokens": "unsupported",
+          "required_permissions": ["sessions:manage"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/api/account/security/passkeys/verify": {
+      "post": {
+        "operationId": "verify_account_security_passkey",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyPasskeyAssertion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifiedSecurity"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["sessions:manage"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Verify Passkey Step Up",
+        "tags": ["Account Security"],
+        "x-bsm-access": {
+          "additional_checks": ["account-owner"],
+          "allowed_roles": ["user", "moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "credential_alternatives": [],
+          "integration_tokens": "unsupported",
+          "required_permissions": ["sessions:manage"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/api/account/security/passkeys/verify/options": {
+      "post": {
+        "operationId": "begin_passkey_step_up",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyOptionsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["sessions:manage"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Begin Passkey Step Up",
+        "tags": ["Account Security"],
+        "x-bsm-access": {
+          "additional_checks": ["account-owner"],
+          "allowed_roles": ["user", "moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "credential_alternatives": [],
+          "integration_tokens": "unsupported",
+          "required_permissions": ["sessions:manage"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/api/account/security/passkeys/{passkey_id}": {
+      "delete": {
+        "operationId": "revoke_account_passkey",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "passkey_id",
+            "required": true,
+            "schema": {
+              "title": "Passkey Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseApiResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["sessions:manage"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Revoke Passkey",
+        "tags": ["Account Security"],
+        "x-bsm-access": {
+          "additional_checks": [
+            "account-owner",
+            "recent-interactive-verification",
+            "administrator-mfa-policy"
+          ],
+          "allowed_roles": ["user", "moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "credential_alternatives": [],
+          "integration_tokens": "unsupported",
+          "required_permissions": ["sessions:manage"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      },
+      "patch": {
+        "operationId": "rename_account_passkey",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "passkey_id",
+            "required": true,
+            "schema": {
+              "title": "Passkey Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenamePasskey"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyInfo"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["sessions:manage"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Rename Passkey",
+        "tags": ["Account Security"],
+        "x-bsm-access": {
+          "additional_checks": ["account-owner"],
+          "allowed_roles": ["user", "moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "credential_alternatives": [],
+          "integration_tokens": "unsupported",
+          "required_permissions": ["sessions:manage"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
     "/api/account/security/verify": {
       "post": {
         "operationId": "verify_account_security",
@@ -15124,10 +16443,11 @@
         "summary": "Rotate Key",
         "tags": ["Backup & Restore"],
         "x-bsm-access": {
-          "additional_checks": [],
+          "additional_checks": ["recent-interactive-verification"],
           "allowed_roles": ["admin"],
           "authentication": "required",
           "classification": "permission",
+          "credential_alternatives": [],
           "integration_tokens": "supported",
           "required_permissions": ["backups:keys"],
           "resource_scope": "global",
@@ -25435,10 +26755,11 @@
         "summary": "Export Snapshot",
         "tags": ["Backup & Restore"],
         "x-bsm-access": {
-          "additional_checks": [],
+          "additional_checks": ["recent-interactive-verification"],
           "allowed_roles": ["admin"],
           "authentication": "required",
           "classification": "permission",
+          "credential_alternatives": [],
           "integration_tokens": "supported",
           "required_permissions": ["backups:export"],
           "resource_scope": "server",
@@ -26837,10 +28158,11 @@
         "summary": "Delete Server",
         "tags": ["Server Management"],
         "x-bsm-access": {
-          "additional_checks": [],
+          "additional_checks": ["recent-interactive-verification"],
           "allowed_roles": ["admin"],
           "authentication": "required",
           "classification": "permission",
+          "credential_alternatives": [],
           "integration_tokens": "supported",
           "required_permissions": ["servers:manage"],
           "resource_scope": "server",
@@ -30442,10 +31764,11 @@
         "summary": "Post Set Setting",
         "tags": ["Application Settings"],
         "x-bsm-access": {
-          "additional_checks": [],
+          "additional_checks": ["recent-interactive-verification"],
           "allowed_roles": ["admin"],
           "authentication": "required",
           "classification": "permission",
+          "credential_alternatives": [],
           "integration_tokens": "supported",
           "required_permissions": ["settings:manage"],
           "resource_scope": "global",
@@ -31965,6 +33288,277 @@
           "allowed_roles": ["user", "moderator", "admin"],
           "authentication": "required",
           "classification": "authenticated",
+          "integration_tokens": "unsupported",
+          "required_permissions": [],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/auth/passkey/options": {
+      "post": {
+        "description": "Issue a single-use WebAuthn authentication challenge for passkey sign-in.",
+        "operationId": "passkey_login_options",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/PasskeyLoginOptionsRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyOptionsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [],
+        "summary": "Passkey Login Options",
+        "tags": ["Authentication"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": [],
+          "authentication": "none",
+          "classification": "public",
+          "credential_alternatives": [],
+          "integration_tokens": "unsupported",
+          "required_permissions": [],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/auth/passkey/verify": {
+      "post": {
+        "description": "Verify a WebAuthn passkey assertion and establish an authenticated session.",
+        "operationId": "passkey_login_verify",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasskeyLoginVerifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [],
+        "summary": "Passkey Login Verify",
+        "tags": ["Authentication"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": [],
+          "authentication": "none",
+          "classification": "public",
+          "credential_alternatives": [],
           "integration_tokens": "unsupported",
           "required_permissions": [],
           "resource_scope": "global",
