@@ -118,7 +118,7 @@ export async function createPasskeyCredential(publicKey, signal) {
 
 /**
  * Run `navigator.credentials.get` using server-provided PublicKeyCredentialRequestOptions
- * and return a JSON-serializable assertion object for `passkey_login_verify` or `verify_account_security_passkey`.
+ * and return a JSON-serializable assertion object for `complete_passkey_login` or `verify_account_security_passkey`.
  */
 export async function getPasskeyAssertion(publicKey, signal) {
   if (!isPasskeySupported()) {
