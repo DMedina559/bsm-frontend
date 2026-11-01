@@ -281,3 +281,158 @@ it("keeps imported documents when the connected account policy changes", async (
     screen.getByRole("button", { name: "POST plugin_example" }),
   ).toBeInTheDocument();
 });
+
+it("supports multipart file uploads and binary response downloads", async () => {
+  sessionSettings.setItem("show_hidden_flag", "true");
+  const transferSchema = {
+    openapi: "3.1.0",
+    info: { title: "Transfers", version: "1" },
+    paths: {
+      "/api/content/upload": {
+        post: {
+          operationId: "upload_content_file",
+          tags: ["Content"],
+          parameters: [
+            {
+              name: "content_type",
+              in: "query",
+              required: true,
+              schema: { type: "string" },
+            },
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              "multipart/form-data": {
+                schema: {
+                  type: "object",
+                  required: ["file"],
+                  properties: {
+                    file: { type: "string", format: "binary" },
+                  },
+                },
+              },
+            },
+          },
+          responses: { 200: { description: "Uploaded" } },
+        },
+      },
+      "/api/content/download": {
+        get: {
+          operationId: "download_content_file",
+          tags: ["Content"],
+          parameters: [
+            {
+              name: "filename",
+              in: "query",
+              required: true,
+              schema: { type: "string" },
+            },
+          ],
+          responses: {
+            200: {
+              description: "File",
+              content: {
+                "application/octet-stream": {
+                  schema: { type: "string", format: "binary" },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  };
+
+  request
+    .mockResolvedValueOnce(transferSchema)
+    .mockImplementationOnce(async (_url, options) => {
+      options.onResponseMetadata({
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+      return { status: "success", filename: "world.mcworld" };
+    })
+    .mockImplementationOnce(async (_url, options) => {
+      options.onResponseMetadata({
+        status: 200,
+        headers: {
+          "content-type": "application/octet-stream",
+          "content-disposition": 'attachment; filename="world.mcworld"',
+        },
+      });
+      return new Blob(["pk-world-bytes"], {
+        type: "application/octet-stream",
+      });
+    });
+
+  render(
+    <MemoryRouter>
+      <ApiExplorer />
+    </MemoryRouter>,
+  );
+
+  fireEvent.click(
+    screen.getByRole("button", { name: "Load connected backend" }),
+  );
+  fireEvent.click(
+    await screen.findByRole("button", { name: /POST upload_content_file/ }),
+  );
+
+  fireEvent.change(screen.getByLabelText(/content_type \(query\)/), {
+    target: { value: "worlds" },
+  });
+  const file = new File(["pk-world-bytes"], "world.mcworld", {
+    type: "application/octet-stream",
+  });
+  fireEvent.change(screen.getByLabelText(/^file/i), {
+    target: { files: [file] },
+  });
+
+  fireEvent.click(screen.getByRole("button", { name: "Execute POST" }));
+  await waitFor(() =>
+    expect(
+      screen.getByRole("heading", { name: "Response" }),
+    ).toBeInTheDocument(),
+  );
+  expect(request.mock.calls[1][0]).toBe(
+    "/api/content/upload?content_type=worlds",
+  );
+  expect(request.mock.calls[1][1].body).toBeInstanceOf(FormData);
+  expect(request.mock.calls[1][1].body.get("file")).toBe(file);
+
+  fireEvent.click(
+    screen.getByRole("button", { name: /GET download_content_file/ }),
+  );
+  fireEvent.change(screen.getByLabelText(/filename \(query\)/), {
+    target: { value: "world.mcworld" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Execute GET" }));
+
+  const downloadButton = await screen.findByRole("button", {
+    name: "Download file",
+  });
+  expect(downloadButton).toBeInTheDocument();
+  expect(screen.getByText("world.mcworld")).toBeInTheDocument();
+
+  const createObjectURL = vi
+    .spyOn(URL, "createObjectURL")
+    .mockReturnValue("blob:mock-download");
+  const revokeObjectURL = vi
+    .spyOn(URL, "revokeObjectURL")
+    .mockImplementation(() => {});
+  const clickSpy = vi
+    .spyOn(HTMLAnchorElement.prototype, "click")
+    .mockImplementation(() => {});
+
+  fireEvent.click(downloadButton);
+  expect(createObjectURL).toHaveBeenCalledTimes(1);
+  expect(clickSpy).toHaveBeenCalledTimes(1);
+  expect(revokeObjectURL).not.toHaveBeenCalled();
+  window.dispatchEvent(new Event("pagehide"));
+  expect(revokeObjectURL).toHaveBeenCalledWith("blob:mock-download");
+
+  createObjectURL.mockRestore();
+  revokeObjectURL.mockRestore();
+  clickSpy.mockRestore();
+});

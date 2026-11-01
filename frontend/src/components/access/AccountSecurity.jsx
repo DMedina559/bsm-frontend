@@ -63,12 +63,14 @@ function SecondFactor({ status, identity, sessionGeneration }) {
   }
   const downloadUrl = useRef(null);
   const saveController = useRef(null);
+  const savingCodesRef = useRef(false);
   const [savingCodes, setSavingCodes] = useState(false);
   // A save dialog may stay open indefinitely. Keep its source alive until the
   // codes are dismissed, replaced, or this view is unmounted.
   useEffect(
     () => () => {
       saveController.current?.abort();
+      savingCodesRef.current = false;
       if (downloadUrl.current) URL.revokeObjectURL(downloadUrl.current);
       downloadUrl.current = null;
     },
@@ -141,11 +143,10 @@ function SecondFactor({ status, identity, sessionGeneration }) {
     }
   }
   async function downloadCodes() {
-    if (savingCodes) return;
+    if (savingCodes || savingCodesRef.current) return;
+    savingCodesRef.current = true;
     const controller = new AbortController();
     saveController.current = controller;
-    setSavingCodes(true);
-    setDownloadMessage("Choose where to save your recovery codes.");
     const content =
       "Bedrock Server Manager recovery codes\nEach code can be used once. Keep these private.\n\n" +
       codes.join("\n") +
@@ -169,6 +170,8 @@ function SecondFactor({ status, identity, sessionGeneration }) {
       }
       anchor.href = downloadUrl.current;
       anchor.download = "bsm-recovery-codes.txt";
+      anchor.rel = "noopener";
+      anchor.style.display = "none";
       document.body.appendChild(anchor);
       anchor.click();
       setDownloadMessage(
@@ -183,6 +186,7 @@ function SecondFactor({ status, identity, sessionGeneration }) {
         );
     } finally {
       anchor.remove();
+      savingCodesRef.current = false;
       if (!controller.signal.aborted) setSavingCodes(false);
     }
   }

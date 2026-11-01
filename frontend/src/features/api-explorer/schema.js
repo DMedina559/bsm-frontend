@@ -95,7 +95,46 @@ export function validateValue(schema, spec, value) {
     );
 }
 
-export function prepareCall(schema, operation, values, bodyText) {
+export function isBinaryField(schema, raw) {
+  const spec = resolve(schema, raw);
+  if (
+    spec.format === "binary" ||
+    spec.contentMediaType === "application/octet-stream"
+  )
+    return true;
+  const variants = spec.anyOf ?? spec.oneOf ?? [];
+  return variants.some((item) => {
+    const resolved = resolve(schema, item);
+    return (
+      resolved.format === "binary" ||
+      resolved.contentMediaType === "application/octet-stream"
+    );
+  });
+}
+
+export function requestBodyMedia(operation) {
+  const content = operation?.request?.content ?? {};
+  for (const mediaType of [
+    "application/json",
+    "multipart/form-data",
+    "application/x-www-form-urlencoded",
+  ]) {
+    if (content[mediaType]?.schema)
+      return { mediaType, schema: content[mediaType].schema };
+  }
+  const [firstType, firstValue] = Object.entries(content)[0] ?? [];
+  return firstValue?.schema
+    ? { mediaType: firstType, schema: firstValue.schema }
+    : { mediaType: null, schema: null };
+}
+
+export function prepareCall(
+  schema,
+  operation,
+  values,
+  bodyText = "",
+  files = {},
+) {
   const options = { path: {}, query: {}, header: {} };
   for (const parameter of operation.parameters) {
     const key = `${parameter.in}:${parameter.name}`;
@@ -109,13 +148,52 @@ export function prepareCall(schema, operation, values, bodyText) {
     options[parameter.in][parameter.name] = value;
   }
   const media = operation.request.content ?? {};
-  if (bodyText.trim()) {
-    if (!media["application/json"])
-      throw new Error("This operation does not accept a JSON body.");
-    options.body = JSON.parse(bodyText);
-    validateValue(schema, media["application/json"].schema ?? {}, options.body);
-  } else if (operation.request.required)
+  const formMedia =
+    media["multipart/form-data"] ?? media["application/x-www-form-urlencoded"];
+  if (media["application/json"]) {
+    if (bodyText.trim()) {
+      options.body = JSON.parse(bodyText);
+      validateValue(
+        schema,
+        media["application/json"].schema ?? {},
+        options.body,
+      );
+    } else if (operation.request.required)
+      throw new Error("A request body is required.");
+  } else if (formMedia) {
+    const parsed = bodyText.trim() ? JSON.parse(bodyText) : {};
+    const fields = objectFields(schema, formMedia.schema ?? {});
+    const payload = {};
+    for (const [name, rawProp] of Object.entries(fields.properties ?? {})) {
+      if (isBinaryField(schema, rawProp)) {
+        const fileVal = files?.[name];
+        const hasFile = Array.isArray(fileVal)
+          ? fileVal.length > 0
+          : fileVal instanceof Blob;
+        if (!hasFile) {
+          if (fields.required?.includes(name))
+            throw new Error(`Missing file: ${name}`);
+        } else {
+          payload[name] = fileVal;
+        }
+      } else {
+        const val = parsed?.[name];
+        if (val === undefined || val === null || val === "") {
+          if (fields.required?.includes(name))
+            throw new Error(`Missing ${name}`);
+        } else {
+          validateValue(schema, rawProp, val);
+          payload[name] = val;
+        }
+      }
+    }
+    if (Object.keys(payload).length > 0 || operation.request.required)
+      options.body = payload;
+  } else if (bodyText.trim()) {
+    throw new Error("This operation does not accept a JSON body.");
+  } else if (operation.request.required) {
     throw new Error("A request body is required.");
+  }
   return options;
 }
 

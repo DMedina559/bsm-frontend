@@ -4,6 +4,7 @@ import TokenAccessNotice from "../components/auth/TokenAccessNotice";
 import ConnectionProbe from "../features/instances/ConnectionProbe";
 import ProfileEditor from "../features/instances/ProfileEditor";
 import { sessionSettings } from "../app/browserStorage";
+import { triggerBlobDownload } from "../utils/download";
 import React, { useEffect, useRef, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -558,16 +559,12 @@ function InstanceWorkspace() {
           type="button"
           className="instance-button"
           onClick={() => {
-            const url = URL.createObjectURL(
+            triggerBlobDownload(
               new Blob([exportInstanceProfiles()], {
                 type: "application/json",
               }),
+              "bsm-instances.json",
             );
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = "bsm-instances.json";
-            link.click();
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
           }}
         >
           Export profiles

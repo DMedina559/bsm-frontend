@@ -7,6 +7,7 @@ import { callOperation } from "../../api/operations";
 import { useResourceQuery } from "../../app/resourceQueries";
 import { validateDiagnosticSnapshot } from "../../app/diagnostics";
 import { sessionRuntime } from "../../app/sessionRuntime";
+import { triggerBlobDownload } from "../../utils/download";
 import QueryStatus from "../QueryStatus";
 import DiagnosticDetails from "./DiagnosticDetails";
 import { dateValue, displayValue, labelFor } from "./format";
@@ -90,19 +91,12 @@ export default function ApplicationDiagnostics() {
       if (!data?.snapshot || typeof data.report_id !== "string")
         throw new Error("The backend returned an invalid support report.");
       validateDiagnosticSnapshot(data.snapshot);
-      const revoke = URL.revokeObjectURL.bind(URL);
-      const url = URL.createObjectURL(
+      triggerBlobDownload(
         new Blob([JSON.stringify(data, null, 2) + "\n"], {
           type: "application/json",
         }),
+        `bsm-diagnostics-${data.report_id.replace(/[^a-zA-Z0-9_-]/g, "")}.json`,
       );
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = `bsm-diagnostics-${data.report_id.replace(/[^a-zA-Z0-9_-]/g, "")}.json`;
-      document.body.append(anchor);
-      anchor.click();
-      anchor.remove();
-      setTimeout(() => revoke(url), 1000);
     },
   });
   const compare = useMutation({

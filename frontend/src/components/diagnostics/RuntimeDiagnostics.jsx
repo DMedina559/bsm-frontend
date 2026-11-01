@@ -2,6 +2,7 @@ import { useState, useSyncExternalStore } from "react";
 import { Download, Trash2 } from "lucide-react";
 import { application } from "../../app/application";
 import { runtimeHistory } from "../../app/runtimeHistoryStore";
+import { triggerBlobDownload } from "../../utils/download";
 import { Link } from "react-router-dom";
 import Timestamp from "../Timestamp";
 import Modal from "../Modal";
@@ -34,18 +35,12 @@ export default function RuntimeDiagnostics() {
   const activePage = Math.min(page, lastPage);
   const shown = matches.slice(activePage * 50, activePage * 50 + 50);
   const exportHistory = () => {
-    const url = URL.createObjectURL(
+    triggerBlobDownload(
       new Blob([JSON.stringify(runtimeHistory.export(), null, 2) + "\n"], {
         type: "application/json",
       }),
+      "bsm-frontend-diagnostics.json",
     );
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "bsm-frontend-diagnostics.json";
-    document.body.append(anchor);
-    anchor.click();
-    anchor.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   return (
     <section

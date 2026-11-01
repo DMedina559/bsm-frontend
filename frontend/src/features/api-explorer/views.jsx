@@ -1,6 +1,12 @@
 import React, { useId, useState } from "react";
 import { ChevronRight, Copy, Check, Braces, Search } from "lucide-react";
-import { resolve, pretty, schemaType, objectFields } from "./schema";
+import {
+  resolve,
+  pretty,
+  schemaType,
+  objectFields,
+  isBinaryField,
+} from "./schema";
 
 export function Method({ method }) {
   return (
@@ -254,13 +260,15 @@ export function SchemaField({
       </fieldset>
     );
   const choices = spec.enum ?? (spec.type === "boolean" ? [true, false] : null);
+  const binary = isBinaryField(schema, raw);
   const stringValue =
-    value === undefined
+    binary || value === undefined
       ? ""
       : typeof value === "string"
         ? value
         : pretty(value);
   const complex =
+    !binary &&
     !choices &&
     (spec.type === "array" ||
       spec.type === "object" ||
@@ -275,11 +283,25 @@ export function SchemaField({
           {location && <small className="ae-location"> ({location})</small>}
         </span>
         <span className="ae-field-meta">
-          <span className="ae-type">{type}</span>
+          <span className="ae-type">{binary ? "file" : type}</span>
           {required && <span className="ae-required">required</span>}
         </span>
       </label>
-      {choices ? (
+      {binary ? (
+        <>
+          <input
+            id={id}
+            type="file"
+            disabled={disabled}
+            onChange={(e) => onChange(e.target.files?.[0])}
+          />
+          {value instanceof Blob && (
+            <small className="ae-hint">
+              Selected: {value.name || "file"} ({value.size} bytes)
+            </small>
+          )}
+        </>
+      ) : choices ? (
         <select
           id={id}
           disabled={disabled}

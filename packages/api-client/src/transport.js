@@ -236,42 +236,77 @@ export function createHttpTransport({
         if (contentType?.includes("text/html"))
           throw new ApiError("Session expired (Redirected to App)", 401, null);
         if (downloadTo || onDownloadProgress) {
-          if (!response.body)
-            throw new ApiError(
-              "Download body is unavailable",
-              response.status,
-              null,
-            );
-          const reader = response.body.getReader();
-          const writer = downloadTo?.getWriter();
-          const chunks = [];
-          let loaded = 0;
-          const total = Number(response.headers.get("content-length")) || null;
-          try {
-            for (;;) {
+          if (!response.body) {
+            if (!downloadTo && typeof response.blob === "function") {
+              data = await response.blob();
               assertCurrent();
-              const { done, value } = await reader.read();
-              if (done) break;
-              assertCurrent();
-              if (writer) await writer.write(value);
-              else chunks.push(value);
-              loaded += value.byteLength;
-              onDownloadProgress?.(loaded, total);
+              onDownloadProgress?.(data.size, data.size || null);
+            } else {
+              throw new ApiError(
+                "Download body is unavailable",
+                response.status,
+                null,
+              );
             }
-            assertCurrent();
-            if (writer) await writer.close();
-            data = writer
-              ? null
-              : new Blob(chunks, {
+          } else {
+            const reader = response.body.getReader();
+            const writer = downloadTo?.getWriter();
+            const chunks = [];
+            let loaded = 0;
+            let lastProgressAt = 0;
+            const total =
+              Number(response.headers.get("content-length")) || null;
+            try {
+              for (;;) {
+                assertCurrent();
+                const { done, value } = await reader.read();
+                if (done) break;
+                assertCurrent();
+                if (writer) await writer.write(value);
+                else chunks.push(value);
+                loaded += value.byteLength;
+                const now = Date.now();
+                if (
+                  onDownloadProgress &&
+                  (lastProgressAt === 0 ||
+                    now - lastProgressAt >= 150 ||
+                    (total && loaded >= total))
+                ) {
+                  lastProgressAt = now;
+                  onDownloadProgress(loaded, total);
+                }
+              }
+              assertCurrent();
+              if (onDownloadProgress && loaded > 0) {
+                onDownloadProgress(loaded, total);
+              }
+              if (writer) {
+                await writer.close();
+                data = null;
+              } else if (chunks.length <= 1) {
+                data = new Blob(chunks, {
                   type: contentType ?? "application/octet-stream",
                 });
-          } catch (error) {
-            await reader.cancel(error).catch(() => {});
-            await writer?.abort(error).catch(() => {});
-            throw error;
-          } finally {
-            reader.releaseLock();
-            writer?.releaseLock();
+              } else {
+                const merged = new Uint8Array(loaded);
+                let offset = 0;
+                for (const chunk of chunks) {
+                  merged.set(chunk, offset);
+                  offset += chunk.byteLength;
+                }
+                chunks.length = 0;
+                data = new Blob([merged], {
+                  type: contentType ?? "application/octet-stream",
+                });
+              }
+            } catch (error) {
+              await reader.cancel(error).catch(() => {});
+              await writer?.abort(error).catch(() => {});
+              throw error;
+            } finally {
+              reader.releaseLock();
+              writer?.releaseLock();
+            }
           }
         } else data = await response.blob();
       } else if (contentType && contentType.includes("application/json")) {

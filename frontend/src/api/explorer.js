@@ -6,6 +6,13 @@ export const loadExplorerSchema = (signal) =>
 export const createExplorerClient = (schema) =>
   createApiClient({ request }).createOperationClient(schema);
 
+function parseDispositionFilename(headers) {
+  const disposition =
+    headers?.["content-disposition"] ?? headers?.["Content-Disposition"] ?? "";
+  const match = /filename="?([^";]+)"?/i.exec(disposition);
+  return match?.[1] ?? "";
+}
+
 export async function executeExplorerOperation(schema, id, options) {
   let metadata;
   const started = performance.now();
@@ -22,6 +29,7 @@ export async function executeExplorerOperation(schema, id, options) {
     const data = await client.callOperation(id, options);
     return {
       ...metadata,
+      filename: parseDispositionFilename(metadata?.headers),
       durationMs: Math.round(performance.now() - started),
       data,
     };

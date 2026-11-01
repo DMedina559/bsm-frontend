@@ -1483,6 +1483,35 @@
     "bodyTypes": [],
     "responseType": "json"
   },
+  "upload_content_file": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["content:manage"]
+      },
+      {
+        "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "supported",
+      "required_permissions": ["content:manage"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "POST",
+    "path": "/api/content/upload",
+    "parameters": [],
+    "bodyRequired": true,
+    "bodyTypes": ["multipart/form-data"],
+    "responseType": "json"
+  },
   "list_available_worlds": {
     "security": [
       {
@@ -1511,6 +1540,86 @@
     "bodyRequired": false,
     "bodyTypes": [],
     "responseType": "json"
+  },
+  "delete_content_file": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["content:manage"]
+      },
+      {
+        "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "supported",
+      "required_permissions": ["content:manage"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "DELETE",
+    "path": "/api/content/{category}/{filename}",
+    "parameters": [
+      {
+        "name": "category",
+        "in": "path",
+        "required": true
+      },
+      {
+        "name": "filename",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "download_content_file": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["content:read"]
+      },
+      {
+        "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["moderator", "admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "supported",
+      "required_permissions": ["content:read"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "GET",
+    "path": "/api/content/{category}/{filename}/download",
+    "parameters": [
+      {
+        "name": "category",
+        "in": "path",
+        "required": true
+      },
+      {
+        "name": "filename",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "blob"
   },
   "get_application_diagnostics": {
     "security": [
@@ -3811,6 +3920,46 @@
     "method": "GET",
     "path": "/api/server/{server_name}/backups/report",
     "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
+  "delete_server_snapshot": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["backups:manage"]
+      },
+      {
+        "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["moderator", "admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "supported",
+      "required_permissions": ["backups:manage"],
+      "resource_scope": "server",
+      "version": 1
+    },
+    "method": "DELETE",
+    "path": "/api/server/{server_name}/backups/{backup_id}",
+    "parameters": [
+      {
+        "name": "backup_id",
+        "in": "path",
+        "required": true
+      },
       {
         "name": "server_name",
         "in": "path",

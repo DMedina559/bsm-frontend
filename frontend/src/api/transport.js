@@ -8,6 +8,7 @@ import { getBackendIdentity } from "../app/backendIdentity";
  * Handles fetch logic, headers, authentication, and response parsing.
  */
 import { sessionRuntime } from "../app/sessionRuntime";
+import { triggerBlobDownload } from "../utils/download";
 
 import { logger } from "../utils/logger";
 
@@ -163,15 +164,5 @@ export function getBlob(url, options = {}) {
 }
 export async function downloadFile(url, filename = "download", options = {}) {
   const blob = await getBlob(url, options);
-  const objectUrl = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  try {
-    anchor.href = objectUrl;
-    anchor.download = filename;
-    document.body.appendChild(anchor);
-    anchor.click();
-  } finally {
-    anchor.remove();
-    URL.revokeObjectURL(objectUrl);
-  }
+  triggerBlobDownload(blob, filename);
 }

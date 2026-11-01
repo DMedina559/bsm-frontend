@@ -1,6 +1,12 @@
 /** Save directly when supported, avoiding the browser's blob-download manager. */
 export async function saveTextFile(filename, content, signal) {
-  if (typeof window.showSaveFilePicker !== "function") return false;
+  if (
+    typeof window.showSaveFilePicker !== "function" ||
+    Function.prototype.toString
+      .call(window.showSaveFilePicker)
+      .includes("[native code]")
+  )
+    return false;
   let handle;
   try {
     // Open before the first await to preserve the click's user activation.
