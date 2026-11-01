@@ -67,7 +67,7 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["recent-interactive-verification"],
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
@@ -131,7 +131,7 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["recent-interactive-verification"],
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
@@ -163,10 +163,11 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["read-only-preview"],
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": ["access:manage"],
       "resource_scope": "global",
@@ -227,7 +228,7 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["recent-interactive-verification"],
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
@@ -259,7 +260,7 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["recent-interactive-verification"],
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
@@ -343,7 +344,7 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["recent-interactive-verification"],
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
@@ -409,10 +410,15 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": [
+        "account-owner",
+        "recent-interactive-verification",
+        "current-password"
+      ],
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": ["account:manage"],
       "resource_scope": "global",
@@ -626,10 +632,15 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": [
+        "account-owner",
+        "recent-interactive-verification",
+        "administrator-mfa-policy"
+      ],
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": ["sessions:manage"],
       "resource_scope": "global",
@@ -652,10 +663,11 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["account-owner", "recent-interactive-verification"],
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": ["sessions:manage"],
       "resource_scope": "global",
@@ -678,10 +690,11 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["account-owner", "recent-interactive-verification"],
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": ["sessions:manage"],
       "resource_scope": "global",
@@ -704,10 +717,11 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["account-owner", "recent-interactive-verification"],
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": ["sessions:manage"],
       "resource_scope": "global",
@@ -782,10 +796,11 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["account-owner", "recent-interactive-verification"],
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": ["sessions:manage"],
       "resource_scope": "global",
@@ -808,10 +823,14 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": [
+        "session-owner",
+        "recent-verification-unless-current-session"
+      ],
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": ["sessions:manage"],
       "resource_scope": "global",
@@ -840,10 +859,11 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["session-owner"],
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": ["sessions:manage"],
       "resource_scope": "global",
@@ -898,10 +918,11 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["credential-owner"],
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": ["tokens:manage"],
       "resource_scope": "global",
@@ -940,10 +961,14 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": [
+        "credential-owner",
+        "recent-interactive-verification"
+      ],
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": ["tokens:manage"],
       "resource_scope": "global",
@@ -966,10 +991,11 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["credential-owner", "read-only-preview"],
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": ["tokens:manage"],
       "resource_scope": "global",
@@ -992,10 +1018,14 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": [
+        "credential-owner",
+        "recent-interactive-verification"
+      ],
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": ["tokens:manage"],
       "resource_scope": "global",
@@ -1018,10 +1048,11 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["credential-owner"],
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": ["tokens:manage"],
       "resource_scope": "global",
@@ -1050,10 +1081,14 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": [
+        "credential-owner",
+        "recent-interactive-verification"
+      ],
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": ["tokens:manage"],
       "resource_scope": "global",
@@ -1972,7 +2007,7 @@
     "parameters": [],
     "bodyRequired": false,
     "bodyTypes": [],
-    "responseType": "json"
+    "responseType": "blob"
   },
   "add_players": {
     "security": [
@@ -2257,16 +2292,63 @@
       },
       {
         "IntegrationToken": []
+      },
+      {
+        "OAuth2PasswordBearer": ["settings:read"]
+      },
+      {
+        "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
+      },
+      {
+        "OAuth2PasswordBearer": ["servers:read"]
+      },
+      {
+        "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
-      "additional_checks": [],
-      "allowed_roles": ["admin"],
+      "additional_checks": ["settings-scope", "query-server-access"],
+      "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
-      "classification": "permission",
+      "classification": "custom",
+      "credential_alternatives": [
+        {
+          "condition": "scope=plugin",
+          "permissions": ["plugins:read"],
+          "schemes": [
+            "OAuth2PasswordBearer",
+            "APIKeyCookie",
+            "IntegrationToken"
+          ]
+        },
+        {
+          "condition": "scope=global",
+          "permissions": ["settings:read"],
+          "schemes": [
+            "OAuth2PasswordBearer",
+            "APIKeyCookie",
+            "IntegrationToken"
+          ]
+        },
+        {
+          "condition": "scope=server",
+          "permissions": ["servers:read"],
+          "schemes": [
+            "OAuth2PasswordBearer",
+            "APIKeyCookie",
+            "IntegrationToken"
+          ]
+        }
+      ],
       "integration_tokens": "supported",
-      "required_permissions": ["plugins:read"],
-      "resource_scope": "global",
+      "required_permissions": [],
+      "resource_scope": "collection",
       "version": 1
     },
     "method": "GET",
@@ -2302,16 +2384,63 @@
       },
       {
         "IntegrationToken": []
+      },
+      {
+        "OAuth2PasswordBearer": ["settings:manage"]
+      },
+      {
+        "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
+      },
+      {
+        "OAuth2PasswordBearer": ["servers:configure"]
+      },
+      {
+        "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["settings-scope", "body-server-access"],
       "allowed_roles": ["admin"],
       "authentication": "required",
-      "classification": "permission",
+      "classification": "custom",
+      "credential_alternatives": [
+        {
+          "condition": "scope=plugin",
+          "permissions": ["plugins:manage"],
+          "schemes": [
+            "OAuth2PasswordBearer",
+            "APIKeyCookie",
+            "IntegrationToken"
+          ]
+        },
+        {
+          "condition": "scope=global",
+          "permissions": ["settings:manage"],
+          "schemes": [
+            "OAuth2PasswordBearer",
+            "APIKeyCookie",
+            "IntegrationToken"
+          ]
+        },
+        {
+          "condition": "scope=server",
+          "permissions": ["servers:configure"],
+          "schemes": [
+            "OAuth2PasswordBearer",
+            "APIKeyCookie",
+            "IntegrationToken"
+          ]
+        }
+      ],
       "integration_tokens": "supported",
-      "required_permissions": ["plugins:manage"],
-      "resource_scope": "global",
+      "required_permissions": [],
+      "resource_scope": "collection",
       "version": 1
     },
     "method": "PUT",
@@ -2337,7 +2466,7 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["recent-interactive-verification"],
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
@@ -2909,7 +3038,7 @@
   "list_server_addons": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["content:manage"]
+        "OAuth2PasswordBearer": ["content:read"]
       },
       {
         "APIKeyCookie": []
@@ -2920,11 +3049,11 @@
     ],
     "access": {
       "additional_checks": [],
-      "allowed_roles": ["admin"],
+      "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
       "integration_tokens": "supported",
-      "required_permissions": ["content:manage"],
+      "required_permissions": ["content:read"],
       "resource_scope": "server",
       "version": 1
     },
@@ -4897,7 +5026,7 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["recent-interactive-verification"],
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
@@ -4929,7 +5058,7 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["recent-interactive-verification"],
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
@@ -4961,7 +5090,7 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["recent-interactive-verification"],
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
@@ -4993,7 +5122,7 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["recent-interactive-verification"],
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",

@@ -3252,6 +3252,20 @@ export interface components {
        */
       status?: "success";
     };
+    /** BackupKeyInfo */
+    BackupKeyInfo: {
+      /** Created At */
+      created_at: string;
+      /** Key Id */
+      key_id: string;
+    };
+    /** BackupKeysInfo */
+    BackupKeysInfo: {
+      /** Active */
+      active: string | null;
+      /** Keys */
+      keys: components["schemas"]["BackupKeyInfo"][];
+    };
     /** BackupManifest */
     BackupManifest: {
       /**
@@ -10836,9 +10850,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": {
-            [key: string]: unknown;
-          };
+          "application/json": components["schemas"]["BackupKeysInfo"];
         };
       };
       /** @description Bad Request */
@@ -10939,9 +10951,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": {
-            [key: string]: string;
-          };
+          "application/json": components["schemas"]["BackupKeyInfo"];
         };
       };
       /** @description Bad Request */
@@ -13134,7 +13144,11 @@ export interface operations {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "image/jpeg": string;
+          "image/png": string;
+          "image/webp": string;
+        };
       };
       /** @description Bad Request */
       400: {
@@ -14479,7 +14493,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": unknown;
+          "application/json": components["schemas"]["BaseApiResponse"];
         };
       };
       /** @description Bad Request */
@@ -14586,7 +14600,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": unknown;
+          "application/json": components["schemas"]["BaseApiResponse"];
         };
       };
       /** @description Bad Request */
@@ -22649,7 +22663,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": unknown;
+          "application/json": components["schemas"]["BaseApiResponse"];
         };
       };
       /** @description Bad Request */

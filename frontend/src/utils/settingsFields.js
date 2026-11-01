@@ -104,10 +104,8 @@ const fields = {
     1,
     "weeks",
   ),
-  "web.jwt_secret_key": {
-    type: "password",
-    description: "Signing secret. Changing it invalidates existing tokens.",
-  },
+  "web.jwt_secret_key": { type: "password", readOnly: true },
+  "web.jwt_key_initialized": { readOnly: true },
   "server_info.status": { readOnly: true },
   "server_info.installed_version": { readOnly: true },
   "server_info.server_name": { readOnly: true },
