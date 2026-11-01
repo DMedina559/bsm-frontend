@@ -187,13 +187,17 @@ function InstanceCard({
           key={`${profile.id}:${profile.url}:${profile.paused}:${!!token}`}
           variant="instance"
           disabled={busy || blocked || profile.paused}
-          onPassword={async ({ username, password, remember, otp }, signal) => {
+          onPassword={async (
+            { username, password, remember, otp, rememberDevice = false },
+            signal,
+          ) => {
             await connection.current.login(
               username,
               password,
               remember,
               otp,
               signal,
+              rememberDevice,
             );
             setShowLogin(false);
           }}

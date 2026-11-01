@@ -267,6 +267,57 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/account/security/devices": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Trusted Devices */
+    get: operations["list_trusted_devices"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/account/security/devices/revoke": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Revoke Trusted Devices */
+    post: operations["revoke_trusted_devices"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/account/security/devices/{device_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Revoke Trusted Device */
+    delete: operations["revoke_trusted_device"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/account/security/mfa": {
     parameters: {
       query?: never;
@@ -3391,6 +3442,11 @@ export interface components {
        */
       password: string;
       /**
+       * Remember Device
+       * @default false
+       */
+      remember_device?: boolean;
+      /**
        * Remember Me
        * @default false
        */
@@ -3400,6 +3456,8 @@ export interface components {
        * @default
        */
       scope?: string;
+      /** Trusted Device Token */
+      trusted_device_token?: string | null;
       /** Username */
       username: string;
     };
@@ -5818,6 +5876,14 @@ export interface components {
        */
       mode: "others" | "all";
     };
+    /** RevokeTrustedDevices */
+    RevokeTrustedDevices: {
+      /**
+       * Mode
+       * @enum {string}
+       */
+      mode: "others" | "all";
+    };
     /** RuntimeDiagnostics */
     RuntimeDiagnostics: {
       /**
@@ -6039,6 +6105,13 @@ export interface components {
       required?: boolean;
       /** Session Id */
       session_id?: string | null;
+      /**
+       * Trusted Device
+       * @default false
+       */
+      trusted_device?: boolean;
+      /** Trusted Device Expires At */
+      trusted_device_expires_at?: number | null;
     };
     /** SendCommandResponse */
     SendCommandResponse: {
@@ -6277,6 +6350,13 @@ export interface components {
        * @constant
        */
       token_type?: "bearer";
+      /** Trusted Device Expires At */
+      trusted_device_expires_at?: number | null;
+      /**
+       * Trusted Device Token
+       * @description One-time remembered-device credential; omitted in cookie mode. Store only when explicitly requested.
+       */
+      trusted_device_token?: string | null;
     };
     /**
      * SetupStatusResponse
@@ -6726,6 +6806,13 @@ export interface components {
        * @constant
        */
       token_type?: "bearer";
+      /** Trusted Device Expires At */
+      trusted_device_expires_at?: number | null;
+      /**
+       * Trusted Device Token
+       * @description One-time remembered-device credential; omitted in cookie mode. Store only when explicitly requested.
+       */
+      trusted_device_token?: string | null;
     };
     /** TransportDiagnostics */
     TransportDiagnostics: {
@@ -6840,6 +6927,30 @@ export interface components {
        */
       status: "success" | "skipped" | "partial";
     };
+    /** TrustedDeviceInfo */
+    TrustedDeviceInfo: {
+      /** Created At */
+      created_at: number;
+      /** Current */
+      current: boolean;
+      /** Expires At */
+      expires_at: number;
+      /** Id */
+      id: string;
+      /** Ip Address */
+      ip_address: string;
+      /** Last Used At */
+      last_used_at: number;
+      /** Name */
+      name: string;
+      /**
+       * Status
+       * @enum {string}
+       */
+      status: "active" | "revoked" | "expired" | "invalidated";
+      /** User Agent */
+      user_agent: string;
+    };
     /**
      * UpdateUserRolePayload
      * @description Request payload for updating a user's role.
@@ -6897,6 +7008,10 @@ export interface components {
     };
     /** VerifiedSecurity */
     VerifiedSecurity: {
+      /** Trusted Device Expires At */
+      trusted_device_expires_at?: number | null;
+      /** Trusted Device Token */
+      trusted_device_token?: string | null;
       /** Verified Until */
       verified_until: number;
     };
@@ -6912,6 +7027,13 @@ export interface components {
        * Format: password
        */
       password: string;
+      /**
+       * Remember Device
+       * @default false
+       */
+      remember_device?: boolean;
+      /** Trusted Device Token */
+      trusted_device_token?: string | null;
     };
   };
   responses: never;
@@ -8483,6 +8605,315 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["SecurityEventInfo"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  list_trusted_devices: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TrustedDeviceInfo"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  revoke_trusted_devices: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RevokeTrustedDevices"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BaseApiResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  revoke_trusted_device: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        device_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BaseApiResponse"];
         };
       };
       /** @description Bad Request */

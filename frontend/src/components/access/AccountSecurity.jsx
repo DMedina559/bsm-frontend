@@ -1,3 +1,5 @@
+import { trustedDeviceOptions } from "../../app/trustedDevices";
+import RememberedDevices from "./RememberedDevices";
 import React, { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ShieldCheck } from "lucide-react";
@@ -17,7 +19,7 @@ import "../../styles/access.css";
 
 function SecondFactor({ status, identity, sessionGeneration }) {
   const { confirmAction } = useDialog();
-  const { checkUser } = useAuth();
+  const { user, checkUser } = useAuth();
   const [enrollment, setEnrollment] = useState(null);
   const [codes, setCodes] = useState(null);
   const [code, setCode] = useState("");
@@ -63,19 +65,23 @@ function SecondFactor({ status, identity, sessionGeneration }) {
       if (action === "enroll")
         result = await callOperation("enroll_account_mfa", {
           signal: abort.signal,
+          ...trustedDeviceOptions(user?.username),
         });
       else if (action === "confirm")
         result = await callOperation("confirm_account_mfa", {
           body: { code },
           signal: abort.signal,
+          ...trustedDeviceOptions(user?.username),
         });
       else if (action === "rotate")
         result = await callOperation("rotate_account_recovery_codes", {
           signal: abort.signal,
+          ...trustedDeviceOptions(user?.username),
         });
       else
         result = await callOperation("disable_account_mfa", {
           signal: abort.signal,
+          ...trustedDeviceOptions(user?.username),
         });
       if (abort.signal.aborted) return;
       if (action === "enroll") setEnrollment(result);
@@ -88,6 +94,9 @@ function SecondFactor({ status, identity, sessionGeneration }) {
       }
       await queryClient.invalidateQueries({
         queryKey: ["account-security", identity, sessionGeneration],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["trusted-devices", identity, sessionGeneration],
       });
       if (action === "confirm" || action === "disable") await checkUser?.();
     } catch (failure) {
@@ -385,7 +394,10 @@ export default function AccountSecurity({ children }) {
     {
       queryKey: ["account-security", identity, sessionGeneration],
       queryFn: ({ signal }) =>
-        callOperation("get_account_security", { signal }),
+        callOperation("get_account_security", {
+          signal,
+          ...trustedDeviceOptions(user?.username),
+        }),
     },
     queryClient,
   );
@@ -472,6 +484,7 @@ export default function AccountSecurity({ children }) {
         {tab === "sessions" && (
           <>
             <Sessions />
+            <RememberedDevices />
             <p className="help-text">
               Idle expiry:{" "}
               {Math.round((status.data?.idle_timeout_seconds ?? 0) / 3600)}{" "}

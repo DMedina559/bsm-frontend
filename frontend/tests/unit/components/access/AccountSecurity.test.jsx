@@ -251,3 +251,62 @@ it.each(["dismiss", "leave"])(
     }
   },
 );
+
+it("uses remembered trust for password reauthentication without asking for OTP", async () => {
+  callOperation.mockImplementation(async (id) =>
+    id === "get_account_security"
+      ? {
+          enabled: true,
+          trusted_device: true,
+          trusted_device_expires_at: 2000000000,
+        }
+      : id === "verify_account_security"
+        ? { verified_until: 999 }
+        : [],
+  );
+  show();
+  fireEvent.click(screen.getByRole("button", { name: "Verify password" }));
+  await screen.findByText(/This device is remembered until/);
+  expect(screen.queryByLabelText("Authenticator or recovery code")).toBeNull();
+  fireEvent.change(screen.getByLabelText("Current password"), {
+    target: { value: "password" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Verify identity" }));
+  await waitFor(() =>
+    expect(callOperation).toHaveBeenCalledWith(
+      "verify_account_security",
+      expect.objectContaining({ body: { password: "password", otp: "" } }),
+    ),
+  );
+});
+
+it("lists remembered devices separately and revokes a selected device", async () => {
+  const original = callOperation.getMockImplementation();
+  callOperation.mockImplementation(async (id, options) =>
+    id === "list_trusted_devices"
+      ? [
+          {
+            id: "remembered",
+            name: "Chrome · Windows",
+            current: true,
+            status: "active",
+            created_at: 100,
+            last_used_at: 200,
+            expires_at: 300,
+          },
+        ]
+      : original(id, options),
+  );
+  show();
+  await screen.findByText("Chrome · Windows");
+  fireEvent.click(screen.getByRole("button", { name: "Forget this device" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Continue", exact: true }),
+  );
+  await waitFor(() =>
+    expect(callOperation).toHaveBeenCalledWith(
+      "revoke_trusted_device",
+      expect.objectContaining({ path: { device_id: "remembered" } }),
+    ),
+  );
+});

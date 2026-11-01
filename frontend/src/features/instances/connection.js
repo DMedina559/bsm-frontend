@@ -1,3 +1,8 @@
+import {
+  readTrustedDevice,
+  rememberTrustedDevice,
+  forgetTrustedDevice,
+} from "../../app/trustedDevices";
 import { authenticateIntegrationToken } from "./tokenAuthentication";
 import { connectionFailure } from "./probe";
 import { sessionSettings } from "../../app/browserStorage";
@@ -433,7 +438,14 @@ export function createInstanceConnection(
       await refresh();
     },
     refresh,
-    async login(username, password, remember = false, otp = "", signal) {
+    async login(
+      username,
+      password,
+      remember = false,
+      otp = "",
+      signal,
+      rememberDevice = false,
+    ) {
       if (profile.paused || disposed)
         throw new Error("Resume this connection before signing in.");
       const body = new URLSearchParams({
@@ -443,17 +455,24 @@ export function createInstanceConnection(
         remember_me: String(remember),
       });
       if (otp) body.set("otp", otp);
+      if (rememberDevice) body.set("remember_device", "true");
+      const device = readTrustedDevice(username, profile.url);
+      if (device) body.set("trusted_device_token", device);
       let result;
       try {
         result = await loginClient.callOperation("login", { body, signal });
       } catch (error) {
-        if (error.mfaRequired) throw error;
+        if (error.mfaRequired) {
+          if (device) forgetTrustedDevice(username, profile.url);
+          throw error;
+        }
         throw new Error(connectionError(error));
       }
       if (disposed)
         throw new DOMException("Instance session changed", "AbortError");
       if (typeof result?.access_token !== "string" || !result.access_token)
         throw new Error("This instance did not return an access token.");
+      if (rememberDevice) rememberTrustedDevice(username, result, profile.url);
       writeToken(profile.url, result.access_token, remember);
     },
     async loginWithToken(candidate, remember = false, signal) {

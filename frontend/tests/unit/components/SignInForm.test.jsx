@@ -96,3 +96,34 @@ it("asks for MFA only after valid credentials receive a challenge", async () => 
     ),
   );
 });
+
+it("only offers remembering after the OTP challenge and submits explicit opt-in", async () => {
+  const password = vi
+    .fn()
+    .mockRejectedValueOnce({ mfaRequired: true })
+    .mockResolvedValueOnce({});
+  render(<SignInForm onPassword={password} onToken={vi.fn()} />);
+  expect(
+    screen.queryByLabelText("Remember this device for 30 days"),
+  ).toBeNull();
+  fireEvent.change(screen.getByLabelText("Username"), {
+    target: { value: "owner" },
+  });
+  fireEvent.change(screen.getByLabelText("Password", { exact: true }), {
+    target: { value: "password" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Sign In", exact: true }));
+  fireEvent.click(
+    await screen.findByLabelText("Remember this device for 30 days"),
+  );
+  fireEvent.change(screen.getByLabelText("Authenticator or recovery code"), {
+    target: { value: "123456" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Verify and sign in" }));
+  await waitFor(() =>
+    expect(password).toHaveBeenLastCalledWith(
+      expect.objectContaining({ rememberDevice: true, otp: "123456" }),
+      expect.any(AbortSignal),
+    ),
+  );
+});

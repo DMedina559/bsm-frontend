@@ -68,12 +68,41 @@ test("login asks for MFA after credentials and accepts a recovery code", async (
   await page
     .getByLabel("Authenticator or recovery code", { exact: true })
     .fill(recovery);
+  await page.getByLabel("Remember this device for 30 days").check();
   await page
     .getByRole("button", { name: "Verify and sign in", exact: true })
     .click();
   await expect(
     page.getByRole("button", { name: "Logout", exact: true }),
   ).toBeVisible();
+  // Trust survives logout, remains HttpOnly and skips OTP on the next password login.
+  const rememberedCookie = (await context.cookies()).find((cookie) =>
+    cookie.name.startsWith("bsm_trusted_device_"),
+  );
+  expect(rememberedCookie.httpOnly).toBe(true);
+  expect(await page.evaluate(() => document.cookie)).not.toContain(
+    rememberedCookie.value,
+  );
+  await page.getByRole("button", { name: "Logout", exact: true }).click();
+  await expect(page.getByLabel("Username", { exact: true })).toBeVisible();
+  await page.getByLabel("Username", { exact: true }).fill(form.username);
+  await page.getByLabel("Password", { exact: true }).fill(form.password);
+  await page.getByRole("button", { name: "Sign In", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Logout", exact: true }),
+  ).toBeVisible();
+  await page.goto(`${origin}/app/account`);
+  await expect(
+    page.getByRole("heading", { name: "Remembered devices", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Verify password" }).click();
+  await expect(page.getByText(/This device is remembered until/)).toBeVisible();
+  await expect(
+    page.getByLabel("Authenticator or recovery code", { exact: true }),
+  ).toHaveCount(0);
+  await page.getByLabel("Current password").fill(form.password);
+  await page.getByRole("button", { name: "Verify identity" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   // The same account can sign in to a saved connection using its second factor.
   const primaryCookie = (await context.cookies()).find(
     (cookie) => cookie.name === "access_token_cookie",

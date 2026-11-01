@@ -1548,6 +1548,11 @@
             "title": "Password",
             "type": "string"
           },
+          "remember_device": {
+            "default": false,
+            "title": "Remember Device",
+            "type": "boolean"
+          },
           "remember_me": {
             "default": false,
             "title": "Remember Me",
@@ -1557,6 +1562,19 @@
             "default": "",
             "title": "Scope",
             "type": "string"
+          },
+          "trusted_device_token": {
+            "anyOf": [
+              {
+                "format": "password",
+                "type": "string",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trusted Device Token"
           },
           "username": {
             "title": "Username",
@@ -7070,6 +7088,19 @@
         "title": "RevokeSessions",
         "type": "object"
       },
+      "RevokeTrustedDevices": {
+        "additionalProperties": false,
+        "properties": {
+          "mode": {
+            "enum": ["others", "all"],
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "required": ["mode"],
+        "title": "RevokeTrustedDevices",
+        "type": "object"
+      },
       "RuntimeDiagnostics": {
         "additionalProperties": false,
         "properties": {
@@ -7573,6 +7604,22 @@
               }
             ],
             "title": "Session Id"
+          },
+          "trusted_device": {
+            "default": false,
+            "title": "Trusted Device",
+            "type": "boolean"
+          },
+          "trusted_device_expires_at": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trusted Device Expires At"
           }
         },
         "required": [
@@ -8156,6 +8203,29 @@
             "default": "bearer",
             "title": "Token Type",
             "type": "string"
+          },
+          "trusted_device_expires_at": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trusted Device Expires At"
+          },
+          "trusted_device_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "One-time remembered-device credential; omitted in cookie mode. Store only when explicitly requested.",
+            "title": "Trusted Device Token"
           }
         },
         "required": ["access_token", "message"],
@@ -9178,6 +9248,29 @@
             "default": "bearer",
             "title": "Token Type",
             "type": "string"
+          },
+          "trusted_device_expires_at": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trusted Device Expires At"
+          },
+          "trusted_device_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "One-time remembered-device credential; omitted in cookie mode. Store only when explicitly requested.",
+            "title": "Trusted Device Token"
           }
         },
         "required": ["access_token"],
@@ -9364,6 +9457,62 @@
         "title": "TriggerEventResponse",
         "type": "object"
       },
+      "TrustedDeviceInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "integer"
+          },
+          "current": {
+            "title": "Current",
+            "type": "boolean"
+          },
+          "expires_at": {
+            "title": "Expires At",
+            "type": "integer"
+          },
+          "id": {
+            "pattern": "^[a-f0-9]{32}$",
+            "title": "Id",
+            "type": "string"
+          },
+          "ip_address": {
+            "title": "Ip Address",
+            "type": "string"
+          },
+          "last_used_at": {
+            "title": "Last Used At",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "enum": ["active", "revoked", "expired", "invalidated"],
+            "title": "Status",
+            "type": "string"
+          },
+          "user_agent": {
+            "title": "User Agent",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "user_agent",
+          "ip_address",
+          "created_at",
+          "last_used_at",
+          "expires_at",
+          "status",
+          "current"
+        ],
+        "title": "TrustedDeviceInfo",
+        "type": "object"
+      },
       "UpdateUserRolePayload": {
         "additionalProperties": false,
         "description": "Request payload for updating a user's role.\n\n:ivar role: The new role.",
@@ -9451,6 +9600,28 @@
       "VerifiedSecurity": {
         "additionalProperties": false,
         "properties": {
+          "trusted_device_expires_at": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trusted Device Expires At"
+          },
+          "trusted_device_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trusted Device Token"
+          },
           "verified_until": {
             "title": "Verified Until",
             "type": "integer"
@@ -9476,6 +9647,24 @@
             "title": "Password",
             "type": "string",
             "writeOnly": true
+          },
+          "remember_device": {
+            "default": false,
+            "title": "Remember Device",
+            "type": "boolean"
+          },
+          "trusted_device_token": {
+            "anyOf": [
+              {
+                "format": "password",
+                "type": "string",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trusted Device Token"
           }
         },
         "required": ["password"],
@@ -11758,6 +11947,412 @@
           }
         ],
         "summary": "Activity",
+        "tags": ["Account Security"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": ["user", "moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "unsupported",
+          "required_permissions": ["sessions:manage"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/api/account/security/devices": {
+      "get": {
+        "operationId": "list_trusted_devices",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TrustedDeviceInfo"
+                  },
+                  "title": "Response List Trusted Devices",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["sessions:manage"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Trusted Devices",
+        "tags": ["Account Security"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": ["user", "moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "unsupported",
+          "required_permissions": ["sessions:manage"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/api/account/security/devices/revoke": {
+      "post": {
+        "operationId": "revoke_trusted_devices",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevokeTrustedDevices"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseApiResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["sessions:manage"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Revoke Trusted Devices",
+        "tags": ["Account Security"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": ["user", "moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "unsupported",
+          "required_permissions": ["sessions:manage"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/api/account/security/devices/{device_id}": {
+      "delete": {
+        "operationId": "revoke_trusted_device",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "device_id",
+            "required": true,
+            "schema": {
+              "title": "Device Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseApiResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["sessions:manage"]
+          },
+          {
+            "APIKeyCookie": []
+          }
+        ],
+        "summary": "Revoke Trusted Device",
         "tags": ["Account Security"],
         "x-bsm-access": {
           "additional_checks": [],

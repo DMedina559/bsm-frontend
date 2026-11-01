@@ -1,3 +1,9 @@
+import {
+  trustedDeviceOptions,
+  rememberTrustedDevice,
+} from "../../app/trustedDevices";
+import { getConnectionIdentity } from "../../app/connection";
+import { useTimeFormat } from "../../app/useTimeFormat";
 import React, { useEffect, useRef, useState } from "react";
 import Modal from "../Modal";
 import { callOperation } from "../../api/operations";
@@ -12,6 +18,9 @@ import { queryClient } from "../../app/queryClient";
 export default function SecurityVerification() {
   const { user, sessionGeneration } = useAuth();
   const { addToast } = useToast();
+  const time = useTimeFormat();
+  const [rememberDevice, setRememberDevice] = useState(false);
+  const [trustedUntil, setTrustedUntil] = useState(null);
   const userId = user?.id;
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState("");
@@ -37,15 +46,24 @@ export default function SecurityVerification() {
         setOtp("");
         setOpen(true);
         setNeedsFactor(false);
+        setRememberDevice(false);
+        setTrustedUntil(null);
         controller.current?.abort();
         const statusRequest = new AbortController();
         controller.current = statusRequest;
         void callOperation("get_account_security", {
           signal: statusRequest.signal,
+          ...trustedDeviceOptions(user?.username),
         })
           .then((status) => {
-            if (!statusRequest.signal.aborted)
-              setNeedsFactor(status.enabled === true);
+            if (!statusRequest.signal.aborted) {
+              setNeedsFactor(
+                status.enabled === true && status.trusted_device !== true,
+              );
+              setTrustedUntil(
+                status.trusted_device ? status.trusted_device_expires_at : null,
+              );
+            }
           })
           .catch(() => {});
       }
@@ -55,7 +73,7 @@ export default function SecurityVerification() {
       controller.current?.abort();
       window.removeEventListener("bsm:security-verification-required", show);
     };
-  }, [userId, sessionGeneration]);
+  }, [userId, user?.username, sessionGeneration]);
   const close = () => {
     controller.current?.abort();
     setOpen(false);
@@ -70,13 +88,24 @@ export default function SecurityVerification() {
     const abort = new AbortController();
     controller.current = abort;
     try {
-      await callOperation("verify_account_security", {
-        body: { password, otp },
+      const backend = getConnectionIdentity();
+      const result = await callOperation("verify_account_security", {
+        body: {
+          password,
+          otp,
+          ...(rememberDevice ? { remember_device: true } : {}),
+        },
+        ...trustedDeviceOptions(user?.username),
         signal: abort.signal,
       });
       if (abort.signal.aborted) return;
+      if (rememberDevice)
+        rememberTrustedDevice(user?.username, result, backend);
       await queryClient.invalidateQueries({
         queryKey: ["account-security", getPreferenceIdentity(user)],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["trusted-devices", getPreferenceIdentity(user)],
       });
       close();
       addToast(
@@ -84,7 +113,13 @@ export default function SecurityVerification() {
         "success",
       );
     } catch (failure) {
-      if (!abort.signal.aborted) setError(failure.message);
+      if (!abort.signal.aborted) {
+        if (failure.mfaRequired) {
+          setNeedsFactor(true);
+          setTrustedUntil(null);
+        }
+        setError(failure.message);
+      }
     } finally {
       if (!abort.signal.aborted) setBusy(false);
     }
@@ -95,6 +130,13 @@ export default function SecurityVerification() {
         Security changes require a recent password check. Verification lasts
         five minutes and does not extend your login.
       </p>
+      {trustedUntil && (
+        <p>
+          This device is remembered until{" "}
+          {time.format(trustedUntil, { unit: "seconds" })}. Enter your current
+          password to continue.
+        </p>
+      )}
       <form onSubmit={verify} className="security-form">
         <input
           type="text"
@@ -128,6 +170,17 @@ export default function SecurityVerification() {
               maxLength={128}
               disabled={busy}
             />
+          </label>
+        )}
+        {needsFactor && (
+          <label className="sign-in-remember">
+            <input
+              type="checkbox"
+              checked={rememberDevice}
+              onChange={(event) => setRememberDevice(event.target.checked)}
+              disabled={busy}
+            />
+            Remember this device for 30 days
           </label>
         )}
         {error && <p role="alert">{error}</p>}

@@ -27,7 +27,7 @@
       "bsm_settings"
     ]
   },
-  "schemaHash": "edf8a5dc35d579566fe0405f26975d2af78344f7a23a1421aad91ae3a1a0354e",
+  "schemaHash": "8f21be30364af374cae6a484ec09d7ff612cbb4b8cc2bb38e45178d9f641b512",
   "openapiVersion": "3.1.0",
   "title": "Bedrock Server Manager",
   "source": "DMedina559/bedrock-server-manager: bedrock_server_manager.web.contract",
@@ -123,6 +123,7 @@
     "list_servers",
     "list_tasks",
     "list_themes",
+    "list_trusted_devices",
     "list_users",
     "login",
     "logout",
@@ -153,6 +154,8 @@
     "revoke_integration_token",
     "revoke_login_session",
     "revoke_login_sessions",
+    "revoke_trusted_device",
+    "revoke_trusted_devices",
     "rotate_account_recovery_codes",
     "rotate_backup_key",
     "rotate_integration_token",

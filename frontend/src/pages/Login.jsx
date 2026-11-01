@@ -64,9 +64,10 @@ const Login = () => {
       <SignInForm
         key={getBackendIdentity()}
         embedded={getAuthenticationMode() !== "bearer"}
-        onPassword={({ username, password, remember, otp }, signal) =>
-          login(username, password, remember, otp, signal)
-        }
+        onPassword={(
+          { username, password, remember, otp, rememberDevice = false },
+          signal,
+        ) => login(username, password, remember, otp, signal, rememberDevice)}
         onToken={(token, remember, signal) =>
           loginWithToken(token, remember, signal)
         }

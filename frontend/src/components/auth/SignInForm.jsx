@@ -17,6 +17,7 @@ export default function SignInForm({
   const [otp, setOtp] = useState("");
   const [challenge, setChallenge] = useState(false);
   const [remember, setRemember] = useState(false);
+  const [rememberDevice, setRememberDevice] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const controller = useRef(null);
@@ -31,6 +32,7 @@ export default function SignInForm({
     setChallenge(false);
     setError("");
     setRemember(false);
+    setRememberDevice(false);
     setBusy(false);
     onChallengeChange?.("");
   }
@@ -47,7 +49,16 @@ export default function SignInForm({
       const result =
         method === "token"
           ? await onToken(token, remember, signal)
-          : await onPassword({ username, password, remember, otp }, signal);
+          : await onPassword(
+              {
+                username,
+                password,
+                remember,
+                otp,
+                ...(rememberDevice ? { rememberDevice: true } : {}),
+              },
+              signal,
+            );
       if (signal.aborted) return;
       onSuccess?.(result);
     } catch (failure) {
@@ -197,6 +208,17 @@ export default function SignInForm({
             autoFocus
             disabled={unavailable}
           />
+        </label>
+      )}
+      {challenge && (
+        <label className="sign-in-remember">
+          <input
+            type="checkbox"
+            checked={rememberDevice}
+            onChange={(event) => setRememberDevice(event.target.checked)}
+            disabled={unavailable}
+          />
+          Remember this device for 30 days
         </label>
       )}
       {method === "password" && !challenge && (

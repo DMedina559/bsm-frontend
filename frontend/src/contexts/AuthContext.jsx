@@ -1,3 +1,8 @@
+import {
+  readTrustedDevice,
+  rememberTrustedDevice,
+  forgetTrustedDevice,
+} from "../app/trustedDevices";
 import { authenticateIntegrationToken } from "../features/instances/tokenAuthentication";
 import {
   isInstanceProfileKey,
@@ -6,6 +11,7 @@ import {
 import {
   getToken,
   getAuthenticationMode,
+  getConnectionIdentity,
   setCredentials,
   setTokenCredentials,
   isTokenAuthentication,
@@ -317,6 +323,7 @@ export const AuthProvider = ({ children }) => {
     rememberMe = false,
     otp = "",
     signal,
+    rememberDevice = false,
   ) => {
     if (isTokenAuthentication()) clearCredentials();
     checkGeneration.current += 1;
@@ -324,17 +331,32 @@ export const AuthProvider = ({ children }) => {
     identityRef.current = null;
     setUser(null);
     logger.debug(`[Auth] Attempting login`, { username, rememberMe });
+    const backend = getConnectionIdentity();
+    const device =
+      getAuthenticationMode() === "bearer"
+        ? readTrustedDevice(username, backend)
+        : undefined;
     const formData = new URLSearchParams();
     formData.append("grant_type", "password");
     formData.append("username", username);
     formData.append("password", password);
     formData.append("remember_me", rememberMe);
     if (otp) formData.append("otp", otp);
+    if (rememberDevice) formData.append("remember_device", "true");
+    if (device) formData.append("trusted_device_token", device);
 
     const attempt = checkGeneration.current;
-    const data = await callOperation("login", { body: formData, signal });
+    let data;
+    try {
+      data = await callOperation("login", { body: formData, signal });
+    } catch (failure) {
+      if (failure.mfaRequired && attempt === checkGeneration.current && device)
+        forgetTrustedDevice(username, backend);
+      throw failure;
+    }
 
     if (attempt !== checkGeneration.current) return data;
+    if (rememberDevice) rememberTrustedDevice(username, data, backend);
     if (data.access_token || getAuthenticationMode() === "cookie-recovery") {
       logger.info(`[Auth] Login successful`, { username });
       if (getAuthenticationMode() === "bearer")
