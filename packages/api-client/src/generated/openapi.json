@@ -1676,6 +1676,19 @@
         "title": "Body_login",
         "type": "object"
       },
+      "Body_upload_content_file": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "format": "binary",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": ["file"],
+        "title": "Body_upload_content_file",
+        "type": "object"
+      },
       "ChangePasswordPayload": {
         "additionalProperties": false,
         "description": "Request payload for changing the user's password.\n\n:ivar current_password: The current password for verification.\n\n:ivar new_password: The new password.",
@@ -1954,6 +1967,37 @@
         },
         "required": ["status"],
         "title": "ContentListResponse",
+        "type": "object"
+      },
+      "ContentUploadResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "enum": ["worlds", "addons"],
+            "title": "Category",
+            "type": "string"
+          },
+          "destination": {
+            "title": "Destination",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "status": {
+            "const": "success",
+            "default": "success",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["filename", "category", "destination", "message"],
+        "title": "ContentUploadResponse",
         "type": "object"
       },
       "ControlSchedulePayload": {
@@ -5000,6 +5044,24 @@
           "active"
         ],
         "title": "LoginSessionInfo",
+        "type": "object"
+      },
+      "ManageSnapshotResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "status": {
+            "const": "success",
+            "default": "success",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["message"],
+        "title": "ManageSnapshotResponse",
         "type": "object"
       },
       "MetricsDiagnostics": {
@@ -16745,6 +16807,147 @@
         }
       }
     },
+    "/api/content/upload": {
+      "post": {
+        "description": "Upload a ``.mcworld``, ``.mcpack``, or ``.mcaddon`` template file to the content library.",
+        "operationId": "upload_content_file",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_content_file"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentUploadResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["content:manage"]
+          },
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "IntegrationToken": []
+          }
+        ],
+        "summary": "Upload Content File",
+        "tags": ["Content Management"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": ["admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "supported",
+          "required_permissions": ["content:manage"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
     "/api/content/worlds": {
       "get": {
         "description": "Return a list of available .mcworld template files.",
@@ -16864,6 +17067,311 @@
         ],
         "summary": "Get Worlds List",
         "tags": ["World Management"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": ["moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "supported",
+          "required_permissions": ["content:read"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/api/content/{category}/{filename}": {
+      "delete": {
+        "description": "Delete a world or addon archive from the content library.",
+        "operationId": "delete_content_file",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "category",
+            "required": true,
+            "schema": {
+              "enum": ["worlds", "addons"],
+              "title": "Category",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "filename",
+            "required": true,
+            "schema": {
+              "title": "Filename",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseApiResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["content:manage"]
+          },
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "IntegrationToken": []
+          }
+        ],
+        "summary": "Delete Content File",
+        "tags": ["Content Management"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": ["admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "supported",
+          "required_permissions": ["content:manage"],
+          "resource_scope": "global",
+          "version": 1
+        }
+      }
+    },
+    "/api/content/{category}/{filename}/download": {
+      "get": {
+        "description": "Download a world or addon archive from the content library.",
+        "operationId": "download_content_file",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "category",
+            "required": true,
+            "schema": {
+              "enum": ["worlds", "addons"],
+              "title": "Category",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "filename",
+            "required": true,
+            "schema": {
+              "title": "Filename",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["content:read"]
+          },
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "IntegrationToken": []
+          }
+        ],
+        "summary": "Download Content File",
+        "tags": ["Content Management"],
         "x-bsm-access": {
           "additional_checks": [],
           "allowed_roles": ["moderator", "admin"],
@@ -26302,6 +26810,158 @@
         }
       }
     },
+    "/api/server/{server_name}/backups/{backup_id}": {
+      "delete": {
+        "description": "Delete an unprotected local backup archive for a server.",
+        "operationId": "delete_server_snapshot",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "backup_id",
+            "required": true,
+            "schema": {
+              "title": "Backup Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "server_name",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "The name of the server",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManageSnapshotResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["backups:manage"]
+          },
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "IntegrationToken": []
+          }
+        ],
+        "summary": "Delete Snapshot",
+        "tags": ["Backup & Restore"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": ["moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "supported",
+          "required_permissions": ["backups:manage"],
+          "resource_scope": "server",
+          "version": 1
+        }
+      }
+    },
     "/api/server/{server_name}/backups/{backup_id}/download": {
       "get": {
         "description": "Download the stored archive unchanged, preserving encryption.",
@@ -33939,6 +34599,10 @@
     {
       "description": "Install and configure server addons.",
       "name": "Addon Management"
+    },
+    {
+      "description": "Upload, download, and manage world and addon content archives.",
+      "name": "Content Management"
     },
     {
       "description": "Create, list, prune, and restore server backups.",

@@ -116,6 +116,9 @@ export function createApiClient({ request }) {
           ? 0
           : undefined),
       responseType: options.responseType ?? operation.responseType,
+      onUploadProgress: options.onUploadProgress,
+      onDownloadProgress: options.onDownloadProgress,
+      downloadTo: options.downloadTo,
     });
   }
   function resolveOperationUrl(id, options) {

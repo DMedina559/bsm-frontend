@@ -4,6 +4,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import {
   Braces,
   Upload,
+  Download,
   RefreshCw,
   Play,
   Square,
@@ -25,6 +26,8 @@ import {
   resolve,
   objectFields,
   pretty,
+  isBinaryField,
+  requestBodyMedia,
 } from "../features/api-explorer/schema";
 import {
   Method,
@@ -56,6 +59,8 @@ function Explorer() {
   const [responseMode, setResponseMode] = useState("body");
   const [values, setValues] = useState({});
   const [body, setBody] = useState("");
+  const [files, setFiles] = useState({});
+  const [transferProgress, setTransferProgress] = useState("");
   const [model, setModel] = useState("");
   const [modelSearch, setModelSearch] = useState("");
   const [error, setError] = useState("");
@@ -122,7 +127,9 @@ function Explorer() {
       setModel("");
       setValues({});
       setBody("");
+      setFiles({});
     }
+    setTransferProgress("");
     setResult(null);
     setError("");
     setImportOpen(false);
@@ -156,6 +163,8 @@ function Explorer() {
     setSelected(id);
     setValues({});
     setBody("");
+    setFiles({});
+    setTransferProgress("");
     setBodyMode("fields");
     setResult(null);
     setError("");
@@ -169,7 +178,7 @@ function Explorer() {
   let preview;
   try {
     if (operation && client) {
-      const options = prepareCall(schema, operation, values, body);
+      const options = prepareCall(schema, operation, values, body, files);
       preview = {
         method: operation.method,
         url: client.resolveOperationUrl(operation.id, options),
@@ -179,18 +188,66 @@ function Explorer() {
   } catch (e) {
     preview = { validation: e.message };
   }
+  function saveResponseFile() {
+    if (!result) return;
+    const blob =
+      result.blob instanceof Blob
+        ? result.blob
+        : new Blob(
+            [
+              typeof result.data === "string"
+                ? result.data
+                : pretty(result.data),
+            ],
+            {
+              type:
+                result.headers?.["content-type"] ||
+                (typeof result.data === "string"
+                  ? "text/plain"
+                  : "application/json"),
+            },
+          );
+    const fallbackExt = result.blob instanceof Blob ? "bin" : "json";
+    const filename =
+      result.filename || `${operation?.id || "response"}.${fallbackExt}`;
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
   async function execute(event) {
     event.preventDefault();
     setError("");
     setResult(null);
+    setTransferProgress("");
     const abort = new AbortController();
     controller.current = abort;
     try {
-      const options = prepareCall(schema, operation, values, body);
+      const options = prepareCall(schema, operation, values, body, files);
       setBusy(true);
       const response = await executeExplorerOperation(schema, operation.id, {
         ...options,
         signal: abort.signal,
+        onUploadProgress: ({ loaded, total }) => {
+          if (controller.current !== abort) return;
+          setTransferProgress(
+            total
+              ? `Uploading… ${Math.round((loaded / total) * 100)}% (${loaded} / ${total} bytes)`
+              : `Uploading… ${loaded} bytes`,
+          );
+        },
+        onDownloadProgress: ({ loaded, total }) => {
+          if (controller.current !== abort) return;
+          setTransferProgress(
+            total
+              ? `Downloading… ${Math.round((loaded / total) * 100)}% (${loaded} / ${total} bytes)`
+              : `Downloading… ${loaded} bytes`,
+          );
+        },
       });
       if (abort.signal.aborted) {
         if (controller.current === abort) setError("Cancelled");
@@ -200,12 +257,15 @@ function Explorer() {
       if (response.error) setError(response.error);
       setResult({
         ...response,
+        blob: response.data instanceof Blob ? response.data : null,
+        filename: response.filename || "",
         data:
           response.data instanceof Blob
             ? {
                 binary: true,
                 bytes: response.data.size,
                 type: response.data.type,
+                ...(response.filename ? { filename: response.filename } : {}),
               }
             : response.data,
       });
@@ -214,10 +274,15 @@ function Explorer() {
     } catch (e) {
       if (controller.current === abort) setError(e.message);
     } finally {
-      if (controller.current === abort) setBusy(false);
+      if (controller.current === abort) {
+        setBusy(false);
+        setTransferProgress("");
+      }
     }
   }
-  const bodySchema = operation?.request.content?.["application/json"]?.schema;
+  const { mediaType: bodyMediaType, schema: bodySchema } =
+    requestBodyMedia(operation);
+  const isJsonBody = bodyMediaType === "application/json";
   const fields = bodySchema ? objectFields(schema, bodySchema) : {};
   let bodyObject;
   try {
@@ -339,7 +404,7 @@ function Explorer() {
       )}
       {busy && (
         <div role="status" className="ae-progress">
-          <span>Request running…</span>
+          <span>{transferProgress || "Request running…"}</span>
           <button
             className="ae-button"
             onClick={() => controller.current?.abort()}
@@ -589,18 +654,20 @@ function Explorer() {
                                   <span className="ae-required">required</span>
                                 )}
                               </h3>
-                              <button
-                                type="button"
-                                className="ae-button"
-                                disabled={busy}
-                                onClick={() =>
-                                  setBody(
-                                    pretty(exampleValue(schema, bodySchema)),
-                                  )
-                                }
-                              >
-                                Fill example
-                              </button>
+                              {isJsonBody && (
+                                <button
+                                  type="button"
+                                  className="ae-button"
+                                  disabled={busy}
+                                  onClick={() =>
+                                    setBody(
+                                      pretty(exampleValue(schema, bodySchema)),
+                                    )
+                                  }
+                                >
+                                  Fill example
+                                </button>
+                              )}
                             </div>
                             <div className="ae-body-toolbar">
                               <div
@@ -619,34 +686,50 @@ function Explorer() {
                                 <button
                                   type="button"
                                   aria-pressed={bodyMode === "json"}
+                                  disabled={!isJsonBody}
                                   onClick={() => setBodyMode("json")}
                                 >
                                   JSON
                                 </button>
                               </div>
-                              <span className="ae-type">application/json</span>
+                              <span className="ae-type">{bodyMediaType}</span>
                             </div>
-                            {bodyMode === "fields" && fieldMode ? (
+                            {(bodyMode === "fields" || !isJsonBody) &&
+                            fieldMode ? (
                               Object.entries(fields.properties)
                                 .filter(([, raw]) => !raw.readOnly)
-                                .map(([name, raw]) => (
-                                  <SchemaField
-                                    key={`${selected}:${name}`}
-                                    schema={schema}
-                                    spec={raw}
-                                    name={name}
-                                    required={fields.required?.includes(name)}
-                                    value={bodyObject[name]}
-                                    disabled={busy}
-                                    onChange={(value) => {
-                                      const updated = { ...bodyObject };
-                                      if (value === undefined)
-                                        delete updated[name];
-                                      else updated[name] = value;
-                                      setBody(pretty(updated));
-                                    }}
-                                  />
-                                ))
+                                .map(([name, raw]) => {
+                                  const binary = isBinaryField(schema, raw);
+                                  return (
+                                    <SchemaField
+                                      key={`${selected}:${name}`}
+                                      schema={schema}
+                                      spec={raw}
+                                      name={name}
+                                      required={fields.required?.includes(name)}
+                                      value={
+                                        binary ? files[name] : bodyObject[name]
+                                      }
+                                      disabled={busy}
+                                      onChange={(value) => {
+                                        if (binary) {
+                                          setFiles((prev) => {
+                                            const next = { ...prev };
+                                            if (!value) delete next[name];
+                                            else next[name] = value;
+                                            return next;
+                                          });
+                                          return;
+                                        }
+                                        const updated = { ...bodyObject };
+                                        if (value === undefined)
+                                          delete updated[name];
+                                        else updated[name] = value;
+                                        setBody(pretty(updated));
+                                      }}
+                                    />
+                                  );
+                                })
                             ) : (
                               <label className="ae-json-editor">
                                 JSON body
@@ -669,8 +752,7 @@ function Explorer() {
                             {Object.keys(operation.request.content ?? {}).join(
                               ", ",
                             )}
-                            . View the schema for details; this explorer
-                            currently executes JSON bodies.
+                            . View the schema for details.
                           </div>
                         )}
                         <div className="ae-request-footer">
@@ -733,7 +815,19 @@ function Explorer() {
                                   </button>
                                 ))}
                               </div>
-                              <CopyButton value={pretty(result.data)} />
+                              <div className="ae-header-actions">
+                                <button
+                                  type="button"
+                                  className="ae-button"
+                                  onClick={saveResponseFile}
+                                >
+                                  <Download size={14} />
+                                  {result.blob instanceof Blob
+                                    ? "Download file"
+                                    : "Save response"}
+                                </button>
+                                <CopyButton value={pretty(result.data)} />
+                              </div>
                             </div>
                             <h3 className="ae-sr-only">Response</h3>
                             {responseMode === "body" ? (

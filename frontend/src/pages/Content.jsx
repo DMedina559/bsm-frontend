@@ -48,12 +48,7 @@ const Content = () => {
     type: activeTab,
   }));
   const loading = contentQuery.isFetching;
-  const pluginQuery = useResourceQuery("plugins");
-  const isUploadEnabled = Boolean(
-    pluginQuery.data?.find(
-      (plugin) => plugin.name === "content_uploader_plugin",
-    )?.enabled,
-  );
+  const isUploadEnabled = true;
   const [isAddonModalOpen, setIsAddonModalOpen] = useState(false);
   const [addonModalTab, setAddonModalTab] = useState("behavior");
   const addonsQuery = useResourceQuery("installedAddons", selectedServer, {
@@ -153,6 +148,52 @@ const Content = () => {
       addToast(`Installation of ${item.name} started.`, "success");
     } catch (error) {
       addToast(error.message || "Installation failed.", "error");
+    }
+  };
+  const handleDownloadContent = async (item) => {
+    try {
+      const blob = await callOperation("download_content_file", {
+        path: {
+          category: activeTab === "worlds" ? "worlds" : "addons",
+          filename: item.name,
+        },
+        responseType: "blob",
+      });
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = item.name;
+        document.body.appendChild(anchor);
+        try {
+          anchor.click();
+        } finally {
+          anchor.remove();
+          URL.revokeObjectURL(url);
+        }
+      }
+    } catch (error) {
+      addToast(error.message || "Download failed.", "error");
+    }
+  };
+  const handleDeleteContent = async (item) => {
+    if (
+      !(await confirmAction(
+        `Delete ${item.name} from ${activeTab}? This cannot be undone.`,
+      ))
+    )
+      return;
+
+    try {
+      await writeOperation("delete_content_file", {
+        path: {
+          category: activeTab === "worlds" ? "worlds" : "addons",
+          filename: item.name,
+        },
+      });
+      addToast(`Deleted ${item.name}.`, "success");
+    } catch (error) {
+      addToast(error.message || "Delete failed.", "error");
     }
   };
   const handleResetWorld = async () => {
@@ -945,20 +986,57 @@ const Content = () => {
                         </div>
                       </td>
                       <td>
-                        <button
-                          className="action-button"
-                          onClick={() => handleInstall(item)}
-                          title={`Install to ${selectedServer}`}
+                        <div
                           style={{
-                            padding:
-                              "calc(5px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
-                            fontSize: "var(--bsm-small-size)",
+                            display: "flex",
+                            gap: "calc(6px * var(--bsm-spacing-scale))",
                           }}
-                          disabled={actionLoading}
-                          type="button"
                         >
-                          Install
-                        </button>
+                          <button
+                            className="action-button"
+                            onClick={() => handleInstall(item)}
+                            title={`Install to ${selectedServer}`}
+                            style={{
+                              padding:
+                                "calc(5px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
+                              fontSize: "var(--bsm-small-size)",
+                            }}
+                            disabled={actionLoading}
+                            type="button"
+                          >
+                            Install
+                          </button>
+                          <button
+                            className="action-button secondary"
+                            onClick={() => handleDownloadContent(item)}
+                            title={`Download ${item.name}`}
+                            aria-label={`Download ${item.name}`}
+                            style={{
+                              padding:
+                                "calc(5px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
+                              fontSize: "var(--bsm-small-size)",
+                            }}
+                            disabled={actionLoading}
+                            type="button"
+                          >
+                            <Download size={14} />
+                          </button>
+                          <button
+                            className="action-button danger-button"
+                            onClick={() => handleDeleteContent(item)}
+                            title={`Delete ${item.name}`}
+                            aria-label={`Delete ${item.name}`}
+                            style={{
+                              padding:
+                                "calc(5px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
+                              fontSize: "var(--bsm-small-size)",
+                            }}
+                            disabled={actionLoading}
+                            type="button"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))

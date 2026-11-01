@@ -885,6 +885,33 @@ function ServerBackups({ prepared, onPrepared }) {
                           onClick: () =>
                             manage(item, item.pinned ? "unpin" : "pin"),
                         },
+                        {
+                          label: "Delete",
+                          Icon: Trash2,
+                          disabled: Boolean(item.pinned),
+                          onClick: async () => {
+                            if (
+                              await confirmAction(
+                                `Permanently delete backup ${item.label || item.filename}?`,
+                              )
+                            ) {
+                              const result = await perform(
+                                "delete_server_snapshot",
+                                {
+                                  path: { ...path, backup_id: item.backup_id },
+                                },
+                                false,
+                              );
+                              if (result) {
+                                if (selected?.backup_id === item.backup_id)
+                                  reset();
+                                await snapshots.refetch();
+                                await health.refetch();
+                                addToast("Backup deleted.", "success");
+                              }
+                            }
+                          },
+                        },
                       ]}
                     />
                   </td>

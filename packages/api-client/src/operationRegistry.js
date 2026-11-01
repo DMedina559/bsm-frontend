@@ -57,6 +57,7 @@ export function buildOperationRegistry(schema) {
         Object.entries(response.content ?? {}).some(
           ([type, value]) =>
             type === "application/octet-stream" ||
+            type.startsWith("image/") ||
             resolve(value.schema)?.format === "binary",
         ),
       );
