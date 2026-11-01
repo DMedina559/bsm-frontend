@@ -691,7 +691,8 @@ test("restores opt-in drafts after reload without persisting secrets or writing 
       json: {
         settings: {
           monitoring: { app_metrics_interval_sec: 3 },
-          web: { jwt_secret_key: "private-secret" },
+          web: { jwt_secret_key: "private-secret", jwt_key_initialized: true },
+          custom: { draft_probe: { api_token: "private-integration-token" } },
         },
       },
     });
@@ -704,33 +705,45 @@ test("restores opt-in drafts after reload without persisting secrets or writing 
     .getByLabel("Application metrics interval", { exact: true })
     .fill("12");
   await page.getByRole("tab", { name: "Web & access", exact: true }).click();
-  await page
-    .getByLabel("jwt secret key", { exact: true })
-    .fill("changed-secret");
-  await expect
-    .poll(() =>
-      page.evaluate(async () => {
-        const db = await new Promise((resolve) => {
-          const request = indexedDB.open("bsm-view-state", 2);
-          request.onsuccess = () => resolve(request.result);
-        });
-        return new Promise((resolve) => {
-          const request = db
-            .transaction("records")
-            .objectStore("records")
-            .getAll();
-          request.onsuccess = () => {
-            db.close();
-            resolve(
-              JSON.stringify(
-                request.result.filter((record) => record.kind === "draft"),
-              ),
-            );
-          };
-        });
-      }),
-    )
-    .toContain('"value":12');
+  await expect(page.getByLabel("jwt secret key", { exact: true })).toHaveCount(
+    0,
+  );
+  await expect(
+    page.getByLabel("jwt key initialized", { exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("tab", { name: "Advanced", exact: true }).click();
+  await page.getByLabel("api token", { exact: true }).fill("changed-secret");
+  const storedDrafts = () =>
+    page.evaluate(async () => {
+      const db = await new Promise((resolve) => {
+        const request = indexedDB.open("bsm-view-state", 2);
+        request.onsuccess = () => resolve(request.result);
+      });
+      return new Promise((resolve) => {
+        const request = db
+          .transaction("records")
+          .objectStore("records")
+          .getAll();
+        request.onsuccess = () => {
+          db.close();
+          resolve(
+            JSON.stringify(
+              request.result.filter((record) => record.kind === "draft"),
+            ),
+          );
+        };
+      });
+    });
+  await expect.poll(storedDrafts).toContain('"value":12');
+  const stored = await storedDrafts();
+  for (const secret of [
+    "private-secret",
+    "private-integration-token",
+    "changed-secret",
+    "jwt_secret_key",
+    "jwt_key_initialized",
+  ])
+    expect(stored).not.toContain(secret);
   page.once("dialog", (dialog) => dialog.accept());
   await page.reload();
   await expect(
@@ -747,8 +760,12 @@ test("restores opt-in drafts after reload without persisting secrets or writing 
     page.getByLabel("Application metrics interval", { exact: true }),
   ).toHaveValue("12");
   await page.getByRole("tab", { name: "Web & access", exact: true }).click();
-  await expect(page.getByLabel("jwt secret key", { exact: true })).toHaveValue(
-    "private-secret",
+  await expect(page.getByLabel("jwt secret key", { exact: true })).toHaveCount(
+    0,
+  );
+  await page.getByRole("tab", { name: "Advanced", exact: true }).click();
+  await expect(page.getByLabel("api token", { exact: true })).toHaveValue(
+    "private-integration-token",
   );
   expect(saved).toBe(0);
 });
