@@ -428,6 +428,8 @@ it("supports multipart file uploads and binary response downloads", async () => 
   fireEvent.click(downloadButton);
   expect(createObjectURL).toHaveBeenCalledTimes(1);
   expect(clickSpy).toHaveBeenCalledTimes(1);
+  expect(revokeObjectURL).not.toHaveBeenCalled();
+  window.dispatchEvent(new Event("pagehide"));
   expect(revokeObjectURL).toHaveBeenCalledWith("blob:mock-download");
 
   createObjectURL.mockRestore();

@@ -19,6 +19,7 @@ import {
   loadExplorerSchema,
 } from "../api/explorer";
 import { sessionSettings } from "../app/browserStorage";
+import { triggerBlobDownload } from "../utils/download";
 import {
   inspectSchema,
   exampleValue,
@@ -210,14 +211,7 @@ function Explorer() {
     const fallbackExt = result.blob instanceof Blob ? "bin" : "json";
     const filename =
       result.filename || `${operation?.id || "response"}.${fallbackExt}`;
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+    triggerBlobDownload(blob, filename);
   }
   async function execute(event) {
     event.preventDefault();
@@ -232,20 +226,12 @@ function Explorer() {
       const response = await executeExplorerOperation(schema, operation.id, {
         ...options,
         signal: abort.signal,
-        onUploadProgress: ({ loaded, total }) => {
+        onUploadProgress: (loaded, total) => {
           if (controller.current !== abort) return;
           setTransferProgress(
             total
               ? `Uploading… ${Math.round((loaded / total) * 100)}% (${loaded} / ${total} bytes)`
               : `Uploading… ${loaded} bytes`,
-          );
-        },
-        onDownloadProgress: ({ loaded, total }) => {
-          if (controller.current !== abort) return;
-          setTransferProgress(
-            total
-              ? `Downloading… ${Math.round((loaded / total) * 100)}% (${loaded} / ${total} bytes)`
-              : `Downloading… ${loaded} bytes`,
           );
         },
       });

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { callOperation } from "../api/operations";
+import { triggerBlobDownload } from "../utils/download";
 import { useToast } from "../contexts/ToastContext";
 import { useDialog } from "../contexts/DialogContext";
 
@@ -72,17 +73,7 @@ export default function BackupKeys() {
                   "download_backup_emergency_kit",
                   { path: { key_id: key.key_id }, responseType: "blob" },
                 );
-                const url = URL.createObjectURL(blob);
-                const anchor = document.createElement("a");
-                anchor.href = url;
-                anchor.download = "bsm-backup-emergency-kit.txt";
-                document.body.appendChild(anchor);
-                try {
-                  anchor.click();
-                } finally {
-                  anchor.remove();
-                  URL.revokeObjectURL(url);
-                }
+                triggerBlobDownload(blob, "bsm-backup-emergency-kit.txt");
               })
             }
           >

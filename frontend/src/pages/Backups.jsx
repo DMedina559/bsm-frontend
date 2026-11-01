@@ -1,5 +1,6 @@
 import BackupContents from "../components/BackupContents";
 import { defaultBackupComponents } from "../utils/backupContents";
+import { triggerBlobDownload } from "../utils/download";
 import { useMetricFormat } from "../app/useMetricFormat";
 import { formatByteValue } from "../utils/metricUnits";
 import ActionMenu from "../components/ActionMenu";
@@ -52,17 +53,7 @@ const unlockOperations = new Set([
 ]);
 
 function saveBlob(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = filename;
-  document.body.appendChild(anchor);
-  try {
-    anchor.click();
-  } finally {
-    anchor.remove();
-    URL.revokeObjectURL(url);
-  }
+  triggerBlobDownload(blob, filename);
 }
 
 export default function Backups() {
@@ -353,24 +344,6 @@ function ServerBackups({ prepared, onPrepared }) {
     }
   };
   const download = async (item) => {
-    let writable;
-    if (window.showSaveFilePicker) {
-      try {
-        const handle = await window.showSaveFilePicker({
-          suggestedName: item.filename,
-          types: [
-            {
-              description: "BSM backup",
-              accept: { "application/octet-stream": [".bsmbackup"] },
-            },
-          ],
-        });
-        writable = await handle.createWritable();
-      } catch (error) {
-        if (error.name !== "AbortError") addToast(error.message, "error");
-        return;
-      }
-    }
     setTransferMessage("");
     setTransferring(true);
     const blob = await perform(
@@ -378,14 +351,16 @@ function ServerBackups({ prepared, onPrepared }) {
       {
         path: { ...path, backup_id: item.backup_id },
         responseType: "blob",
-        downloadTo: writable,
         onDownloadProgress: transferProgress("Downloading"),
       },
       false,
     );
     setTransferring(false);
-    if (blob) saveBlob(blob, item.filename);
-    else if (writable) await writable.abort().catch(() => {});
+    if (blob) {
+      setTimeout(() => {
+        saveBlob(blob, item.filename);
+      }, 50);
+    }
   };
   const upload = async (event) => {
     const file = event.target.files?.[0];

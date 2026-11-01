@@ -12,6 +12,7 @@ import React, { useMemo, useState } from "react";
 import { useServer } from "../contexts/ServerContext";
 import { useToast } from "../contexts/ToastContext";
 import { request } from "../api/transport";
+import { triggerBlobDownload } from "../utils/download";
 import ResourceIcon from "../components/ResourceIcon";
 
 import {
@@ -160,17 +161,7 @@ const Content = () => {
         responseType: "blob",
       });
       if (blob) {
-        const url = URL.createObjectURL(blob);
-        const anchor = document.createElement("a");
-        anchor.href = url;
-        anchor.download = item.name;
-        document.body.appendChild(anchor);
-        try {
-          anchor.click();
-        } finally {
-          anchor.remove();
-          URL.revokeObjectURL(url);
-        }
+        triggerBlobDownload(blob, item.name);
       }
     } catch (error) {
       addToast(error.message || "Download failed.", "error");
