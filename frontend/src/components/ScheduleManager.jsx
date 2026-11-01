@@ -39,7 +39,8 @@ const initial = (serverName, timezone = "UTC", task = "backup:create") => ({
   stagger_minutes: 15,
   options: {},
 });
-export default function BackupSchedules({
+
+export default function ScheduleManager({
   serverName,
   defaultServer,
   serverNames = [],
@@ -100,12 +101,12 @@ export default function BackupSchedules({
     }
   };
   return (
-    <section className="card backup-schedules" aria-label="Schedules">
+    <section className="card schedule-manager" aria-label="Schedules">
       <div className="schedule-toolbar">
         <div>
           <h2>Schedules</h2>
           <p className="schedule-muted">
-            Backups and verification run independently.
+            Automate backups, server maintenance, commands, and scheduled tasks.
           </p>
         </div>
         {!editing && (
@@ -296,8 +297,7 @@ export default function BackupSchedules({
         !query.error &&
         !query.data?.schedules?.length && (
           <p className="schedule-empty">
-            No schedules yet. Add a backup or verification schedule to get
-            started.
+            No schedules yet. Add a scheduled task to get started.
           </p>
         )}
       {editing && (
@@ -536,8 +536,8 @@ export default function BackupSchedules({
                 occurrence to UTC automatically.
               </p>
               <p>
-                Enable verification in backup policy or add a verification
-                schedule.
+                Tasks run according to their schedule and respect server lock
+                requirements.
               </p>
             </details>
             <fieldset className="schedule-days">

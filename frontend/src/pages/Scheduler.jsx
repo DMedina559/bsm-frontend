@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { CalendarClock } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useServer } from "../contexts/ServerContext";
-import BackupSchedules from "../components/BackupSchedules";
+import ScheduleManager from "../components/ScheduleManager";
 import "../styles/backup-settings.css";
 
 export default function Scheduler() {
@@ -30,7 +30,9 @@ export default function Scheduler() {
         </h1>
       </div>
       <div className="scheduler-overview">
-        <p>Back up and verify your servers automatically.</p>
+        <p>
+          Automate backups, server maintenance, commands, and scheduled tasks.
+        </p>
         <label>
           Show server
           <select
@@ -45,7 +47,7 @@ export default function Scheduler() {
           </select>
         </label>
       </div>
-      <BackupSchedules
+      <ScheduleManager
         key={`${sessionGeneration}:${filter}`}
         serverName={filter || undefined}
         defaultServer={selectedServer || names[0]}

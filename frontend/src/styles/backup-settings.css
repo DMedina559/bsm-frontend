@@ -273,16 +273,16 @@
 .backup-summary dt {
   font-weight: 600;
 }
-.backup-schedules {
+.schedule-manager {
   padding: 1rem;
   margin: 1rem 0;
 }
-.backup-schedules .settings-grid {
+.schedule-manager .settings-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
   gap: 1rem;
 }
-.backup-schedules article {
+.schedule-manager article {
   border-bottom: 1px solid var(--border-color);
   padding: 0.75rem 0;
   overflow-wrap: anywhere;
@@ -325,7 +325,7 @@
   display: block;
   margin: 0.75rem 0;
 }
-.backup-schedules :is(fieldset, input, select, textarea) {
+.schedule-manager :is(fieldset, input, select, textarea) {
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
@@ -355,7 +355,7 @@
   width: auto;
   min-width: 12rem;
 }
-.scheduler-page .backup-schedules {
+.scheduler-page .schedule-manager {
   padding: 0;
   margin-top: 1.5rem;
   background: transparent;
@@ -379,7 +379,7 @@
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
   gap: var(--bsm-space-4);
 }
-.backup-schedules .schedule-list article {
+.schedule-manager .schedule-list article {
   border: 1px solid var(--border-color);
   border-radius: var(--bsm-radius-md);
   padding: var(--bsm-space-4);
@@ -412,20 +412,20 @@
   margin: 0;
   overflow-wrap: anywhere;
 }
-.backup-schedules .button-group {
+.schedule-manager .button-group {
   display: flex;
   gap: var(--bsm-space-2);
   margin: var(--bsm-space-3) 0;
 }
-.backup-schedules .action-button {
+.schedule-manager .action-button {
   margin: 0;
   padding: var(--bsm-space-2) 0.85rem;
 }
-.backup-schedules details {
+.schedule-manager details {
   margin-top: var(--bsm-space-3);
   font-size: 0.9rem;
 }
-.backup-schedules summary {
+.schedule-manager summary {
   cursor: pointer;
 }
 .schedule-warning {
@@ -444,29 +444,29 @@
   border: 1px dashed var(--border-color);
   border-radius: var(--bsm-radius-md);
 }
-.backup-schedules form {
+.schedule-manager form {
   margin-top: var(--bsm-space-4);
 }
-.backup-schedules form > fieldset {
+.schedule-manager form > fieldset {
   padding: var(--bsm-space-4);
   border: 1px solid var(--border-color);
   border-radius: var(--bsm-radius-md);
 }
-.backup-schedules label {
+.schedule-manager label {
   display: flex;
   align-items: center;
   gap: var(--bsm-space-2);
   margin: var(--bsm-space-2) 0;
 }
-.backup-schedules .settings-grid label {
+.schedule-manager .settings-grid label {
   display: flex;
   flex-direction: column;
   align-items: stretch;
 }
-.backup-schedules .settings-grid > div > label {
+.schedule-manager .settings-grid > div > label {
   display: block;
 }
-.backup-schedules input[type="checkbox"] {
+.schedule-manager input[type="checkbox"] {
   width: auto;
 }
 .schedule-days {

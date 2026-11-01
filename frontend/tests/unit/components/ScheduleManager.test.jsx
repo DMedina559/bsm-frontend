@@ -1,14 +1,14 @@
 import { TimeContext } from "../../../src/contexts/TimeContext";
 import { render, screen, fireEvent, waitFor } from "../../support/utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import BackupSchedules from "../../../src/components/BackupSchedules";
+import ScheduleManager from "../../../src/components/ScheduleManager";
 import * as api from "../../support/httpFixtures";
 
 vi.mock("../../../src/api/transport", async (importOriginal) => {
   const { createHttpTransport } = await import("../../support/httpFixtures");
   return createHttpTransport(await importOriginal());
 });
-describe("Backup schedules", () => {
+describe("Schedule manager", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     api.request.mockImplementation((url) =>
@@ -49,7 +49,7 @@ describe("Backup schedules", () => {
     api.put.mockResolvedValue({ status: "success", message: "Saved" });
   });
   it("creates a paused verification schedule independently from backups", async () => {
-    render(<BackupSchedules serverName="alpha" />);
+    render(<ScheduleManager serverName="alpha" />);
     fireEvent.click(
       await screen.findByRole("button", { name: "Add schedule" }),
     );
@@ -83,7 +83,7 @@ describe("Backup schedules", () => {
     );
   });
   it("renders dynamic options from task_definitions for built-in and plugin tasks", async () => {
-    render(<BackupSchedules serverName="alpha" />);
+    render(<ScheduleManager serverName="alpha" />);
     fireEvent.click(
       await screen.findByRole("button", { name: "Add schedule" }),
     );
@@ -125,7 +125,7 @@ describe("Backup schedules", () => {
         ],
       },
     });
-    render(<BackupSchedules serverName="alpha" />);
+    render(<ScheduleManager serverName="alpha" />);
     fireEvent.click(
       await screen.findByRole("button", { name: "Add schedule" }),
     );
@@ -157,7 +157,7 @@ describe("Backup schedules", () => {
       task_types: ["backup:create", "backup:verify"],
     });
     api.post.mockResolvedValue({ status: "success" });
-    render(<BackupSchedules serverName="alpha" />);
+    render(<ScheduleManager serverName="alpha" />);
     fireEvent.click(
       await screen.findByRole("button", { name: "Pause", exact: true }),
     );
@@ -194,7 +194,7 @@ describe("Backup schedules", () => {
     });
     const { container } = render(
       <TimeContext.Provider value={{ timezone: "America/Los_Angeles" }}>
-        <BackupSchedules serverName="alpha" />
+        <ScheduleManager serverName="alpha" />
       </TimeContext.Provider>,
     );
     expect(
@@ -224,7 +224,7 @@ it("offers Pacific Time as a regional timezone instead of PDT", async () => {
     timezones: ["UTC", "America/Los_Angeles"],
     timezone_database_available: true,
   });
-  render(<BackupSchedules serverName="alpha" />);
+  render(<ScheduleManager serverName="alpha" />);
   fireEvent.click(await screen.findByRole("button", { name: "Add schedule" }));
   const select = screen.getByRole("combobox", {
     name: "Timezone",
