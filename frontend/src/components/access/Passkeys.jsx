@@ -126,11 +126,11 @@ export default function Passkeys({ status, userId }) {
       queryKey,
       queryFn: ({ signal }) =>
         admin
-          ? callOperation("list_user_passkeys", {
+          ? callOperation("list_account_passkeys", {
               path: { user_id: userId },
               signal,
             })
-          : callOperation("list_account_passkeys", {
+          : callOperation("list_passkeys", {
               signal,
               ...trustedDeviceOptions(user?.username),
             }),
@@ -202,14 +202,14 @@ export default function Passkeys({ status, userId }) {
     setError("");
     try {
       if (action === "rename") {
-        await callOperation("rename_account_passkey", {
+        await callOperation("rename_passkey", {
           path: { passkey_id: passkeyId },
           body: { name },
           signal: abort.signal,
           ...trustedDeviceOptions(user?.username),
         });
       } else if (action === "revoke") {
-        await callOperation("revoke_account_passkey", {
+        await callOperation("revoke_passkey", {
           path: { passkey_id: passkeyId },
           signal: abort.signal,
           ...trustedDeviceOptions(user?.username),

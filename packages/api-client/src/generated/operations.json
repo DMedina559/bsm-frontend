@@ -67,10 +67,14 @@
       }
     ],
     "access": {
-      "additional_checks": ["recent-interactive-verification"],
+      "additional_checks": [
+        "other-account-only",
+        "recent-interactive-verification"
+      ],
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": ["sessions:admin"],
       "resource_scope": "global",
@@ -89,7 +93,7 @@
     "bodyTypes": [],
     "responseType": "json"
   },
-  "list_user_passkeys": {
+  "list_account_passkeys": {
     "security": [
       {
         "OAuth2PasswordBearer": ["sessions:admin"]
@@ -502,10 +506,11 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["account-owner"],
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": ["account:manage"],
       "resource_scope": "global",
@@ -528,10 +533,11 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["account-owner"],
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": ["sessions:manage"],
       "resource_scope": "global",
@@ -554,10 +560,11 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["account-owner"],
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": ["sessions:manage"],
       "resource_scope": "global",
@@ -580,10 +587,11 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["account-owner"],
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": ["sessions:manage"],
       "resource_scope": "global",
@@ -606,10 +614,11 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["account-owner"],
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": ["sessions:manage"],
       "resource_scope": "global",
@@ -632,10 +641,11 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["account-owner"],
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": ["sessions:manage"],
       "resource_scope": "global",
@@ -766,7 +776,7 @@
     "bodyTypes": [],
     "responseType": "json"
   },
-  "list_account_passkeys": {
+  "list_passkeys": {
     "security": [
       {
         "OAuth2PasswordBearer": ["sessions:manage"]
@@ -776,10 +786,11 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["account-owner"],
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": ["sessions:manage"],
       "resource_scope": "global",
@@ -900,7 +911,7 @@
     "bodyTypes": [],
     "responseType": "json"
   },
-  "revoke_account_passkey": {
+  "revoke_passkey": {
     "security": [
       {
         "OAuth2PasswordBearer": ["sessions:manage"]
@@ -937,7 +948,7 @@
     "bodyTypes": [],
     "responseType": "json"
   },
-  "rename_account_passkey": {
+  "rename_passkey": {
     "security": [
       {
         "OAuth2PasswordBearer": ["sessions:manage"]
@@ -980,10 +991,11 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["account-owner"],
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": ["sessions:manage"],
       "resource_scope": "global",
@@ -1006,10 +1018,11 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["account-owner"],
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": ["sessions:manage"],
       "resource_scope": "global",
@@ -1128,10 +1141,11 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": ["account-owner"],
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": ["account:manage"],
       "resource_scope": "global",
@@ -5450,7 +5464,7 @@
     "bodyTypes": [],
     "responseType": "json"
   },
-  "passkey_login_options": {
+  "begin_passkey_login": {
     "security": [],
     "access": {
       "additional_checks": [],
@@ -5470,7 +5484,7 @@
     "bodyTypes": ["application/json"],
     "responseType": "json"
   },
-  "passkey_login_verify": {
+  "complete_passkey_login": {
     "security": [],
     "access": {
       "additional_checks": [],

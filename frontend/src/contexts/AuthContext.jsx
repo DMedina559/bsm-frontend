@@ -409,14 +409,14 @@ export const AuthProvider = ({ children }) => {
       rememberMe,
     });
     const attempt = checkGeneration.current;
-    const options = await callOperation("passkey_login_options", {
+    const options = await callOperation("begin_passkey_login", {
       body: { username: trimmedUsername },
       signal,
     });
     if (attempt !== checkGeneration.current || signal?.aborted) return null;
     const credential = await getPasskeyAssertion(options.public_key, signal);
     if (attempt !== checkGeneration.current || signal?.aborted) return null;
-    const data = await callOperation("passkey_login_verify", {
+    const data = await callOperation("complete_passkey_login", {
       body: {
         challenge_id: options.challenge_id,
         credential,

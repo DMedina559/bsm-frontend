@@ -495,7 +495,7 @@ export function createInstanceConnection(
       const trimmedUsername = username.trim() || null;
       let options;
       try {
-        options = await loginClient.callOperation("passkey_login_options", {
+        options = await loginClient.callOperation("begin_passkey_login", {
           body: { username: trimmedUsername },
           signal,
         });
@@ -509,7 +509,7 @@ export function createInstanceConnection(
         throw new DOMException("Instance session changed", "AbortError");
       let result;
       try {
-        result = await loginClient.callOperation("passkey_login_verify", {
+        result = await loginClient.callOperation("complete_passkey_login", {
           body: {
             challenge_id: options.challenge_id,
             credential,

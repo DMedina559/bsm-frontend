@@ -58,7 +58,7 @@ export interface paths {
       cookie?: never;
     };
     /** Admin List Passkeys */
-    get: operations["list_user_passkeys"];
+    get: operations["list_account_passkeys"];
     put?: never;
     post?: never;
     delete?: never;
@@ -431,7 +431,7 @@ export interface paths {
       cookie?: never;
     };
     /** List Passkeys */
-    get: operations["list_account_passkeys"];
+    get: operations["list_passkeys"];
     put?: never;
     post?: never;
     delete?: never;
@@ -519,11 +519,11 @@ export interface paths {
     put?: never;
     post?: never;
     /** Revoke Passkey */
-    delete: operations["revoke_account_passkey"];
+    delete: operations["revoke_passkey"];
     options?: never;
     head?: never;
     /** Rename Passkey */
-    patch: operations["rename_account_passkey"];
+    patch: operations["rename_passkey"];
     trace?: never;
   };
   "/api/account/security/verify": {
@@ -2868,7 +2868,7 @@ export interface paths {
      * Passkey Login Options
      * @description Issue a single-use WebAuthn authentication challenge for passkey sign-in.
      */
-    post: operations["passkey_login_options"];
+    post: operations["begin_passkey_login"];
     delete?: never;
     options?: never;
     head?: never;
@@ -2888,7 +2888,7 @@ export interface paths {
      * Passkey Login Verify
      * @description Verify a WebAuthn passkey assertion and establish an authenticated session.
      */
-    post: operations["passkey_login_verify"];
+    post: operations["complete_passkey_login"];
     delete?: never;
     options?: never;
     head?: never;
@@ -7681,7 +7681,7 @@ export interface operations {
       };
     };
   };
-  list_user_passkeys: {
+  list_account_passkeys: {
     parameters: {
       query?: never;
       header?: never;
@@ -9953,7 +9953,7 @@ export interface operations {
       };
     };
   };
-  list_account_passkeys: {
+  list_passkeys: {
     parameters: {
       query?: never;
       header?: never;
@@ -10466,7 +10466,7 @@ export interface operations {
       };
     };
   };
-  revoke_account_passkey: {
+  revoke_passkey: {
     parameters: {
       query?: never;
       header?: never;
@@ -10569,7 +10569,7 @@ export interface operations {
       };
     };
   };
-  rename_account_passkey: {
+  rename_passkey: {
     parameters: {
       query?: never;
       header?: never;
@@ -23838,7 +23838,7 @@ export interface operations {
       };
     };
   };
-  passkey_login_options: {
+  begin_passkey_login: {
     parameters: {
       query?: never;
       header?: never;
@@ -23944,7 +23944,7 @@ export interface operations {
       };
     };
   };
-  passkey_login_verify: {
+  complete_passkey_login: {
     parameters: {
       query?: never;
       header?: never;
