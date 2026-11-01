@@ -1,3 +1,4 @@
+import AccessPreview from "./AccessPreview";
 import CredentialSecret from "./CredentialSecret";
 import React, { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -14,12 +15,27 @@ export default function IntegrationTokens() {
   const [preset, setPreset] = useState("monitoring");
   const time = useTimeFormat();
   const identity = getPreferenceIdentity(user);
-  const key = ["integration-tokens", identity, sessionGeneration];
+  const [page, setPage] = useState(0);
+  const [status, setStatus] = useState("active");
+  const pageSize = 50;
+  const key = ["integration-tokens", identity, sessionGeneration, status, page];
   const tokens = useQuery(
     {
       queryKey: key,
       queryFn: ({ signal }) =>
-        callOperation("list_integration_tokens", { signal }),
+        callOperation("list_integration_tokens", {
+          signal,
+          query: {
+            limit: pageSize + 1,
+            offset: page * pageSize,
+            status:
+              status === "active"
+                ? "active"
+                : status === "inactive"
+                  ? "inactive"
+                  : "all",
+          },
+        }),
     },
     queryClient,
   );
@@ -88,9 +104,11 @@ export default function IntegrationTokens() {
           server_ids: allServers ? null : selected,
         },
       });
+      if (abort.signal.aborted) return;
       setCreated(result.token);
+      setPage(0);
       setName("");
-      await queryClient.invalidateQueries({ queryKey: key });
+      await queryClient.invalidateQueries({ queryKey: key.slice(0, 3) });
     } catch (failure) {
       if (failure.name !== "AbortError") setError(failure.message);
     } finally {
@@ -114,7 +132,7 @@ export default function IntegrationTokens() {
         signal: abort.signal,
       });
       setCreated(null);
-      await queryClient.invalidateQueries({ queryKey: key });
+      await queryClient.invalidateQueries({ queryKey: key.slice(0, 3) });
     } catch (failure) {
       if (failure.name !== "AbortError") setError(failure.message);
     } finally {
@@ -139,7 +157,7 @@ export default function IntegrationTokens() {
         signal: abort.signal,
       });
       if (!abort.signal.aborted) setCreated(result.token);
-      await queryClient.invalidateQueries({ queryKey: key });
+      await queryClient.invalidateQueries({ queryKey: key.slice(0, 3) });
     } catch (failure) {
       if (!abort.signal.aborted) setError(failure.message);
     } finally {
@@ -162,7 +180,7 @@ export default function IntegrationTokens() {
         signal: abort.signal,
       });
       setCreated(null);
-      await queryClient.invalidateQueries({ queryKey: key });
+      await queryClient.invalidateQueries({ queryKey: key.slice(0, 3) });
     } catch (failure) {
       if (!abort.signal.aborted) setError(failure.message);
     } finally {
@@ -344,6 +362,23 @@ export default function IntegrationTokens() {
             Credentials cannot exceed your account’s role or server assignments.
             They cannot manage accounts or create more credentials.
           </p>
+          <AccessPreview
+            operation="preview_integration_token"
+            enabled={
+              (neverExpire ||
+                (Number.isInteger(days) && days >= 1 && days <= 365)) &&
+              Boolean(name.trim()) &&
+              permissions.length > 0 &&
+              (allServers || selected.length > 0)
+            }
+            body={{
+              name,
+              expires_in_days: neverExpire ? null : days,
+              permissions,
+              server_ids: allServers ? null : selected,
+            }}
+            servers={servers.data ?? []}
+          />
           <button
             className="action-button primary-button"
             type="submit"
@@ -355,8 +390,42 @@ export default function IntegrationTokens() {
           </button>
         </form>
       )}
+      <label className="form-label">
+        Show credentials
+        <select
+          className="form-input"
+          value={status}
+          onChange={(event) => {
+            setStatus(event.target.value);
+            setPage(0);
+          }}
+        >
+          <option value="active">Active</option>
+          <option value="inactive">Expired and revoked</option>
+          <option value="all">All credentials</option>
+        </select>
+      </label>
+      <div className="form-actions">
+        <button
+          type="button"
+          className="action-button secondary"
+          disabled={page === 0 || tokens.isFetching}
+          onClick={() => setPage((value) => value - 1)}
+        >
+          Newer credentials
+        </button>
+        <span>Page {page + 1}</span>
+        <button
+          type="button"
+          className="action-button secondary"
+          disabled={tokens.isFetching || (tokens.data?.length ?? 0) <= pageSize}
+          onClick={() => setPage((value) => value + 1)}
+        >
+          Older credentials
+        </button>
+      </div>
       <div className="access-credentials-list">
-        {tokens.data?.map((token) => (
+        {tokens.data?.slice(0, pageSize).map((token) => (
           <div key={token.id} className="access-credential-row">
             <div>
               <strong>{token.name}</strong>

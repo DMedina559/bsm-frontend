@@ -205,3 +205,49 @@ it.each([[capabilities], [["account:read", "servers:read"]]])(
     );
   },
 );
+
+it("pages credential history and resets to the first page when changing filters", async () => {
+  const original = callOperation.getMockImplementation();
+  callOperation.mockImplementation(async (id, options) => {
+    if (id !== "list_integration_tokens") return original(id, options);
+    return Array.from(
+      { length: options.query.offset === 0 ? 51 : 1 },
+      (_, index) => ({
+        id: `credential-${options.query.offset + index}`,
+        name: `Credential ${options.query.offset + index}`,
+        permissions: ["account:read"],
+        server_ids: null,
+        created_at: 1,
+        expires_at: null,
+        last_used_at: null,
+        revoked_at: null,
+      }),
+    );
+  });
+  render(
+    <DialogProvider>
+      <IntegrationTokens />
+    </DialogProvider>,
+  );
+  await screen.findByText("Credential 0");
+  expect(screen.queryByText("Credential 50")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Older credentials" }));
+  await screen.findByText("Credential 50");
+  expect(
+    screen.getByRole("button", { name: "Older credentials" }),
+  ).toBeDisabled();
+  fireEvent.change(screen.getByLabelText("Show credentials"), {
+    target: { value: "inactive" },
+  });
+  await waitFor(() =>
+    expect(callOperation).toHaveBeenCalledWith(
+      "list_integration_tokens",
+      expect.objectContaining({
+        query: { limit: 51, offset: 0, status: "inactive" },
+      }),
+    ),
+  );
+  expect(
+    screen.getByRole("button", { name: "Newer credentials" }),
+  ).toBeDisabled();
+});

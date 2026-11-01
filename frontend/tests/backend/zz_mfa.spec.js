@@ -103,6 +103,22 @@ test("login asks for MFA after credentials and accepts a recovery code", async (
   await page.getByLabel("Current password").fill(form.password);
   await page.getByRole("button", { name: "Verify identity" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
+  // A deliberate fresh factor can renew trust; remembered trust alone never does.
+  await page.getByRole("button", { name: "Verify password" }).click();
+  await page
+    .getByRole("button", { name: "Use an authenticator instead" })
+    .click();
+  await page.getByLabel("Current password").fill(form.password);
+  await page
+    .getByLabel("Authenticator or recovery code", { exact: true })
+    .fill(recoveryCodes[2]);
+  await page.getByLabel("Remember this device for 30 days").check();
+  await page.getByRole("button", { name: "Verify identity" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  const renewed = (await context.cookies()).find(
+    (cookie) => cookie.name === rememberedCookie.name,
+  );
+  expect(renewed.value).not.toBe(rememberedCookie.value);
   // The same account can sign in to a saved connection using its second factor.
   const primaryCookie = (await context.cookies()).find(
     (cookie) => cookie.name === "access_token_cookie",
@@ -233,6 +249,19 @@ test("login asks for MFA after credentials and accepts a recovery code", async (
     const displayedCodes = await enrollmentPage
       .locator(".security-recovery li code")
       .allTextContents();
+    await enrollmentPage
+      .context()
+      .grantPermissions(["clipboard-read", "clipboard-write"], { origin });
+    await enrollmentPage
+      .getByRole("button", { name: "Copy recovery codes", exact: true })
+      .click();
+    await expect(
+      enrollmentPage.getByText("Recovery codes copied.", { exact: true }),
+    ).toBeVisible();
+    const copied = await enrollmentPage.evaluate(() =>
+      navigator.clipboard.readText(),
+    );
+    for (const code of displayedCodes) expect(copied).toContain(code);
     // Direct writes are exercised with a fake handle; CI cannot operate an OS dialog.
     await enrollmentPage.evaluate(() => {
       window.__savedRecovery = "";

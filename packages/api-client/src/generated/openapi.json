@@ -11104,6 +11104,17 @@
               "title": "Offset",
               "type": "integer"
             }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "enum": ["all", "active", "inactive"],
+              "title": "Status",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -13957,6 +13968,17 @@
               "minimum": 0,
               "title": "Offset",
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "enum": ["all", "active", "inactive"],
+              "title": "Status",
+              "type": "string"
             }
           }
         ],

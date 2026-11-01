@@ -55,6 +55,10 @@ test("named credentials are shown once, usable as bearer, and revocable", async 
     );
   if (supportsNoExpiry)
     await page.getByLabel("Never expire", { exact: true }).check();
+  const preview = page.getByRole("region", {
+    name: "Effective access preview",
+  });
+  await expect(preview.getByText(/Policy revision/)).toBeVisible();
   await page
     .getByRole("button", { name: "Create credential", exact: true })
     .click();
@@ -130,6 +134,13 @@ test("named credentials are shown once, usable as bearer, and revocable", async 
       ).status(),
     )
     .toBe(401);
+  await page
+    .getByRole("combobox", { name: "Show credentials", exact: true })
+    .selectOption("inactive");
+  await expect(
+    page.getByText("Browser monitoring", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("Revoked", { exact: true })).toBeVisible();
   await page.reload();
   await expect(field).toHaveCount(0);
 });

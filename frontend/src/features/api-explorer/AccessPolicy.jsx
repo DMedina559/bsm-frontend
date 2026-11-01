@@ -70,6 +70,31 @@ export default function AccessPolicy({ policy = {}, permissions, connected }) {
           {labels[policy.classification] ?? labels.unknown}
         </span>
       </div>
+      {Array.isArray(policy.credential_alternatives) &&
+        policy.credential_alternatives.length > 0 && (
+          <div>
+            <strong>Conditional access</strong>
+            <ul>
+              {policy.credential_alternatives.map((alternative, index) => (
+                <li key={index}>
+                  <strong>{alternative.condition}</strong>
+                  <p>{strings(alternative.schemes).join(" or ")}</p>
+                  {strings(alternative.permissions).length ? (
+                    <Chips
+                      values={strings(alternative.permissions)}
+                      permissions={connected ? account : null}
+                    />
+                  ) : (
+                    <span>
+                      Dedicated local credential; account capabilities do not
+                      apply.
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       <dl className="ae-access-facts">
         <div>
           <dt>Required capabilities</dt>
@@ -81,7 +106,11 @@ export default function AccessPolicy({ policy = {}, permissions, connected }) {
               />
             ) : (
               <span className="ae-muted">
-                {policy.classification === "public" ? "None" : "Not declared"}
+                {policy.classification === "public"
+                  ? "None"
+                  : policy.credential_alternatives?.length
+                    ? "Depends on the credential and operation context above"
+                    : "Not declared"}
               </span>
             )}
           </dd>

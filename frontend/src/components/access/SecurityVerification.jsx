@@ -107,6 +107,11 @@ export default function SecurityVerification() {
       await queryClient.invalidateQueries({
         queryKey: ["trusted-devices", getPreferenceIdentity(user)],
       });
+      window.dispatchEvent(
+        new CustomEvent("bsm:security-verified", {
+          detail: { backend: getBackendIdentity() },
+        }),
+      );
       close();
       addToast(
         "Identity verified. You can retry the security action.",
@@ -137,6 +142,19 @@ export default function SecurityVerification() {
           password to continue.
         </p>
       )}
+      {trustedUntil && !needsFactor && (
+        <button
+          type="button"
+          className="action-button secondary"
+          disabled={busy}
+          onClick={() => {
+            setNeedsFactor(true);
+            setTrustedUntil(null);
+          }}
+        >
+          Use an authenticator instead
+        </button>
+      )}
       <form onSubmit={verify} className="security-form">
         <input
           type="text"
@@ -164,6 +182,7 @@ export default function SecurityVerification() {
             Authenticator or recovery code
             <input
               className="form-input"
+              required
               autoComplete="one-time-code"
               value={otp}
               onChange={(event) => setOtp(event.target.value)}

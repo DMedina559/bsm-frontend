@@ -18,6 +18,9 @@ import {
   HISTORY_LIMIT,
 } from "../utils/notificationHistory";
 const SECURITY_MESSAGES = {
+  trusted_device_remembered:
+    "A device was remembered for second-factor verification.",
+  trusted_devices_revoked: "Remembered-device access was removed.",
   login: "A new login was created for your account.",
   recovery_code_used: "A recovery code was used to verify your account.",
   mfa_enabled: "Two-factor authentication was enabled.",

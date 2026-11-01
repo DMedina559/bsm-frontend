@@ -13,6 +13,7 @@ import { useTimeFormat } from "../../app/useTimeFormat";
 import { useAuth } from "../../contexts/AuthContext";
 import { useDialog } from "../../contexts/DialogContext";
 import { saveTextFile } from "../../utils/saveTextFile";
+import { sessionRuntime } from "../../app/sessionRuntime";
 import IntegrationTokens from "./IntegrationTokens";
 import Sessions from "./Sessions";
 import "../../styles/access.css";
@@ -26,6 +27,39 @@ function SecondFactor({ status, identity, sessionGeneration }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [downloadMessage, setDownloadMessage] = useState("");
+  const [copyMessage, setCopyMessage] = useState("");
+  const [copyFailed, setCopyFailed] = useState(false);
+  const copyController = useRef(null);
+  const copyField = useRef(null);
+  useEffect(() => {
+    setCopyMessage("");
+    setCopyFailed(false);
+    return () => copyController.current?.abort();
+  }, [codes]);
+  useEffect(() => {
+    if (copyFailed) {
+      copyField.current?.focus();
+      copyField.current?.select();
+    }
+  }, [copyFailed]);
+  async function copyCodes() {
+    const abort = new AbortController();
+    copyController.current?.abort();
+    copyController.current = abort;
+    setCopyMessage("Copying recovery codes…");
+    setCopyFailed(false);
+    try {
+      await navigator.clipboard.writeText(codes.join("\n"));
+      if (!abort.signal.aborted) setCopyMessage("Recovery codes copied.");
+    } catch {
+      if (!abort.signal.aborted) {
+        setCopyMessage(
+          "Could not copy automatically. Select the codes below and copy them manually.",
+        );
+        setCopyFailed(true);
+      }
+    }
+  }
   const downloadUrl = useRef(null);
   const saveController = useRef(null);
   const [savingCodes, setSavingCodes] = useState(false);
@@ -232,7 +266,26 @@ function SecondFactor({ status, identity, sessionGeneration }) {
               </li>
             ))}
           </ul>
+          {copyFailed && (
+            <textarea
+              ref={copyField}
+              className="form-input"
+              rows={6}
+              readOnly
+              value={codes.join("\n")}
+              aria-label="Recovery codes to copy"
+            />
+          )}
+          {copyMessage && <p role="status">{copyMessage}</p>}
           <div className="form-actions">
+            <button
+              type="button"
+              className="action-button secondary"
+              disabled={savingCodes}
+              onClick={copyCodes}
+            >
+              Copy recovery codes
+            </button>
             <button
               type="button"
               className="action-button secondary"
@@ -382,6 +435,25 @@ export default function AccountSecurity({ children }) {
   const { user, sessionGeneration } = useAuth();
   const time = useTimeFormat();
   const identity = getPreferenceIdentity(user);
+  useEffect(() => {
+    const refresh = (event) => {
+      if (
+        event.detail?.backend !== getBackendIdentity() ||
+        event.detail?.generation !== sessionRuntime.capture().generation
+      )
+        return;
+      for (const group of [
+        "account-security",
+        "trusted-devices",
+        "security-activity",
+        "login-sessions",
+        "integration-tokens",
+      ])
+        void queryClient.invalidateQueries({ queryKey: [group, identity] });
+    };
+    window.addEventListener("bsm:security-notice", refresh);
+    return () => window.removeEventListener("bsm:security-notice", refresh);
+  }, [identity, sessionGeneration]);
   const [tab, setTab] = useState(
     user?.mfa_enrollment_required ? "sign-in" : "sessions",
   );

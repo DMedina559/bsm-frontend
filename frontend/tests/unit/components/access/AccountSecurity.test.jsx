@@ -310,3 +310,79 @@ it("lists remembered devices separately and revokes a selected device", async ()
     ),
   );
 });
+
+it.each(["success", "failure"])(
+  "copies recovery codes with explicit feedback and a manual fallback: %s",
+  async (outcome) => {
+    const writeText = vi.fn();
+    if (outcome === "success") writeText.mockResolvedValue();
+    else writeText.mockRejectedValue(new Error("Clipboard unavailable"));
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    show();
+    fireEvent.click(screen.getByRole("tab", { name: "Password & MFA" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Set up authenticator" }),
+    );
+    fireEvent.change(
+      await screen.findByLabelText("Six-digit authenticator code"),
+      { target: { value: "123456" } },
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Enable two-factor authentication" }),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Copy recovery codes" }),
+    );
+    await waitFor(() =>
+      expect(writeText).toHaveBeenCalledWith("synthetic-recovery-code"),
+    );
+    if (outcome === "success")
+      await screen.findByText("Recovery codes copied.");
+    else {
+      const field = await screen.findByLabelText("Recovery codes to copy");
+      expect(field).toHaveValue("synthetic-recovery-code");
+      expect(field).toHaveFocus();
+    }
+    expect(
+      JSON.stringify(queryClient.getMutationCache().getAll()),
+    ).not.toContain("synthetic-recovery-code");
+  },
+);
+
+it("can choose a fresh authenticator and opt into renewed device trust", async () => {
+  callOperation.mockImplementation(async (id) =>
+    id === "get_account_security"
+      ? {
+          enabled: true,
+          trusted_device: true,
+          trusted_device_expires_at: 2000000000,
+        }
+      : id === "verify_account_security"
+        ? { verified_until: 999 }
+        : [],
+  );
+  show();
+  fireEvent.click(screen.getByRole("button", { name: "Verify password" }));
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Use an authenticator instead" }),
+  );
+  fireEvent.change(screen.getByLabelText("Current password"), {
+    target: { value: "password" },
+  });
+  fireEvent.change(screen.getByLabelText("Authenticator or recovery code"), {
+    target: { value: "123456" },
+  });
+  fireEvent.click(screen.getByLabelText("Remember this device for 30 days"));
+  fireEvent.click(screen.getByRole("button", { name: "Verify identity" }));
+  await waitFor(() =>
+    expect(callOperation).toHaveBeenCalledWith(
+      "verify_account_security",
+      expect.objectContaining({
+        body: { password: "password", otp: "123456", remember_device: true },
+      }),
+    ),
+  );
+});

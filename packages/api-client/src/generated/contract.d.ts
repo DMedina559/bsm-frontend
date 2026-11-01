@@ -8036,6 +8036,7 @@ export interface operations {
       query?: {
         limit?: number;
         offset?: number;
+        status?: "all" | "active" | "inactive";
       };
       header?: never;
       path: {
@@ -10203,6 +10204,7 @@ export interface operations {
       query?: {
         limit?: number;
         offset?: number;
+        status?: "all" | "active" | "inactive";
       };
       header?: never;
       path?: never;

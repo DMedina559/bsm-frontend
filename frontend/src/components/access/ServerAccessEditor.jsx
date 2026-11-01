@@ -1,3 +1,4 @@
+import AccessPreview from "./AccessPreview";
 import React, { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { callOperation } from "../../api/operations";
@@ -112,6 +113,19 @@ export default function ServerAccessEditor({ userId, userRole }) {
       </p>
       {failure && <p role="alert">{failure}</p>}
       {message && <p role="status">{message}</p>}
+      {!access.isPending && (
+        <AccessPreview
+          operation="preview_account_server_access"
+          path={{ user_id: userId }}
+          body={{
+            mode,
+            grants: Object.entries(grants)
+              .filter(([, permissions]) => permissions.length)
+              .map(([server_id, permissions]) => ({ server_id, permissions })),
+          }}
+          servers={servers.data ?? []}
+        />
+      )}
       {access.isPending || servers.isPending || policy.isPending ? (
         <p role="status">Loading server access…</p>
       ) : (

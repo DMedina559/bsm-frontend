@@ -322,6 +322,11 @@
         "name": "offset",
         "in": "query",
         "required": false
+      },
+      {
+        "name": "status",
+        "in": "query",
+        "required": false
       }
     ],
     "bodyRequired": false,
@@ -912,6 +917,11 @@
       },
       {
         "name": "offset",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "status",
         "in": "query",
         "required": false
       }
