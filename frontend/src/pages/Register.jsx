@@ -111,8 +111,7 @@ const Register = () => {
     >
       <AuthBrand />
       <p className="form-help-text">
-        Use at least 15 characters. Spaces and memorable passphrases are
-        welcome.
+        Use at least 8 characters. Spaces and memorable passphrases are welcome.
       </p>
       <div className="header">
         <h1>Register</h1>
@@ -149,7 +148,7 @@ const Register = () => {
           </label>
           <input
             type="password"
-            minLength={15}
+            minLength={8}
             maxLength={1024}
             id="password"
             className="form-input"
@@ -171,7 +170,7 @@ const Register = () => {
           </label>
           <input
             type="password"
-            minLength={15}
+            minLength={8}
             maxLength={1024}
             id="confirmPassword"
             className="form-input"

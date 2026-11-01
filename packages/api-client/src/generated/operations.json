@@ -153,6 +153,38 @@
     "bodyTypes": ["application/json"],
     "responseType": "json"
   },
+  "preview_account_server_access": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["access:manage"]
+      },
+      {
+        "APIKeyCookie": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "unsupported",
+      "required_permissions": ["access:manage"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "POST",
+    "path": "/api/access/users/{user_id}/servers/preview",
+    "parameters": [
+      {
+        "name": "user_id",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
+  },
   "list_account_login_sessions": {
     "security": [
       {
@@ -280,6 +312,16 @@
         "name": "user_id",
         "in": "path",
         "required": true
+      },
+      {
+        "name": "limit",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "offset",
+        "in": "query",
+        "required": false
       }
     ],
     "bodyRequired": false,
@@ -862,7 +904,18 @@
     },
     "method": "GET",
     "path": "/api/account/tokens",
-    "parameters": [],
+    "parameters": [
+      {
+        "name": "limit",
+        "in": "query",
+        "required": false
+      },
+      {
+        "name": "offset",
+        "in": "query",
+        "required": false
+      }
+    ],
     "bodyRequired": false,
     "bodyTypes": [],
     "responseType": "json"
@@ -888,6 +941,32 @@
     },
     "method": "POST",
     "path": "/api/account/tokens",
+    "parameters": [],
+    "bodyRequired": true,
+    "bodyTypes": ["application/json"],
+    "responseType": "json"
+  },
+  "preview_integration_token": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["tokens:manage"]
+      },
+      {
+        "APIKeyCookie": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["user", "moderator", "admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "unsupported",
+      "required_permissions": ["tokens:manage"],
+      "resource_scope": "global",
+      "version": 1
+    },
+    "method": "POST",
+    "path": "/api/account/tokens/preview",
     "parameters": [],
     "bodyRequired": true,
     "bodyTypes": ["application/json"],
@@ -1054,10 +1133,13 @@
       }
     ],
     "access": {
-      "additional_checks": [],
+      "additional_checks": [
+        "interactive-recent-verification-or-explicit-integration-key-grant"
+      ],
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "supported",
       "required_permissions": ["backups:keys"],
       "resource_scope": "global",
@@ -1671,16 +1753,16 @@
   "get_application_health": {
     "security": [
       {
-        "LocalReadiness": []
-      },
-      {
-        "OAuth2PasswordBearer": []
+        "OAuth2PasswordBearer": ["health:read"]
       },
       {
         "APIKeyCookie": []
       },
       {
         "IntegrationToken": []
+      },
+      {
+        "LocalReadiness": []
       }
     ],
     "access": {
@@ -1688,9 +1770,25 @@
         "local-readiness-or-account",
         "local-readiness-peer"
       ],
-      "allowed_roles": [],
+      "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "custom",
+      "credential_alternatives": [
+        {
+          "condition": "Account credential",
+          "permissions": ["health:read"],
+          "schemes": [
+            "OAuth2PasswordBearer",
+            "APIKeyCookie",
+            "IntegrationToken"
+          ]
+        },
+        {
+          "condition": "Loopback supervisor",
+          "permissions": [],
+          "schemes": ["LocalReadiness"]
+        }
+      ],
       "integration_tokens": "supported",
       "required_permissions": [],
       "resource_scope": "global",
@@ -1710,6 +1808,7 @@
       "allowed_roles": [],
       "authentication": "none",
       "classification": "public",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": [],
       "resource_scope": "global",
@@ -1729,6 +1828,7 @@
       "allowed_roles": [],
       "authentication": "none",
       "classification": "public",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": [],
       "resource_scope": "global",
@@ -1751,15 +1851,44 @@
       },
       {
         "IntegrationToken": []
+      },
+      {
+        "OAuth2PasswordBearer": ["logs:read_application"]
+      },
+      {
+        "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
       }
     ],
     "access": {
-      "additional_checks": ["application-log-admin"],
+      "additional_checks": ["application-log-admin", "topic-server-access"],
       "allowed_roles": ["moderator", "admin"],
       "authentication": "required",
-      "classification": "permission",
+      "classification": "custom",
+      "credential_alternatives": [
+        {
+          "condition": "topic=server_log:<server>",
+          "permissions": ["logs:read"],
+          "schemes": [
+            "OAuth2PasswordBearer",
+            "APIKeyCookie",
+            "IntegrationToken"
+          ]
+        },
+        {
+          "condition": "topic=app_log or app_logs",
+          "permissions": ["logs:read_application"],
+          "schemes": [
+            "OAuth2PasswordBearer",
+            "APIKeyCookie",
+            "IntegrationToken"
+          ]
+        }
+      ],
       "integration_tokens": "supported",
-      "required_permissions": ["logs:read"],
+      "required_permissions": [],
       "resource_scope": "collection",
       "version": 1
     },
@@ -1822,6 +1951,7 @@
       "allowed_roles": [],
       "authentication": "none",
       "classification": "public",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": [],
       "resource_scope": "global",
@@ -2220,6 +2350,7 @@
       "allowed_roles": [],
       "authentication": "none",
       "classification": "custom",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": [],
       "resource_scope": "global",
@@ -2245,6 +2376,7 @@
       "allowed_roles": [],
       "authentication": "none",
       "classification": "custom",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": [],
       "resource_scope": "global",
@@ -2295,16 +2427,16 @@
   "shutdown_web_runtime": {
     "security": [
       {
-        "APIKeyHeader": []
-      },
-      {
-        "OAuth2PasswordBearer": []
+        "OAuth2PasswordBearer": ["runtime:shutdown"]
       },
       {
         "APIKeyCookie": []
       },
       {
         "IntegrationToken": []
+      },
+      {
+        "APIKeyHeader": []
       }
     ],
     "access": {
@@ -2312,6 +2444,22 @@
       "allowed_roles": ["admin"],
       "authentication": "required",
       "classification": "custom",
+      "credential_alternatives": [
+        {
+          "condition": "Administrator credential",
+          "permissions": ["runtime:shutdown"],
+          "schemes": [
+            "OAuth2PasswordBearer",
+            "APIKeyCookie",
+            "IntegrationToken"
+          ]
+        },
+        {
+          "condition": "Local shutdown credential",
+          "permissions": [],
+          "schemes": ["APIKeyHeader"]
+        }
+      ],
       "integration_tokens": "supported",
       "required_permissions": [],
       "resource_scope": "global",
@@ -4601,6 +4749,7 @@
       "allowed_roles": [],
       "authentication": "none",
       "classification": "custom",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": [],
       "resource_scope": "global",
@@ -4620,6 +4769,7 @@
       "allowed_roles": [],
       "authentication": "none",
       "classification": "public",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": [],
       "resource_scope": "global",
@@ -4649,6 +4799,7 @@
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "supported",
       "required_permissions": ["tasks:read"],
       "resource_scope": "global",
@@ -4678,6 +4829,7 @@
       "allowed_roles": ["user", "moderator", "admin"],
       "authentication": "required",
       "classification": "permission",
+      "credential_alternatives": [],
       "integration_tokens": "supported",
       "required_permissions": ["tasks:read"],
       "resource_scope": "global",
@@ -4958,6 +5110,7 @@
       "allowed_roles": [],
       "authentication": "none",
       "classification": "public",
+      "credential_alternatives": [],
       "integration_tokens": "unsupported",
       "required_permissions": [],
       "resource_scope": "global",

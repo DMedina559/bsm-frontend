@@ -27,7 +27,7 @@
       "bsm_settings"
     ]
   },
-  "schemaHash": "8f21be30364af374cae6a484ec09d7ff612cbb4b8cc2bb38e45178d9f641b512",
+  "schemaHash": "2a3cdcb89650d272edf0c095fa9cdf3472fa69c9c16286f8fe9b85cc9ce6fccf",
   "openapiVersion": "3.1.0",
   "title": "Bedrock Server Manager",
   "source": "DMedina559/bedrock-server-manager: bedrock_server_manager.web.contract",
@@ -130,6 +130,8 @@
     "manage_server_snapshot",
     "plan_snapshot_restore",
     "prepare_backup_copy",
+    "preview_account_server_access",
+    "preview_integration_token",
     "prune_backups",
     "prune_downloads",
     "reauthenticate",
