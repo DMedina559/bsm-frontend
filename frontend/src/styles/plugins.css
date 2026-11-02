@@ -85,3 +85,18 @@
   overflow-wrap: anywhere;
   min-width: 0;
 }
+
+.plugin-settings-scopes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(8px * var(--bsm-spacing-scale));
+}
+.plugin-permissions summary {
+  cursor: pointer;
+}
+.plugin-permissions code {
+  overflow-wrap: anywhere;
+}
+.plugin-permissions ul {
+  padding-left: calc(20px * var(--bsm-spacing-scale));
+}

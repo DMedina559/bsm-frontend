@@ -100,6 +100,8 @@ const Plugins = () => {
           <option value="all">All plugins ({plugins.length})</option>
           <option value="enabled">Enabled</option>
           <option value="disabled">Disabled</option>
+          <option value="loaded">Loaded</option>
+          <option value="unloaded">Unloaded</option>
           <option value="error">Errors</option>
         </select>
         <Link className="action-button secondary" to="/plugin-settings">
@@ -111,12 +113,14 @@ const Plugins = () => {
         {plugins
           .filter(
             (plugin) =>
-              `${plugin.name} ${plugin.description} ${plugin.author}`
+              `${plugin.name} ${plugin.description} ${plugin.author} ${(plugin.permissions ?? []).join(" ")}`
                 .toLowerCase()
                 .includes(search.toLowerCase()) &&
               (filter === "all" ||
                 (filter === "enabled" && plugin.enabled) ||
                 (filter === "disabled" && !plugin.enabled) ||
+                (filter === "loaded" && plugin.status === "LOADED") ||
+                (filter === "unloaded" && plugin.status === "UNLOADED") ||
                 (filter === "error" && plugin.status === "ERROR")),
           )
           .map((plugin) => (
@@ -124,15 +128,46 @@ const Plugins = () => {
               <div className="plugin-card-heading">
                 <Plug size={20} />
                 <h3>{plugin.name}</h3>
-                <span className="status-badge">
-                  {plugin.status === "UNKNOWN" || !plugin.status
-                    ? plugin.enabled
-                      ? "Enabled"
-                      : "Disabled"
-                    : plugin.status}
+                <span className="status-badge" title="Configured state">
+                  {plugin.enabled ? "Enabled" : "Disabled"}
+                </span>
+                <span className="status-badge" title="Runtime status">
+                  {plugin.status || "UNKNOWN"}
                 </span>
               </div>
               <p>{plugin.description || "No description provided."}</p>
+              <div className="plugin-settings-scopes">
+                <strong>Settings scopes</strong>
+                <span>
+                  {[
+                    plugin.has_settings && "Plugin",
+                    plugin.has_global_settings && "Global",
+                    plugin.has_server_settings && "Server",
+                  ]
+                    .filter(Boolean)
+                    .join(", ") || "None"}
+                </span>
+              </div>
+              <details className="plugin-permissions">
+                <summary>
+                  Declared permissions ({(plugin.permissions ?? []).length})
+                </summary>
+                <p className="form-help-text">
+                  Capabilities declared by this plugin for backend API and
+                  filesystem access.
+                </p>
+                {plugin.permissions?.length ? (
+                  <ul>
+                    {plugin.permissions.map((permission) => (
+                      <li key={permission}>
+                        <code>{permission}</code>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>No permissions declared.</p>
+                )}
+              </details>
               <div className="plugin-card-footer">
                 <span>v{plugin.version || "N/A"}</span>
                 <span>{plugin.author || "Unknown Author"}</span>
