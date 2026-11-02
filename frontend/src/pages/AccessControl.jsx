@@ -626,13 +626,7 @@ const AccessControl = () => {
                   {activeTab === "permissions" && <th>Permission Level</th>}
                   {activeTab === "bans" && <th>Reason</th>}
                   {(activeTab === "allowlist" || activeTab === "bans") && (
-                    <th
-                      style={{
-                        width: "100px",
-                      }}
-                    >
-                      Actions
-                    </th>
+                    <th className="actions-column">Actions</th>
                   )}
                 </tr>
               </thead>
@@ -716,21 +710,24 @@ const AccessControl = () => {
 
                       {activeTab === "bans" && <td>{item.reason || "-"}</td>}
                       {(activeTab === "allowlist" || activeTab === "bans") && (
-                        <td>
-                          <button
-                            className="action-button danger-button"
-                            onClick={() => handleRemove(item)}
-                            title={`Remove from ${activeTab}`}
-                            style={{
-                              padding:
-                                "calc(5px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
-                            }}
-                            disabled={actionLoading}
-                            type="button"
-                            aria-label={`Remove from ${activeTab}`}
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                        <td className="actions-column">
+                          <div className="table-actions table-actions-right">
+                            <button
+                              className="action-button danger-button"
+                              onClick={() => handleRemove(item)}
+                              title={`Remove from ${activeTab}`}
+                              style={{
+                                padding:
+                                  "calc(5px * var(--bsm-spacing-scale)) calc(12px * var(--bsm-spacing-scale))",
+                                fontSize: "var(--bsm-small-size)",
+                              }}
+                              disabled={actionLoading}
+                              type="button"
+                              aria-label={`Remove from ${activeTab}`}
+                            >
+                              <Trash2 size={14} /> Remove
+                            </button>
+                          </div>
                         </td>
                       )}
                     </tr>

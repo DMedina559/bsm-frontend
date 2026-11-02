@@ -24,6 +24,11 @@ import {
   RefreshCcw,
   Download,
   Settings,
+  HardDriveDownload,
+  Check,
+  XCircle,
+  CheckCircle2,
+  Save,
   X,
 } from "lucide-react";
 import DraggableList from "../components/DraggableList";
@@ -492,7 +497,7 @@ const Content = () => {
             flexDirection: "column",
             gap: "calc(8px * var(--bsm-spacing-scale))",
             justifyContent: "center",
-            width: "90px",
+            width: "105px",
             flexShrink: 0,
           }}
         >
@@ -510,7 +515,7 @@ const Content = () => {
               disabled={actionLoading}
               type="button"
             >
-              Disable
+              <XCircle size={14} /> Disable
             </button>
           ) : (
             <button
@@ -519,8 +524,6 @@ const Content = () => {
                 padding:
                   "calc(6px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
                 fontSize: "var(--bsm-small-size)",
-                background: "var(--bsm-success)",
-                color: "var(--text-color)",
                 width: "100%",
                 justifyContent: "center",
               }}
@@ -528,7 +531,7 @@ const Content = () => {
               disabled={actionLoading}
               type="button"
             >
-              Enable
+              <CheckCircle2 size={14} /> Enable
             </button>
           )}
           <button
@@ -544,7 +547,7 @@ const Content = () => {
             disabled={actionLoading}
             type="button"
           >
-            Uninstall
+            <Trash2 size={14} /> Uninstall
           </button>
         </div>
       </div>
@@ -616,29 +619,17 @@ const Content = () => {
             disabled={loading || actionLoading}
             type="button"
           >
-            <RefreshCw
-              size={16}
-              style={{
-                marginRight: "calc(5px * var(--bsm-spacing-scale))",
-              }}
-              className={loading ? "spin" : ""}
-            />{" "}
+            <RefreshCw size={16} className={loading ? "spin" : ""} />
             Refresh
           </button>
           {activeTab === "addons" && (
             <button
-              className="action-button primary"
+              className="action-button primary-button"
               onClick={handleOpenAddonModal}
               disabled={actionLoading}
               type="button"
             >
-              <Settings
-                size={16}
-                style={{
-                  marginRight: "calc(5px * var(--bsm-spacing-scale))",
-                }}
-              />{" "}
-              Manage Installed Addons
+              <Settings size={16} /> Manage Installed Addons
             </button>
           )}
           {activeTab === "worlds" && (
@@ -650,13 +641,7 @@ const Content = () => {
                 title="Export active world to content/worlds"
                 type="button"
               >
-                <Download
-                  size={16}
-                  style={{
-                    marginRight: "calc(5px * var(--bsm-spacing-scale))",
-                  }}
-                />{" "}
-                Export World
+                <Download size={16} /> Export World
               </button>
               <button
                 className="action-button danger-button"
@@ -665,13 +650,7 @@ const Content = () => {
                 title="Delete current world and generate new one"
                 type="button"
               >
-                <RefreshCcw
-                  size={16}
-                  style={{
-                    marginRight: "calc(5px * var(--bsm-spacing-scale))",
-                  }}
-                />{" "}
-                Reset World
+                <RefreshCcw size={16} /> Reset World
               </button>
             </>
           )}
@@ -856,14 +835,16 @@ const Content = () => {
               }
               type="button"
             >
+              <RefreshCw size={14} className={addonsLoading ? "spin" : ""} />
               Reload add-ons
             </button>
             <button
-              className="action-button primary"
+              className="action-button primary-button"
               onClick={handleSaveAddonOrder}
               disabled={!orderChanged || actionLoading || addonDraft.conflicted}
               type="button"
             >
+              <Save size={14} />
               Save Order
             </button>
           </div>
@@ -884,8 +865,12 @@ const Content = () => {
             <h3
               style={{
                 marginTop: 0,
+                display: "flex",
+                alignItems: "center",
+                gap: "calc(8px * var(--bsm-spacing-scale))",
               }}
             >
+              <Upload size={18} />
               Upload{" "}
               {activeTab === "worlds"
                 ? "World (.mcworld)"
@@ -932,8 +917,10 @@ const Content = () => {
                 <tr>
                   <th>File Name</th>
                   <th
+                    className="actions-column"
                     style={{
-                      width: "150px",
+                      textAlign: "right",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     Actions
@@ -944,18 +931,13 @@ const Content = () => {
                 {items && items.length > 0 ? (
                   items.map((item, idx) => (
                     <tr key={idx}>
-                      <td
-                        style={{
-                          maxWidth: "200px",
-                          overflowX: "auto",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
+                      <td>
                         <div
                           style={{
                             display: "flex",
                             alignItems: "center",
                             gap: "calc(10px * var(--bsm-spacing-scale))",
+                            minWidth: 0,
                           }}
                         >
                           {activeTab === "worlds" ? (
@@ -973,29 +955,46 @@ const Content = () => {
                               }}
                             />
                           )}
-                          <span>{item.name}</span>
+                          <span
+                            title={item.name}
+                            style={{
+                              wordBreak: "break-all",
+                            }}
+                          >
+                            {item.name}
+                          </span>
                         </div>
                       </td>
-                      <td>
+                      <td
+                        className="actions-column"
+                        style={{
+                          textAlign: "right",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         <div
+                          className="table-actions table-actions-right"
                           style={{
-                            display: "flex",
-                            gap: "calc(6px * var(--bsm-spacing-scale))",
+                            display: "inline-flex",
+                            gap: "calc(8px * var(--bsm-spacing-scale))",
+                            justifyContent: "flex-end",
+                            alignItems: "center",
                           }}
                         >
                           <button
-                            className="action-button"
+                            className="action-button primary-button"
                             onClick={() => handleInstall(item)}
-                            title={`Install to ${selectedServer}`}
+                            title={`Install ${item.name} to ${selectedServer}`}
+                            aria-label={`Install ${item.name} to ${selectedServer}`}
                             style={{
                               padding:
-                                "calc(5px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
+                                "calc(5px * var(--bsm-spacing-scale)) calc(12px * var(--bsm-spacing-scale))",
                               fontSize: "var(--bsm-small-size)",
                             }}
                             disabled={actionLoading}
                             type="button"
                           >
-                            Install
+                            <HardDriveDownload size={14} /> Install
                           </button>
                           <button
                             className="action-button secondary"
@@ -1004,13 +1003,13 @@ const Content = () => {
                             aria-label={`Download ${item.name}`}
                             style={{
                               padding:
-                                "calc(5px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
+                                "calc(5px * var(--bsm-spacing-scale)) calc(12px * var(--bsm-spacing-scale))",
                               fontSize: "var(--bsm-small-size)",
                             }}
                             disabled={actionLoading}
                             type="button"
                           >
-                            <Download size={14} />
+                            <Download size={14} /> Download
                           </button>
                           <button
                             className="action-button danger-button"
@@ -1019,13 +1018,13 @@ const Content = () => {
                             aria-label={`Delete ${item.name}`}
                             style={{
                               padding:
-                                "calc(5px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
+                                "calc(5px * var(--bsm-spacing-scale)) calc(12px * var(--bsm-spacing-scale))",
                               fontSize: "var(--bsm-small-size)",
                             }}
                             disabled={actionLoading}
                             type="button"
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={14} /> Delete
                           </button>
                         </div>
                       </td>
@@ -1034,7 +1033,7 @@ const Content = () => {
                 ) : (
                   <tr className="no-servers-row">
                     <td
-                      colSpan="3"
+                      colSpan="2"
                       className="no-servers"
                       style={{
                         textAlign: "center",

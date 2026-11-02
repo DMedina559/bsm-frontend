@@ -1,5 +1,4 @@
-import { setCredentials } from "../../../src/app/connection";
-import { getToken } from "../../../src/app/connection";
+import { getToken, setCredentials } from "../../../src/app/connection";
 import { queryClient } from "../../../src/app/queryClient";
 import { sessionRuntime } from "../../../src/app/sessionRuntime";
 import React from "react";

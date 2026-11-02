@@ -292,13 +292,7 @@ const Users = () => {
                 <th>Username</th>
                 <th>Role</th>
                 <th>Status</th>
-                <th
-                  style={{
-                    width: "150px",
-                  }}
-                >
-                  Actions
-                </th>
+                <th className="actions-column">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -365,13 +359,8 @@ const Users = () => {
                       </span>
                     )}
                   </td>
-                  <td>
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "calc(5px * var(--bsm-spacing-scale))",
-                      }}
-                    >
+                  <td className="actions-column">
+                    <div className="table-actions table-actions-right">
                       {isAdmin && (
                         <>
                           <button
@@ -380,7 +369,8 @@ const Users = () => {
                             title="Edit User"
                             style={{
                               padding:
-                                "calc(5px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
+                                "calc(5px * var(--bsm-spacing-scale)) calc(12px * var(--bsm-spacing-scale))",
+                              fontSize: "var(--bsm-small-size)",
                             }}
                             disabled={
                               actionLoading || user.id === currentUser?.id
@@ -388,7 +378,7 @@ const Users = () => {
                             type="button"
                             aria-label="Edit User"
                           >
-                            <UserCog size={14} />
+                            <UserCog size={14} /> Edit
                           </button>
                           <button
                             className="action-button danger-button"
@@ -396,7 +386,8 @@ const Users = () => {
                             title="Delete User"
                             style={{
                               padding:
-                                "calc(5px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
+                                "calc(5px * var(--bsm-spacing-scale)) calc(12px * var(--bsm-spacing-scale))",
+                              fontSize: "var(--bsm-small-size)",
                             }}
                             disabled={
                               actionLoading || user.id === currentUser?.id
@@ -404,7 +395,7 @@ const Users = () => {
                             type="button"
                             aria-label="Delete User"
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={14} /> Delete
                           </button>
                         </>
                       )}

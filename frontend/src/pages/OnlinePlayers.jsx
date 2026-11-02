@@ -7,7 +7,7 @@ import { useServer } from "../contexts/ServerContext";
 import { useToast } from "../contexts/ToastContext";
 
 import { logger } from "../utils/logger";
-import { Users, X } from "lucide-react";
+import { Users, X, ArrowRightLeft, UserMinus, Ban } from "lucide-react";
 const OnlinePlayersWorkspace = () => {
   const { selectedServer, servers } = useServer();
   const { addToast } = useToast();
@@ -283,27 +283,32 @@ const OnlinePlayersWorkspace = () => {
                   )}
                 </div>
 
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "calc(10px * var(--bsm-spacing-scale))",
-                  }}
-                >
+                <div className="table-actions table-actions-right">
                   <button
                     className="action-button secondary"
                     onClick={() => handleOpenTransferModal(player.name)}
                     disabled={loadingAction}
                     type="button"
+                    style={{
+                      padding:
+                        "calc(5px * var(--bsm-spacing-scale)) calc(12px * var(--bsm-spacing-scale))",
+                      fontSize: "var(--bsm-small-size)",
+                    }}
                   >
-                    Transfer
+                    <ArrowRightLeft size={14} /> Transfer
                   </button>
                   <button
                     className="action-button danger-button"
                     onClick={() => handleOpenKickModal(player.name)}
                     disabled={loadingAction}
                     type="button"
+                    style={{
+                      padding:
+                        "calc(5px * var(--bsm-spacing-scale)) calc(12px * var(--bsm-spacing-scale))",
+                      fontSize: "var(--bsm-small-size)",
+                    }}
                   >
-                    Kick
+                    <UserMinus size={14} /> Kick
                   </button>
                   <button
                     className="action-button danger-button"
@@ -320,8 +325,13 @@ const OnlinePlayersWorkspace = () => {
                         : "Ban Player"
                     }
                     type="button"
+                    style={{
+                      padding:
+                        "calc(5px * var(--bsm-spacing-scale)) calc(12px * var(--bsm-spacing-scale))",
+                      fontSize: "var(--bsm-small-size)",
+                    }}
                   >
-                    Ban
+                    <Ban size={14} /> Ban
                   </button>
                 </div>
               </div>

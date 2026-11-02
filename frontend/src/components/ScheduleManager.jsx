@@ -21,8 +21,12 @@ const TASK_LABELS = {
   "server:start": "Start server",
   "server:stop": "Stop server",
   "server:restart": "Restart server",
+  "server:update": "Update server",
   "server:send_command": "Send console command",
   "world:export": "Export world",
+  "world:reset": "Reset world",
+  "player:scan": "Scan player logs",
+  "system:prune_downloads": "Prune download cache",
 };
 const isBackupTask = (task) => task === "backup" || task === "backup:create";
 const isVerifyTask = (task) => task === "verify" || task === "backup:verify";

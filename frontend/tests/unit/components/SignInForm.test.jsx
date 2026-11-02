@@ -156,3 +156,55 @@ it("directs passkey-only accounts to passkey sign-in without retaining password 
   });
   expect(screen.getByLabelText("Password", { exact: true })).toHaveValue("");
 });
+
+it("provides a direct passkey button, omits Passkey from Other sign-in methods, and places Other sign-in methods at the bottom", async () => {
+  const originalPublicKey = window.PublicKeyCredential;
+  const originalCredentials = navigator.credentials;
+  window.PublicKeyCredential = function PublicKeyCredential() {};
+  Object.defineProperty(navigator, "credentials", {
+    configurable: true,
+    value: {
+      create: vi.fn(),
+      get: vi.fn(),
+    },
+  });
+  try {
+    const onPasskey = vi.fn().mockResolvedValue({});
+    const { container } = render(
+      <SignInForm
+        onPassword={vi.fn()}
+        onPasskey={onPasskey}
+        onToken={vi.fn()}
+        embedded
+      />,
+    );
+    const select = screen.getByLabelText("Sign in with", { exact: true });
+    const visibleOptionValues = Array.from(select.querySelectorAll("option"))
+      .filter((opt) => !opt.hidden)
+      .map((opt) => opt.value);
+    expect(visibleOptionValues).toEqual(["password", "token"]);
+
+    const form = container.querySelector("form");
+    expect(form.lastElementChild.tagName.toLowerCase()).toBe("details");
+    expect(form.lastElementChild).toHaveClass("sign-in-methods");
+
+    fireEvent.change(screen.getByLabelText("Username", { exact: true }), {
+      target: { value: "owner" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Sign in with passkey" }),
+    );
+    await waitFor(() =>
+      expect(onPasskey).toHaveBeenCalledWith(
+        { username: "owner", remember: false },
+        expect.any(AbortSignal),
+      ),
+    );
+  } finally {
+    window.PublicKeyCredential = originalPublicKey;
+    Object.defineProperty(navigator, "credentials", {
+      configurable: true,
+      value: originalCredentials,
+    });
+  }
+});

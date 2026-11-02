@@ -166,8 +166,9 @@ export const AuthProvider = ({ children }) => {
       logger.debug("[Auth] Checking user status");
       // Check if we have a token in either storage (the transport handles retrieval)
       const ticket = captureStateRequest();
-      if (!getToken() && getAuthenticationMode() === "bearer")
+      if (!getToken() && getAuthenticationMode() === "bearer") {
         throw new Error("Sign in to this instance.");
+      }
       let userData = await callOperation("get_account");
       if (!current()) return;
       if (userData?.id == null && !userData?.username)

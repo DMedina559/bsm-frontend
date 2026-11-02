@@ -101,6 +101,27 @@ export default function SignInForm({
       }
     }
   }
+  async function signInWithPasskey() {
+    if (busy || disabled || !passkeyAvailable) return;
+    const request = new AbortController();
+    controller.current = request;
+    const signal = request.signal;
+    setBusy(true);
+    setError("");
+    try {
+      const result = await onPasskey({ username, remember }, signal);
+      if (signal.aborted) return;
+      onSuccess?.(result);
+    } catch (failure) {
+      if (signal.aborted || failure.name === "AbortError") return;
+      setError(
+        failure.message ||
+          "Unable to sign in with passkey. Check your connection and try again.",
+      );
+    } finally {
+      if (!signal.aborted) setBusy(false);
+    }
+  }
   const selector = (
     <>
       <label className="form-label" htmlFor={`${id}-method`}>
@@ -114,7 +135,11 @@ export default function SignInForm({
         onChange={(event) => changeMethod(event.target.value)}
       >
         <option value="password">Username &amp; password</option>
-        {Boolean(onPasskey) && <option value="passkey">Passkey</option>}
+        {method === "passkey" && (
+          <option value="passkey" hidden>
+            Passkey
+          </option>
+        )}
         <option value="token">API token</option>
       </select>
     </>
@@ -129,15 +154,6 @@ export default function SignInForm({
       }
       aria-busy={busy}
     >
-      {!challenge &&
-        (embedded ? (
-          <details className="sign-in-methods">
-            <summary>Other sign-in methods</summary>
-            {selector}
-          </details>
-        ) : (
-          selector
-        ))}
       {method === "password" && !challenge && (
         <div
           className={
@@ -297,6 +313,20 @@ export default function SignInForm({
                 ? "Sign in"
                 : "Sign In"}
       </button>
+      {passkeyAvailable && !challenge && method === "password" && (
+        <button
+          type="button"
+          className={
+            variant === "instance"
+              ? "instance-button"
+              : "action-button secondary"
+          }
+          disabled={unavailable}
+          onClick={signInWithPasskey}
+        >
+          Sign in with passkey
+        </button>
+      )}
       {challenge && (
         <button
           type="button"
@@ -311,6 +341,15 @@ export default function SignInForm({
           Back to sign in
         </button>
       )}
+      {!challenge &&
+        (embedded ? (
+          <details className="sign-in-methods">
+            <summary>Other sign-in methods</summary>
+            {selector}
+          </details>
+        ) : (
+          selector
+        ))}
     </form>
   );
 }
