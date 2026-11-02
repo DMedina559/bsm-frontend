@@ -85,7 +85,8 @@ describe("Plugins", () => {
     expect(
       screen.getByText("Enabled", { selector: "span" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Global, Server")).toBeInTheDocument();
+    expect(screen.getByText("Global")).toBeInTheDocument();
+    expect(screen.getByText("Server")).toBeInTheDocument();
     fireEvent.click(screen.getByText("Declared permissions (2)"));
     expect(screen.getByText("path:servers")).toBeVisible();
     expect(screen.getByText("custom:future")).toBeVisible();
