@@ -121,6 +121,10 @@
 .check-degraded {
   color: var(--bsm-warning);
 }
+.health-unhealthy summary,
+.check-unhealthy {
+  color: var(--bsm-danger);
+}
 .application-health-popover {
   position: absolute;
   right: 0;

@@ -306,13 +306,24 @@ export function createApplicationStateModule({
       refreshFleet();
       return false;
     }
+    const resolvedStatus =
+      message.topic === "event:after_server_status_change"
+        ? typeof data?.new_status === "string" && data.new_status.trim()
+          ? data.new_status.trim()
+          : typeof data?.result?.new_status === "string" &&
+              data.result.new_status.trim()
+            ? data.result.new_status.trim()
+            : typeof data?.status === "string" &&
+                data.status !== "success" &&
+                data.status.trim()
+              ? data.status.trim()
+              : null
+        : null;
     if (
       typeof data?.server_name !== "string" ||
       !data.server_name ||
       (message.topic === "event:after_server_status_change" &&
-        (data.status !== "success" ||
-          typeof data.new_status !== "string" ||
-          !data.new_status.trim())) ||
+        !resolvedStatus) ||
       (message.topic === "event:after_server_start" &&
         data.status === "success" &&
         !["started", "already_running"].includes(data.outcome)) ||
@@ -337,10 +348,14 @@ export function createApplicationStateModule({
     )
       return false;
     const name = data?.server_name;
-    if (typeof name === "string" && data.status === "success") {
+    const isSuccess =
+      data?.status === "success" ||
+      data?.result?.status === "success" ||
+      Boolean(resolvedStatus);
+    if (typeof name === "string" && isSuccess) {
       const status =
         message.topic === "event:after_server_status_change"
-          ? data.new_status
+          ? resolvedStatus
           : message.topic === "event:after_server_start" &&
               ["started", "already_running"].includes(data.outcome)
             ? "RUNNING"
@@ -361,8 +376,17 @@ export function createApplicationStateModule({
         updateFleet(name, patch);
       }
       if (
-        message.topic === "event:after_server_stop" &&
-        ["stopped", "already_stopped"].includes(data.outcome)
+        status === "RUNNING" ||
+        (message.topic === "event:after_server_start" &&
+          ["started", "already_running"].includes(data.outcome))
+      ) {
+        void recover([queryKeys.serverMonitor(name)]);
+      }
+      if (
+        (message.topic === "event:after_server_stop" &&
+          ["stopped", "already_stopped"].includes(data.outcome)) ||
+        (message.topic === "event:after_server_status_change" &&
+          resolvedStatus === "STOPPED")
       ) {
         const stopped = { status: "success", process_info: null };
         stateReconciler.accept(["monitor", name], stopped, {
@@ -437,6 +461,55 @@ export function createApplicationStateModule({
         result.value,
       );
       return true;
+    }
+    if (
+      message?.type === "health_update" &&
+      (message.topic === "health" || message.topic === "application-health")
+    ) {
+      if (message.data && typeof message.data === "object") {
+        queryClient.setQueriesData(
+          { queryKey: queryKeys.applicationHealth() },
+          message.data,
+        );
+        queryClient.setQueryData(queryKeys.applicationHealth(), message.data);
+        return true;
+      }
+      return false;
+    }
+    if (
+      message?.type === "diagnostic_update" &&
+      message.topic === "diagnostics"
+    ) {
+      if (message.data && typeof message.data === "object") {
+        queryClient.setQueriesData(
+          { queryKey: queryKeys.diagnostics() },
+          message.data,
+        );
+        queryClient.setQueryData(queryKeys.diagnostics(), message.data);
+        return true;
+      }
+      return false;
+    }
+    if (
+      message?.type === "diagnostic_summary" &&
+      message.topic === "diagnostics:summary"
+    ) {
+      if (message.data && typeof message.data === "object") {
+        queryClient.setQueriesData(
+          { queryKey: queryKeys.diagnostics() },
+          (current) =>
+            current && typeof current === "object"
+              ? { ...current, summary: message.data }
+              : current,
+        );
+        queryClient.setQueryData(queryKeys.diagnostics(), (current) =>
+          current && typeof current === "object"
+            ? { ...current, summary: message.data }
+            : current,
+        );
+        return true;
+      }
+      return false;
     }
     if (message?.type === "task_update") {
       const accepted = stateReconciler.task(message.data, {

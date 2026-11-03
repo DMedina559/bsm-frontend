@@ -22,6 +22,35 @@
   font-size: 0.8rem;
   color: var(--text-color-secondary);
 }
+.monitor-state .status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(6px * var(--bsm-spacing-scale));
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.monitor-state .status-indicator::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.monitor-state .status-running {
+  color: var(--bsm-success);
+}
+.monitor-state .status-stopped,
+.monitor-state .status-error,
+.monitor-state .status-unhealthy {
+  color: var(--bsm-danger);
+}
+.monitor-state .status-starting,
+.monitor-state .status-stopping,
+.monitor-state .status-restarting,
+.monitor-state .status-degraded {
+  color: var(--bsm-warning);
+}
 .monitor-page .monitor-actions .action-button {
   display: inline-flex;
   align-items: center;

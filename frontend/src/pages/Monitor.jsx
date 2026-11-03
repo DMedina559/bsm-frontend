@@ -250,7 +250,20 @@ const Monitor = () => {
           <h1>Server Monitor: {selectedServer}</h1>
           <div className="monitor-state">
             <span
-              className={`status-indicator ${isRunning ? "status-running" : "status-stopped"}`}
+              className={`status-indicator ${
+                isRunning
+                  ? "status-running"
+                  : status === "ERROR" || status === "UNHEALTHY"
+                    ? "status-error"
+                    : [
+                          "STARTING",
+                          "STOPPING",
+                          "RESTARTING",
+                          "DEGRADED",
+                        ].includes(status)
+                      ? "status-starting"
+                      : "status-stopped"
+              }`}
             >
               {status}
             </span>

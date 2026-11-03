@@ -20,13 +20,25 @@ import { useAuth } from "./AuthContext";
 import { createWebSocketManager } from "../app/webSocketManager";
 import { logger } from "../utils/logger";
 
+const defaultSocketContext = Object.freeze({
+  isConnected: false,
+  isFallback: false,
+  connectionState: "disconnected",
+  subscribe: () => {},
+  unsubscribe: () => {},
+  manager: null,
+});
+
 const WebSocketContext = createContext(null);
-export const useWebSocket = () => {
+export const useWebSocket = (options = {}) => {
   const context = useContext(WebSocketContext);
-  if (!context)
+  if (!context) {
+    if (options?.optional) return defaultSocketContext;
     throw new Error("useWebSocket must be used within a WebSocketProvider");
+  }
   return context;
 };
+export const useOptionalWebSocket = () => useWebSocket({ optional: true });
 export const WebSocketProvider = ({ children }) => {
   const { user, sessionGeneration } = useAuth();
   const identity = user?.id ?? user?.username ?? null;

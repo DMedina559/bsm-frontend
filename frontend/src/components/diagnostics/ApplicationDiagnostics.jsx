@@ -8,6 +8,8 @@ import { useResourceQuery } from "../../app/resourceQueries";
 import { validateDiagnosticSnapshot } from "../../app/diagnostics";
 import { sessionRuntime } from "../../app/sessionRuntime";
 import { triggerBlobDownload } from "../../utils/download";
+import { useWebSocket } from "../../contexts/WebSocketContext";
+import { useAccess } from "../../app/useAccess";
 import QueryStatus from "../QueryStatus";
 import DiagnosticDetails from "./DiagnosticDetails";
 import { dateValue, displayValue, labelFor } from "./format";
@@ -64,11 +66,24 @@ export default function ApplicationDiagnostics() {
     controller.current = new AbortController();
     return () => controller.current.abort();
   }, []);
+  const { isConnected, subscribe, unsubscribe } = useWebSocket({
+    optional: true,
+  });
+  const { can } = useAccess();
+  const canDiagnostics = can("diagnostics:read");
+
+  useEffect(() => {
+    if (!canDiagnostics || view === "frontend" || !isConnected) return;
+    subscribe("diagnostics");
+    return () => unsubscribe("diagnostics");
+  }, [canDiagnostics, view, isConnected, subscribe, unsubscribe]);
+
   const query = useResourceQuery("diagnostics", undefined, {
     enabled: view !== "frontend",
     retry: false,
-    refetchInterval: automatic && view !== "frontend" ? 15000 : false,
-    refetchIntervalInBackground: false,
+    refetchInterval:
+      automatic && view !== "frontend" ? (isConnected ? 60000 : 15000) : false,
+    refetchIntervalInBackground: true,
   });
   const trace = useResourceQuery("diagnosticTrace", correlation, {
     enabled: view === "history" && !!correlation,

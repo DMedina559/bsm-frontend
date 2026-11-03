@@ -400,6 +400,30 @@ it("does not let malformed lifecycle frames poison revision watermarks", async (
   expect(reconcileSocketMessage(frame(99, {}))).toBe(false);
   expect(reconcileSocketMessage(frame(1, "RUNNING"))).toBe(true);
 });
+
+it("reconciles status from after_server_status_change frames containing a result object", async () => {
+  const { reconcileSocketMessage } =
+    await import("../../../src/app/applicationState");
+  expect(
+    reconcileSocketMessage({
+      type: "event",
+      topic: "event:after_server_status_change",
+      epoch: "instance",
+      revision: 8,
+      data: {
+        server_name: "alpha",
+        status: "RUNNING",
+        result: {
+          status: "success",
+          message: "Server status set to RUNNING.",
+          server_name: "alpha",
+          previous_status: "STOPPED",
+          new_status: "RUNNING",
+        },
+      },
+    }),
+  ).toBe(true);
+});
 it("rejects cancelled HTTP work before reconciliation can change its watermarks", async () => {
   const { captureStateRequest, reconcileServerSnapshot } =
     await import("../../../src/app/applicationState");
@@ -776,4 +800,89 @@ it("retains an untracked socket outcome for a later task list read", async () =>
     captureStateRequest(),
   );
   expect(tasks[0].result).toEqual(task.result);
+});
+
+it("reconciles health_update frames into applicationHealth query cache", async () => {
+  const { reconcileSocketMessage } =
+    await import("../../../src/app/applicationState");
+  const healthData = {
+    health: "healthy",
+    ready: true,
+    lifecycle: "ready",
+    checks: {
+      database: { healthy: true, message: "Database reachable" },
+    },
+  };
+  expect(
+    reconcileSocketMessage({
+      type: "health_update",
+      topic: "health",
+      data: healthData,
+    }),
+  ).toBe(true);
+  expect(queryClient.getQueryData(queryKeys.applicationHealth())).toEqual(
+    healthData,
+  );
+});
+
+it("reconciles unhealthy health_update frames into applicationHealth query cache", async () => {
+  const { reconcileSocketMessage } =
+    await import("../../../src/app/applicationState");
+  const healthData = {
+    health: "unhealthy",
+    ready: false,
+    lifecycle: "failed",
+    checks: {
+      database: { healthy: false, message: "Database unreachable" },
+      process_manager: { healthy: false, message: "Server crash-looping" },
+    },
+  };
+  expect(
+    reconcileSocketMessage({
+      type: "health_update",
+      topic: "health",
+      data: healthData,
+    }),
+  ).toBe(true);
+  expect(queryClient.getQueryData(queryKeys.applicationHealth())).toEqual(
+    healthData,
+  );
+});
+
+it("reconciles diagnostic_update and diagnostic_summary frames into diagnostics cache", async () => {
+  const { reconcileSocketMessage } =
+    await import("../../../src/app/applicationState");
+  const diagnosticData = {
+    instance_id: "inst-1",
+    snapshot_id: "snap-1",
+    collected_at: Date.now(),
+    summary: { status: "ok", ready: true, findings: [] },
+    sections: [],
+  };
+  expect(
+    reconcileSocketMessage({
+      type: "diagnostic_update",
+      topic: "diagnostics",
+      data: diagnosticData,
+    }),
+  ).toBe(true);
+  expect(queryClient.getQueryData(queryKeys.diagnostics())).toEqual(
+    diagnosticData,
+  );
+
+  const updatedSummary = {
+    status: "degraded",
+    ready: true,
+    findings: [{ subsystem: "storage", issue: { message: "Disk full" } }],
+  };
+  expect(
+    reconcileSocketMessage({
+      type: "diagnostic_summary",
+      topic: "diagnostics:summary",
+      data: updatedSummary,
+    }),
+  ).toBe(true);
+  expect(queryClient.getQueryData(queryKeys.diagnostics()).summary).toEqual(
+    updatedSummary,
+  );
 });

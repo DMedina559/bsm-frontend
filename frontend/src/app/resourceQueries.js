@@ -90,7 +90,7 @@ const resources = {
       const health = object(data, "application health");
       const checks = object(health.checks, "health checks");
       if (
-        !["healthy", "degraded"].includes(health.health) ||
+        !["healthy", "degraded", "unhealthy"].includes(health.health) ||
         !["starting", "ready", "stopping", "stopped", "failed"].includes(
           health.lifecycle,
         ) ||
