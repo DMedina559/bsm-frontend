@@ -279,6 +279,7 @@
 
 .integration-token-form {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
   margin-block: 1.5rem;
 }
@@ -337,6 +338,7 @@
 }
 .credential-secret {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.85rem;
   padding: 1rem;
   margin-block: 1rem 1.5rem;
@@ -418,4 +420,9 @@
 }
 .access-preview details {
   margin-block: 0.5rem;
+}
+
+.credential-secret-heading > div,
+.integration-token-form .form-input {
+  min-width: 0;
 }

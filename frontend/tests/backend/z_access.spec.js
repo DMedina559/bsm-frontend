@@ -111,13 +111,17 @@ test("named credentials are shown once, usable as bearer, and revocable", async 
     path: "/tmp/access-settings-browser.png",
     fullPage: true,
   });
-  await page.setViewportSize({ width: 390, height: 844 });
-  await expect(field).toBeVisible();
-  expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= window.innerWidth,
-    ),
-  ).toBe(true);
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    await expect(field).toBeVisible();
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+      )
+      .toBe(true);
+  }
   await page.screenshot({ path: "/tmp/credential-mobile.png", fullPage: true });
   await page
     .getByRole("button", { name: "Dismiss credential", exact: true })

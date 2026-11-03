@@ -5685,6 +5685,8 @@ export interface components {
        * @default false
        */
       has_settings?: boolean;
+      /** Permissions */
+      permissions?: string[];
       /**
        * Status
        * @default UNKNOWN

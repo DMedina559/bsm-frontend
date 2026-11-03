@@ -67,21 +67,23 @@ test("frontend preferences have a central home while Account stays focused on se
   await expect(
     page.getByLabel("Recover unsaved settings and properties", { exact: true }),
   ).toBeChecked();
-  await page.setViewportSize({ width: 390, height: 844 });
-  await expect
-    .poll(() =>
-      page
-        .locator(".sidebar-nav")
-        .evaluate((node) => node.getBoundingClientRect().right),
-    )
-    .toBeLessThanOrEqual(1);
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () => document.documentElement.scrollWidth <= window.innerWidth,
-      ),
-    )
-    .toBe(true);
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    await expect
+      .poll(() =>
+        page
+          .locator(".sidebar-nav")
+          .evaluate((node) => node.getBoundingClientRect().right),
+      )
+      .toBeLessThanOrEqual(1);
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+      )
+      .toBe(true);
+  }
   await page.screenshot({
     path: "/tmp/frontend-settings-mobile.png",
     fullPage: true,

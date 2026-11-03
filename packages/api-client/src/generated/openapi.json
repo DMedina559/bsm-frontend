@@ -6167,6 +6167,13 @@
             "title": "Has Settings",
             "type": "boolean"
           },
+          "permissions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Permissions",
+            "type": "array"
+          },
           "status": {
             "default": "UNKNOWN",
             "title": "Status",
