@@ -98,7 +98,7 @@ export interface QueryClient {
   setQueryData<T = unknown>(
     queryKey: QueryKey,
     updater: T | ((current: T | undefined) => T | undefined),
-  ): T | undefined;
+  ): unknown;
   setQueriesData<T>(
     filters: QueryFilters,
     updater: T | ((current: T | undefined) => T | undefined),
