@@ -32,11 +32,16 @@ export async function authenticateIntegrationToken(
   } catch (error) {
     if (error.name === "AbortError") throw error;
     if (error.status === 401)
-      throw new Error("This token is invalid, expired, or revoked.");
+      throw new Error("This token is invalid, expired, or revoked.", {
+        cause: error,
+      });
     if (error.status === 403)
-      throw new Error("This token needs account:read permission to sign in.");
+      throw new Error("This token needs account:read permission to sign in.", {
+        cause: error,
+      });
     throw new Error(
       "Could not validate the token. Check the backend address and connection.",
+      { cause: error },
     );
   }
   if (!account?.credential_id || !Array.isArray(account.permissions))
