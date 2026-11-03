@@ -89,10 +89,18 @@ test("Swagger bearer authentication is isolated from the embedded cookie session
     .getByRole("button", { name: "Close", exact: true })
     .first()
     .click();
+  // Swagger virtualizes large specs. Filter through the UI so the account
+  // operation is mounted before interacting with it.
+  await page
+    .getByPlaceholder("Filter by tag or path", { exact: true })
+    .fill("/api/account");
   const operation = page.locator(".opblock").filter({
     has: page.locator('.opblock-summary-path[data-path="/api/account"]'),
   });
-  await operation.locator(".opblock-summary").click();
+  await expect(operation).toBeVisible();
+  const summary = operation.locator(".opblock-summary-control");
+  if ((await summary.getAttribute("aria-expanded")) !== "true")
+    await summary.click();
   if (
     await page.evaluate(() => typeof window.SwaggerAccessPlugin === "function")
   ) {
