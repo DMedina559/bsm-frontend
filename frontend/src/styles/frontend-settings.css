@@ -1,5 +1,5 @@
-.account-page,
-.frontend-settings-page {
+.container.account-page,
+.container.frontend-settings-page {
   max-width: 1180px;
   background: transparent;
   border: 0;
@@ -156,4 +156,11 @@
 
 .frontend-settings-content .appearance-preference-grid {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+}
+
+/* Page actions must fit inside nested panels at narrow viewport widths. */
+.account-page .action-button,
+.frontend-settings-page .action-button {
+  max-width: 100%;
+  white-space: normal;
 }
