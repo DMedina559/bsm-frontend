@@ -74,7 +74,15 @@ test("Swagger bearer authentication is isolated from the embedded cookie session
     if (new URL(outgoing.url()).pathname === "/auth/token")
       cookieHeaders.push(outgoing.allHeaders());
   });
-  await page.goto(`${origin}/docs`);
+  const accountOperation = schema.paths["/api/account"].get;
+  const accountTag = (accountOperation.tags?.[0] ?? "default").replaceAll(
+    " ",
+    "_",
+  );
+  // Deep links scroll virtualized Swagger lists to the requested operation.
+  await page.goto(
+    `${origin}/docs#/${encodeURIComponent(accountTag)}/${encodeURIComponent(accountOperation.operationId)}`,
+  );
   expect(
     await page.evaluate(async () => (await fetch("/api/account")).status),
   ).toBe(401);
@@ -92,7 +100,10 @@ test("Swagger bearer authentication is isolated from the embedded cookie session
   const operation = page.locator(".opblock").filter({
     has: page.locator('.opblock-summary-path[data-path="/api/account"]'),
   });
-  await operation.locator(".opblock-summary").click();
+  await expect(operation).toBeVisible();
+  const summary = operation.locator(".opblock-summary-control");
+  if ((await summary.getAttribute("aria-expanded")) !== "true")
+    await summary.click();
   if (
     await page.evaluate(() => typeof window.SwaggerAccessPlugin === "function")
   ) {
