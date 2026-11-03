@@ -471,7 +471,7 @@ export function createInstanceConnection(
           if (device) forgetTrustedDevice(username, profile.url);
           throw error;
         }
-        throw new Error(connectionError(error));
+        throw new Error(connectionError(error), { cause: error });
       }
       if (disposed)
         throw new DOMException("Instance session changed", "AbortError");
@@ -504,7 +504,7 @@ export function createInstanceConnection(
           signal,
         });
       } catch (error) {
-        throw new Error(connectionError(error));
+        throw new Error(connectionError(error), { cause: error });
       }
       if (disposed || signal?.aborted)
         throw new DOMException("Instance session changed", "AbortError");
@@ -522,7 +522,7 @@ export function createInstanceConnection(
           signal,
         });
       } catch (error) {
-        throw new Error(connectionError(error));
+        throw new Error(connectionError(error), { cause: error });
       }
       if (disposed)
         throw new DOMException("Instance session changed", "AbortError");
@@ -627,6 +627,7 @@ export function createInstanceConnection(
             };
           throw new Error(
             `The outcome of ${action.replaceAll("_", " ")} on ${serverName} is unknown because the response was lost. Check the server state before retrying. No automatic retry was sent.`,
+            { cause: error },
           );
         }
         if (!disposed && !runtime.operationCoordinator.get(intent.id)?.terminal)

@@ -71,6 +71,6 @@ export async function probeInstance(url, { fetch, signal } = {}) {
     }
   } catch (error) {
     if (error.name === "AbortError") throw error;
-    throw new Error(connectionFailure(error, url));
+    throw new Error(connectionFailure(error, url), { cause: error });
   }
 }
