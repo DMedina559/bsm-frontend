@@ -95,6 +95,10 @@ export interface QueryClient {
   invalidateQueries(filters: QueryFilters): Promise<void>;
   removeQueries(filters: QueryFilters): void;
   resetQueries(): Promise<void>;
+  setQueryData<T = unknown>(
+    queryKey: QueryKey,
+    updater: T | ((current: T | undefined) => T | undefined),
+  ): T | undefined;
   setQueriesData<T>(
     filters: QueryFilters,
     updater: T | ((current: T | undefined) => T | undefined),
