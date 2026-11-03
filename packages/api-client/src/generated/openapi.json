@@ -1493,6 +1493,29 @@
         "title": "BanAddRequest",
         "type": "object"
       },
+      "BanEnforcementStatus": {
+        "additionalProperties": false,
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "required": ["available"],
+        "title": "BanEnforcementStatus",
+        "type": "object"
+      },
       "BanInfo": {
         "additionalProperties": false,
         "properties": {
@@ -4133,7 +4156,7 @@
             "type": "object"
           },
           "health": {
-            "enum": ["healthy", "degraded"],
+            "enum": ["healthy", "degraded", "unhealthy"],
             "title": "Health",
             "type": "string"
           },
@@ -4437,6 +4460,41 @@
         },
         "required": ["bans"],
         "title": "GetServerBansResponse",
+        "type": "object"
+      },
+      "GetServerProcessResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "process": {
+            "$ref": "#/components/schemas/ServerProcessStatus"
+          },
+          "server_name": {
+            "examples": ["example"],
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Server Name",
+            "type": "string"
+          },
+          "status": {
+            "const": "success",
+            "default": "success",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["server_name", "process"],
+        "title": "GetServerProcessResponse",
         "type": "object"
       },
       "HealthCheck": {
@@ -6400,9 +6458,90 @@
       "ProcessDiagnostic": {
         "additionalProperties": false,
         "properties": {
+          "ban_enforcement_available": {
+            "default": false,
+            "title": "Ban Enforcement Available",
+            "type": "boolean"
+          },
+          "ban_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ban Error"
+          },
+          "command_available": {
+            "default": false,
+            "title": "Command Available",
+            "type": "boolean"
+          },
+          "cpu_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cpu Percent"
+          },
+          "exit_code": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exit Code"
+          },
+          "exit_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exit Reason"
+          },
           "expected_status": {
             "title": "Expected Status",
             "type": "string"
+          },
+          "generation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generation"
+          },
+          "healthy": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Healthy"
+          },
+          "in_restart_backoff": {
+            "default": false,
+            "title": "In Restart Backoff",
+            "type": "boolean"
           },
           "last_error_type": {
             "anyOf": [
@@ -6414,6 +6553,17 @@
               }
             ],
             "title": "Last Error Type"
+          },
+          "memory_mb": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Memory Mb"
           },
           "observed_at": {
             "anyOf": [
@@ -6437,6 +6587,49 @@
             ],
             "title": "Observed Running"
           },
+          "output_available": {
+            "default": false,
+            "title": "Output Available",
+            "type": "boolean"
+          },
+          "output_dropped_bytes": {
+            "default": 0,
+            "title": "Output Dropped Bytes",
+            "type": "integer"
+          },
+          "output_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Error"
+          },
+          "output_queued_bytes": {
+            "default": 0,
+            "title": "Output Queued Bytes",
+            "type": "integer"
+          },
+          "output_source": {
+            "default": "unknown",
+            "enum": ["file", "pipe", "unknown"],
+            "title": "Output Source",
+            "type": "string"
+          },
+          "phase": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phase"
+          },
           "pid": {
             "anyOf": [
               {
@@ -6448,6 +6641,31 @@
             ],
             "title": "Pid"
           },
+          "process_owned": {
+            "default": false,
+            "title": "Process Owned",
+            "type": "boolean"
+          },
+          "ready": {
+            "default": false,
+            "title": "Ready",
+            "type": "boolean"
+          },
+          "recovered_untracked": {
+            "default": false,
+            "title": "Recovered Untracked",
+            "type": "boolean"
+          },
+          "recovery_exhausted": {
+            "default": false,
+            "title": "Recovery Exhausted",
+            "type": "boolean"
+          },
+          "restart_attempts": {
+            "default": 0,
+            "title": "Restart Attempts",
+            "type": "integer"
+          },
           "server_name": {
             "title": "Server Name",
             "type": "string"
@@ -6455,6 +6673,35 @@
         },
         "required": ["server_name", "expected_status"],
         "title": "ProcessDiagnostic",
+        "type": "object"
+      },
+      "ProcessExitStatus": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "title": "ProcessExitStatus",
         "type": "object"
       },
       "ProcessInfo": {
@@ -6481,9 +6728,63 @@
         "title": "ProcessInfo",
         "type": "object"
       },
+      "ProcessOutputStatus": {
+        "additionalProperties": false,
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "dropped_bytes": {
+            "minimum": 0.0,
+            "title": "Dropped Bytes",
+            "type": "integer"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "queued_bytes": {
+            "minimum": 0.0,
+            "title": "Queued Bytes",
+            "type": "integer"
+          },
+          "source": {
+            "enum": ["file", "pipe", "unknown"],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": ["source", "available", "queued_bytes", "dropped_bytes"],
+        "title": "ProcessOutputStatus",
+        "type": "object"
+      },
       "ProcessesDiagnostics": {
         "additionalProperties": false,
         "properties": {
+          "command_unavailable_count": {
+            "default": 0,
+            "title": "Command Unavailable Count",
+            "type": "integer"
+          },
+          "identity_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identity Error"
+          },
           "kind": {
             "const": "processes",
             "default": "processes",
@@ -6520,6 +6821,11 @@
             "title": "Observed Running",
             "type": "integer"
           },
+          "pending_identities": {
+            "default": 0,
+            "title": "Pending Identities",
+            "type": "integer"
+          },
           "processes": {
             "items": {
               "$ref": "#/components/schemas/ProcessDiagnostic"
@@ -6531,10 +6837,30 @@
             "title": "Registered",
             "type": "integer"
           },
+          "total_cpu_percent": {
+            "default": 0.0,
+            "title": "Total Cpu Percent",
+            "type": "number"
+          },
+          "total_memory_mb": {
+            "default": 0.0,
+            "title": "Total Memory Mb",
+            "type": "number"
+          },
           "truncated": {
             "default": false,
             "title": "Truncated",
             "type": "boolean"
+          },
+          "unhealthy_count": {
+            "default": 0,
+            "title": "Unhealthy Count",
+            "type": "integer"
+          },
+          "untracked_recoveries_count": {
+            "default": 0,
+            "title": "Untracked Recoveries Count",
+            "type": "integer"
           }
         },
         "required": ["registered", "observed_running", "observation_available"],
@@ -8144,6 +8470,96 @@
         },
         "required": ["status"],
         "title": "ServerProcessInfoResponse",
+        "type": "object"
+      },
+      "ServerProcessStatus": {
+        "additionalProperties": false,
+        "properties": {
+          "bans": {
+            "$ref": "#/components/schemas/BanEnforcementStatus"
+          },
+          "command_available": {
+            "title": "Command Available",
+            "type": "boolean"
+          },
+          "exit": {
+            "$ref": "#/components/schemas/ProcessExitStatus"
+          },
+          "generation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generation"
+          },
+          "observed_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed At"
+          },
+          "output": {
+            "$ref": "#/components/schemas/ProcessOutputStatus"
+          },
+          "owned": {
+            "title": "Owned",
+            "type": "boolean"
+          },
+          "phase": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phase"
+          },
+          "pid": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pid"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "boolean"
+          },
+          "recovered": {
+            "title": "Recovered",
+            "type": "boolean"
+          },
+          "running": {
+            "title": "Running",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "running",
+          "ready",
+          "owned",
+          "recovered",
+          "command_available",
+          "output",
+          "bans",
+          "exit"
+        ],
+        "title": "ServerProcessStatus",
         "type": "object"
       },
       "ServerRunningStatusResponse": {
@@ -29140,6 +29556,149 @@
           "classification": "permission",
           "integration_tokens": "supported",
           "required_permissions": ["permissions:manage"],
+          "resource_scope": "server",
+          "version": 1
+        }
+      }
+    },
+    "/api/server/{server_name}/process": {
+      "get": {
+        "description": "Inspect process ownership, live capabilities and failure evidence.",
+        "operationId": "get_server_process",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "server_name",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "The name of the server",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetServerProcessResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": ["servers:inspect"]
+          },
+          {
+            "APIKeyCookie": []
+          },
+          {
+            "IntegrationToken": []
+          }
+        ],
+        "summary": "Get Server Process",
+        "tags": ["Server Management"],
+        "x-bsm-access": {
+          "additional_checks": [],
+          "allowed_roles": ["moderator", "admin"],
+          "authentication": "required",
+          "classification": "permission",
+          "integration_tokens": "supported",
+          "required_permissions": ["servers:inspect"],
           "resource_scope": "server",
           "version": 1
         }

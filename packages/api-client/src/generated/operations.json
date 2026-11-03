@@ -4502,6 +4502,41 @@
     "bodyTypes": ["application/json"],
     "responseType": "json"
   },
+  "get_server_process": {
+    "security": [
+      {
+        "OAuth2PasswordBearer": ["servers:inspect"]
+      },
+      {
+        "APIKeyCookie": []
+      },
+      {
+        "IntegrationToken": []
+      }
+    ],
+    "access": {
+      "additional_checks": [],
+      "allowed_roles": ["moderator", "admin"],
+      "authentication": "required",
+      "classification": "permission",
+      "integration_tokens": "supported",
+      "required_permissions": ["servers:inspect"],
+      "resource_scope": "server",
+      "version": 1
+    },
+    "method": "GET",
+    "path": "/api/server/{server_name}/process",
+    "parameters": [
+      {
+        "name": "server_name",
+        "in": "path",
+        "required": true
+      }
+    ],
+    "bodyRequired": false,
+    "bodyTypes": [],
+    "responseType": "json"
+  },
   "get_server_process_info": {
     "security": [
       {

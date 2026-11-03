@@ -27,7 +27,7 @@
       "bsm_settings"
     ]
   },
-  "schemaHash": "e29b7c8607017daad3288b4d42737189aa802ff6130dabf2dba311eac566dc86",
+  "schemaHash": "2937f01e1b6ae6bd328a05104aa46988e1da2801c7cd498c69cdd4b4fd97dbd3",
   "openapiVersion": "3.1.0",
   "title": "Bedrock Server Manager",
   "source": "DMedina559/bedrock-server-manager: bedrock_server_manager.web.contract",
@@ -94,6 +94,7 @@
     "get_restore_recovery",
     "get_server_addon_icon",
     "get_server_bans",
+    "get_server_process",
     "get_server_process_info",
     "get_server_settings",
     "get_server_status",

@@ -2258,6 +2258,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/server/{server_name}/process": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Server Process
+     * @description Inspect process ownership, live capabilities and failure evidence.
+     */
+    get: operations["get_server_process"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/server/{server_name}/process_info": {
     parameters: {
       query?: never;
@@ -3693,6 +3713,13 @@ export interface components {
       /** Xuid */
       xuid: string;
     };
+    /** BanEnforcementStatus */
+    BanEnforcementStatus: {
+      /** Available */
+      available: boolean;
+      /** Error */
+      error?: string | null;
+    };
     /** BanInfo */
     BanInfo: {
       /** Banned At */
@@ -4828,7 +4855,7 @@ export interface components {
        * Health
        * @enum {string}
        */
-      health: "healthy" | "degraded";
+      health: "healthy" | "degraded" | "unhealthy";
       /** Instance Id */
       instance_id?: string | null;
       lifecycle: components["schemas"]["LifecyclePhase"];
@@ -4937,6 +4964,23 @@ export interface components {
       bans: components["schemas"]["BanInfo"][];
       /** Message */
       message?: string | null;
+      /**
+       * Status
+       * @default success
+       * @constant
+       */
+      status?: "success";
+    };
+    /** GetServerProcessResponse */
+    GetServerProcessResponse: {
+      /** Message */
+      message?: string | null;
+      process: components["schemas"]["ServerProcessStatus"];
+      /**
+       * Server Name
+       * @example example
+       */
+      server_name: string;
       /**
        * Status
        * @default success
@@ -5808,18 +5852,104 @@ export interface components {
     };
     /** ProcessDiagnostic */
     ProcessDiagnostic: {
+      /**
+       * Ban Enforcement Available
+       * @default false
+       */
+      ban_enforcement_available?: boolean;
+      /** Ban Error */
+      ban_error?: string | null;
+      /**
+       * Command Available
+       * @default false
+       */
+      command_available?: boolean;
+      /** Cpu Percent */
+      cpu_percent?: number | null;
+      /** Exit Code */
+      exit_code?: number | null;
+      /** Exit Reason */
+      exit_reason?: string | null;
       /** Expected Status */
       expected_status: string;
+      /** Generation */
+      generation?: string | null;
+      /** Healthy */
+      healthy?: boolean | null;
+      /**
+       * In Restart Backoff
+       * @default false
+       */
+      in_restart_backoff?: boolean;
       /** Last Error Type */
       last_error_type?: string | null;
+      /** Memory Mb */
+      memory_mb?: number | null;
       /** Observed At */
       observed_at?: number | null;
       /** Observed Running */
       observed_running?: boolean | null;
+      /**
+       * Output Available
+       * @default false
+       */
+      output_available?: boolean;
+      /**
+       * Output Dropped Bytes
+       * @default 0
+       */
+      output_dropped_bytes?: number;
+      /** Output Error */
+      output_error?: string | null;
+      /**
+       * Output Queued Bytes
+       * @default 0
+       */
+      output_queued_bytes?: number;
+      /**
+       * Output Source
+       * @default unknown
+       * @enum {string}
+       */
+      output_source?: "file" | "pipe" | "unknown";
+      /** Phase */
+      phase?: string | null;
       /** Pid */
       pid?: number | null;
+      /**
+       * Process Owned
+       * @default false
+       */
+      process_owned?: boolean;
+      /**
+       * Ready
+       * @default false
+       */
+      ready?: boolean;
+      /**
+       * Recovered Untracked
+       * @default false
+       */
+      recovered_untracked?: boolean;
+      /**
+       * Recovery Exhausted
+       * @default false
+       */
+      recovery_exhausted?: boolean;
+      /**
+       * Restart Attempts
+       * @default 0
+       */
+      restart_attempts?: number;
       /** Server Name */
       server_name: string;
+    };
+    /** ProcessExitStatus */
+    ProcessExitStatus: {
+      /** Code */
+      code?: number | null;
+      /** Reason */
+      reason?: string | null;
     };
     /** ProcessInfo */
     ProcessInfo: {
@@ -5832,8 +5962,31 @@ export interface components {
       /** Uptime */
       uptime: string;
     };
+    /** ProcessOutputStatus */
+    ProcessOutputStatus: {
+      /** Available */
+      available: boolean;
+      /** Dropped Bytes */
+      dropped_bytes: number;
+      /** Error */
+      error?: string | null;
+      /** Queued Bytes */
+      queued_bytes: number;
+      /**
+       * Source
+       * @enum {string}
+       */
+      source: "file" | "pipe" | "unknown";
+    };
     /** ProcessesDiagnostics */
     ProcessesDiagnostics: {
+      /**
+       * Command Unavailable Count
+       * @default 0
+       */
+      command_unavailable_count?: number;
+      /** Identity Error */
+      identity_error?: string | null;
       /**
        * @description discriminator enum property added by openapi-typescript
        * @enum {string}
@@ -5847,15 +6000,40 @@ export interface components {
       observation_available: boolean;
       /** Observed Running */
       observed_running: number;
+      /**
+       * Pending Identities
+       * @default 0
+       */
+      pending_identities?: number;
       /** Processes */
       processes?: components["schemas"]["ProcessDiagnostic"][];
       /** Registered */
       registered: number;
       /**
+       * Total Cpu Percent
+       * @default 0
+       */
+      total_cpu_percent?: number;
+      /**
+       * Total Memory Mb
+       * @default 0
+       */
+      total_memory_mb?: number;
+      /**
        * Truncated
        * @default false
        */
       truncated?: boolean;
+      /**
+       * Unhealthy Count
+       * @default 0
+       */
+      unhealthy_count?: number;
+      /**
+       * Untracked Recoveries Count
+       * @default 0
+       */
+      untracked_recoveries_count?: number;
     };
     /**
      * ProfileUpdatePayload
@@ -6608,6 +6786,30 @@ export interface components {
        * @enum {string}
        */
       status: "success" | "skipped" | "partial";
+    };
+    /** ServerProcessStatus */
+    ServerProcessStatus: {
+      bans: components["schemas"]["BanEnforcementStatus"];
+      /** Command Available */
+      command_available: boolean;
+      exit: components["schemas"]["ProcessExitStatus"];
+      /** Generation */
+      generation?: string | null;
+      /** Observed At */
+      observed_at?: number | null;
+      output: components["schemas"]["ProcessOutputStatus"];
+      /** Owned */
+      owned: boolean;
+      /** Phase */
+      phase?: string | null;
+      /** Pid */
+      pid?: number | null;
+      /** Ready */
+      ready: boolean;
+      /** Recovered */
+      recovered: boolean;
+      /** Running */
+      running: boolean;
     };
     /**
      * ServerRunningStatusResponse
@@ -20772,6 +20974,109 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["PermissionsUpdateResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorEnvelope"];
+        };
+      };
+    };
+  };
+  get_server_process: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        server_name: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GetServerProcessResponse"];
         };
       };
       /** @description Bad Request */
