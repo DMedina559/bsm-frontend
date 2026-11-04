@@ -56,7 +56,11 @@ function responder(requests) {
         servers: [{ name: "survival", status: "running", version: "1.0" }],
       });
     if (url.endsWith("/api/info"))
-      return Response.json({ info: { app_version: "4.0" } });
+      return Response.json({
+        os_type: "Linux",
+        app_version: "4.0",
+        splash_text: "Hello",
+      });
     if (url.endsWith("/auth/token"))
       return Response.json({ access_token: "new-token" });
     return Response.json({ status: "success" });

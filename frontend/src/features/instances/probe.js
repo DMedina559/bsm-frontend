@@ -48,7 +48,7 @@ export async function probeInstance(url, { fetch, signal } = {}) {
       };
     try {
       const result = await client.callOperation("get_system_info");
-      const version = (result.info ?? result)?.app_version;
+      const version = result?.app_version;
       if (typeof version !== "string" || !version)
         throw new Error(
           "The backend responded, but its BSM version response is incompatible.",

@@ -245,10 +245,7 @@ export function createInstanceConnection(
             ? results[2].value
             : [],
         servers: fleet.value.servers,
-        info:
-          results[1].status === "fulfilled"
-            ? (results[1].value.info ?? results[1].value)
-            : null,
+        info: results[1].status === "fulfilled" ? results[1].value : null,
         updatedAt: new Date().toISOString(),
         error: null,
       });

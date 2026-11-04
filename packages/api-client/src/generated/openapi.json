@@ -197,22 +197,54 @@
         "title": "AccountServerAccessInfo",
         "type": "object"
       },
-      "ActionResponse": {
+      "AddPlayersManuallyResponse": {
         "additionalProperties": false,
         "properties": {
+          "count": {
+            "minimum": 0.0,
+            "title": "Count",
+            "type": "integer"
+          },
           "message": {
-            "title": "Message",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "parsed_count": {
+            "minimum": 0.0,
+            "title": "Parsed Count",
+            "type": "integer"
           },
           "status": {
+            "const": "success",
             "default": "success",
-            "enum": ["success", "skipped", "partial"],
             "title": "Status",
             "type": "string"
+          },
+          "submitted_count": {
+            "minimum": 0.0,
+            "title": "Submitted Count",
+            "type": "integer"
+          },
+          "unique_count": {
+            "minimum": 0.0,
+            "title": "Unique Count",
+            "type": "integer"
           }
         },
-        "required": ["message"],
-        "title": "ActionResponse",
+        "required": [
+          "count",
+          "submitted_count",
+          "parsed_count",
+          "unique_count"
+        ],
+        "title": "AddPlayersManuallyResponse",
         "type": "object"
       },
       "AddPlayersPayload": {
@@ -233,87 +265,6 @@
         },
         "required": ["players"],
         "title": "AddPlayersPayload",
-        "type": "object"
-      },
-      "AddPlayersResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Count"
-          },
-          "details": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PlayerScanDetails"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          },
-          "parsed_count": {
-            "anyOf": [
-              {
-                "minimum": 0.0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parsed Count"
-          },
-          "status": {
-            "enum": ["success", "skipped", "partial"],
-            "title": "Status",
-            "type": "string"
-          },
-          "submitted_count": {
-            "anyOf": [
-              {
-                "minimum": 0.0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Submitted Count"
-          },
-          "unique_count": {
-            "anyOf": [
-              {
-                "minimum": 0.0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Unique Count"
-          }
-        },
-        "required": ["status"],
-        "title": "AddPlayersResponse",
         "type": "object"
       },
       "AddServerBanResponse": {
@@ -391,41 +342,6 @@
         },
         "required": ["pack_uuid", "pack_type"],
         "title": "AddonActionPayload",
-        "type": "object"
-      },
-      "AddonListResponse": {
-        "additionalProperties": false,
-        "description": "Response model for retrieving all addons on a server.",
-        "properties": {
-          "addons": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/InstalledAddons"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          },
-          "status": {
-            "enum": ["success", "skipped", "partial"],
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": ["status"],
-        "title": "AddonListResponse",
         "type": "object"
       },
       "AddonReorderPayload": {
@@ -572,45 +488,6 @@
         },
         "required": ["players"],
         "title": "AllowlistRemovePayload",
-        "type": "object"
-      },
-      "AppInfoResponse": {
-        "additionalProperties": false,
-        "description": "Response model for app/system info.",
-        "properties": {
-          "info": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "$ref": "#/components/schemas/JsonValue"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Info"
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          },
-          "status": {
-            "enum": ["success", "skipped", "partial"],
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": ["status"],
-        "title": "AppInfoResponse",
         "type": "object"
       },
       "AuditLogResponse": {
@@ -771,51 +648,6 @@
         },
         "required": ["path", "component", "size", "sha256"],
         "title": "BackupFile",
-        "type": "object"
-      },
-      "BackupFilesResponse": {
-        "additionalProperties": false,
-        "properties": {
-          "backups": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "additionalProperties": {
-                  "items": {
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                "type": "object"
-              }
-            ],
-            "title": "Backups"
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          },
-          "status": {
-            "const": "success",
-            "default": "success",
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": ["backups"],
-        "title": "BackupFilesResponse",
         "type": "object"
       },
       "BackupHealth": {
@@ -1470,6 +1302,8 @@
         "additionalProperties": false,
         "properties": {
           "player_name": {
+            "minLength": 1,
+            "pattern": ".*\\S.*",
             "title": "Player Name",
             "type": "string"
           },
@@ -1485,6 +1319,8 @@
             "title": "Reason"
           },
           "xuid": {
+            "minLength": 1,
+            "pattern": ".*\\S.*",
             "title": "Xuid",
             "type": "string"
           }
@@ -1558,6 +1394,8 @@
         "additionalProperties": false,
         "properties": {
           "xuid": {
+            "minLength": 1,
+            "pattern": ".*\\S.*",
             "title": "Xuid",
             "type": "string"
           }
@@ -1736,6 +1574,40 @@
         "title": "ChangePasswordPayload",
         "type": "object"
       },
+      "CleanupResult": {
+        "additionalProperties": false,
+        "properties": {
+          "deleted": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Deleted",
+            "type": "array"
+          },
+          "failures": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/FailureInfo"
+            },
+            "title": "Failures",
+            "type": "object"
+          },
+          "outcome": {
+            "default": "noop",
+            "enum": ["completed", "partial", "failed", "noop"],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "retained": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Retained",
+            "type": "array"
+          }
+        },
+        "title": "CleanupResult",
+        "type": "object"
+      },
       "CollectionDiagnostics": {
         "additionalProperties": false,
         "properties": {
@@ -1868,6 +1740,7 @@
           "command": {
             "description": "The command to send to the server.",
             "minLength": 1,
+            "pattern": ".*\\S.*",
             "title": "Command",
             "type": "string"
           }
@@ -1888,6 +1761,55 @@
         },
         "required": ["before", "after"],
         "title": "CompareDiagnosticSnapshotsRequest",
+        "type": "object"
+      },
+      "CompareDiagnosticSnapshotsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "after_snapshot_id": {
+            "title": "After Snapshot Id",
+            "type": "string"
+          },
+          "before_snapshot_id": {
+            "title": "Before Snapshot Id",
+            "type": "string"
+          },
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/DiagnosticChange"
+            },
+            "maxItems": 200,
+            "title": "Changes",
+            "type": "array"
+          },
+          "elapsed_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Elapsed Seconds"
+          },
+          "same_instance": {
+            "title": "Same Instance",
+            "type": "boolean"
+          },
+          "truncated": {
+            "default": false,
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "before_snapshot_id",
+          "after_snapshot_id",
+          "same_instance",
+          "elapsed_seconds"
+        ],
+        "title": "CompareDiagnosticSnapshotsResponse",
         "type": "object"
       },
       "CompletePasskeyRegistration": {
@@ -1953,47 +1875,9 @@
         "title": "CompletedItem",
         "type": "object"
       },
-      "ContentListResponse": {
-        "additionalProperties": false,
-        "description": "Response model for content listing endpoints.\n\n:ivar files: A list of filenames found.",
-        "properties": {
-          "files": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Files"
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          },
-          "status": {
-            "enum": ["success", "skipped", "partial"],
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": ["status"],
-        "title": "ContentListResponse",
-        "type": "object"
-      },
       "ContentUploadResponse": {
         "additionalProperties": false,
+        "description": "Response model for uploading a world or addon archive to the content library.",
         "properties": {
           "category": {
             "enum": ["worlds", "addons"],
@@ -2009,8 +1893,15 @@
             "type": "string"
           },
           "message": {
-            "title": "Message",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
           },
           "status": {
             "const": "success",
@@ -2019,7 +1910,7 @@
             "type": "string"
           }
         },
-        "required": ["filename", "category", "destination", "message"],
+        "required": ["filename", "category", "destination"],
         "title": "ContentUploadResponse",
         "type": "object"
       },
@@ -2202,6 +2093,7 @@
           },
           "server_access": {
             "default": "all",
+            "enum": ["all", "assigned"],
             "title": "Server Access",
             "type": "string"
           },
@@ -2290,63 +2182,6 @@
         "title": "DestinationCleanupPayload",
         "type": "object"
       },
-      "DiagnosticActivity": {
-        "additionalProperties": false,
-        "description": "Global current-instance metadata; no correlation filter is required.",
-        "properties": {
-          "events": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/EventDiagnostics"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "issues": {
-            "items": {
-              "$ref": "#/components/schemas/DiagnosticIssue"
-            },
-            "maxItems": 3,
-            "title": "Issues",
-            "type": "array"
-          },
-          "operations": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/OperationActivity"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "scope": {
-            "const": "application",
-            "default": "application",
-            "title": "Scope",
-            "type": "string"
-          },
-          "subscriptions": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/EventSubscriptions"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "truncated": {
-            "default": false,
-            "title": "Truncated",
-            "type": "boolean"
-          }
-        },
-        "title": "DiagnosticActivity",
-        "type": "object"
-      },
       "DiagnosticChange": {
         "additionalProperties": false,
         "properties": {
@@ -2417,55 +2252,6 @@
         },
         "required": ["subsystem", "field", "before", "after"],
         "title": "DiagnosticChange",
-        "type": "object"
-      },
-      "DiagnosticComparison": {
-        "additionalProperties": false,
-        "properties": {
-          "after_snapshot_id": {
-            "title": "After Snapshot Id",
-            "type": "string"
-          },
-          "before_snapshot_id": {
-            "title": "Before Snapshot Id",
-            "type": "string"
-          },
-          "changes": {
-            "items": {
-              "$ref": "#/components/schemas/DiagnosticChange"
-            },
-            "maxItems": 200,
-            "title": "Changes",
-            "type": "array"
-          },
-          "elapsed_seconds": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Elapsed Seconds"
-          },
-          "same_instance": {
-            "title": "Same Instance",
-            "type": "boolean"
-          },
-          "truncated": {
-            "default": false,
-            "title": "Truncated",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "before_snapshot_id",
-          "after_snapshot_id",
-          "same_instance",
-          "elapsed_seconds"
-        ],
-        "title": "DiagnosticComparison",
         "type": "object"
       },
       "DiagnosticEnvironment": {
@@ -2787,38 +2573,6 @@
           "code"
         ],
         "title": "DiagnosticRecord",
-        "type": "object"
-      },
-      "DiagnosticReport": {
-        "additionalProperties": false,
-        "properties": {
-          "generated_at": {
-            "title": "Generated At",
-            "type": "number"
-          },
-          "history": {
-            "$ref": "#/components/schemas/DiagnosticHistory"
-          },
-          "report_id": {
-            "title": "Report Id",
-            "type": "string"
-          },
-          "runs": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/DiagnosticRuns"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "snapshot": {
-            "$ref": "#/components/schemas/DiagnosticSnapshot"
-          }
-        },
-        "required": ["snapshot", "history"],
-        "title": "DiagnosticReport",
         "type": "object"
       },
       "DiagnosticRun": {
@@ -3177,81 +2931,6 @@
         "title": "DiagnosticSummary",
         "type": "object"
       },
-      "DiagnosticTrace": {
-        "additionalProperties": false,
-        "properties": {
-          "correlation_id": {
-            "title": "Correlation Id",
-            "type": "string"
-          },
-          "events": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/EventDiagnostics"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "events_available": {
-            "default": false,
-            "title": "Events Available",
-            "type": "boolean"
-          },
-          "history": {
-            "$ref": "#/components/schemas/DiagnosticHistory"
-          },
-          "issues": {
-            "items": {
-              "$ref": "#/components/schemas/DiagnosticIssue"
-            },
-            "maxItems": 4,
-            "title": "Issues",
-            "type": "array"
-          },
-          "operations": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/OperationActivity"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "operations_available": {
-            "default": false,
-            "title": "Operations Available",
-            "type": "boolean"
-          },
-          "tasks": {
-            "items": {
-              "$ref": "#/components/schemas/TaskDiagnostic"
-            },
-            "title": "Tasks",
-            "type": "array"
-          },
-          "tasks_available": {
-            "title": "Tasks Available",
-            "type": "boolean"
-          },
-          "truncated": {
-            "default": false,
-            "title": "Truncated",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "correlation_id",
-          "events",
-          "tasks",
-          "tasks_available",
-          "history"
-        ],
-        "title": "DiagnosticTrace",
-        "type": "object"
-      },
       "ErrorEnvelope": {
         "additionalProperties": false,
         "properties": {
@@ -3479,6 +3158,29 @@
           "recent"
         ],
         "title": "EventDiagnostics",
+        "type": "object"
+      },
+      "EventDispatchSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "failures": {
+            "items": {
+              "$ref": "#/components/schemas/ListenerFailure"
+            },
+            "title": "Failures",
+            "type": "array"
+          },
+          "listeners_called": {
+            "title": "Listeners Called",
+            "type": "integer"
+          }
+        },
+        "required": ["event_id", "listeners_called", "failures"],
+        "title": "EventDispatchSummary",
         "type": "object"
       },
       "EventFilter": {
@@ -4108,6 +3810,165 @@
         "title": "GenerateTokenPayload",
         "type": "object"
       },
+      "GetAllGlobalSettingsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "settings": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "title": "Settings",
+            "type": "object"
+          },
+          "status": {
+            "const": "success",
+            "default": "success",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["settings"],
+        "title": "GetAllGlobalSettingsResponse",
+        "type": "object"
+      },
+      "GetAllKnownPlayersResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "players": {
+            "items": {
+              "$ref": "#/components/schemas/PlayerInfo"
+            },
+            "title": "Players",
+            "type": "array"
+          },
+          "status": {
+            "const": "success",
+            "default": "success",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["players"],
+        "title": "GetAllKnownPlayersResponse",
+        "type": "object"
+      },
+      "GetAllServerSettingsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "settings": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "title": "Settings",
+            "type": "object"
+          },
+          "status": {
+            "const": "success",
+            "default": "success",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["settings"],
+        "title": "GetAllServerSettingsResponse",
+        "type": "object"
+      },
+      "GetAllServersDataResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "epoch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Epoch"
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/ResourceFailure"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision"
+          },
+          "servers": {
+            "items": {
+              "$ref": "#/components/schemas/ServerSummary"
+            },
+            "title": "Servers",
+            "type": "array"
+          },
+          "status": {
+            "default": "success",
+            "enum": ["success", "partial"],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["servers"],
+        "title": "GetAllServersDataResponse",
+        "type": "object"
+      },
       "GetAllowlistResponse": {
         "additionalProperties": false,
         "properties": {
@@ -4138,6 +3999,79 @@
         },
         "required": ["players"],
         "title": "GetAllowlistResponse",
+        "type": "object"
+      },
+      "GetApplicationDiagnosticsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "collected_at": {
+            "title": "Collected At",
+            "type": "number"
+          },
+          "collection": {
+            "$ref": "#/components/schemas/CollectionDiagnostics"
+          },
+          "counter_scope": {
+            "const": "current_instance",
+            "default": "current_instance",
+            "title": "Counter Scope",
+            "type": "string"
+          },
+          "environment": {
+            "$ref": "#/components/schemas/DiagnosticEnvironment"
+          },
+          "instance_id": {
+            "title": "Instance Id",
+            "type": "string"
+          },
+          "persistence": {
+            "$ref": "#/components/schemas/PersistenceDiagnostics"
+          },
+          "recent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecentDiagnosticWindow"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "registry": {
+            "$ref": "#/components/schemas/RegistryDiagnostics"
+          },
+          "schema_version": {
+            "const": 1,
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/DiagnosticSection"
+            },
+            "maxItems": 1000,
+            "title": "Sections",
+            "type": "array"
+          },
+          "snapshot_id": {
+            "title": "Snapshot Id",
+            "type": "string"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/DiagnosticSummary"
+          }
+        },
+        "required": [
+          "instance_id",
+          "collected_at",
+          "sections",
+          "summary",
+          "registry",
+          "environment",
+          "persistence"
+        ],
+        "title": "GetApplicationDiagnosticsResponse",
         "type": "object"
       },
       "GetApplicationHealthResponse": {
@@ -4287,6 +4221,285 @@
         "title": "GetApplicationMetricsResponse",
         "type": "object"
       },
+      "GetBedrockProcessInfoResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "epoch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Epoch"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "process_info": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProcessInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision"
+          },
+          "status": {
+            "const": "success",
+            "default": "success",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["process_info"],
+        "title": "GetBedrockProcessInfoResponse",
+        "type": "object"
+      },
+      "GetDiagnosticActivityResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "events": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EventDiagnostics"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/DiagnosticIssue"
+            },
+            "maxItems": 3,
+            "title": "Issues",
+            "type": "array"
+          },
+          "operations": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OperationActivity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scope": {
+            "const": "application",
+            "default": "application",
+            "title": "Scope",
+            "type": "string"
+          },
+          "subscriptions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EventSubscriptions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "truncated": {
+            "default": false,
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "title": "GetDiagnosticActivityResponse",
+        "type": "object"
+      },
+      "GetDiagnosticHistoryResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "records": {
+            "items": {
+              "$ref": "#/components/schemas/DiagnosticRecord"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "truncated": {
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "required": ["records", "available", "truncated"],
+        "title": "GetDiagnosticHistoryResponse",
+        "type": "object"
+      },
+      "GetDiagnosticReportResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "generated_at": {
+            "title": "Generated At",
+            "type": "number"
+          },
+          "history": {
+            "$ref": "#/components/schemas/DiagnosticHistory"
+          },
+          "report_id": {
+            "title": "Report Id",
+            "type": "string"
+          },
+          "runs": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DiagnosticRuns"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "snapshot": {
+            "$ref": "#/components/schemas/DiagnosticSnapshot"
+          }
+        },
+        "required": ["snapshot", "history"],
+        "title": "GetDiagnosticReportResponse",
+        "type": "object"
+      },
+      "GetDiagnosticRunsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "runs": {
+            "items": {
+              "$ref": "#/components/schemas/DiagnosticRun"
+            },
+            "title": "Runs",
+            "type": "array"
+          },
+          "truncated": {
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "required": ["runs", "available", "truncated"],
+        "title": "GetDiagnosticRunsResponse",
+        "type": "object"
+      },
+      "GetDiagnosticTraceResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "correlation_id": {
+            "title": "Correlation Id",
+            "type": "string"
+          },
+          "events": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EventDiagnostics"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "events_available": {
+            "default": false,
+            "title": "Events Available",
+            "type": "boolean"
+          },
+          "history": {
+            "$ref": "#/components/schemas/DiagnosticHistory"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/DiagnosticIssue"
+            },
+            "maxItems": 4,
+            "title": "Issues",
+            "type": "array"
+          },
+          "operations": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OperationActivity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "operations_available": {
+            "default": false,
+            "title": "Operations Available",
+            "type": "boolean"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/TaskDiagnostic"
+            },
+            "title": "Tasks",
+            "type": "array"
+          },
+          "tasks_available": {
+            "title": "Tasks Available",
+            "type": "boolean"
+          },
+          "truncated": {
+            "default": false,
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "correlation_id",
+          "events",
+          "tasks",
+          "tasks_available",
+          "history"
+        ],
+        "title": "GetDiagnosticTraceResponse",
+        "type": "object"
+      },
       "GetPermissionsResponse": {
         "additionalProperties": false,
         "properties": {
@@ -4363,6 +4576,38 @@
         },
         "required": ["settings"],
         "title": "GetPluginSettingsResponse",
+        "type": "object"
+      },
+      "GetPluginStatusesResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "plugins": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PluginInfo"
+            },
+            "title": "Plugins",
+            "type": "object"
+          },
+          "status": {
+            "const": "success",
+            "default": "success",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["plugins"],
+        "title": "GetPluginStatusesResponse",
         "type": "object"
       },
       "GetPropertiesResponse": {
@@ -4495,6 +4740,101 @@
         },
         "required": ["server_name", "process"],
         "title": "GetServerProcessResponse",
+        "type": "object"
+      },
+      "GetServerRunningStatusResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "epoch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Epoch"
+          },
+          "is_running": {
+            "title": "Is Running",
+            "type": "boolean"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "maximum": 9007199254740991.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision"
+          },
+          "status": {
+            "const": "success",
+            "default": "success",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["is_running"],
+        "title": "GetServerRunningStatusResponse",
+        "type": "object"
+      },
+      "GetSystemAndAppInfoResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "app_version": {
+            "title": "App Version",
+            "type": "string"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "os_type": {
+            "title": "Os Type",
+            "type": "string"
+          },
+          "splash_text": {
+            "title": "Splash Text",
+            "type": "string"
+          },
+          "status": {
+            "const": "success",
+            "default": "success",
+            "title": "Status",
+            "type": "string"
+          },
+          "timezone": {
+            "default": "UTC",
+            "title": "Timezone",
+            "type": "string"
+          }
+        },
+        "required": ["os_type", "app_version", "splash_text"],
+        "title": "GetSystemAndAppInfoResponse",
         "type": "object"
       },
       "HealthCheck": {
@@ -4817,6 +5157,111 @@
         },
         "required": ["files"],
         "title": "ListAvailableAddonsResponse",
+        "type": "object"
+      },
+      "ListAvailableWorldsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "files": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Files",
+            "type": "array"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "status": {
+            "const": "success",
+            "default": "success",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["files"],
+        "title": "ListAvailableWorldsResponse",
+        "type": "object"
+      },
+      "ListBackupFilesResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "backups": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "additionalProperties": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "type": "object"
+              }
+            ],
+            "title": "Backups"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "status": {
+            "const": "success",
+            "default": "success",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["backups"],
+        "title": "ListBackupFilesResponse",
+        "type": "object"
+      },
+      "ListInstalledAddonsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "addons": {
+            "$ref": "#/components/schemas/InstalledAddons"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "status": {
+            "const": "success",
+            "default": "success",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["addons"],
+        "title": "ListInstalledAddonsResponse",
         "type": "object"
       },
       "ListSchedulesResponse": {
@@ -5726,9 +6171,7 @@
         "description": "WebAuthn assertion payload for passwordless passkey login.",
         "properties": {
           "challenge_id": {
-            "maxLength": 32,
-            "minLength": 32,
-            "pattern": "^[0-9a-f]{32}$",
+            "pattern": "^[a-f0-9]{32}$",
             "title": "Challenge Id",
             "type": "string"
           },
@@ -5784,6 +6227,7 @@
       },
       "PermissionsUpdateResponse": {
         "additionalProperties": false,
+        "description": "Response model for permissions update.",
         "properties": {
           "errors": {
             "anyOf": [
@@ -5964,45 +6408,6 @@
         },
         "required": ["name", "xuid"],
         "title": "PlayerInfo",
-        "type": "object"
-      },
-      "PlayerListResponse": {
-        "additionalProperties": false,
-        "description": "Response model for player lists.",
-        "properties": {
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          },
-          "players": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/PlayerInfo"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Players"
-          },
-          "status": {
-            "enum": ["success", "skipped", "partial"],
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": ["status"],
-        "title": "PlayerListResponse",
         "type": "object"
       },
       "PlayerPermission": {
@@ -6336,45 +6741,6 @@
         },
         "required": ["enabled"],
         "title": "PluginStatusSetPayload",
-        "type": "object"
-      },
-      "PluginStatusesResponse": {
-        "additionalProperties": false,
-        "description": "Response model for plugin statuses.",
-        "properties": {
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          },
-          "plugins": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "$ref": "#/components/schemas/PluginInfo"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Plugins"
-          },
-          "status": {
-            "enum": ["success", "skipped", "partial"],
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": ["status"],
-        "title": "PluginStatusesResponse",
         "type": "object"
       },
       "PluginValues": {
@@ -6901,6 +7267,27 @@
         "title": "PropertiesPayload",
         "type": "object"
       },
+      "PruneDownloadCacheResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "result": {
+            "$ref": "#/components/schemas/CleanupResult"
+          },
+          "status": {
+            "default": "success",
+            "enum": ["success", "skipped", "partial"],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["message"],
+        "title": "PruneDownloadCacheResponse",
+        "type": "object"
+      },
       "PruneDownloadsPayload": {
         "additionalProperties": false,
         "description": "Request model for pruning the download cache.",
@@ -6908,6 +7295,7 @@
           "directory": {
             "description": "The subdirectory within the main download cache to prune (e.g., 'stable' or 'preview').",
             "minLength": 1,
+            "pattern": ".*\\S.*",
             "title": "Directory",
             "type": "string"
           },
@@ -6927,60 +7315,6 @@
         },
         "required": ["directory"],
         "title": "PruneDownloadsPayload",
-        "type": "object"
-      },
-      "PruneDownloadsResponse": {
-        "additionalProperties": false,
-        "description": "Response model for pruning downloads.",
-        "properties": {
-          "failures": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/FailureInfo"
-            },
-            "title": "Failures",
-            "type": "object"
-          },
-          "files_deleted": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Files Deleted"
-          },
-          "files_kept": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Files Kept"
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          },
-          "status": {
-            "enum": ["success", "skipped", "partial"],
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": ["status"],
-        "title": "PruneDownloadsResponse",
         "type": "object"
       },
       "RecentDiagnosticCounts": {
@@ -7503,6 +7837,60 @@
         "title": "RegistryDiagnostics",
         "type": "object"
       },
+      "ReloadGlobalSettingsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "status": {
+            "default": "success",
+            "enum": ["success", "skipped", "partial"],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["message"],
+        "title": "ReloadGlobalSettingsResponse",
+        "type": "object"
+      },
+      "ReloadPluginsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "status": {
+            "default": "success",
+            "enum": ["success", "skipped", "partial"],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["message"],
+        "title": "ReloadPluginsResponse",
+        "type": "object"
+      },
+      "ReloadSinglePluginResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "status": {
+            "default": "success",
+            "enum": ["success", "skipped", "partial"],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["message"],
+        "title": "ReloadSinglePluginResponse",
+        "type": "object"
+      },
       "RemoveFromAllowlistResponse": {
         "additionalProperties": false,
         "properties": {
@@ -7954,6 +8342,34 @@
         },
         "required": ["instance_id", "pid", "phase", "shutdown_requested"],
         "title": "RuntimeStatus",
+        "type": "object"
+      },
+      "ScanAndUpdatePlayerDbResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "details": {
+            "$ref": "#/components/schemas/PlayerScanDetails"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "status": {
+            "default": "success",
+            "enum": ["success", "partial"],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["details"],
+        "title": "ScanAndUpdatePlayerDbResponse",
         "type": "object"
       },
       "ScheduleConfigurationView": {
@@ -8413,65 +8829,6 @@
         "title": "ServerMetrics",
         "type": "object"
       },
-      "ServerProcessInfoResponse": {
-        "additionalProperties": false,
-        "description": "Response model for server process info.",
-        "properties": {
-          "epoch": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Epoch"
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          },
-          "process_info": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ProcessInfo"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "revision": {
-            "anyOf": [
-              {
-                "maximum": 9007199254740991.0,
-                "minimum": 1.0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Revision"
-          },
-          "status": {
-            "enum": ["success", "skipped", "partial"],
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": ["status"],
-        "title": "ServerProcessInfoResponse",
-        "type": "object"
-      },
       "ServerProcessStatus": {
         "additionalProperties": false,
         "properties": {
@@ -8562,66 +8919,6 @@
         "title": "ServerProcessStatus",
         "type": "object"
       },
-      "ServerRunningStatusResponse": {
-        "additionalProperties": false,
-        "description": "Response model for server running status.",
-        "properties": {
-          "epoch": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Epoch"
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          },
-          "revision": {
-            "anyOf": [
-              {
-                "maximum": 9007199254740991.0,
-                "minimum": 1.0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Revision"
-          },
-          "running": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Running"
-          },
-          "status": {
-            "enum": ["success", "skipped", "partial"],
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": ["status"],
-        "title": "ServerRunningStatusResponse",
-        "type": "object"
-      },
       "ServerSettingItemPayload": {
         "additionalProperties": false,
         "description": "Request model for a single server setting key-value pair.",
@@ -8640,55 +8937,6 @@
         },
         "required": ["key", "value"],
         "title": "ServerSettingItemPayload",
-        "type": "object"
-      },
-      "ServerSettingsResponse": {
-        "additionalProperties": false,
-        "description": "Response model for server settings operations.",
-        "properties": {
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          },
-          "setting": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ServerSettingItemPayload"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "settings": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "$ref": "#/components/schemas/JsonValue"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings"
-          },
-          "status": {
-            "enum": ["success", "skipped", "partial"],
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": ["status"],
-        "title": "ServerSettingsResponse",
         "type": "object"
       },
       "ServerSummary": {
@@ -8753,73 +9001,22 @@
         "title": "ServerSummary",
         "type": "object"
       },
-      "ServersListResponse": {
+      "SetGlobalSettingResponse": {
         "additionalProperties": false,
         "properties": {
-          "epoch": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Epoch"
-          },
-          "errors": {
-            "items": {
-              "$ref": "#/components/schemas/ResourceFailure"
-            },
-            "title": "Errors",
-            "type": "array"
-          },
           "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          },
-          "revision": {
-            "anyOf": [
-              {
-                "maximum": 9007199254740991.0,
-                "minimum": 1.0,
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Revision"
-          },
-          "servers": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ServerSummary"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Servers"
+            "title": "Message",
+            "type": "string"
           },
           "status": {
+            "default": "success",
             "enum": ["success", "skipped", "partial"],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": ["status"],
-        "title": "ServersListResponse",
+        "required": ["message"],
+        "title": "SetGlobalSettingResponse",
         "type": "object"
       },
       "SetPluginSettingResponse": {
@@ -8838,6 +9035,24 @@
         },
         "required": ["message"],
         "title": "SetPluginSettingResponse",
+        "type": "object"
+      },
+      "SetPluginStatusResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "status": {
+            "default": "success",
+            "enum": ["success", "skipped", "partial"],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["message"],
+        "title": "SetPluginStatusResponse",
         "type": "object"
       },
       "SetPropertiesResponse": {
@@ -8886,6 +9101,31 @@
         "title": "SetServerAccess",
         "type": "object"
       },
+      "SetServerSettingResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "server_name": {
+            "examples": ["example"],
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Server Name",
+            "type": "string"
+          },
+          "status": {
+            "default": "success",
+            "enum": ["success", "skipped", "partial"],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": ["message", "server_name"],
+        "title": "SetServerSettingResponse",
+        "type": "object"
+      },
       "SettingItemPayload": {
         "additionalProperties": false,
         "description": "Request model for a single setting key-value pair.",
@@ -8904,108 +9144,6 @@
         },
         "required": ["key", "value"],
         "title": "SettingItemPayload",
-        "type": "object"
-      },
-      "SettingsResponse": {
-        "additionalProperties": false,
-        "description": "Response model for settings operations.",
-        "properties": {
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          },
-          "setting": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/SettingItemPayload"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "settings": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "$ref": "#/components/schemas/JsonValue"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Settings"
-          },
-          "status": {
-            "enum": ["success", "skipped", "partial"],
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": ["status"],
-        "title": "SettingsResponse",
-        "type": "object"
-      },
-      "SetupAccountResponse": {
-        "additionalProperties": false,
-        "description": "First account creation returns the same session credentials as login.",
-        "properties": {
-          "access_token": {
-            "description": "Bearer JWT; empty in explicitly negotiated cookie mode, where the credential is HttpOnly",
-            "title": "Access Token",
-            "type": "string"
-          },
-          "message": {
-            "title": "Message",
-            "type": "string"
-          },
-          "status": {
-            "const": "success",
-            "default": "success",
-            "title": "Status",
-            "type": "string"
-          },
-          "token_type": {
-            "const": "bearer",
-            "default": "bearer",
-            "title": "Token Type",
-            "type": "string"
-          },
-          "trusted_device_expires_at": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Trusted Device Expires At"
-          },
-          "trusted_device_token": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "One-time remembered-device credential; omitted in cookie mode. Store only when explicitly requested.",
-            "title": "Trusted Device Token"
-          }
-        },
-        "required": ["access_token", "message"],
-        "title": "SetupAccountResponse",
         "type": "object"
       },
       "SetupStatusResponse": {
@@ -10019,6 +10157,12 @@
             ],
             "title": "Message"
           },
+          "status": {
+            "const": "success",
+            "default": "success",
+            "title": "Status",
+            "type": "string"
+          },
           "token_type": {
             "const": "bearer",
             "default": "bearer",
@@ -10171,6 +10315,7 @@
           "event_name": {
             "description": "The namespaced name of the event to trigger (e.g., 'myplugin:myevent').",
             "minLength": 1,
+            "pattern": ".*\\S.*",
             "title": "Event Name",
             "type": "string"
           },
@@ -10194,43 +10339,25 @@
         "title": "TriggerEventPayload",
         "type": "object"
       },
-      "TriggerEventResponse": {
+      "TriggerExternalAppEventResponse": {
         "additionalProperties": false,
-        "description": "Response model for triggering a custom plugin event.",
         "properties": {
           "details": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "$ref": "#/components/schemas/JsonValue"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Details"
+            "$ref": "#/components/schemas/EventDispatchSummary"
           },
           "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
+            "title": "Message",
+            "type": "string"
           },
           "status": {
+            "default": "success",
             "enum": ["success", "skipped", "partial"],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": ["status"],
-        "title": "TriggerEventResponse",
+        "required": ["message", "details"],
+        "title": "TriggerExternalAppEventResponse",
         "type": "object"
       },
       "TrustedDeviceInfo": {
@@ -10494,6 +10621,8 @@
               "access:manage": "Inspect credentials and change other accounts' server assignments",
               "account:manage": "Change your profile, appearance and password",
               "account:read": "Read your account identity and effective access",
+              "addons:manage": "Install, enable, disable, uninstall or reorder server add-ons",
+              "addons:read": "Read installed server add-ons and pack icons",
               "allowlist:manage": "Add or remove allowlisted players",
               "allowlist:read": "Read a server allowlist",
               "audit:read": "Read installation-wide administrative audit history",
@@ -10501,14 +10630,17 @@
               "backups:destinations": "Prepare server copies and clean up external backup destinations",
               "backups:export": "Export decrypted backup contents",
               "backups:keys": "Manage backup encryption keys and export secret recovery credentials",
-              "backups:manage": "Import, verify, pin and prune server backups",
+              "backups:manage": "Import, verify, drill and pin server backups",
+              "backups:prune": "Prune server backups using configured retention",
               "backups:read": "List, inspect and download stored backup archives",
               "backups:restore": "Plan and restore server data; restores may stop a running server",
               "bans:manage": "Ban or unban players on a server",
               "bans:read": "Read server player bans",
-              "content:manage": "Import, export, remove or change worlds and add-ons",
-              "content:read": "Read world and add-on inventories",
+              "content:manage": "Upload or delete shared world and add-on template files",
+              "content:read": "Read shared world and add-on template libraries",
               "diagnostics:read": "Inspect runtime, event and activity diagnostics",
+              "downloads:prune": "Prune cached server download archives",
+              "downloads:read": "Read cached custom server download archives",
               "health:read": "Check application health and readiness",
               "logs:read": "Read logs for authorized servers",
               "logs:read_application": "Read application logs across the installation",
@@ -10519,16 +10651,19 @@
               "plugins:manage": "Configure, enable or reload plugins and trigger plugin events",
               "plugins:pages": "Discover registered plugin UI pages",
               "plugins:read": "Read plugin status and metadata",
+              "properties:manage": "Edit server.properties configuration",
+              "properties:read": "Read server.properties configuration",
               "runtime:metrics": "Read application and host performance metrics",
               "runtime:read": "Inspect the hosting web runtime",
               "runtime:shutdown": "Shut down the hosting web runtime",
               "scheduler:manage": "Create, change, delete or run global scheduled work",
               "scheduler:read": "Read global schedules and run history",
+              "servers:command": "Send interactive console commands to running servers",
               "servers:configure": "Change managed server settings such as automatic updates",
-              "servers:control": "Start, stop and restart servers or send console commands",
+              "servers:delete": "Delete servers and all associated server data",
               "servers:inspect": "Inspect server details and configuration summaries",
-              "servers:manage": "Install, update, rename or delete servers and their data",
-              "servers:properties": "Read and edit server.properties",
+              "servers:install": "Install new servers and update server software binaries",
+              "servers:lifecycle": "Start, stop and restart game servers",
               "servers:read": "List visible servers and read their status and resource usage",
               "sessions:admin": "Inspect or revoke account logins and reset other accounts' MFA",
               "sessions:manage": "Manage your login sessions and security settings",
@@ -10537,7 +10672,10 @@
               "tasks:read": "Read your background tasks within current credential and server access",
               "tokens:manage": "Manage your integration credentials",
               "users:manage": "Create invitations and administer application accounts and roles",
-              "users:read": "Read application user accounts"
+              "users:read": "Read application user accounts",
+              "worlds:manage": "Import or export Minecraft server worlds",
+              "worlds:read": "Read server world metadata and icons",
+              "worlds:reset": "Reset and regenerate server worlds"
             },
             "tokenUrl": "auth/token"
           }
@@ -12553,141 +12691,6 @@
           "credential_alternatives": [],
           "integration_tokens": "unsupported",
           "required_permissions": ["account:manage"],
-          "resource_scope": "global",
-          "version": 1
-        }
-      }
-    },
-    "/api/account/permissions": {
-      "get": {
-        "description": "Return current role-derived capabilities, not resource-specific guarantees.",
-        "operationId": "get_account_permissions",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "type": "string"
-                  },
-                  "title": "Response Get Account Permissions",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Conflict"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Unprocessable Entity"
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Too Many Requests"
-          },
-          "500": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Internal Server Error"
-          },
-          "503": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorEnvelope"
-                }
-              }
-            },
-            "description": "Service Unavailable"
-          }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": ["account:read"]
-          },
-          {
-            "APIKeyCookie": []
-          },
-          {
-            "IntegrationToken": []
-          }
-        ],
-        "summary": "Get Account Permissions",
-        "tags": ["Account Management"],
-        "x-bsm-access": {
-          "additional_checks": [],
-          "allowed_roles": ["user", "moderator", "admin"],
-          "authentication": "required",
-          "classification": "permission",
-          "integration_tokens": "supported",
-          "required_permissions": ["account:read"],
           "resource_scope": "global",
           "version": 1
         }
@@ -17380,7 +17383,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ContentListResponse"
+                  "$ref": "#/components/schemas/ListAvailableWorldsResponse"
                 }
               }
             },
@@ -17816,7 +17819,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DiagnosticSnapshot"
+                  "$ref": "#/components/schemas/GetApplicationDiagnosticsResponse"
                 }
               }
             },
@@ -18129,7 +18132,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DiagnosticActivity"
+                  "$ref": "#/components/schemas/GetDiagnosticActivityResponse"
                 }
               }
             },
@@ -18270,7 +18273,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DiagnosticComparison"
+                  "$ref": "#/components/schemas/CompareDiagnosticSnapshotsResponse"
                 }
               }
             },
@@ -18550,7 +18553,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DiagnosticHistory"
+                  "$ref": "#/components/schemas/GetDiagnosticHistoryResponse"
                 }
               }
             },
@@ -18681,7 +18684,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DiagnosticReport"
+                  "$ref": "#/components/schemas/GetDiagnosticReportResponse"
                 }
               }
             },
@@ -18825,7 +18828,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DiagnosticRuns"
+                  "$ref": "#/components/schemas/GetDiagnosticRunsResponse"
                 }
               }
             },
@@ -18995,7 +18998,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DiagnosticTrace"
+                  "$ref": "#/components/schemas/GetDiagnosticTraceResponse"
                 }
               }
             },
@@ -19136,7 +19139,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DiagnosticSnapshot"
+                  "$ref": "#/components/schemas/GetApplicationDiagnosticsResponse"
                 }
               }
             },
@@ -19365,7 +19368,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["content:read"]
+            "OAuth2PasswordBearer": ["downloads:read"]
           },
           {
             "APIKeyCookie": []
@@ -19382,7 +19385,7 @@
           "authentication": "required",
           "classification": "permission",
           "integration_tokens": "supported",
-          "required_permissions": ["content:read"],
+          "required_permissions": ["downloads:read"],
           "resource_scope": "global",
           "version": 1
         }
@@ -19407,7 +19410,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PruneDownloadsResponse"
+                  "$ref": "#/components/schemas/PruneDownloadCacheResponse"
                 }
               }
             },
@@ -19506,7 +19509,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["content:manage"]
+            "OAuth2PasswordBearer": ["downloads:prune"]
           },
           {
             "APIKeyCookie": []
@@ -19523,7 +19526,7 @@
           "authentication": "required",
           "classification": "permission",
           "integration_tokens": "supported",
-          "required_permissions": ["content:manage"],
+          "required_permissions": ["downloads:prune"],
           "resource_scope": "global",
           "version": 1
         }
@@ -20133,7 +20136,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AppInfoResponse"
+                  "$ref": "#/components/schemas/GetSystemAndAppInfoResponse"
                 }
               }
             },
@@ -20859,7 +20862,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AddPlayersResponse"
+                  "$ref": "#/components/schemas/AddPlayersManuallyResponse"
                 }
               }
             },
@@ -20990,7 +20993,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PlayerListResponse"
+                  "$ref": "#/components/schemas/GetAllKnownPlayersResponse"
                 }
               }
             },
@@ -21121,7 +21124,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AddPlayersResponse"
+                  "$ref": "#/components/schemas/ScanAndUpdatePlayerDbResponse"
                 }
               }
             },
@@ -21252,7 +21255,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PluginStatusesResponse"
+                  "$ref": "#/components/schemas/GetPluginStatusesResponse"
                 }
               }
             },
@@ -21514,7 +21517,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ActionResponse"
+                  "$ref": "#/components/schemas/ReloadPluginsResponse"
                 }
               }
             },
@@ -21655,7 +21658,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TriggerEventResponse"
+                  "$ref": "#/components/schemas/TriggerExternalAppEventResponse"
                 }
               }
             },
@@ -21807,7 +21810,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ActionResponse"
+                  "$ref": "#/components/schemas/SetPluginStatusResponse"
                 }
               }
             },
@@ -21949,7 +21952,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ActionResponse"
+                  "$ref": "#/components/schemas/ReloadSinglePluginResponse"
                 }
               }
             },
@@ -23902,7 +23905,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["servers:manage"]
+            "OAuth2PasswordBearer": ["servers:install"]
           },
           {
             "APIKeyCookie": []
@@ -23919,7 +23922,7 @@
           "authentication": "required",
           "classification": "permission",
           "integration_tokens": "supported",
-          "required_permissions": ["servers:manage"],
+          "required_permissions": ["servers:install"],
           "resource_scope": "global",
           "version": 1
         }
@@ -24055,7 +24058,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["content:manage"]
+            "OAuth2PasswordBearer": ["addons:manage"]
           },
           {
             "APIKeyCookie": []
@@ -24072,7 +24075,7 @@
           "authentication": "required",
           "classification": "permission",
           "integration_tokens": "supported",
-          "required_permissions": ["content:manage"],
+          "required_permissions": ["addons:manage"],
           "resource_scope": "server",
           "version": 1
         }
@@ -24208,7 +24211,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["content:manage"]
+            "OAuth2PasswordBearer": ["addons:manage"]
           },
           {
             "APIKeyCookie": []
@@ -24225,7 +24228,7 @@
           "authentication": "required",
           "classification": "permission",
           "integration_tokens": "supported",
-          "required_permissions": ["content:manage"],
+          "required_permissions": ["addons:manage"],
           "resource_scope": "server",
           "version": 1
         }
@@ -24382,7 +24385,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["content:read"]
+            "OAuth2PasswordBearer": ["addons:read"]
           },
           {
             "APIKeyCookie": []
@@ -24399,7 +24402,7 @@
           "authentication": "required",
           "classification": "permission",
           "integration_tokens": "supported",
-          "required_permissions": ["content:read"],
+          "required_permissions": ["addons:read"],
           "resource_scope": "server",
           "version": 1
         }
@@ -24535,7 +24538,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["content:manage"]
+            "OAuth2PasswordBearer": ["addons:manage"]
           },
           {
             "APIKeyCookie": []
@@ -24552,7 +24555,7 @@
           "authentication": "required",
           "classification": "permission",
           "integration_tokens": "supported",
-          "required_permissions": ["content:manage"],
+          "required_permissions": ["addons:manage"],
           "resource_scope": "server",
           "version": 1
         }
@@ -24688,7 +24691,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["content:manage"]
+            "OAuth2PasswordBearer": ["addons:manage"]
           },
           {
             "APIKeyCookie": []
@@ -24705,7 +24708,7 @@
           "authentication": "required",
           "classification": "permission",
           "integration_tokens": "supported",
-          "required_permissions": ["content:manage"],
+          "required_permissions": ["addons:manage"],
           "resource_scope": "server",
           "version": 1
         }
@@ -24841,7 +24844,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["content:manage"]
+            "OAuth2PasswordBearer": ["addons:manage"]
           },
           {
             "APIKeyCookie": []
@@ -24858,7 +24861,7 @@
           "authentication": "required",
           "classification": "permission",
           "integration_tokens": "supported",
-          "required_permissions": ["content:manage"],
+          "required_permissions": ["addons:manage"],
           "resource_scope": "server",
           "version": 1
         }
@@ -24994,7 +24997,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["content:manage"]
+            "OAuth2PasswordBearer": ["addons:manage"]
           },
           {
             "APIKeyCookie": []
@@ -25011,7 +25014,7 @@
           "authentication": "required",
           "classification": "permission",
           "integration_tokens": "supported",
-          "required_permissions": ["content:manage"],
+          "required_permissions": ["addons:manage"],
           "resource_scope": "server",
           "version": 1
         }
@@ -25038,7 +25041,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AddonListResponse"
+                  "$ref": "#/components/schemas/ListInstalledAddonsResponse"
                 }
               }
             },
@@ -25137,7 +25140,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["content:read"]
+            "OAuth2PasswordBearer": ["addons:read"]
           },
           {
             "APIKeyCookie": []
@@ -25154,7 +25157,7 @@
           "authentication": "required",
           "classification": "permission",
           "integration_tokens": "supported",
-          "required_permissions": ["content:read"],
+          "required_permissions": ["addons:read"],
           "resource_scope": "server",
           "version": 1
         }
@@ -25951,7 +25954,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BackupFilesResponse"
+                  "$ref": "#/components/schemas/ListBackupFilesResponse"
                 }
               }
             },
@@ -26783,7 +26786,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["backups:manage"]
+            "OAuth2PasswordBearer": ["backups:prune"]
           },
           {
             "APIKeyCookie": []
@@ -26800,7 +26803,7 @@
           "authentication": "required",
           "classification": "permission",
           "integration_tokens": "supported",
-          "required_permissions": ["backups:manage"],
+          "required_permissions": ["backups:prune"],
           "resource_scope": "server",
           "version": 1
         }
@@ -29243,7 +29246,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["servers:manage"]
+            "OAuth2PasswordBearer": ["servers:delete"]
           },
           {
             "APIKeyCookie": []
@@ -29261,7 +29264,7 @@
           "classification": "permission",
           "credential_alternatives": [],
           "integration_tokens": "supported",
-          "required_permissions": ["servers:manage"],
+          "required_permissions": ["servers:delete"],
           "resource_scope": "server",
           "version": 1
         }
@@ -29725,7 +29728,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ServerProcessInfoResponse"
+                  "$ref": "#/components/schemas/GetBedrockProcessInfoResponse"
                 }
               }
             },
@@ -29966,7 +29969,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["servers:properties"]
+            "OAuth2PasswordBearer": ["properties:read"]
           },
           {
             "APIKeyCookie": []
@@ -29983,7 +29986,7 @@
           "authentication": "required",
           "classification": "permission",
           "integration_tokens": "supported",
-          "required_permissions": ["servers:properties"],
+          "required_permissions": ["properties:read"],
           "resource_scope": "server",
           "version": 1
         }
@@ -30109,7 +30112,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["servers:properties"]
+            "OAuth2PasswordBearer": ["properties:read"]
           },
           {
             "APIKeyCookie": []
@@ -30126,7 +30129,7 @@
           "authentication": "required",
           "classification": "permission",
           "integration_tokens": "supported",
-          "required_permissions": ["servers:properties"],
+          "required_permissions": ["properties:read"],
           "resource_scope": "server",
           "version": 1
         }
@@ -30261,7 +30264,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["servers:properties"]
+            "OAuth2PasswordBearer": ["properties:manage"]
           },
           {
             "APIKeyCookie": []
@@ -30278,7 +30281,7 @@
           "authentication": "required",
           "classification": "permission",
           "integration_tokens": "supported",
-          "required_permissions": ["servers:properties"],
+          "required_permissions": ["properties:manage"],
           "resource_scope": "server",
           "version": 1
         }
@@ -30404,7 +30407,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["servers:control"]
+            "OAuth2PasswordBearer": ["servers:lifecycle"]
           },
           {
             "APIKeyCookie": []
@@ -30421,7 +30424,7 @@
           "authentication": "required",
           "classification": "permission",
           "integration_tokens": "supported",
-          "required_permissions": ["servers:control"],
+          "required_permissions": ["servers:lifecycle"],
           "resource_scope": "server",
           "version": 1
         }
@@ -30710,7 +30713,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["servers:control"]
+            "OAuth2PasswordBearer": ["servers:command"]
           },
           {
             "APIKeyCookie": []
@@ -30727,7 +30730,7 @@
           "authentication": "required",
           "classification": "permission",
           "integration_tokens": "supported",
-          "required_permissions": ["servers:control"],
+          "required_permissions": ["servers:command"],
           "resource_scope": "server",
           "version": 1
         }
@@ -30754,7 +30757,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ServerSettingsResponse"
+                  "$ref": "#/components/schemas/GetAllServerSettingsResponse"
                 }
               }
             },
@@ -30907,7 +30910,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ServerSettingsResponse"
+                  "$ref": "#/components/schemas/SetServerSettingResponse"
                 }
               }
             },
@@ -31149,7 +31152,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["servers:control"]
+            "OAuth2PasswordBearer": ["servers:lifecycle"]
           },
           {
             "APIKeyCookie": []
@@ -31166,7 +31169,7 @@
           "authentication": "required",
           "classification": "permission",
           "integration_tokens": "supported",
-          "required_permissions": ["servers:control"],
+          "required_permissions": ["servers:lifecycle"],
           "resource_scope": "server",
           "version": 1
         }
@@ -31193,7 +31196,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ServerRunningStatusResponse"
+                  "$ref": "#/components/schemas/GetServerRunningStatusResponse"
                 }
               }
             },
@@ -31435,7 +31438,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["servers:control"]
+            "OAuth2PasswordBearer": ["servers:lifecycle"]
           },
           {
             "APIKeyCookie": []
@@ -31452,7 +31455,7 @@
           "authentication": "required",
           "classification": "permission",
           "integration_tokens": "supported",
-          "required_permissions": ["servers:control"],
+          "required_permissions": ["servers:lifecycle"],
           "resource_scope": "server",
           "version": 1
         }
@@ -31721,7 +31724,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["servers:manage"]
+            "OAuth2PasswordBearer": ["servers:install"]
           },
           {
             "APIKeyCookie": []
@@ -31738,7 +31741,7 @@
           "authentication": "required",
           "classification": "permission",
           "integration_tokens": "supported",
-          "required_permissions": ["servers:manage"],
+          "required_permissions": ["servers:install"],
           "resource_scope": "server",
           "version": 1
         }
@@ -32006,7 +32009,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["content:manage"]
+            "OAuth2PasswordBearer": ["worlds:manage"]
           },
           {
             "APIKeyCookie": []
@@ -32023,7 +32026,7 @@
           "authentication": "required",
           "classification": "permission",
           "integration_tokens": "supported",
-          "required_permissions": ["content:manage"],
+          "required_permissions": ["worlds:manage"],
           "resource_scope": "server",
           "version": 1
         }
@@ -32162,7 +32165,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["servers:read"]
+            "OAuth2PasswordBearer": ["worlds:read"]
           },
           {
             "APIKeyCookie": []
@@ -32179,7 +32182,7 @@
           "authentication": "required",
           "classification": "permission",
           "integration_tokens": "supported",
-          "required_permissions": ["servers:read"],
+          "required_permissions": ["worlds:read"],
           "resource_scope": "server",
           "version": 1
         }
@@ -32315,7 +32318,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["content:manage"]
+            "OAuth2PasswordBearer": ["worlds:manage"]
           },
           {
             "APIKeyCookie": []
@@ -32332,7 +32335,7 @@
           "authentication": "required",
           "classification": "permission",
           "integration_tokens": "supported",
-          "required_permissions": ["content:manage"],
+          "required_permissions": ["worlds:manage"],
           "resource_scope": "server",
           "version": 1
         }
@@ -32458,7 +32461,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["content:manage"]
+            "OAuth2PasswordBearer": ["worlds:reset"]
           },
           {
             "APIKeyCookie": []
@@ -32475,7 +32478,7 @@
           "authentication": "required",
           "classification": "permission",
           "integration_tokens": "supported",
-          "required_permissions": ["content:manage"],
+          "required_permissions": ["worlds:reset"],
           "resource_scope": "server",
           "version": 1
         }
@@ -32490,7 +32493,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ServersListResponse"
+                  "$ref": "#/components/schemas/GetAllServersDataResponse"
                 }
               }
             },
@@ -32621,7 +32624,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SettingsResponse"
+                  "$ref": "#/components/schemas/GetAllGlobalSettingsResponse"
                 }
               }
             },
@@ -32752,7 +32755,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SettingsResponse"
+                  "$ref": "#/components/schemas/ReloadGlobalSettingsResponse"
                 }
               }
             },
@@ -32893,7 +32896,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SettingsResponse"
+                  "$ref": "#/components/schemas/SetGlobalSettingResponse"
                 }
               }
             },
@@ -33035,7 +33038,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SetupAccountResponse"
+                  "$ref": "#/components/schemas/TokenResponse"
                 }
               }
             },

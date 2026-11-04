@@ -52,7 +52,9 @@ describe("Sidebar", () => {
       if (url === "/api/info")
         return Promise.resolve({
           status: "success",
-          info: { splash_text: "Splash!", app_version: "4.0.0b2.dev4" },
+          os_type: "Linux",
+          splash_text: "Splash!",
+          app_version: "4.0.0b2.dev4",
         });
       // Fallback for context calls if they use get
       if (url === "/api/account")
@@ -238,7 +240,9 @@ describe("Sidebar", () => {
       if (url === "/api/info")
         return Promise.resolve({
           status: "success",
-          info: { splash_text: "Splash!", app_version: "4.0.0b2.dev4" },
+          os_type: "Linux",
+          splash_text: "Splash!",
+          app_version: "4.0.0b2.dev4",
         });
       if (url === "/api/account")
         return Promise.resolve({ username: "testuser", role: "admin" });

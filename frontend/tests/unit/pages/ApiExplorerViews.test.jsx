@@ -49,7 +49,7 @@ describe("Structured API explorer views", () => {
     render(
       <SchemaView
         schema={backend}
-        value={backend.components.schemas.SettingsResponse}
+        value={backend.components.schemas.GetAllServersDataResponse}
         onModel={onModel}
       />,
     );
@@ -61,9 +61,9 @@ describe("Structured API explorer views", () => {
     ).toBeInTheDocument();
     expect(screen.getAllByText("required").length).toBeGreaterThan(0);
     fireEvent.click(
-      screen.getByRole("button", { name: "SettingItemPayload", exact: true }),
+      screen.getByRole("button", { name: "ServerSummary", exact: true }),
     );
-    expect(onModel).toHaveBeenCalledWith("SettingItemPayload");
+    expect(onModel).toHaveBeenCalledWith("ServerSummary");
   });
   it("keeps recursive models bounded", () => {
     const recursive = {

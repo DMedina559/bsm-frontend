@@ -36,10 +36,10 @@ export function fixtureResponse(url) {
   if (p === "/api/info")
     return {
       status: "success",
-      info: {
-        app_version: "4.0.0",
-        splash_text: "Your worlds. Your infrastructure.",
-      },
+      os_type: "Linux",
+      app_version: "4.0.0",
+      splash_text: "Your worlds. Your infrastructure.",
+      timezone: "UTC",
     };
   if (p === "/api/info/themes")
     return { status: "success", themes: ["default", "light", "blue"] };

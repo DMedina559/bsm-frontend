@@ -230,26 +230,6 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/account/permissions": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Get Account Permissions
-     * @description Return current role-derived capabilities, not resource-specific guarantees.
-     */
-    get: operations["get_account_permissions"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   "/api/account/profile": {
     parameters: {
       query?: never;
@@ -3132,16 +3112,24 @@ export interface components {
       /** User Id */
       user_id: number;
     };
-    /** ActionResponse */
-    ActionResponse: {
+    /** AddPlayersManuallyResponse */
+    AddPlayersManuallyResponse: {
+      /** Count */
+      count: number;
       /** Message */
-      message: string;
+      message?: string | null;
+      /** Parsed Count */
+      parsed_count: number;
       /**
        * Status
        * @default success
-       * @enum {string}
+       * @constant
        */
-      status?: "success" | "skipped" | "partial";
+      status?: "success";
+      /** Submitted Count */
+      submitted_count: number;
+      /** Unique Count */
+      unique_count: number;
     };
     /**
      * AddPlayersPayload
@@ -3155,25 +3143,6 @@ export interface components {
        * @description List of player strings, e.g., ["PlayerOne:123xuid", "PlayerTwo:456xuid"]
        */
       players: string[];
-    };
-    /** AddPlayersResponse */
-    AddPlayersResponse: {
-      /** Count */
-      count?: number | null;
-      details?: components["schemas"]["PlayerScanDetails"] | null;
-      /** Message */
-      message?: string | null;
-      /** Parsed Count */
-      parsed_count?: number | null;
-      /**
-       * Status
-       * @enum {string}
-       */
-      status: "success" | "skipped" | "partial";
-      /** Submitted Count */
-      submitted_count?: number | null;
-      /** Unique Count */
-      unique_count?: number | null;
     };
     /** AddServerBanResponse */
     AddServerBanResponse: {
@@ -3220,20 +3189,6 @@ export interface components {
        * @description The UUID of the pack.
        */
       pack_uuid: string;
-    };
-    /**
-     * AddonListResponse
-     * @description Response model for retrieving all addons on a server.
-     */
-    AddonListResponse: {
-      addons?: components["schemas"]["InstalledAddons"] | null;
-      /** Message */
-      message?: string | null;
-      /**
-       * Status
-       * @enum {string}
-       */
-      status: "success" | "skipped" | "partial";
     };
     /**
      * AddonReorderPayload
@@ -3321,23 +3276,6 @@ export interface components {
        */
       players: string[];
     };
-    /**
-     * AppInfoResponse
-     * @description Response model for app/system info.
-     */
-    AppInfoResponse: {
-      /** Info */
-      info?: {
-        [key: string]: components["schemas"]["JsonValue"];
-      } | null;
-      /** Message */
-      message?: string | null;
-      /**
-       * Status
-       * @enum {string}
-       */
-      status: "success" | "skipped" | "partial";
-    };
     /** AuditLogResponse */
     AuditLogResponse: {
       /** Action */
@@ -3420,23 +3358,6 @@ export interface components {
       sha256: string;
       /** Size */
       size: number;
-    };
-    /** BackupFilesResponse */
-    BackupFilesResponse: {
-      /** Backups */
-      backups:
-        | string[]
-        | {
-            [key: string]: string[];
-          };
-      /** Message */
-      message?: string | null;
-      /**
-       * Status
-       * @default success
-       * @constant
-       */
-      status?: "success";
     };
     /** BackupHealth */
     BackupHealth: {
@@ -3825,6 +3746,23 @@ export interface components {
        */
       new_password: string;
     };
+    /** CleanupResult */
+    CleanupResult: {
+      /** Deleted */
+      deleted?: string[];
+      /** Failures */
+      failures?: {
+        [key: string]: components["schemas"]["FailureInfo"];
+      };
+      /**
+       * Outcome
+       * @default noop
+       * @enum {string}
+       */
+      outcome?: "completed" | "partial" | "failed" | "noop";
+      /** Retained */
+      retained?: string[];
+    };
     /** CollectionDiagnostics */
     CollectionDiagnostics: {
       /**
@@ -3909,6 +3847,24 @@ export interface components {
       after: components["schemas"]["DiagnosticSnapshot"];
       before: components["schemas"]["DiagnosticSnapshot"];
     };
+    /** CompareDiagnosticSnapshotsResponse */
+    CompareDiagnosticSnapshotsResponse: {
+      /** After Snapshot Id */
+      after_snapshot_id: string;
+      /** Before Snapshot Id */
+      before_snapshot_id: string;
+      /** Changes */
+      changes?: components["schemas"]["DiagnosticChange"][];
+      /** Elapsed Seconds */
+      elapsed_seconds: number | null;
+      /** Same Instance */
+      same_instance: boolean;
+      /**
+       * Truncated
+       * @default false
+       */
+      truncated?: boolean;
+    };
     /** CompletePasskeyRegistration */
     CompletePasskeyRegistration: {
       /** Challenge Id */
@@ -3935,23 +3891,9 @@ export interface components {
       reason?: null;
     };
     /**
-     * ContentListResponse
-     * @description Response model for content listing endpoints.
-     *
-     *     :ivar files: A list of filenames found.
+     * ContentUploadResponse
+     * @description Response model for uploading a world or addon archive to the content library.
      */
-    ContentListResponse: {
-      /** Files */
-      files?: string[] | null;
-      /** Message */
-      message?: string | null;
-      /**
-       * Status
-       * @enum {string}
-       */
-      status: "success" | "skipped" | "partial";
-    };
-    /** ContentUploadResponse */
     ContentUploadResponse: {
       /**
        * Category
@@ -3963,7 +3905,7 @@ export interface components {
       /** Filename */
       filename: string;
       /** Message */
-      message: string;
+      message?: string | null;
       /**
        * Status
        * @default success
@@ -4035,8 +3977,9 @@ export interface components {
       /**
        * Server Access
        * @default all
+       * @enum {string}
        */
-      server_access?: string;
+      server_access?: "all" | "assigned";
       /** Server Permissions */
       server_permissions?: {
         [key: string]: string[];
@@ -4071,28 +4014,6 @@ export interface components {
       /** Token */
       token?: string | null;
     };
-    /**
-     * DiagnosticActivity
-     * @description Global current-instance metadata; no correlation filter is required.
-     */
-    DiagnosticActivity: {
-      events?: components["schemas"]["EventDiagnostics"] | null;
-      /** Issues */
-      issues?: components["schemas"]["DiagnosticIssue"][];
-      operations?: components["schemas"]["OperationActivity"] | null;
-      /**
-       * Scope
-       * @default application
-       * @constant
-       */
-      scope?: "application";
-      subscriptions?: components["schemas"]["EventSubscriptions"] | null;
-      /**
-       * Truncated
-       * @default false
-       */
-      truncated?: boolean;
-    };
     /** DiagnosticChange */
     DiagnosticChange: {
       /** After */
@@ -4110,24 +4031,6 @@ export interface components {
       field: string;
       /** Subsystem */
       subsystem: string;
-    };
-    /** DiagnosticComparison */
-    DiagnosticComparison: {
-      /** After Snapshot Id */
-      after_snapshot_id: string;
-      /** Before Snapshot Id */
-      before_snapshot_id: string;
-      /** Changes */
-      changes?: components["schemas"]["DiagnosticChange"][];
-      /** Elapsed Seconds */
-      elapsed_seconds: number | null;
-      /** Same Instance */
-      same_instance: boolean;
-      /**
-       * Truncated
-       * @default false
-       */
-      truncated?: boolean;
     };
     /** DiagnosticEnvironment */
     DiagnosticEnvironment: {
@@ -4235,16 +4138,6 @@ export interface components {
       subsystem: string;
       /** Timestamp */
       timestamp: number;
-    };
-    /** DiagnosticReport */
-    DiagnosticReport: {
-      /** Generated At */
-      generated_at?: number;
-      history: components["schemas"]["DiagnosticHistory"];
-      /** Report Id */
-      report_id?: string;
-      runs?: components["schemas"]["DiagnosticRuns"] | null;
-      snapshot: components["schemas"]["DiagnosticSnapshot"];
     };
     /** DiagnosticRun */
     DiagnosticRun: {
@@ -4374,35 +4267,6 @@ export interface components {
        * @enum {string}
        */
       status: "ok" | "degraded" | "unavailable" | "unknown";
-      /**
-       * Truncated
-       * @default false
-       */
-      truncated?: boolean;
-    };
-    /** DiagnosticTrace */
-    DiagnosticTrace: {
-      /** Correlation Id */
-      correlation_id: string;
-      events: components["schemas"]["EventDiagnostics"] | null;
-      /**
-       * Events Available
-       * @default false
-       */
-      events_available?: boolean;
-      history: components["schemas"]["DiagnosticHistory"];
-      /** Issues */
-      issues?: components["schemas"]["DiagnosticIssue"][];
-      operations?: components["schemas"]["OperationActivity"] | null;
-      /**
-       * Operations Available
-       * @default false
-       */
-      operations_available?: boolean;
-      /** Tasks */
-      tasks: components["schemas"]["TaskDiagnostic"][];
-      /** Tasks Available */
-      tasks_available: boolean;
       /**
        * Truncated
        * @default false
@@ -4545,6 +4409,15 @@ export interface components {
       workers_by_owner?: {
         [key: string]: number;
       };
+    };
+    /** EventDispatchSummary */
+    EventDispatchSummary: {
+      /** Event Id */
+      event_id: string;
+      /** Failures */
+      failures: components["schemas"]["ListenerFailure"][];
+      /** Listeners Called */
+      listeners_called: number;
     };
     /** EventFilter */
     EventFilter: {
@@ -4830,6 +4703,68 @@ export interface components {
        */
       role: "admin" | "moderator" | "user";
     };
+    /** GetAllGlobalSettingsResponse */
+    GetAllGlobalSettingsResponse: {
+      /** Message */
+      message?: string | null;
+      /** Settings */
+      settings: {
+        [key: string]: components["schemas"]["JsonValue"];
+      };
+      /**
+       * Status
+       * @default success
+       * @constant
+       */
+      status?: "success";
+    };
+    /** GetAllKnownPlayersResponse */
+    GetAllKnownPlayersResponse: {
+      /** Message */
+      message?: string | null;
+      /** Players */
+      players: components["schemas"]["PlayerInfo"][];
+      /**
+       * Status
+       * @default success
+       * @constant
+       */
+      status?: "success";
+    };
+    /** GetAllServerSettingsResponse */
+    GetAllServerSettingsResponse: {
+      /** Message */
+      message?: string | null;
+      /** Settings */
+      settings: {
+        [key: string]: components["schemas"]["JsonValue"];
+      };
+      /**
+       * Status
+       * @default success
+       * @constant
+       */
+      status?: "success";
+    };
+    /** GetAllServersDataResponse */
+    GetAllServersDataResponse: {
+      /** Epoch */
+      epoch?: string | null;
+      /** Errors */
+      errors?: components["schemas"]["ResourceFailure"][];
+      /** Message */
+      message?: string | null;
+      /** Revision */
+      revision?: number | null;
+      /** Servers */
+      servers: components["schemas"]["ServerSummary"][];
+      /**
+       * Status
+       * @default success
+       * @enum {string}
+       */
+      status?: "success" | "partial";
+    };
     /** GetAllowlistResponse */
     GetAllowlistResponse: {
       /** Message */
@@ -4842,6 +4777,35 @@ export interface components {
        * @constant
        */
       status?: "success";
+    };
+    /** GetApplicationDiagnosticsResponse */
+    GetApplicationDiagnosticsResponse: {
+      /** Collected At */
+      collected_at: number;
+      collection?: components["schemas"]["CollectionDiagnostics"];
+      /**
+       * Counter Scope
+       * @default current_instance
+       * @constant
+       */
+      counter_scope?: "current_instance";
+      environment: components["schemas"]["DiagnosticEnvironment"];
+      /** Instance Id */
+      instance_id: string;
+      persistence: components["schemas"]["PersistenceDiagnostics"];
+      recent?: components["schemas"]["RecentDiagnosticWindow"] | null;
+      registry: components["schemas"]["RegistryDiagnostics"];
+      /**
+       * Schema Version
+       * @default 1
+       * @constant
+       */
+      schema_version?: 1;
+      /** Sections */
+      sections: components["schemas"]["DiagnosticSection"][];
+      /** Snapshot Id */
+      snapshot_id?: string;
+      summary: components["schemas"]["DiagnosticSummary"];
     };
     /** GetApplicationHealthResponse */
     GetApplicationHealthResponse: {
@@ -4896,6 +4860,100 @@ export interface components {
        */
       status?: "success";
     };
+    /** GetBedrockProcessInfoResponse */
+    GetBedrockProcessInfoResponse: {
+      /** Epoch */
+      epoch?: string | null;
+      /** Message */
+      message?: string | null;
+      process_info: components["schemas"]["ProcessInfo"] | null;
+      /** Revision */
+      revision?: number | null;
+      /**
+       * Status
+       * @default success
+       * @constant
+       */
+      status?: "success";
+    };
+    /** GetDiagnosticActivityResponse */
+    GetDiagnosticActivityResponse: {
+      events?: components["schemas"]["EventDiagnostics"] | null;
+      /** Issues */
+      issues?: components["schemas"]["DiagnosticIssue"][];
+      operations?: components["schemas"]["OperationActivity"] | null;
+      /**
+       * Scope
+       * @default application
+       * @constant
+       */
+      scope?: "application";
+      subscriptions?: components["schemas"]["EventSubscriptions"] | null;
+      /**
+       * Truncated
+       * @default false
+       */
+      truncated?: boolean;
+    };
+    /** GetDiagnosticHistoryResponse */
+    GetDiagnosticHistoryResponse: {
+      /** Available */
+      available: boolean;
+      /** Next Cursor */
+      next_cursor?: string | null;
+      /** Records */
+      records: components["schemas"]["DiagnosticRecord"][];
+      /** Truncated */
+      truncated: boolean;
+    };
+    /** GetDiagnosticReportResponse */
+    GetDiagnosticReportResponse: {
+      /** Generated At */
+      generated_at?: number;
+      history: components["schemas"]["DiagnosticHistory"];
+      /** Report Id */
+      report_id?: string;
+      runs?: components["schemas"]["DiagnosticRuns"] | null;
+      snapshot: components["schemas"]["DiagnosticSnapshot"];
+    };
+    /** GetDiagnosticRunsResponse */
+    GetDiagnosticRunsResponse: {
+      /** Available */
+      available: boolean;
+      /** Runs */
+      runs: components["schemas"]["DiagnosticRun"][];
+      /** Truncated */
+      truncated: boolean;
+    };
+    /** GetDiagnosticTraceResponse */
+    GetDiagnosticTraceResponse: {
+      /** Correlation Id */
+      correlation_id: string;
+      events: components["schemas"]["EventDiagnostics"] | null;
+      /**
+       * Events Available
+       * @default false
+       */
+      events_available?: boolean;
+      history: components["schemas"]["DiagnosticHistory"];
+      /** Issues */
+      issues?: components["schemas"]["DiagnosticIssue"][];
+      operations?: components["schemas"]["OperationActivity"] | null;
+      /**
+       * Operations Available
+       * @default false
+       */
+      operations_available?: boolean;
+      /** Tasks */
+      tasks: components["schemas"]["TaskDiagnostic"][];
+      /** Tasks Available */
+      tasks_available: boolean;
+      /**
+       * Truncated
+       * @default false
+       */
+      truncated?: boolean;
+    };
     /** GetPermissionsResponse */
     GetPermissionsResponse: {
       /** Message */
@@ -4921,6 +4979,21 @@ export interface components {
       settings_schema?: {
         [key: string]: components["schemas"]["JsonValue"];
       } | null;
+      /**
+       * Status
+       * @default success
+       * @constant
+       */
+      status?: "success";
+    };
+    /** GetPluginStatusesResponse */
+    GetPluginStatusesResponse: {
+      /** Message */
+      message?: string | null;
+      /** Plugins */
+      plugins: {
+        [key: string]: components["schemas"]["PluginInfo"];
+      };
       /**
        * Status
        * @default success
@@ -4987,6 +5060,45 @@ export interface components {
        * @constant
        */
       status?: "success";
+    };
+    /** GetServerRunningStatusResponse */
+    GetServerRunningStatusResponse: {
+      /** Epoch */
+      epoch?: string | null;
+      /** Is Running */
+      is_running: boolean;
+      /** Message */
+      message?: string | null;
+      /** Revision */
+      revision?: number | null;
+      /**
+       * Status
+       * @default success
+       * @constant
+       */
+      status?: "success";
+    };
+    /** GetSystemAndAppInfoResponse */
+    GetSystemAndAppInfoResponse: {
+      /** App Version */
+      app_version: string;
+      /** Message */
+      message?: string | null;
+      /** Os Type */
+      os_type: string;
+      /** Splash Text */
+      splash_text: string;
+      /**
+       * Status
+       * @default success
+       * @constant
+       */
+      status?: "success";
+      /**
+       * Timezone
+       * @default UTC
+       */
+      timezone?: string;
     };
     /** HealthCheck */
     HealthCheck: {
@@ -5116,6 +5228,48 @@ export interface components {
     ListAvailableAddonsResponse: {
       /** Files */
       files: string[];
+      /** Message */
+      message?: string | null;
+      /**
+       * Status
+       * @default success
+       * @constant
+       */
+      status?: "success";
+    };
+    /** ListAvailableWorldsResponse */
+    ListAvailableWorldsResponse: {
+      /** Files */
+      files: string[];
+      /** Message */
+      message?: string | null;
+      /**
+       * Status
+       * @default success
+       * @constant
+       */
+      status?: "success";
+    };
+    /** ListBackupFilesResponse */
+    ListBackupFilesResponse: {
+      /** Backups */
+      backups:
+        | string[]
+        | {
+            [key: string]: string[];
+          };
+      /** Message */
+      message?: string | null;
+      /**
+       * Status
+       * @default success
+       * @constant
+       */
+      status?: "success";
+    };
+    /** ListInstalledAddonsResponse */
+    ListInstalledAddonsResponse: {
+      addons: components["schemas"]["InstalledAddons"];
       /** Message */
       message?: string | null;
       /**
@@ -5526,7 +5680,10 @@ export interface components {
        */
       permissions: components["schemas"]["PlayerPermissionPayload"][];
     };
-    /** PermissionsUpdateResponse */
+    /**
+     * PermissionsUpdateResponse
+     * @description Response model for permissions update.
+     */
     PermissionsUpdateResponse: {
       /** Errors */
       errors?: {
@@ -5594,21 +5751,6 @@ export interface components {
       name: string;
       /** Xuid */
       xuid: string;
-    };
-    /**
-     * PlayerListResponse
-     * @description Response model for player lists.
-     */
-    PlayerListResponse: {
-      /** Message */
-      message?: string | null;
-      /** Players */
-      players?: components["schemas"]["PlayerInfo"][] | null;
-      /**
-       * Status
-       * @enum {string}
-       */
-      status: "success" | "skipped" | "partial";
     };
     /** PlayerPermission */
     PlayerPermission: {
@@ -5786,23 +5928,6 @@ export interface components {
        * @description Set to true to enable the plugin, false to disable.
        */
       enabled: boolean;
-    };
-    /**
-     * PluginStatusesResponse
-     * @description Response model for plugin statuses.
-     */
-    PluginStatusesResponse: {
-      /** Message */
-      message?: string | null;
-      /** Plugins */
-      plugins?: {
-        [key: string]: components["schemas"]["PluginInfo"];
-      } | null;
-      /**
-       * Status
-       * @enum {string}
-       */
-      status: "success" | "skipped" | "partial";
     };
     /**
      * PluginValues
@@ -6062,6 +6187,18 @@ export interface components {
         [key: string]: string;
       };
     };
+    /** PruneDownloadCacheResponse */
+    PruneDownloadCacheResponse: {
+      /** Message */
+      message: string;
+      result?: components["schemas"]["CleanupResult"];
+      /**
+       * Status
+       * @default success
+       * @enum {string}
+       */
+      status?: "success" | "skipped" | "partial";
+    };
     /**
      * PruneDownloadsPayload
      * @description Request model for pruning the download cache.
@@ -6077,27 +6214,6 @@ export interface components {
        * @description Number of most recent files to keep. Defaults to config if omitted.
        */
       keep?: number | null;
-    };
-    /**
-     * PruneDownloadsResponse
-     * @description Response model for pruning downloads.
-     */
-    PruneDownloadsResponse: {
-      /** Failures */
-      failures?: {
-        [key: string]: components["schemas"]["FailureInfo"];
-      };
-      /** Files Deleted */
-      files_deleted?: number | null;
-      /** Files Kept */
-      files_kept?: number | null;
-      /** Message */
-      message?: string | null;
-      /**
-       * Status
-       * @enum {string}
-       */
-      status: "success" | "skipped" | "partial";
     };
     /** RecentDiagnosticCounts */
     RecentDiagnosticCounts: {
@@ -6367,6 +6483,39 @@ export interface components {
        */
       timeouts?: number;
     };
+    /** ReloadGlobalSettingsResponse */
+    ReloadGlobalSettingsResponse: {
+      /** Message */
+      message: string;
+      /**
+       * Status
+       * @default success
+       * @enum {string}
+       */
+      status?: "success" | "skipped" | "partial";
+    };
+    /** ReloadPluginsResponse */
+    ReloadPluginsResponse: {
+      /** Message */
+      message: string;
+      /**
+       * Status
+       * @default success
+       * @enum {string}
+       */
+      status?: "success" | "skipped" | "partial";
+    };
+    /** ReloadSinglePluginResponse */
+    ReloadSinglePluginResponse: {
+      /** Message */
+      message: string;
+      /**
+       * Status
+       * @default success
+       * @enum {string}
+       */
+      status?: "success" | "skipped" | "partial";
+    };
     /** RemoveFromAllowlistResponse */
     RemoveFromAllowlistResponse: {
       details: components["schemas"]["AllowlistRemovalDetails"];
@@ -6562,6 +6711,18 @@ export interface components {
         ("administrator" | "local_cli" | "service" | "signal") | null;
       /** Shutdown Requested */
       shutdown_requested: boolean;
+    };
+    /** ScanAndUpdatePlayerDbResponse */
+    ScanAndUpdatePlayerDbResponse: {
+      details: components["schemas"]["PlayerScanDetails"];
+      /** Message */
+      message?: string | null;
+      /**
+       * Status
+       * @default success
+       * @enum {string}
+       */
+      status?: "success" | "partial";
     };
     /**
      * ScheduleConfigurationView
@@ -6769,24 +6930,6 @@ export interface components {
       /** Server Name */
       server_name: string;
     };
-    /**
-     * ServerProcessInfoResponse
-     * @description Response model for server process info.
-     */
-    ServerProcessInfoResponse: {
-      /** Epoch */
-      epoch?: string | null;
-      /** Message */
-      message?: string | null;
-      process_info?: components["schemas"]["ProcessInfo"] | null;
-      /** Revision */
-      revision?: number | null;
-      /**
-       * Status
-       * @enum {string}
-       */
-      status: "success" | "skipped" | "partial";
-    };
     /** ServerProcessStatus */
     ServerProcessStatus: {
       bans: components["schemas"]["BanEnforcementStatus"];
@@ -6812,25 +6955,6 @@ export interface components {
       running: boolean;
     };
     /**
-     * ServerRunningStatusResponse
-     * @description Response model for server running status.
-     */
-    ServerRunningStatusResponse: {
-      /** Epoch */
-      epoch?: string | null;
-      /** Message */
-      message?: string | null;
-      /** Revision */
-      revision?: number | null;
-      /** Running */
-      running?: boolean | null;
-      /**
-       * Status
-       * @enum {string}
-       */
-      status: "success" | "skipped" | "partial";
-    };
-    /**
      * ServerSettingItemPayload
      * @description Request model for a single server setting key-value pair.
      */
@@ -6842,24 +6966,6 @@ export interface components {
       key: string;
       /** @description The new value for the setting. */
       value: components["schemas"]["JsonValue"];
-    };
-    /**
-     * ServerSettingsResponse
-     * @description Response model for server settings operations.
-     */
-    ServerSettingsResponse: {
-      /** Message */
-      message?: string | null;
-      setting?: components["schemas"]["ServerSettingItemPayload"] | null;
-      /** Settings */
-      settings?: {
-        [key: string]: components["schemas"]["JsonValue"];
-      } | null;
-      /**
-       * Status
-       * @enum {string}
-       */
-      status: "success" | "skipped" | "partial";
     };
     /** ServerSummary */
     ServerSummary: {
@@ -6886,26 +6992,30 @@ export interface components {
       /** Version */
       version: string;
     };
-    /** ServersListResponse */
-    ServersListResponse: {
-      /** Epoch */
-      epoch?: string | null;
-      /** Errors */
-      errors?: components["schemas"]["ResourceFailure"][];
+    /** SetGlobalSettingResponse */
+    SetGlobalSettingResponse: {
       /** Message */
-      message?: string | null;
-      /** Revision */
-      revision?: number | null;
-      /** Servers */
-      servers?: components["schemas"]["ServerSummary"][] | null;
+      message: string;
       /**
        * Status
+       * @default success
        * @enum {string}
        */
-      status: "success" | "skipped" | "partial";
+      status?: "success" | "skipped" | "partial";
     };
     /** SetPluginSettingResponse */
     SetPluginSettingResponse: {
+      /** Message */
+      message: string;
+      /**
+       * Status
+       * @default success
+       * @enum {string}
+       */
+      status?: "success" | "skipped" | "partial";
+    };
+    /** SetPluginStatusResponse */
+    SetPluginStatusResponse: {
       /** Message */
       message: string;
       /**
@@ -6941,6 +7051,22 @@ export interface components {
        */
       mode: "all" | "assigned";
     };
+    /** SetServerSettingResponse */
+    SetServerSettingResponse: {
+      /** Message */
+      message: string;
+      /**
+       * Server Name
+       * @example example
+       */
+      server_name: string;
+      /**
+       * Status
+       * @default success
+       * @enum {string}
+       */
+      status?: "success" | "skipped" | "partial";
+    };
     /**
      * SettingItemPayload
      * @description Request model for a single setting key-value pair.
@@ -6953,56 +7079,6 @@ export interface components {
       key: string;
       /** @description The new value for the setting. */
       value: components["schemas"]["JsonValue"];
-    };
-    /**
-     * SettingsResponse
-     * @description Response model for settings operations.
-     */
-    SettingsResponse: {
-      /** Message */
-      message?: string | null;
-      setting?: components["schemas"]["SettingItemPayload"] | null;
-      /** Settings */
-      settings?: {
-        [key: string]: components["schemas"]["JsonValue"];
-      } | null;
-      /**
-       * Status
-       * @enum {string}
-       */
-      status: "success" | "skipped" | "partial";
-    };
-    /**
-     * SetupAccountResponse
-     * @description First account creation returns the same session credentials as login.
-     */
-    SetupAccountResponse: {
-      /**
-       * Access Token
-       * @description Bearer JWT; empty in explicitly negotiated cookie mode, where the credential is HttpOnly
-       */
-      access_token: string;
-      /** Message */
-      message: string;
-      /**
-       * Status
-       * @default success
-       * @constant
-       */
-      status?: "success";
-      /**
-       * Token Type
-       * @default bearer
-       * @constant
-       */
-      token_type?: "bearer";
-      /** Trusted Device Expires At */
-      trusted_device_expires_at?: number | null;
-      /**
-       * Trusted Device Token
-       * @description One-time remembered-device credential; omitted in cookie mode. Store only when explicitly requested.
-       */
-      trusted_device_token?: string | null;
     };
     /**
      * SetupStatusResponse
@@ -7447,6 +7523,12 @@ export interface components {
       /** Message */
       message?: string | null;
       /**
+       * Status
+       * @default success
+       * @constant
+       */
+      status?: "success";
+      /**
        * Token Type
        * @default bearer
        * @constant
@@ -7556,22 +7638,17 @@ export interface components {
         [key: string]: components["schemas"]["JsonValue"];
       } | null;
     };
-    /**
-     * TriggerEventResponse
-     * @description Response model for triggering a custom plugin event.
-     */
-    TriggerEventResponse: {
-      /** Details */
-      details?: {
-        [key: string]: components["schemas"]["JsonValue"];
-      } | null;
+    /** TriggerExternalAppEventResponse */
+    TriggerExternalAppEventResponse: {
+      details: components["schemas"]["EventDispatchSummary"];
       /** Message */
-      message?: string | null;
+      message: string;
       /**
        * Status
+       * @default success
        * @enum {string}
        */
-      status: "success" | "skipped" | "partial";
+      status?: "success" | "skipped" | "partial";
     };
     /** TrustedDeviceInfo */
     TrustedDeviceInfo: {
@@ -9066,107 +9143,6 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["BaseApiResponse"];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorEnvelope"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorEnvelope"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorEnvelope"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorEnvelope"];
-        };
-      };
-      /** @description Conflict */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorEnvelope"];
-        };
-      };
-      /** @description Unprocessable Entity */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorEnvelope"];
-        };
-      };
-      /** @description Too Many Requests */
-      429: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorEnvelope"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorEnvelope"];
-        };
-      };
-      /** @description Service Unavailable */
-      503: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorEnvelope"];
-        };
-      };
-    };
-  };
-  get_account_permissions: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": string[];
         };
       };
       /** @description Bad Request */
@@ -12773,7 +12749,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["ContentListResponse"];
+          "application/json": components["schemas"]["ListAvailableWorldsResponse"];
         };
       };
       /** @description Bad Request */
@@ -13082,7 +13058,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["DiagnosticSnapshot"];
+          "application/json": components["schemas"]["GetApplicationDiagnosticsResponse"];
         };
       };
       /** @description Bad Request */
@@ -13203,7 +13179,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["DiagnosticActivity"];
+          "application/json": components["schemas"]["GetDiagnosticActivityResponse"];
         };
       };
       /** @description Bad Request */
@@ -13308,7 +13284,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["DiagnosticComparison"];
+          "application/json": components["schemas"]["CompareDiagnosticSnapshotsResponse"];
         };
       };
       /** @description Bad Request */
@@ -13419,7 +13395,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["DiagnosticHistory"];
+          "application/json": components["schemas"]["GetDiagnosticHistoryResponse"];
         };
       };
       /** @description Bad Request */
@@ -13520,7 +13496,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["DiagnosticReport"];
+          "application/json": components["schemas"]["GetDiagnosticReportResponse"];
         };
       };
       /** @description Bad Request */
@@ -13623,7 +13599,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["DiagnosticRuns"];
+          "application/json": components["schemas"]["GetDiagnosticRunsResponse"];
         };
       };
       /** @description Bad Request */
@@ -13729,7 +13705,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["DiagnosticTrace"];
+          "application/json": components["schemas"]["GetDiagnosticTraceResponse"];
         };
       };
       /** @description Bad Request */
@@ -13832,7 +13808,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["DiagnosticSnapshot"];
+          "application/json": components["schemas"]["GetApplicationDiagnosticsResponse"];
         };
       };
       /** @description Bad Request */
@@ -14038,7 +14014,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["PruneDownloadsResponse"];
+          "application/json": components["schemas"]["PruneDownloadCacheResponse"];
         };
       };
       /** @description Bad Request */
@@ -14462,7 +14438,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["AppInfoResponse"];
+          "application/json": components["schemas"]["GetSystemAndAppInfoResponse"];
         };
       };
       /** @description Bad Request */
@@ -14977,7 +14953,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["AddPlayersResponse"];
+          "application/json": components["schemas"]["AddPlayersManuallyResponse"];
         };
       };
       /** @description Bad Request */
@@ -15078,7 +15054,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["PlayerListResponse"];
+          "application/json": components["schemas"]["GetAllKnownPlayersResponse"];
         };
       };
       /** @description Bad Request */
@@ -15179,7 +15155,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["AddPlayersResponse"];
+          "application/json": components["schemas"]["ScanAndUpdatePlayerDbResponse"];
         };
       };
       /** @description Bad Request */
@@ -15280,7 +15256,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["PluginStatusesResponse"];
+          "application/json": components["schemas"]["GetPluginStatusesResponse"];
         };
       };
       /** @description Bad Request */
@@ -15482,7 +15458,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["ActionResponse"];
+          "application/json": components["schemas"]["ReloadPluginsResponse"];
         };
       };
       /** @description Bad Request */
@@ -15587,7 +15563,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["TriggerEventResponse"];
+          "application/json": components["schemas"]["TriggerExternalAppEventResponse"];
         };
       };
       /** @description Bad Request */
@@ -15694,7 +15670,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["ActionResponse"];
+          "application/json": components["schemas"]["SetPluginStatusResponse"];
         };
       };
       /** @description Bad Request */
@@ -15797,7 +15773,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["ActionResponse"];
+          "application/json": components["schemas"]["ReloadSinglePluginResponse"];
         };
       };
       /** @description Bad Request */
@@ -17911,7 +17887,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["AddonListResponse"];
+          "application/json": components["schemas"]["ListInstalledAddonsResponse"];
         };
       };
       /** @description Bad Request */
@@ -18547,7 +18523,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["BackupFilesResponse"];
+          "application/json": components["schemas"]["ListBackupFilesResponse"];
         };
       };
       /** @description Bad Request */
@@ -21179,7 +21155,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["ServerProcessInfoResponse"];
+          "application/json": components["schemas"]["GetBedrockProcessInfoResponse"];
         };
       };
       /** @description Bad Request */
@@ -21912,7 +21888,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["ServerSettingsResponse"];
+          "application/json": components["schemas"]["GetAllServerSettingsResponse"];
         };
       };
       /** @description Bad Request */
@@ -22019,7 +21995,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["ServerSettingsResponse"];
+          "application/json": components["schemas"]["SetServerSettingResponse"];
         };
       };
       /** @description Bad Request */
@@ -22225,7 +22201,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["ServerRunningStatusResponse"];
+          "application/json": components["schemas"]["GetServerRunningStatusResponse"];
         };
       };
       /** @description Bad Request */
@@ -23156,7 +23132,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["ServersListResponse"];
+          "application/json": components["schemas"]["GetAllServersDataResponse"];
         };
       };
       /** @description Bad Request */
@@ -23257,7 +23233,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["SettingsResponse"];
+          "application/json": components["schemas"]["GetAllGlobalSettingsResponse"];
         };
       };
       /** @description Bad Request */
@@ -23358,7 +23334,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["SettingsResponse"];
+          "application/json": components["schemas"]["ReloadGlobalSettingsResponse"];
         };
       };
       /** @description Bad Request */
@@ -23463,7 +23439,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["SettingsResponse"];
+          "application/json": components["schemas"]["SetGlobalSettingResponse"];
         };
       };
       /** @description Bad Request */
@@ -23568,7 +23544,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["SetupAccountResponse"];
+          "application/json": components["schemas"]["TokenResponse"];
         };
       };
       /** @description Bad Request */

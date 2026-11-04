@@ -115,7 +115,7 @@ const resources = {
   applicationInfo: {
     key: queryKeys.applicationInfo,
     load: (_target, options) => callOperation("get_system_info", options),
-    select: (data) => object(data?.info, "application info"),
+    select: (data) => object(data, "application info"),
   },
   themes: {
     key: queryKeys.themes,

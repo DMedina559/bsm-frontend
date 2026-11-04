@@ -467,35 +467,6 @@
     "bodyTypes": ["application/json"],
     "responseType": "json"
   },
-  "get_account_permissions": {
-    "security": [
-      {
-        "OAuth2PasswordBearer": ["account:read"]
-      },
-      {
-        "APIKeyCookie": []
-      },
-      {
-        "IntegrationToken": []
-      }
-    ],
-    "access": {
-      "additional_checks": [],
-      "allowed_roles": ["user", "moderator", "admin"],
-      "authentication": "required",
-      "classification": "permission",
-      "integration_tokens": "supported",
-      "required_permissions": ["account:read"],
-      "resource_scope": "global",
-      "version": 1
-    },
-    "method": "GET",
-    "path": "/api/account/permissions",
-    "parameters": [],
-    "bodyRequired": false,
-    "bodyTypes": [],
-    "responseType": "json"
-  },
   "update_account_profile": {
     "security": [
       {
@@ -1986,7 +1957,7 @@
   "list_downloads": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["content:read"]
+        "OAuth2PasswordBearer": ["downloads:read"]
       },
       {
         "APIKeyCookie": []
@@ -2001,7 +1972,7 @@
       "authentication": "required",
       "classification": "permission",
       "integration_tokens": "supported",
-      "required_permissions": ["content:read"],
+      "required_permissions": ["downloads:read"],
       "resource_scope": "global",
       "version": 1
     },
@@ -2015,7 +1986,7 @@
   "prune_downloads": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["content:manage"]
+        "OAuth2PasswordBearer": ["downloads:prune"]
       },
       {
         "APIKeyCookie": []
@@ -2030,7 +2001,7 @@
       "authentication": "required",
       "classification": "permission",
       "integration_tokens": "supported",
-      "required_permissions": ["content:manage"],
+      "required_permissions": ["downloads:prune"],
       "resource_scope": "global",
       "version": 1
     },
@@ -3114,7 +3085,7 @@
   "install_server": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["servers:manage"]
+        "OAuth2PasswordBearer": ["servers:install"]
       },
       {
         "APIKeyCookie": []
@@ -3129,7 +3100,7 @@
       "authentication": "required",
       "classification": "permission",
       "integration_tokens": "supported",
-      "required_permissions": ["servers:manage"],
+      "required_permissions": ["servers:install"],
       "resource_scope": "global",
       "version": 1
     },
@@ -3143,7 +3114,7 @@
   "disable_addon": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["content:manage"]
+        "OAuth2PasswordBearer": ["addons:manage"]
       },
       {
         "APIKeyCookie": []
@@ -3158,7 +3129,7 @@
       "authentication": "required",
       "classification": "permission",
       "integration_tokens": "supported",
-      "required_permissions": ["content:manage"],
+      "required_permissions": ["addons:manage"],
       "resource_scope": "server",
       "version": 1
     },
@@ -3178,7 +3149,7 @@
   "enable_addon": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["content:manage"]
+        "OAuth2PasswordBearer": ["addons:manage"]
       },
       {
         "APIKeyCookie": []
@@ -3193,7 +3164,7 @@
       "authentication": "required",
       "classification": "permission",
       "integration_tokens": "supported",
-      "required_permissions": ["content:manage"],
+      "required_permissions": ["addons:manage"],
       "resource_scope": "server",
       "version": 1
     },
@@ -3213,7 +3184,7 @@
   "get_server_addon_icon": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["content:read"]
+        "OAuth2PasswordBearer": ["addons:read"]
       },
       {
         "APIKeyCookie": []
@@ -3228,7 +3199,7 @@
       "authentication": "required",
       "classification": "permission",
       "integration_tokens": "supported",
-      "required_permissions": ["content:read"],
+      "required_permissions": ["addons:read"],
       "resource_scope": "server",
       "version": 1
     },
@@ -3258,7 +3229,7 @@
   "install_addon": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["content:manage"]
+        "OAuth2PasswordBearer": ["addons:manage"]
       },
       {
         "APIKeyCookie": []
@@ -3273,7 +3244,7 @@
       "authentication": "required",
       "classification": "permission",
       "integration_tokens": "supported",
-      "required_permissions": ["content:manage"],
+      "required_permissions": ["addons:manage"],
       "resource_scope": "server",
       "version": 1
     },
@@ -3293,7 +3264,7 @@
   "reorder_addons": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["content:manage"]
+        "OAuth2PasswordBearer": ["addons:manage"]
       },
       {
         "APIKeyCookie": []
@@ -3308,7 +3279,7 @@
       "authentication": "required",
       "classification": "permission",
       "integration_tokens": "supported",
-      "required_permissions": ["content:manage"],
+      "required_permissions": ["addons:manage"],
       "resource_scope": "server",
       "version": 1
     },
@@ -3328,7 +3299,7 @@
   "update_addon_subpack": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["content:manage"]
+        "OAuth2PasswordBearer": ["addons:manage"]
       },
       {
         "APIKeyCookie": []
@@ -3343,7 +3314,7 @@
       "authentication": "required",
       "classification": "permission",
       "integration_tokens": "supported",
-      "required_permissions": ["content:manage"],
+      "required_permissions": ["addons:manage"],
       "resource_scope": "server",
       "version": 1
     },
@@ -3363,7 +3334,7 @@
   "uninstall_addon": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["content:manage"]
+        "OAuth2PasswordBearer": ["addons:manage"]
       },
       {
         "APIKeyCookie": []
@@ -3378,7 +3349,7 @@
       "authentication": "required",
       "classification": "permission",
       "integration_tokens": "supported",
-      "required_permissions": ["content:manage"],
+      "required_permissions": ["addons:manage"],
       "resource_scope": "server",
       "version": 1
     },
@@ -3398,7 +3369,7 @@
   "list_server_addons": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["content:read"]
+        "OAuth2PasswordBearer": ["addons:read"]
       },
       {
         "APIKeyCookie": []
@@ -3413,7 +3384,7 @@
       "authentication": "required",
       "classification": "permission",
       "integration_tokens": "supported",
-      "required_permissions": ["content:read"],
+      "required_permissions": ["addons:read"],
       "resource_scope": "server",
       "version": 1
     },
@@ -3793,7 +3764,7 @@
   "prune_backups": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["backups:manage"]
+        "OAuth2PasswordBearer": ["backups:prune"]
       },
       {
         "APIKeyCookie": []
@@ -3808,7 +3779,7 @@
       "authentication": "required",
       "classification": "permission",
       "integration_tokens": "supported",
-      "required_permissions": ["backups:manage"],
+      "required_permissions": ["backups:prune"],
       "resource_scope": "server",
       "version": 1
     },
@@ -4399,7 +4370,7 @@
   "delete_server": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["servers:manage"]
+        "OAuth2PasswordBearer": ["servers:delete"]
       },
       {
         "APIKeyCookie": []
@@ -4415,7 +4386,7 @@
       "classification": "permission",
       "credential_alternatives": [],
       "integration_tokens": "supported",
-      "required_permissions": ["servers:manage"],
+      "required_permissions": ["servers:delete"],
       "resource_scope": "server",
       "version": 1
     },
@@ -4575,7 +4546,7 @@
   "get_properties": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["servers:properties"]
+        "OAuth2PasswordBearer": ["properties:read"]
       },
       {
         "APIKeyCookie": []
@@ -4590,7 +4561,7 @@
       "authentication": "required",
       "classification": "permission",
       "integration_tokens": "supported",
-      "required_permissions": ["servers:properties"],
+      "required_permissions": ["properties:read"],
       "resource_scope": "server",
       "version": 1
     },
@@ -4610,7 +4581,7 @@
   "get_raw_properties": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["servers:properties"]
+        "OAuth2PasswordBearer": ["properties:read"]
       },
       {
         "APIKeyCookie": []
@@ -4625,7 +4596,7 @@
       "authentication": "required",
       "classification": "permission",
       "integration_tokens": "supported",
-      "required_permissions": ["servers:properties"],
+      "required_permissions": ["properties:read"],
       "resource_scope": "server",
       "version": 1
     },
@@ -4645,7 +4616,7 @@
   "set_properties": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["servers:properties"]
+        "OAuth2PasswordBearer": ["properties:manage"]
       },
       {
         "APIKeyCookie": []
@@ -4660,7 +4631,7 @@
       "authentication": "required",
       "classification": "permission",
       "integration_tokens": "supported",
-      "required_permissions": ["servers:properties"],
+      "required_permissions": ["properties:manage"],
       "resource_scope": "server",
       "version": 1
     },
@@ -4680,7 +4651,7 @@
   "restart_server": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["servers:control"]
+        "OAuth2PasswordBearer": ["servers:lifecycle"]
       },
       {
         "APIKeyCookie": []
@@ -4695,7 +4666,7 @@
       "authentication": "required",
       "classification": "permission",
       "integration_tokens": "supported",
-      "required_permissions": ["servers:control"],
+      "required_permissions": ["servers:lifecycle"],
       "resource_scope": "server",
       "version": 1
     },
@@ -4750,7 +4721,7 @@
   "send_command": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["servers:control"]
+        "OAuth2PasswordBearer": ["servers:command"]
       },
       {
         "APIKeyCookie": []
@@ -4765,7 +4736,7 @@
       "authentication": "required",
       "classification": "permission",
       "integration_tokens": "supported",
-      "required_permissions": ["servers:control"],
+      "required_permissions": ["servers:command"],
       "resource_scope": "server",
       "version": 1
     },
@@ -4855,7 +4826,7 @@
   "start_server": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["servers:control"]
+        "OAuth2PasswordBearer": ["servers:lifecycle"]
       },
       {
         "APIKeyCookie": []
@@ -4870,7 +4841,7 @@
       "authentication": "required",
       "classification": "permission",
       "integration_tokens": "supported",
-      "required_permissions": ["servers:control"],
+      "required_permissions": ["servers:lifecycle"],
       "resource_scope": "server",
       "version": 1
     },
@@ -4925,7 +4896,7 @@
   "stop_server": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["servers:control"]
+        "OAuth2PasswordBearer": ["servers:lifecycle"]
       },
       {
         "APIKeyCookie": []
@@ -4940,7 +4911,7 @@
       "authentication": "required",
       "classification": "permission",
       "integration_tokens": "supported",
-      "required_permissions": ["servers:control"],
+      "required_permissions": ["servers:lifecycle"],
       "resource_scope": "server",
       "version": 1
     },
@@ -4995,7 +4966,7 @@
   "update_server": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["servers:manage"]
+        "OAuth2PasswordBearer": ["servers:install"]
       },
       {
         "APIKeyCookie": []
@@ -5010,7 +4981,7 @@
       "authentication": "required",
       "classification": "permission",
       "integration_tokens": "supported",
-      "required_permissions": ["servers:manage"],
+      "required_permissions": ["servers:install"],
       "resource_scope": "server",
       "version": 1
     },
@@ -5065,7 +5036,7 @@
   "export_world": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["content:manage"]
+        "OAuth2PasswordBearer": ["worlds:manage"]
       },
       {
         "APIKeyCookie": []
@@ -5080,7 +5051,7 @@
       "authentication": "required",
       "classification": "permission",
       "integration_tokens": "supported",
-      "required_permissions": ["content:manage"],
+      "required_permissions": ["worlds:manage"],
       "resource_scope": "server",
       "version": 1
     },
@@ -5100,7 +5071,7 @@
   "get_world_icon": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["servers:read"]
+        "OAuth2PasswordBearer": ["worlds:read"]
       },
       {
         "APIKeyCookie": []
@@ -5115,7 +5086,7 @@
       "authentication": "required",
       "classification": "permission",
       "integration_tokens": "supported",
-      "required_permissions": ["servers:read"],
+      "required_permissions": ["worlds:read"],
       "resource_scope": "server",
       "version": 1
     },
@@ -5135,7 +5106,7 @@
   "install_world": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["content:manage"]
+        "OAuth2PasswordBearer": ["worlds:manage"]
       },
       {
         "APIKeyCookie": []
@@ -5150,7 +5121,7 @@
       "authentication": "required",
       "classification": "permission",
       "integration_tokens": "supported",
-      "required_permissions": ["content:manage"],
+      "required_permissions": ["worlds:manage"],
       "resource_scope": "server",
       "version": 1
     },
@@ -5170,7 +5141,7 @@
   "reset_world": {
     "security": [
       {
-        "OAuth2PasswordBearer": ["content:manage"]
+        "OAuth2PasswordBearer": ["worlds:reset"]
       },
       {
         "APIKeyCookie": []
@@ -5185,7 +5156,7 @@
       "authentication": "required",
       "classification": "permission",
       "integration_tokens": "supported",
-      "required_permissions": ["content:manage"],
+      "required_permissions": ["worlds:reset"],
       "resource_scope": "server",
       "version": 1
     },
