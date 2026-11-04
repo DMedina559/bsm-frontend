@@ -42,7 +42,7 @@ jobs:
           import { appendFileSync } from 'node:fs';
           import { resolveReleaseTag } from './scripts/release-version.mjs';
           const { version } = resolveReleaseTag('frontend', process.env.RELEASE_TAG);
-          appendFileSync(process.env.GITHUB_ENV, `SETUPTOOLS_SCM_PRETEND_VERSION=${version}\nBSM_FRONTEND_VERSION=${version}\n`);
+          appendFileSync(process.env.GITHUB_ENV, `SETUPTOOLS_SCM_PRETEND_VERSION_FOR_BSM_FRONTEND=${version}\nBSM_FRONTEND_VERSION=${version}\n`);
           appendFileSync(process.env.GITHUB_OUTPUT, `version=${version}\n`);
           JS
 
@@ -56,6 +56,32 @@ jobs:
           ref: dev
           path: backend
           persist-credentials: false
+
+      # Release the frontend before updating the backend's published version range.
+      # Only this disposable integration checkout accepts the candidate frontend.
+      - name: Allow candidate frontend in backend integration checkout
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          import tomllib
+
+          path = Path("backend/pyproject.toml")
+          source = path.read_text()
+          dependencies = tomllib.loads(source)["project"]["dependencies"]
+          matches = [
+              dependency for dependency in dependencies
+              if re.match(r"^bsm[-_]frontend\b", dependency, re.IGNORECASE)
+          ]
+          if len(matches) != 1:
+              raise SystemExit("Expected exactly one backend frontend dependency")
+          dependency = matches[0]
+          old = f'"{dependency}"'
+          if source.count(old) != 1:
+              raise SystemExit("Expected a single quoted frontend dependency")
+          path.write_text(source.replace(old, '"bsm-frontend"', 1))
+          print(f"Integration-only dependency override: {dependency} -> bsm-frontend")
+          PY
 
       - name: Install dependencies
         run: |
