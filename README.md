@@ -7,7 +7,7 @@ same verified assets can also be distributed as a static npm package.
 
 ## Quick start
 
-Install **Node.js 22.12 or later** and run these commands from the repository root:
+Install **Node.js 22.13+ (22.x) or 24+** and run these commands from the repository root:
 
 ```sh
 npm ci
