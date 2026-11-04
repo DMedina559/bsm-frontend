@@ -1,0 +1,30 @@
+name: OpenAPI Generator Prototype
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [dev]
+    paths:
+      - experiments/openapi-generator/**
+      - .github/workflows/openapi-generator-prototype.yml
+
+permissions:
+  contents: read
+
+jobs:
+  prototype:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - name: Check Java runtime
+        run: java -version
+      - name: Install dependencies
+        run: npm ci
+      - name: Generate and check experimental SDK
+        run: npm run prototype:openapi:test
