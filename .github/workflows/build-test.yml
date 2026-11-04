@@ -105,6 +105,17 @@ jobs:
           npm run test:e2e --workspace=bsm-frontend
           npm run test:e2e:backend --workspace=bsm-frontend
 
+      - name: Upload browser failure traces
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: browser-failure-traces
+          path: |
+            frontend/test-results/
+            frontend/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Pack the same verified frontend for npm
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name || '' }}

@@ -176,8 +176,27 @@ test("installation survives navigation and reconnect then resumes setup", async 
   const state = await backend(context);
   await login(page, "alice");
   await page.getByRole("link", { name: /Install Server/ }).click();
-  await page.getByLabel("Server Name").fill("NewServer");
-  await page.getByRole("button", { name: /Install Server/ }).click();
+  const serverName = page.getByLabel("Server Name");
+  await serverName.fill("NewServer");
+  await expect(serverName).toHaveValue("NewServer");
+  // Commit the controlled input before WebKit submits the form.
+  await serverName.blur();
+  const installResponse = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === "/api/server/install" &&
+      response.request().method() === "POST",
+  );
+  await page
+    .getByRole("button", { name: "Install Server", exact: true })
+    .click();
+  const response = await installResponse;
+  expect(response.ok()).toBe(true);
+  expect(response.request().postDataJSON()).toMatchObject({
+    server_name: "NewServer",
+  });
+  await expect(response.json()).resolves.toMatchObject({
+    task_id: "install-task",
+  });
   await expect(
     page.getByRole("button", { name: "1 active operation. View operations" }),
   ).toBeVisible();
