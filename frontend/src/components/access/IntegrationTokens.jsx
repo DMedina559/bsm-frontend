@@ -1,5 +1,7 @@
 import AccessPreview from "./AccessPreview";
 import CredentialSecret from "./CredentialSecret";
+import { getScopeCategory } from "../../utils/scopeCategory";
+import { PERMISSIONS } from "../../app/permissions";
 import React, { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { callOperation } from "../../api/operations";
@@ -191,13 +193,14 @@ export default function IntegrationTokens() {
     full: policy.data?.token_permissions ?? [],
     monitoring: ["account:read", "health:read", "servers:read", "tasks:read"],
     operator: [
-      "account:read",
-      "health:read",
-      "servers:read",
-      "servers:inspect",
-      "servers:control",
-      "logs:read",
-      "tasks:read",
+      PERMISSIONS.ACCOUNT_READ,
+      PERMISSIONS.HEALTH_READ,
+      PERMISSIONS.SERVERS_READ,
+      PERMISSIONS.SERVERS_INSPECT,
+      PERMISSIONS.SERVERS_LIFECYCLE,
+      PERMISSIONS.SERVERS_COMMAND,
+      PERMISSIONS.LOGS_READ,
+      PERMISSIONS.TASKS_READ,
     ],
     backups: [
       "account:read",
@@ -292,7 +295,9 @@ export default function IntegrationTokens() {
                 <option
                   value="operator"
                   disabled={
-                    !policy.data.token_permissions.includes("servers:control")
+                    !policy.data.token_permissions.includes(
+                      PERMISSIONS.SERVERS_LIFECYCLE,
+                    )
                   }
                 >
                   Server operator
@@ -447,7 +452,11 @@ export default function IntegrationTokens() {
                 </summary>
                 <ul className="security-permissions">
                   {token.permissions.map((permission) => (
-                    <li key={permission}>
+                    <li
+                      key={permission}
+                      data-scope={permission}
+                      data-category={getScopeCategory(permission)}
+                    >
                       <code>{permission}</code>
                     </li>
                   ))}

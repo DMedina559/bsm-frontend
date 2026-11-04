@@ -1,4 +1,5 @@
 import { useAccess } from "../app/useAccess";
+import { PERMISSIONS } from "../app/permissions";
 import { useTimeFormat } from "../app/useTimeFormat";
 import { useMetricFormat } from "../app/useMetricFormat";
 import { callOperation } from "../api/operations";
@@ -284,7 +285,7 @@ const Monitor = () => {
             disabled={
               loadingAction ||
               isRunning ||
-              !can("servers:control", selectedServer)
+              !can(PERMISSIONS.SERVERS_LIFECYCLE, selectedServer)
             }
           >
             <Play size={16} aria-hidden="true" /> Start
@@ -296,7 +297,7 @@ const Monitor = () => {
             disabled={
               loadingAction ||
               !isRunning ||
-              !can("servers:control", selectedServer)
+              !can(PERMISSIONS.SERVERS_LIFECYCLE, selectedServer)
             }
           >
             <Square size={16} aria-hidden="true" /> Stop
@@ -305,7 +306,10 @@ const Monitor = () => {
             type="button"
             className="action-button warning-button"
             onClick={() => sendAction("restart")}
-            disabled={loadingAction || !can("servers:control", selectedServer)}
+            disabled={
+              loadingAction ||
+              !can(PERMISSIONS.SERVERS_LIFECYCLE, selectedServer)
+            }
           >
             <RotateCcw size={16} aria-hidden="true" /> Restart
           </button>
@@ -482,7 +486,7 @@ const Monitor = () => {
                 disabled={
                   loadingAction ||
                   !isRunning ||
-                  !can("servers:control", selectedServer)
+                  !can(PERMISSIONS.SERVERS_COMMAND, selectedServer)
                 }
               />
             </div>
@@ -493,7 +497,7 @@ const Monitor = () => {
                 loadingAction ||
                 !command.trim() ||
                 !isRunning ||
-                !can("servers:control", selectedServer)
+                !can(PERMISSIONS.SERVERS_COMMAND, selectedServer)
               }
             >
               Send

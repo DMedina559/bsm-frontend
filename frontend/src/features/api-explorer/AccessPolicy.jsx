@@ -1,4 +1,5 @@
 import { keyedItems } from "../../utils/keyedItems";
+import ScopeBadge from "../../components/ScopeBadge";
 import React, { useState } from "react";
 import { Check, ShieldCheck, Search, Minus } from "lucide-react";
 
@@ -22,18 +23,19 @@ function Chips({ values, permissions }) {
         const present = permissions?.includes(value);
         const Icon = present ? Check : Minus;
         return (
-          <li
+          <ScopeBadge
             key={value}
-            className={present === false ? "ae-capability-missing" : ""}
+            scope={value}
+            present={present}
+            icon={permissions ? Icon : null}
           >
-            {permissions && <Icon size={12} aria-hidden="true" />}
-            <code>{value}</code>
+            {value}
             {permissions && (
               <span className="ae-sr-only">
                 {present ? "Present" : "Missing"}
               </span>
             )}
-          </li>
+          </ScopeBadge>
         );
       })}
     </ul>

@@ -1,4 +1,5 @@
 import { callOperation } from "../api/operations";
+import { getScopeCategory } from "../utils/scopeCategory";
 import QueryStatus from "../components/QueryStatus";
 import { queryKeys } from "../app/queryKeys";
 import { useResourceQuery, useResourceMutation } from "../app/resourceQueries";
@@ -191,9 +192,13 @@ const Plugins = () => {
                 filesystem access.
               </p>
               {plugin.permissions?.length ? (
-                <ul>
+                <ul className="plugin-permission-list">
                   {plugin.permissions.map((permission) => (
-                    <li key={permission}>
+                    <li
+                      key={permission}
+                      data-scope={permission}
+                      data-category={getScopeCategory(permission)}
+                    >
                       <code>{permission}</code>
                     </li>
                   ))}

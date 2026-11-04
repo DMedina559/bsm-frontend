@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { getScopeCategory } from "../../utils/scopeCategory";
 import { callOperation } from "../../api/operations";
 import {
   getBackendIdentity,
@@ -113,7 +114,11 @@ export default function AccessPreview({
               </strong>
               <ul>
                 {current.data.unavailable_permissions.map((value) => (
-                  <li key={value}>
+                  <li
+                    key={value}
+                    data-scope={value}
+                    data-category={getScopeCategory(value)}
+                  >
                     <code>{value}</code>
                   </li>
                 ))}
@@ -124,7 +129,11 @@ export default function AccessPreview({
             <summary>Effective capabilities</summary>
             <ul className="security-permissions">
               {current.data.effective_permissions.map((value) => (
-                <li key={value}>
+                <li
+                  key={value}
+                  data-scope={value}
+                  data-category={getScopeCategory(value)}
+                >
                   <code>{value}</code>
                 </li>
               ))}
@@ -139,7 +148,11 @@ export default function AccessPreview({
                 </summary>
                 <ul className="security-permissions">
                   {permissions.map((value) => (
-                    <li key={value}>
+                    <li
+                      key={value}
+                      data-scope={value}
+                      data-category={getScopeCategory(value)}
+                    >
                       <code>{value}</code>
                     </li>
                   ))}

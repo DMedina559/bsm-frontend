@@ -19,14 +19,14 @@ const capabilities = [
   "health:read",
   "servers:read",
   "tasks:read",
-  "servers:control",
+  "servers:lifecycle",
 ];
 const catalog = {
   revision: "one",
   permissions: Object.fromEntries(capabilities.map((value) => [value, value])),
   token_permissions: capabilities,
-  server_permissions: ["servers:read", "servers:control", "servers:manage"],
-  role_permissions: { moderator: ["servers:read", "servers:control"] },
+  server_permissions: ["servers:read", "servers:lifecycle", "servers:install"],
+  role_permissions: { moderator: ["servers:read", "servers:lifecycle"] },
 };
 beforeEach(() => {
   queryClient.clear();
@@ -74,8 +74,8 @@ it("edits server grants using immutable resource IDs and the selected account's 
   const mode = await screen.findByLabelText("Access mode");
   fireEvent.change(mode, { target: { value: "assigned" } });
   fireEvent.click(screen.getByText(/Alpha ·/));
-  expect(screen.queryByLabelText("servers:manage")).toBeNull();
-  fireEvent.click(screen.getByLabelText("servers:control"));
+  expect(screen.queryByLabelText("servers:install")).toBeNull();
+  fireEvent.click(screen.getByLabelText("servers:lifecycle"));
   fireEvent.click(screen.getByRole("button", { name: "Save server access" }));
   await waitFor(() =>
     expect(callOperation).toHaveBeenCalledWith(
@@ -87,7 +87,7 @@ it("edits server grants using immutable resource IDs and the selected account's 
           grants: [
             {
               server_id: identity,
-              permissions: ["servers:read", "servers:control"],
+              permissions: ["servers:read", "servers:lifecycle"],
             },
           ],
         },

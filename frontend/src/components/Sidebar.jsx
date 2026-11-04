@@ -1,5 +1,6 @@
 import { navigationLabel } from "../utils/navigationLabel";
 import { useAccess } from "../app/useAccess";
+import { PERMISSIONS } from "../app/permissions";
 import { sessionSettings } from "../app/browserStorage";
 import { useResourceQuery } from "../app/resourceQueries";
 import { usePreference } from "../app/usePreference";
@@ -51,7 +52,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
     loading,
   } = useServer();
   const pluginQuery = useResourceQuery("pluginPages", undefined, {
-    enabled: can("plugins:pages"),
+    enabled: can(PERMISSIONS.PLUGINS_PAGES),
   });
   const infoQuery = useResourceQuery("applicationInfo");
   const pluginPages = pluginQuery.data ?? [];
@@ -210,22 +211,22 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
     })),
   }));
   const required = {
-    "/application-monitor": "runtime:metrics",
-    "/server-install": "servers:manage",
-    "/monitor": "servers:read",
-    "/online-players": "servers:read",
-    "/server-config": "servers:read",
-    "/server-properties": "servers:properties",
-    "/access-control": "allowlist:read",
-    "/backups": "backups:read",
-    "/content": "content:manage",
-    "/global-players": "players:read",
-    "/bsm-settings": "settings:read",
-    "/scheduler": "scheduler:read",
-    "/users": "users:read",
-    "/audit-log": "audit:read",
-    "/plugins": "plugins:read",
-    "/plugin-settings": "plugins:read",
+    "/application-monitor": PERMISSIONS.RUNTIME_METRICS,
+    "/server-install": PERMISSIONS.SERVERS_INSTALL,
+    "/monitor": PERMISSIONS.SERVERS_READ,
+    "/online-players": PERMISSIONS.SERVERS_READ,
+    "/server-config": PERMISSIONS.SERVERS_READ,
+    "/server-properties": PERMISSIONS.PROPERTIES_READ,
+    "/access-control": PERMISSIONS.ALLOWLIST_READ,
+    "/backups": PERMISSIONS.BACKUPS_READ,
+    "/content": PERMISSIONS.CONTENT_MANAGE,
+    "/global-players": PERMISSIONS.PLAYERS_READ,
+    "/bsm-settings": PERMISSIONS.SETTINGS_READ,
+    "/scheduler": PERMISSIONS.SCHEDULER_READ,
+    "/users": PERMISSIONS.USERS_READ,
+    "/audit-log": PERMISSIONS.AUDIT_READ,
+    "/plugins": PERMISSIONS.PLUGINS_READ,
+    "/plugin-settings": PERMISSIONS.PLUGINS_READ,
   };
   const filtered = groups
     .map((group) => ({

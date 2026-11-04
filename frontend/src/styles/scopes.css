@@ -1,0 +1,299 @@
+/* Color-coordinated scope & capability badges */
+
+.scope-badge,
+.ae-access-chips > li,
+.security-permissions li,
+.plugin-permission-list li,
+.token-permission-list .scope-badge,
+.token-permission-list span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--bsm-radius-sm, 6px);
+  font-family: var(--bsm-mono);
+  font-size: 0.75rem;
+  line-height: 1.35;
+  border: 1px solid var(--scope-border, var(--bsm-border));
+  background: var(--scope-bg, var(--bsm-input));
+  color: var(--scope-text, var(--bsm-text));
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+  overflow-wrap: anywhere;
+}
+
+.scope-badge[data-category],
+.scope-badge[data-scope],
+.ae-access-chips > li[data-category],
+.ae-access-chips > li[data-scope],
+.security-permissions li[data-category],
+.security-permissions li[data-scope],
+.plugin-permission-list li[data-category],
+.plugin-permission-list li[data-scope],
+.token-permission-list [data-category],
+.token-permission-list [data-scope] {
+  border-color: var(--scope-border);
+  background-color: var(--scope-bg);
+  color: var(--scope-text);
+}
+
+.scope-badge code,
+.ae-access-chips > li code,
+.security-permissions li code,
+.plugin-permission-list li code,
+.token-permission-list .scope-badge code,
+.token-permission-list span code {
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  background: transparent;
+  padding: 0;
+  border: none;
+}
+
+/* Category: Servers (Sky / Cyan) */
+[data-category="servers"],
+.scope-badge-servers,
+[data-scope^="servers:"] {
+  --scope-text: #38bdf8;
+  --scope-bg: rgba(56, 189, 248, 0.1);
+  --scope-border: rgba(56, 189, 248, 0.35);
+}
+
+/* Category: Properties (Teal) */
+[data-category="properties"],
+.scope-badge-properties,
+[data-scope^="properties:"] {
+  --scope-text: #2dd4bf;
+  --scope-bg: rgba(45, 212, 191, 0.1);
+  --scope-border: rgba(45, 212, 191, 0.35);
+}
+
+/* Category: Content, Worlds, Addons, Downloads (Purple / Violet) */
+[data-category="content"],
+.scope-badge-content,
+[data-scope^="content:"],
+[data-scope^="worlds:"],
+[data-scope^="addons:"],
+[data-scope^="downloads:"] {
+  --scope-text: #c084fc;
+  --scope-bg: rgba(192, 132, 252, 0.1);
+  --scope-border: rgba(192, 132, 252, 0.35);
+}
+
+/* Category: Backups (Indigo) */
+[data-category="backups"],
+.scope-badge-backups,
+[data-scope^="backups:"] {
+  --scope-text: #818cf8;
+  --scope-bg: rgba(129, 140, 248, 0.1);
+  --scope-border: rgba(129, 140, 248, 0.35);
+}
+
+/* Category: Players, Allowlist, Bans, Permissions (Emerald / Mint) */
+[data-category="players"],
+.scope-badge-players,
+[data-scope^="players:"],
+[data-scope^="allowlist:"],
+[data-scope^="bans:"],
+[data-scope^="permissions:"] {
+  --scope-text: #34d399;
+  --scope-bg: rgba(52, 211, 153, 0.1);
+  --scope-border: rgba(52, 211, 153, 0.35);
+}
+
+/* Category: Access, Account, Tokens, Sessions, Users (Amber / Gold) */
+[data-category="access"],
+.scope-badge-access,
+[data-scope^="access:"],
+[data-scope^="account:"],
+[data-scope^="tokens:"],
+[data-scope^="sessions:"],
+[data-scope^="users:"] {
+  --scope-text: #fbbf24;
+  --scope-bg: rgba(251, 191, 36, 0.1);
+  --scope-border: rgba(251, 191, 36, 0.35);
+}
+
+/* Category: System, Diagnostics, Health, Runtime, Logs, Audit, Tasks (Rose / Coral) */
+[data-category="system"],
+.scope-badge-system,
+[data-scope^="health:"],
+[data-scope^="runtime:"],
+[data-scope^="diagnostics:"],
+[data-scope^="audit:"],
+[data-scope^="tasks:"],
+[data-scope^="logs:"] {
+  --scope-text: #fb7185;
+  --scope-bg: rgba(251, 113, 133, 0.1);
+  --scope-border: rgba(251, 113, 133, 0.35);
+}
+
+/* Category: Plugins (Lime) */
+[data-category="plugins"],
+.scope-badge-plugins,
+[data-scope^="plugins:"],
+[data-scope^="plugin:"] {
+  --scope-text: #a3e635;
+  --scope-bg: rgba(163, 230, 53, 0.1);
+  --scope-border: rgba(163, 230, 53, 0.35);
+}
+
+/* Category: Settings & Scheduler (Orange) */
+[data-category="settings"],
+.scope-badge-settings,
+[data-scope^="scheduler:"],
+[data-scope^="settings:"] {
+  --scope-text: #fb923c;
+  --scope-bg: rgba(251, 146, 60, 0.1);
+  --scope-border: rgba(251, 146, 60, 0.35);
+}
+
+/* Roles: Admin (Red) */
+[data-category="admin"],
+.scope-badge-admin,
+[data-scope="admin"] {
+  --scope-text: #f87171;
+  --scope-bg: rgba(248, 113, 113, 0.15);
+  --scope-border: rgba(248, 113, 113, 0.45);
+}
+
+/* Roles: Moderator (Cyan) */
+[data-category="moderator"],
+.scope-badge-moderator,
+[data-scope="moderator"] {
+  --scope-text: #38bdf8;
+  --scope-bg: rgba(56, 189, 248, 0.15);
+  --scope-border: rgba(56, 189, 248, 0.45);
+}
+
+/* Roles: User (Green) */
+[data-category="user"],
+.scope-badge-user,
+[data-scope="user"] {
+  --scope-text: #4ade80;
+  --scope-bg: rgba(74, 222, 128, 0.15);
+  --scope-border: rgba(74, 222, 128, 0.45);
+}
+
+/* Contextual checks & other (Fuchsia) */
+[data-category="check"],
+.scope-badge-check,
+[data-scope="credential-owner"] {
+  --scope-text: #e879f9;
+  --scope-bg: rgba(232, 121, 249, 0.1);
+  --scope-border: rgba(232, 121, 249, 0.35);
+}
+
+/* Light Theme Adjustments */
+:root[data-mode="light"] {
+  [data-category="servers"],
+  .scope-badge-servers,
+  [data-scope^="servers:"] {
+    --scope-text: #0284c7;
+    --scope-bg: #f0f9ff;
+    --scope-border: #bae6fd;
+  }
+  [data-category="properties"],
+  .scope-badge-properties,
+  [data-scope^="properties:"] {
+    --scope-text: #0d9488;
+    --scope-bg: #f0fdfa;
+    --scope-border: #99f6e4;
+  }
+  [data-category="content"],
+  .scope-badge-content,
+  [data-scope^="content:"],
+  [data-scope^="worlds:"],
+  [data-scope^="addons:"],
+  [data-scope^="downloads:"] {
+    --scope-text: #7e22ce;
+    --scope-bg: #faf5ff;
+    --scope-border: #e9d5ff;
+  }
+  [data-category="backups"],
+  .scope-badge-backups,
+  [data-scope^="backups:"] {
+    --scope-text: #4338ca;
+    --scope-bg: #eef2ff;
+    --scope-border: #c7d2fe;
+  }
+  [data-category="players"],
+  .scope-badge-players,
+  [data-scope^="players:"],
+  [data-scope^="allowlist:"],
+  [data-scope^="bans:"],
+  [data-scope^="permissions:"] {
+    --scope-text: #047857;
+    --scope-bg: #ecfdf5;
+    --scope-border: #a7f3d0;
+  }
+  [data-category="access"],
+  .scope-badge-access,
+  [data-scope^="access:"],
+  [data-scope^="account:"],
+  [data-scope^="tokens:"],
+  [data-scope^="sessions:"],
+  [data-scope^="users:"] {
+    --scope-text: #b45309;
+    --scope-bg: #fffbeb;
+    --scope-border: #fde68a;
+  }
+  [data-category="system"],
+  .scope-badge-system,
+  [data-scope^="health:"],
+  [data-scope^="runtime:"],
+  [data-scope^="diagnostics:"],
+  [data-scope^="audit:"],
+  [data-scope^="tasks:"],
+  [data-scope^="logs:"] {
+    --scope-text: #be123c;
+    --scope-bg: #fff1f2;
+    --scope-border: #fecdd3;
+  }
+  [data-category="plugins"],
+  .scope-badge-plugins,
+  [data-scope^="plugins:"],
+  [data-scope^="plugin:"] {
+    --scope-text: #4d7c0f;
+    --scope-bg: #f7fee7;
+    --scope-border: #d9f99d;
+  }
+  [data-category="settings"],
+  .scope-badge-settings,
+  [data-scope^="scheduler:"],
+  [data-scope^="settings:"] {
+    --scope-text: #c2410c;
+    --scope-bg: #fff7ed;
+    --scope-border: #fed7aa;
+  }
+  [data-category="admin"],
+  .scope-badge-admin,
+  [data-scope="admin"] {
+    --scope-text: #b91c1c;
+    --scope-bg: #fef2f2;
+    --scope-border: #fca5a5;
+  }
+  [data-category="moderator"],
+  .scope-badge-moderator,
+  [data-scope="moderator"] {
+    --scope-text: #0369a1;
+    --scope-bg: #f0f9ff;
+    --scope-border: #7dd3fc;
+  }
+  [data-category="user"],
+  .scope-badge-user,
+  [data-scope="user"] {
+    --scope-text: #15803d;
+    --scope-bg: #f0fdf4;
+    --scope-border: #86efac;
+  }
+  [data-category="check"],
+  .scope-badge-check,
+  [data-scope="credential-owner"] {
+    --scope-text: #a21caf;
+    --scope-bg: #fdf4ff;
+    --scope-border: #f0abfc;
+  }
+}

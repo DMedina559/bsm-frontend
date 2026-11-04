@@ -1060,16 +1060,18 @@
   align-items: center;
   gap: 5px;
   max-width: 100%;
-  border: 1px solid var(--ae-line);
+  border: 1px solid var(--scope-border, var(--ae-line));
   border-radius: 5px;
   padding: 2px 6px;
-  background: var(--ae-inset);
+  background: var(--scope-bg, var(--ae-inset));
+  color: var(--scope-text, inherit);
   overflow-wrap: anywhere;
 }
 .ae-access-chips code {
   font-size: 10px;
   overflow-wrap: anywhere;
   min-width: 0;
+  color: inherit;
 }
 .ae-access-chips .ae-capability-missing,
 .api-explorer .ae-access-note.ae-access-warning {

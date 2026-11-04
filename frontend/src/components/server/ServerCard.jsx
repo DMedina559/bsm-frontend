@@ -1,4 +1,4 @@
-import { useAccess } from "../../app/useAccess";
+import { useServerAccess } from "../../app/useAccess";
 import { memo } from "react";
 import { useOnline } from "../../app/useOnline";
 import { useServerSnapshot } from "../../app/useServerSnapshot";
@@ -52,8 +52,9 @@ const actionDefinitions = {
 function ServerCard({
   server,
   isAdmin = false,
-  canControl = true,
-  canManage = true,
+  canLifecycle = true,
+  canCommand = true,
+  canUpdate = true,
   busy,
   onOpen,
   onAction,
@@ -170,12 +171,13 @@ function ServerCard({
       >
         {actions.map((action) => {
           const { Icon, label, title, className } = actionDefinitions[action];
+          const isLifecycle = ["start", "stop", "restart"].includes(action);
           const disabled =
             !online ||
-            (action === "update" ? !canManage : !canControl) ||
             busy ||
-            (action === "update" && !stable) ||
-            (action === "command" && !running);
+            (isLifecycle && !canLifecycle) ||
+            (action === "command" && (!canCommand || !running)) ||
+            (action === "update" && (!canUpdate || !stable));
           return (
             <button
               key={action}
@@ -205,14 +207,16 @@ export const ConnectedServerCard = memo(function ConnectedServerCard({
   ...props
 }) {
   const server = useServerSnapshot(serverName);
-  const { can } = useAccess();
+  const { canLifecycle, canCommand, canUpdate, canReadProperties } =
+    useServerAccess(serverName);
   return server ? (
     <MemoServerCard
       server={server}
       {...props}
-      isAdmin={props.isAdmin && can("servers:properties", serverName)}
-      canControl={can("servers:control", serverName)}
-      canManage={can("servers:manage", serverName)}
+      isAdmin={props.isAdmin && canReadProperties}
+      canLifecycle={canLifecycle}
+      canCommand={canCommand}
+      canUpdate={canUpdate}
     />
   ) : null;
 });

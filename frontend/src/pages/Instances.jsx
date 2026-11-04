@@ -111,15 +111,18 @@ function InstanceCard({
   const blocked =
     window.location.protocol === "https:" &&
     new URL(profile.url).protocol === "http:";
+  const hasControlPerm = (perms) =>
+    Array.isArray(perms) && perms.includes("servers:lifecycle");
   const canManage = Array.isArray(snapshot.user?.permissions)
-    ? snapshot.user.permissions.includes("servers:control")
+    ? hasControlPerm(snapshot.user.permissions)
     : ["admin", "moderator"].includes(snapshot.user?.role);
   const canControl = (server) =>
     canManage &&
     (snapshot.user?.server_access !== "assigned" ||
-      snapshot.serverAccess
-        ?.find((resource) => resource.name === server.name)
-        ?.permissions.includes("servers:control"));
+      hasControlPerm(
+        snapshot.serverAccess?.find((resource) => resource.name === server.name)
+          ?.permissions,
+      ));
   return (
     <article
       hidden={hidden}

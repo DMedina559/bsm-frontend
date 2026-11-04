@@ -1,5 +1,6 @@
 import React from "react";
 import { useTimeFormat } from "../../app/useTimeFormat";
+import ScopeBadge from "../ScopeBadge";
 
 export default function TokenAccessNotice({ account }) {
   const time = useTimeFormat();
@@ -34,7 +35,7 @@ export default function TokenAccessNotice({ account }) {
         </summary>
         <div className="token-permission-list">
           {account.permissions?.map((permission) => (
-            <code key={permission}>{permission}</code>
+            <ScopeBadge as="span" key={permission} scope={permission} />
           ))}
         </div>
       </details>

@@ -1,4 +1,5 @@
 import { trustedDeviceOptions } from "../../app/trustedDevices";
+import { getScopeCategory } from "../../utils/scopeCategory";
 import RememberedDevices from "./RememberedDevices";
 import React, { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -419,7 +420,11 @@ function EffectiveAccess({ user, identity, sessionGeneration }) {
         <summary>Account permissions ({permissions.length})</summary>
         <ul className="security-permissions">
           {permissions.map((value) => (
-            <li key={value}>
+            <li
+              key={value}
+              data-scope={value}
+              data-category={getScopeCategory(value)}
+            >
               <code>{value}</code>
             </li>
           ))}
@@ -433,7 +438,11 @@ function EffectiveAccess({ user, identity, sessionGeneration }) {
             </summary>
             <ul className="security-permissions">
               {server.permissions.map((value) => (
-                <li key={value}>
+                <li
+                  key={value}
+                  data-scope={value}
+                  data-category={getScopeCategory(value)}
+                >
                   <code>{value}</code>
                 </li>
               ))}

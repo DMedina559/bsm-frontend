@@ -235,11 +235,15 @@
 }
 .security-permissions li {
   padding: 0.3rem 0.45rem;
-  background: var(--bsm-input);
-  border: 1px solid var(--bsm-border);
+  background: var(--scope-bg, var(--bsm-input));
+  border: 1px solid var(--scope-border, var(--bsm-border));
+  color: var(--scope-text, inherit);
   border-radius: 0.3rem;
   overflow-wrap: anywhere;
   font-size: 0.75rem;
+}
+.security-permissions li code {
+  color: inherit;
 }
 .security-access-servers {
   display: grid;
