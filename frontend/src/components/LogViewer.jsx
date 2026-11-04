@@ -21,12 +21,12 @@ export default function LogViewer({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [following, setFollowing] = useState(true);
-  const container = useRef(null);
-  const current = useRef(EMPTY);
-  const busy = useRef(false);
-  const follow = useRef(true);
-  const anchor = useRef(null);
-  const loadOlder = useRef(null);
+  const containerRef = useRef(null);
+  const currentRef = useRef(EMPTY);
+  const busyRef = useRef(false);
+  const followRef = useRef(true);
+  const anchorRef = useRef(null);
+  const loadOlderRef = useRef(null);
 
   useEffect(() => {
     let active = true;
@@ -35,16 +35,16 @@ export default function LogViewer({
     const pending = [];
     let pendingBytes = 0;
     let resyncPending = false;
-    current.current = EMPTY;
-    follow.current = true;
-    anchor.current = null;
+    currentRef.current = EMPTY;
+    followRef.current = true;
+    anchorRef.current = null;
     setPage(EMPTY);
     setLoading(false);
     setFollowing(true);
     setError("");
     const commit = (value, older = false) => {
       const window = logWindow(value, older);
-      current.current = window;
+      currentRef.current = window;
       setPage(window);
     };
     const append = (message) => {
@@ -55,12 +55,12 @@ export default function LogViewer({
         message.type !== "log_update"
       )
         return;
-      const previous = current.current;
+      const previous = currentRef.current;
       // An older window stays in place until the user asks to follow live.
       if (previous.tailOmitted) return;
       if (
         !initialized ||
-        (busy.current &&
+        (busyRef.current &&
           message.file_id &&
           (message.file_id !== previous.file_id ||
             message.end < previous.end ||
@@ -106,12 +106,12 @@ export default function LogViewer({
       commit({ ...previous, data: previous.data + suffix, end: message.end });
     };
     const fetchPage = async (older = false) => {
-      if (!active || busy.current || (older && !current.current.has_more))
+      if (!active || busyRef.current || (older && !currentRef.current.has_more))
         return;
-      busy.current = true;
+      busyRef.current = true;
       setLoading(true);
       setError("");
-      const previous = current.current;
+      const previous = currentRef.current;
       try {
         const result = await callOperation("get_log_history", {
           query: {
@@ -129,16 +129,16 @@ export default function LogViewer({
         )
           throw new Error("Invalid log history response");
         if (older) {
-          const element = container.current;
+          const element = containerRef.current;
           if (element)
-            anchor.current = {
+            anchorRef.current = {
               top: element.scrollTop,
               height: element.scrollHeight,
             };
           commit(
             {
-              ...current.current,
-              data: result.data + current.current.data,
+              ...currentRef.current,
+              data: result.data + currentRef.current.data,
               start: result.start,
               has_more: result.has_more,
             },
@@ -159,7 +159,7 @@ export default function LogViewer({
         initialized = true;
       } finally {
         if (active) {
-          busy.current = false;
+          busyRef.current = false;
           setLoading(false);
           if (initialized) {
             pendingBytes = 0;
@@ -172,8 +172,8 @@ export default function LogViewer({
         }
       }
     };
-    busy.current = false;
-    loadOlder.current = fetchPage;
+    busyRef.current = false;
+    loadOlderRef.current = fetchPage;
     const removeListener = addMessageListener(append);
     if (isConnected && identity !== null) subscribe(topic);
     if (identity !== null) void fetchPage();
@@ -195,26 +195,26 @@ export default function LogViewer({
   ]);
 
   useLayoutEffect(() => {
-    const element = container.current;
+    const element = containerRef.current;
     if (!element) return;
-    if (anchor.current) {
+    if (anchorRef.current) {
       element.scrollTop =
-        anchor.current.top + element.scrollHeight - anchor.current.height;
-      anchor.current = null;
-    } else if (follow.current) {
+        anchorRef.current.top + element.scrollHeight - anchorRef.current.height;
+      anchorRef.current = null;
+    } else if (followRef.current) {
       element.scrollTop = element.scrollHeight;
     }
   }, [page]);
 
   const onScroll = () => {
-    const element = container.current;
+    const element = containerRef.current;
     const atBottom =
-      !current.current.tailOmitted &&
+      !currentRef.current.tailOmitted &&
       element.scrollHeight - element.scrollTop - element.clientHeight < 40;
-    follow.current = atBottom;
+    followRef.current = atBottom;
     setFollowing(atBottom);
-    if (element.scrollTop < 40 && current.current.has_more)
-      void loadOlder.current?.(true);
+    if (element.scrollTop < 40 && currentRef.current.has_more)
+      void loadOlderRef.current?.(true);
   };
 
   return (
@@ -231,9 +231,9 @@ export default function LogViewer({
             type="button"
             disabled={loading}
             onClick={() => {
-              follow.current = false;
+              followRef.current = false;
               setFollowing(false);
-              void loadOlder.current?.(true);
+              void loadOlderRef.current?.(true);
             }}
           >
             Load older entries
@@ -243,9 +243,9 @@ export default function LogViewer({
           type="button"
           disabled={loading}
           onClick={() => {
-            follow.current = true;
+            followRef.current = true;
             setFollowing(true);
-            void loadOlder.current?.();
+            void loadOlderRef.current?.();
           }}
         >
           Reload log
@@ -254,11 +254,12 @@ export default function LogViewer({
           <button
             type="button"
             onClick={() => {
-              follow.current = true;
+              followRef.current = true;
               setFollowing(true);
-              if (current.current.tailOmitted) void loadOlder.current?.();
-              else if (container.current)
-                container.current.scrollTop = container.current.scrollHeight;
+              if (currentRef.current.tailOmitted) void loadOlderRef.current?.();
+              else if (containerRef.current)
+                containerRef.current.scrollTop =
+                  containerRef.current.scrollHeight;
             }}
           >
             Follow live
@@ -273,7 +274,7 @@ export default function LogViewer({
         {error && <span role="alert">{error}</span>}
       </div>
       <div
-        ref={container}
+        ref={containerRef}
         role="region"
         aria-label={label}
         onScroll={onScroll}

@@ -632,8 +632,12 @@ const AccessControl = () => {
               </thead>
               <tbody>
                 {items && items.length > 0 ? (
-                  items.map((item, idx) => (
-                    <tr key={idx}>
+                  items.map((item) => (
+                    <tr
+                      key={
+                        item.xuid ?? item.uuid ?? item.name ?? item.player_name
+                      }
+                    >
                       <td>
                         <span
                           style={{
@@ -811,9 +815,9 @@ const AccessControl = () => {
                     gap: "calc(10px * var(--bsm-spacing-scale))",
                   }}
                 >
-                  {players.map((player, idx) => (
+                  {players.map((player) => (
                     <div
-                      key={idx}
+                      key={player.xuid ?? player.uuid ?? player.name}
                       style={{
                         display: "flex",
                         justifyContent: "space-between",

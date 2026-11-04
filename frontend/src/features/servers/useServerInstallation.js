@@ -15,12 +15,12 @@ export function useServerInstallation(onInstalled) {
   const operation = operations
     .filter((item) => item.kind === "install" && !item.acknowledged)
     .at(-1);
-  const handled = useRef(null);
-  const mounted = useRef(false);
+  const handledRef = useRef(null);
+  const mountedRef = useRef(false);
   useEffect(() => {
-    mounted.current = true;
+    mountedRef.current = true;
     return () => {
-      mounted.current = false;
+      mountedRef.current = false;
     };
   }, []);
   const write = useScopedMutation(
@@ -55,16 +55,16 @@ export function useServerInstallation(onInstalled) {
   useEffect(() => {
     if (
       !operation ||
-      handled.current === `${operation.id}:${operation.status}` ||
+      handledRef.current === `${operation.id}:${operation.status}` ||
       (!operation.terminal && operation.status !== "unknown")
     )
       return;
-    handled.current = `${operation.id}:${operation.status}`;
+    handledRef.current = `${operation.id}:${operation.status}`;
     const session = sessionRuntime.capture();
     const backend = getBackendIdentity();
     const assertCurrent = () => {
       if (
-        !mounted.current ||
+        !mountedRef.current ||
         !sessionRuntime.isCurrent(session) ||
         backend !== getBackendIdentity()
       )

@@ -1,3 +1,4 @@
+import { keyedItems } from "../../utils/keyedItems";
 import { useSearchParams } from "react-router-dom";
 import RuntimeDiagnostics from "./RuntimeDiagnostics";
 import { useEffect, useRef, useState } from "react";
@@ -60,11 +61,11 @@ export default function ApplicationDiagnostics() {
   );
   const [traceDraft, setTraceDraft] = useState("");
   const [correlation, setCorrelation] = useState("");
-  const traceHeading = useRef(null);
-  const controller = useRef(/** @type {AbortController | null} */ (null));
+  const traceHeadingRef = useRef(null);
+  const controllerRef = useRef(/** @type {AbortController | null} */ (null));
   useEffect(() => {
-    controller.current = new AbortController();
-    return () => controller.current.abort();
+    controllerRef.current = new AbortController();
+    return () => controllerRef.current.abort();
   }, []);
   const { isConnected, subscribe, unsubscribe } = useWebSocket({
     optional: true,
@@ -91,14 +92,14 @@ export default function ApplicationDiagnostics() {
   });
   useEffect(() => {
     if (view === "history" && correlation)
-      traceHeading.current?.focus({ preventScroll: true });
+      traceHeadingRef.current?.focus({ preventScroll: true });
   }, [view, correlation]);
   const snapshot = query.data;
   const report = useMutation({
     gcTime: 0,
     mutationFn: async () => {
       const session = sessionRuntime.capture();
-      const signal = controller.current?.signal;
+      const signal = controllerRef.current?.signal;
       if (!signal) throw new DOMException("View closed", "AbortError");
       const data = await callOperation("get_diagnostic_report", { signal });
       if (!sessionRuntime.isCurrent(session) || signal.aborted)
@@ -118,7 +119,7 @@ export default function ApplicationDiagnostics() {
     gcTime: 0,
     mutationFn: async () => {
       const session = sessionRuntime.capture();
-      const signal = controller.current?.signal;
+      const signal = controllerRef.current?.signal;
       if (!signal || !baseline || !snapshot)
         throw new Error("Save a baseline and collect observations first.");
       const result = await callOperation("compare_diagnostic_snapshots", {
@@ -139,11 +140,11 @@ export default function ApplicationDiagnostics() {
     setView("history");
     setHistoryVisited(true);
     setTraceDraft(id);
-    traceHeading.current?.scrollIntoView?.({
+    traceHeadingRef.current?.scrollIntoView?.({
       block: "start",
       behavior: "smooth",
     });
-    traceHeading.current?.focus({ preventScroll: true });
+    traceHeadingRef.current?.focus({ preventScroll: true });
     if (correlation === id) void trace.refetch();
     else setCorrelation(id);
   };
@@ -259,18 +260,18 @@ export default function ApplicationDiagnostics() {
                   aria-label="Diagnostic findings"
                 >
                   <h2>Needs attention</h2>
-                  {snapshot.summary.findings.map((finding, index) => (
-                    <article
-                      key={`${finding.subsystem}:${finding.issue.code}:${index}`}
-                    >
-                      <strong>{labelFor(finding.subsystem)}</strong>
-                      <p>{finding.issue.message}</p>
-                      <small>
-                        {actions[finding.issue.action] ??
-                          "Inspect this subsystem's observations."}
-                      </small>
-                    </article>
-                  ))}
+                  {keyedItems(snapshot.summary.findings).map(
+                    ({ item: finding, key }) => (
+                      <article key={key}>
+                        <strong>{labelFor(finding.subsystem)}</strong>
+                        <p>{finding.issue.message}</p>
+                        <small>
+                          {actions[finding.issue.action] ??
+                            "Inspect this subsystem's observations."}
+                        </small>
+                      </article>
+                    ),
+                  )}
                 </section>
               )}
               {snapshot.summary.truncated && (
@@ -430,7 +431,11 @@ export default function ApplicationDiagnostics() {
             className="diagnostic-trace"
             aria-labelledby="diagnostic-trace-heading"
           >
-            <h2 id="diagnostic-trace-heading" ref={traceHeading} tabIndex={-1}>
+            <h2
+              id="diagnostic-trace-heading"
+              ref={traceHeadingRef}
+              tabIndex={-1}
+            >
               Correlated trace
             </h2>
             <form

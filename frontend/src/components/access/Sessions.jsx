@@ -126,8 +126,8 @@ export default function Sessions({ userId }) {
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const controller = useRef(null);
-  useEffect(() => () => controller.current?.abort(), []);
+  const controllerRef = useRef(null);
+  useEffect(() => () => controllerRef.current?.abort(), []);
   async function perform(action, id, name) {
     if (
       action !== "rename" &&
@@ -141,7 +141,7 @@ export default function Sessions({ userId }) {
     )
       return false;
     const abort = new AbortController();
-    controller.current = abort;
+    controllerRef.current = abort;
     setBusy(true);
     setError("");
     try {

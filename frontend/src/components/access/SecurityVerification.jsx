@@ -30,7 +30,7 @@ export default function SecurityVerification() {
   const [busy, setBusy] = useState(false);
   const [needsFactor, setNeedsFactor] = useState(false);
   const [passkeysEnabled, setPasskeysEnabled] = useState(false);
-  const controller = useRef(null);
+  const controllerRef = useRef(null);
   useEffect(() => {
     setOpen(false);
     setPassword("");
@@ -52,9 +52,9 @@ export default function SecurityVerification() {
         setPasskeysEnabled(false);
         setRememberDevice(false);
         setTrustedUntil(null);
-        controller.current?.abort();
+        controllerRef.current?.abort();
         const statusRequest = new AbortController();
-        controller.current = statusRequest;
+        controllerRef.current = statusRequest;
         void callOperation("get_account_security", {
           signal: statusRequest.signal,
           ...trustedDeviceOptions(user?.username),
@@ -75,12 +75,12 @@ export default function SecurityVerification() {
     };
     window.addEventListener("bsm:security-verification-required", show);
     return () => {
-      controller.current?.abort();
+      controllerRef.current?.abort();
       window.removeEventListener("bsm:security-verification-required", show);
     };
   }, [userId, user?.username, sessionGeneration]);
   const close = () => {
-    controller.current?.abort();
+    controllerRef.current?.abort();
     setOpen(false);
     setPassword("");
     setOtp("");
@@ -91,7 +91,7 @@ export default function SecurityVerification() {
     setBusy(true);
     setError("");
     const abort = new AbortController();
-    controller.current = abort;
+    controllerRef.current = abort;
     try {
       const backend = getConnectionIdentity();
       const result = await callOperation("verify_account_security", {
@@ -144,8 +144,8 @@ export default function SecurityVerification() {
     setBusy(true);
     setError("");
     const abort = new AbortController();
-    controller.current?.abort();
-    controller.current = abort;
+    controllerRef.current?.abort();
+    controllerRef.current = abort;
     try {
       const options = await callOperation("begin_passkey_step_up", {
         signal: abort.signal,

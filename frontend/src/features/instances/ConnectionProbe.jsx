@@ -4,12 +4,12 @@ import { probeInstance } from "./probe";
 export default function ConnectionProbe({ url }) {
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
-  const controller = useRef(null);
-  useEffect(() => () => controller.current?.abort(), []);
+  const controllerRef = useRef(null);
+  useEffect(() => () => controllerRef.current?.abort(), []);
   async function test() {
-    controller.current?.abort();
+    controllerRef.current?.abort();
     const current = new AbortController();
-    controller.current = current;
+    controllerRef.current = current;
     setBusy(true);
     setResult(null);
     try {

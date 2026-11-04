@@ -1,8 +1,8 @@
-import { useContext, useMemo } from "react";
+import { use, useMemo } from "react";
 import { TimeContext } from "../contexts/TimeContext";
 import { formatTimestamp, timestampDetails } from "../utils/time";
 export function useTimeFormat() {
-  const context = useContext(TimeContext);
+  const context = use(TimeContext);
   return useMemo(
     () => ({
       ...context,

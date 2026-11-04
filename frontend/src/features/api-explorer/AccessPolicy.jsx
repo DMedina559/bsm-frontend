@@ -1,3 +1,4 @@
+import { keyedItems } from "../../utils/keyedItems";
 import React, { useState } from "react";
 import { Check, ShieldCheck, Search, Minus } from "lucide-react";
 
@@ -75,23 +76,25 @@ export default function AccessPolicy({ policy = {}, permissions, connected }) {
           <div>
             <strong>Conditional access</strong>
             <ul>
-              {policy.credential_alternatives.map((alternative, index) => (
-                <li key={index}>
-                  <strong>{alternative.condition}</strong>
-                  <p>{strings(alternative.schemes).join(" or ")}</p>
-                  {strings(alternative.permissions).length ? (
-                    <Chips
-                      values={strings(alternative.permissions)}
-                      permissions={connected ? account : null}
-                    />
-                  ) : (
-                    <span>
-                      Dedicated local credential; account capabilities do not
-                      apply.
-                    </span>
-                  )}
-                </li>
-              ))}
+              {keyedItems(policy.credential_alternatives).map(
+                ({ item: alternative, key }) => (
+                  <li key={key}>
+                    <strong>{alternative.condition}</strong>
+                    <p>{strings(alternative.schemes).join(" or ")}</p>
+                    {strings(alternative.permissions).length ? (
+                      <Chips
+                        values={strings(alternative.permissions)}
+                        permissions={connected ? account : null}
+                      />
+                    ) : (
+                      <span>
+                        Dedicated local credential; account capabilities do not
+                        apply.
+                      </span>
+                    )}
+                  </li>
+                ),
+              )}
             </ul>
           </div>
         )}

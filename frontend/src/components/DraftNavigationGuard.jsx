@@ -1,24 +1,8 @@
-import { useContext, useEffect, useSyncExternalStore } from "react";
+import { use, useEffect, useSyncExternalStore } from "react";
 import { UNSAFE_DataRouterContext, useBlocker } from "react-router-dom";
 import { useDialog } from "../contexts/DialogContext";
 import { draftRegistry } from "../app/draftRegistry";
-export function isSettingsTabChange(current, next) {
-  if (
-    current.pathname !== "/bsm-settings" ||
-    current.pathname !== next.pathname
-  )
-    return false;
-  const before = new URLSearchParams(current.search);
-  const after = new URLSearchParams(next.search);
-  const tabs = [null, "general", "backups", "web", "storage", "advanced"];
-  if (!tabs.includes(before.get("tab")) || !tabs.includes(after.get("tab")))
-    return false;
-  before.delete("tab");
-  after.delete("tab");
-  before.sort();
-  after.sort();
-  return before.toString() === after.toString();
-}
+import { isSettingsTabChange } from "../utils/settingsNavigation";
 
 function RouterGuard({ dirty }) {
   const blocker = useBlocker(
@@ -47,7 +31,7 @@ function RouterGuard({ dirty }) {
   return null;
 }
 export default function DraftNavigationGuard() {
-  const router = useContext(UNSAFE_DataRouterContext);
+  const router = use(UNSAFE_DataRouterContext);
   const dirty = useSyncExternalStore(
     draftRegistry.subscribe,
     draftRegistry.dirty,

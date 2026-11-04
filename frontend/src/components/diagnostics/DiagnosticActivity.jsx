@@ -1,3 +1,4 @@
+import { keyedItems } from "../../utils/keyedItems";
 import { useState } from "react";
 import { useResourceQuery } from "../../app/resourceQueries";
 import QueryStatus from "../QueryStatus";
@@ -8,8 +9,8 @@ function ActivityRecords({ title, records = [], onTrace }) {
     <section className="diagnostic-card" aria-label={title}>
       <h3>{title}</h3>
       {!records.length && <p>No matching entries.</p>}
-      {records.map((record, index) => (
-        <details key={record.event_id ?? record.operation_id ?? index}>
+      {keyedItems(records).map(({ item: record, key }) => (
+        <details key={key}>
           <summary>
             {record.name} · {record.server_name ?? "Application"} ·{" "}
             {record.status}

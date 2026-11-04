@@ -20,11 +20,11 @@ export default function RememberedDevices() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const identity = getPreferenceIdentity(user);
-  const controller = useRef(null);
+  const controllerRef = useRef(null);
   useEffect(() => {
     setBusy(false);
     setError("");
-    return () => controller.current?.abort();
+    return () => controllerRef.current?.abort();
   }, [identity, sessionGeneration]);
   const devices = useQuery(
     {
@@ -45,8 +45,8 @@ export default function RememberedDevices() {
   );
   async function revoke(device, mode) {
     const abort = new AbortController();
-    controller.current?.abort();
-    controller.current = abort;
+    controllerRef.current?.abort();
+    controllerRef.current = abort;
     const username = user.username;
     const backend = getConnectionIdentity();
     if (

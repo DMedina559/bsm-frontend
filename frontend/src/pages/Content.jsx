@@ -929,8 +929,8 @@ const Content = () => {
               </thead>
               <tbody>
                 {items && items.length > 0 ? (
-                  items.map((item, idx) => (
-                    <tr key={idx}>
+                  items.map((item) => (
+                    <tr key={item.uuid ?? item.name}>
                       <td>
                         <div
                           style={{

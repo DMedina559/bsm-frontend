@@ -1,3 +1,4 @@
+import { keyedItems } from "../../../utils/keyedItems";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "../../../contexts/ToastContext";
 import {
@@ -102,7 +103,7 @@ export const displayComponents = {
         title={title || "Plugin content"}
         height={height}
         className={`dynamic-iframe ${className}`}
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+        sandbox="allow-scripts allow-forms allow-popups"
       />
     );
   },
@@ -162,8 +163,8 @@ export const displayComponents = {
         {!lines || lines.length === 0 ? (
           <div className="log-placeholder">Waiting for logs…</div>
         ) : (
-          lines.map((line, idx) => (
-            <div key={idx} className="log-line">
+          keyedItems(lines).map(({ item: line, key }) => (
+            <div key={key} className="log-line">
               {line}
             </div>
           ))
@@ -309,16 +310,16 @@ export const displayComponents = {
       <table className={`data-table ${className}`}>
         <thead>
           <tr>
-            {headers.map((h, i) => (
-              <th key={i}>{h}</th>
+            {keyedItems(headers).map(({ item: h, key }) => (
+              <th key={key}>{h}</th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, i) => (
-            <tr key={i}>
-              {row.map((cell, j) => (
-                <td key={j}>{cell}</td>
+          {keyedItems(rows).map(({ item: row, key: rowKey }) => (
+            <tr key={rowKey}>
+              {keyedItems(row).map(({ item: cell, key }) => (
+                <td key={key}>{cell}</td>
               ))}
             </tr>
           ))}

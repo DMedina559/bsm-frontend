@@ -58,7 +58,7 @@ function InstanceCard({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [showLogin, setShowLogin] = useState(false);
-  const connection = useRef(null);
+  const connectionRef = useRef(null);
   const onStateRef = useRef(onState);
   useEffect(() => {
     onStateRef.current = onState;
@@ -73,18 +73,18 @@ function InstanceCard({
         },
       },
     );
-    connection.current = session;
+    connectionRef.current = session;
     setSnapshot(session.getSnapshot());
     onStateRef.current(profile.id, session.getSnapshot());
     void session.start();
     return () => {
       session.dispose();
-      connection.current = null;
+      connectionRef.current = null;
     };
   }, [profile.id, profile.url, profile.paused, token]);
   const { confirmAction } = useDialog();
   async function action(server, operation) {
-    const session = connection.current;
+    const session = connectionRef.current;
     if (
       !(await confirmAction(
         `${operation === "stop_server" ? "Stop" : "Start"} ${server.name} on ${profile.name} (${profile.url})?`,
@@ -93,7 +93,7 @@ function InstanceCard({
       return;
     setError("");
     try {
-      if (session !== connection.current)
+      if (session !== connectionRef.current)
         throw new Error(
           "The connection changed. Review the target instance before confirming again.",
         );
@@ -192,7 +192,7 @@ function InstanceCard({
             { username, password, remember, otp, rememberDevice = false },
             signal,
           ) => {
-            await connection.current.login(
+            await connectionRef.current.login(
               username,
               password,
               remember,
@@ -203,7 +203,7 @@ function InstanceCard({
             setShowLogin(false);
           }}
           onToken={async (candidate, remember, signal) => {
-            await connection.current.loginWithToken(
+            await connectionRef.current.loginWithToken(
               candidate,
               remember,
               signal,
@@ -211,7 +211,7 @@ function InstanceCard({
             setShowLogin(false);
           }}
           onPasskey={async ({ username, remember }, signal) => {
-            await connection.current.loginWithPasskey(
+            await connectionRef.current.loginWithPasskey(
               username,
               remember,
               signal,
@@ -388,7 +388,9 @@ function InstanceCard({
                           `Have you checked ${operation.serverName} on ${profile.name}? Acknowledging this only unlocks actions; it does not cancel a backend operation.`,
                         )
                       ) {
-                        connection.current.acknowledgeUncertain(operation.id);
+                        connectionRef.current.acknowledgeUncertain(
+                          operation.id,
+                        );
                         setError("");
                       }
                     }}
@@ -413,7 +415,7 @@ function InstanceCard({
         <button
           className="instance-button"
           disabled={busy || blocked || profile.paused || !token}
-          onClick={() => void connection.current.refresh()}
+          onClick={() => void connectionRef.current.refresh()}
         >
           <RefreshCw size={13} />
           Refresh
@@ -471,7 +473,7 @@ function InstanceCard({
               onClick={async () => {
                 setBusy(true);
                 try {
-                  await connection.current.logout();
+                  await connectionRef.current.logout();
                 } catch (failure) {
                   setError(failure.message);
                 } finally {

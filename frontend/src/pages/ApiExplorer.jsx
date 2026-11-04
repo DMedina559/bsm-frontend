@@ -67,20 +67,20 @@ function Explorer() {
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
-  const controller = useRef(null);
-  const reloadSchema = useRef(null);
-  const connected = useRef(false);
+  const controllerRef = useRef(null);
+  const reloadSchemaRef = useRef(null);
+  const connectedRef = useRef(false);
   useEffect(() => {
     const changed = () => {
-      if (!connected.current) return;
-      controller.current?.abort();
-      void reloadSchema.current?.(true);
+      if (!connectedRef.current) return;
+      controllerRef.current?.abort();
+      void reloadSchemaRef.current?.(true);
     };
     window.addEventListener("bsm:access-changed", changed);
     return () => window.removeEventListener("bsm:access-changed", changed);
   }, []);
-  const fileInput = useRef(null);
-  useEffect(() => () => controller.current?.abort(), []);
+  const fileInputRef = useRef(null);
+  useEffect(() => () => controllerRef.current?.abort(), []);
   const operation = operations.find((item) => item.id === selected);
   const matches = operations.filter(
     (item) =>
@@ -107,11 +107,11 @@ function Explorer() {
   ) {
     const next = inspectSchema(value);
     if (!isConnected) {
-      controller.current?.abort();
-      controller.current = null;
+      controllerRef.current?.abort();
+      controllerRef.current = null;
       setBusy(false);
     }
-    connected.current = isConnected;
+    connectedRef.current = isConnected;
     setConnectedSource(isConnected);
     setSchema(value);
     setOperations(next);
@@ -146,19 +146,19 @@ function Explorer() {
     setBusy(true);
     setError("");
     const abort = new AbortController();
-    controller.current = abort;
+    controllerRef.current = abort;
     try {
       const value = await loadExplorerSchema(abort.signal);
       if (abort.signal.aborted) return;
       load(value, "Connected backend", preserve, true);
     } catch (e) {
-      if (controller.current === abort) setError(e.message);
+      if (controllerRef.current === abort) setError(e.message);
     } finally {
-      if (controller.current === abort) setBusy(false);
+      if (controllerRef.current === abort) setBusy(false);
     }
   }
   useEffect(() => {
-    reloadSchema.current = live;
+    reloadSchemaRef.current = live;
   });
   function choose(id) {
     setSelected(id);
@@ -219,7 +219,7 @@ function Explorer() {
     setResult(null);
     setTransferProgress("");
     const abort = new AbortController();
-    controller.current = abort;
+    controllerRef.current = abort;
     try {
       const options = prepareCall(schema, operation, values, body, files);
       setBusy(true);
@@ -227,7 +227,7 @@ function Explorer() {
         ...options,
         signal: abort.signal,
         onUploadProgress: (loaded, total) => {
-          if (controller.current !== abort) return;
+          if (controllerRef.current !== abort) return;
           setTransferProgress(
             total
               ? `Uploading… ${Math.round((loaded / total) * 100)}% (${loaded} / ${total} bytes)`
@@ -236,10 +236,10 @@ function Explorer() {
         },
       });
       if (abort.signal.aborted) {
-        if (controller.current === abort) setError("Cancelled");
+        if (controllerRef.current === abort) setError("Cancelled");
         return;
       }
-      if (controller.current !== abort) return;
+      if (controllerRef.current !== abort) return;
       if (response.error) setError(response.error);
       setResult({
         ...response,
@@ -258,9 +258,9 @@ function Explorer() {
       setTab("response");
       setResponseMode("body");
     } catch (e) {
-      if (controller.current === abort) setError(e.message);
+      if (controllerRef.current === abort) setError(e.message);
     } finally {
-      if (controller.current === abort) {
+      if (controllerRef.current === abort) {
         setBusy(false);
         setTransferProgress("");
       }
@@ -313,7 +313,7 @@ function Explorer() {
         </div>
       </div>
       <input
-        ref={fileInput}
+        ref={fileInputRef}
         className="ae-file-input"
         aria-label="Upload OpenAPI JSON"
         type="file"
@@ -342,7 +342,7 @@ function Explorer() {
             <button
               className="ae-button"
               disabled={busy}
-              onClick={() => fileInput.current?.click()}
+              onClick={() => fileInputRef.current?.click()}
             >
               <FileJson size={15} />
               Choose JSON file
@@ -393,7 +393,7 @@ function Explorer() {
           <span>{transferProgress || "Request running…"}</span>
           <button
             className="ae-button"
-            onClick={() => controller.current?.abort()}
+            onClick={() => controllerRef.current?.abort()}
           >
             <Square size={12} />
             Cancel

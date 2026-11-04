@@ -36,10 +36,10 @@ export function usePublicQuery(key, load, options = {}) {
 
 /** Scope changes and unmounts prevent a completed write from updating another page. */
 export function useScopedMutation(scope, run) {
-  const current = useRef(null);
+  const currentRef = useRef(null);
   useEffect(() => {
     const controller = new AbortController();
-    current.current = controller;
+    currentRef.current = controller;
     return () => controller.abort();
   }, [scope]);
   const mutation = useMutation(
@@ -84,7 +84,7 @@ export function useScopedMutation(scope, run) {
         variables,
         session: sessionRuntime.capture(),
         backend: getBackendIdentity(),
-        controller: current.current,
+        controller: currentRef.current,
         execute: run,
       }),
   };
@@ -92,17 +92,17 @@ export function useScopedMutation(scope, run) {
 
 /** Keep passwords and one-time secrets out of the shared mutation cache. */
 export function useSensitiveMutation(scope, run) {
-  const current = useRef(null);
+  const currentRef = useRef(null);
   const [pending, setPending] = useState(null);
   useEffect(() => {
     const controller = new AbortController();
-    current.current = controller;
+    currentRef.current = controller;
     return () => controller.abort();
   }, [scope]);
   return {
     isPending: pending === scope,
     mutateAsync: async (variables) => {
-      const controller = current.current;
+      const controller = currentRef.current;
       const session = sessionRuntime.capture();
       const backend = getBackendIdentity();
       const signal = AbortSignal.any([session.signal, controller.signal]);

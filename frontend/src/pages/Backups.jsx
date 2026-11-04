@@ -1,3 +1,4 @@
+import { keyedItems } from "../utils/keyedItems";
 import BackupContents from "../components/BackupContents";
 import { defaultBackupComponents } from "../utils/backupContents";
 import { triggerBlobDownload } from "../utils/download";
@@ -91,7 +92,7 @@ function ServerBackups({ prepared, onPrepared }) {
     refetchIntervalInBackground: false,
   });
   const [preparedNotice, setPreparedNotice] = useState("");
-  const openedPrepared = useRef(null);
+  const openedPreparedRef = useRef(null);
   const [destination, setDestination] = useState("");
   const [copyName, setCopyName] = useState("");
   const [copyVersion, setCopyVersion] = useState("LATEST");
@@ -121,17 +122,17 @@ function ServerBackups({ prepared, onPrepared }) {
   const [plan, setPlan] = useState(null);
   const [restart, setRestart] = useState(true);
   const [progress, setProgress] = useState("");
-  const secret = useRef("");
-  const input = useRef(null);
-  const scope = useRef(new AbortController());
-  const transferScope = useRef(new AbortController());
+  const secretRef = useRef("");
+  const inputRef = useRef(null);
+  const scopeRef = useRef(new AbortController());
+  const transferScopeRef = useRef(new AbortController());
   useEffect(() => {
-    scope.current = new AbortController();
-    transferScope.current = new AbortController();
+    scopeRef.current = new AbortController();
+    transferScopeRef.current = new AbortController();
     return () => {
-      scope.current.abort();
-      transferScope.current.abort();
-      secret.current = "";
+      scopeRef.current.abort();
+      transferScopeRef.current.abort();
+      secretRef.current = "";
     };
   }, [selectedServer, sessionGeneration]);
   const reset = () => {
@@ -141,8 +142,8 @@ function ServerBackups({ prepared, onPrepared }) {
     setManifest(null);
     setPlan(null);
     setComponents([]);
-    secret.current = "";
-    if (input.current) input.current.value = "";
+    secretRef.current = "";
+    if (inputRef.current) inputRef.current.value = "";
   };
 
   const execute = async (
@@ -151,16 +152,16 @@ function ServerBackups({ prepared, onPrepared }) {
   ) => {
     const signal = AbortSignal.any([
       session.signal,
-      scope.current.signal,
+      scopeRef.current.signal,
       ...(quiet || id === "import_server_snapshot"
-        ? [transferScope.current.signal]
+        ? [transferScopeRef.current.signal]
         : []),
     ]);
     const body =
       unlockOperations.has(id) || id === "import_server_snapshot"
         ? {
             ...options.body,
-            ...(secret.current ? { recovery_key: secret.current } : {}),
+            ...(secretRef.current ? { recovery_key: secretRef.current } : {}),
           }
         : options.body;
     /** @type {any} */
@@ -282,14 +283,14 @@ function ServerBackups({ prepared, onPrepared }) {
     if (
       !prepared ||
       prepared.server_name !== selectedServer ||
-      openedPrepared.current === prepared.backup_id
+      openedPreparedRef.current === prepared.backup_id
     )
       return;
     const item = snapshots.data?.find(
       (entry) => entry.backup_id === prepared.backup_id,
     );
     if (!item) return;
-    openedPrepared.current = prepared.backup_id;
+    openedPreparedRef.current = prepared.backup_id;
     setSelected(item);
     setInspectorTab("restore");
     setPreparedNotice(
@@ -374,8 +375,8 @@ function ServerBackups({ prepared, onPrepared }) {
     });
     setTransferring(false);
     if (result) {
-      secret.current = "";
-      if (input.current) input.current.value = "";
+      secretRef.current = "";
+      if (inputRef.current) inputRef.current.value = "";
       await snapshots.refetch();
       addToast("Backup imported and validated.", "success");
     }
@@ -639,12 +640,12 @@ function ServerBackups({ prepared, onPrepared }) {
                 Recovery key (if encrypted){" "}
                 <input
                   className="form-input"
-                  ref={input}
+                  ref={inputRef}
                   type="password"
                   name="recovery_key"
                   autoComplete="off"
                   onChange={(e) => {
-                    secret.current = e.target.value;
+                    secretRef.current = e.target.value;
                   }}
                 />
               </label>
@@ -680,8 +681,8 @@ function ServerBackups({ prepared, onPrepared }) {
         <button
           className="action-button secondary"
           onClick={() => {
-            transferScope.current.abort();
-            transferScope.current = new AbortController();
+            transferScopeRef.current.abort();
+            transferScopeRef.current = new AbortController();
           }}
         >
           Cancel transfer
@@ -1072,7 +1073,7 @@ function ServerBackups({ prepared, onPrepared }) {
                         name="recovery_key"
                         autoComplete="off"
                         onChange={(e) => {
-                          secret.current = e.target.value;
+                          secretRef.current = e.target.value;
                         }}
                       />
                     </label>
@@ -1202,18 +1203,20 @@ function ServerBackups({ prepared, onPrepared }) {
                           </tr>
                         </thead>
                         <tbody>
-                          {plan.volumes.map((volume, index) => (
-                            <tr key={index}>
-                              <td>{volume.roles.join(" + ")}</td>
-                              <td>{bytes(volume.required_bytes)}</td>
-                              <td>{bytes(volume.available_bytes)}</td>
-                              <td>
-                                {volume.sufficient
-                                  ? "Enough space"
-                                  : "Not enough space"}
-                              </td>
-                            </tr>
-                          ))}
+                          {keyedItems(plan.volumes).map(
+                            ({ item: volume, key }) => (
+                              <tr key={key}>
+                                <td>{volume.roles.join(" + ")}</td>
+                                <td>{bytes(volume.required_bytes)}</td>
+                                <td>{bytes(volume.available_bytes)}</td>
+                                <td>
+                                  {volume.sufficient
+                                    ? "Enough space"
+                                    : "Not enough space"}
+                                </td>
+                              </tr>
+                            ),
+                          )}
                         </tbody>
                       </table>
                     )}
@@ -1415,7 +1418,7 @@ function ServerBackups({ prepared, onPrepared }) {
                     name="recovery_key"
                     autoComplete="off"
                     onChange={(event) => {
-                      secret.current = event.target.value;
+                      secretRef.current = event.target.value;
                     }}
                   />
                 </label>

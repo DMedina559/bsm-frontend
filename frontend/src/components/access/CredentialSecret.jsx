@@ -4,24 +4,24 @@ import { Check, Copy, KeyRound, X } from "lucide-react";
 /** Keep the one-time credential and clipboard result local to this view. */
 export default function CredentialSecret({ value, onDismiss }) {
   const [state, setState] = useState("idle");
-  const field = useRef(null);
-  const active = useRef(false);
+  const fieldRef = useRef(null);
+  const activeRef = useRef(false);
   useEffect(() => {
-    active.current = true;
+    activeRef.current = true;
     return () => {
-      active.current = false;
+      activeRef.current = false;
     };
   }, []);
   async function copy() {
     setState("copying");
     try {
       await navigator.clipboard.writeText(value);
-      if (active.current) setState("copied");
+      if (activeRef.current) setState("copied");
     } catch {
-      if (!active.current) return;
+      if (!activeRef.current) return;
       setState("failed");
-      field.current?.focus();
-      field.current?.select();
+      fieldRef.current?.focus();
+      fieldRef.current?.select();
     }
   }
   return (
@@ -34,7 +34,7 @@ export default function CredentialSecret({ value, onDismiss }) {
         </div>
       </div>
       <textarea
-        ref={field}
+        ref={fieldRef}
         aria-label="New integration credential"
         readOnly
         value={value}

@@ -1,3 +1,4 @@
+import { keyedItems } from "../../../utils/keyedItems";
 import {
   LineChart,
   Line,
@@ -68,9 +69,9 @@ export const chartsComponents = {
                 label
               >
                 {Array.isArray(data) &&
-                  data.map((entry, index) => (
+                  keyedItems(data).map(({ item: entry, key }, index) => (
                     <Cell
-                      key={`cell-${index}`}
+                      key={key}
                       fill={entry.color || colors[index % colors.length]}
                     />
                   ))}
@@ -121,9 +122,9 @@ export const chartsComponents = {
             />
             {showLegend && <Legend />}
             {series &&
-              series.map((s, idx) => (
+              series.map((s) => (
                 <DataComponent
-                  key={idx}
+                  key={s.dataKey}
                   type="monotone"
                   dataKey={s.dataKey}
                   stroke={s.color}

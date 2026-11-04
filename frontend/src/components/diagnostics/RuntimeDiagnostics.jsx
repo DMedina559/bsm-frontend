@@ -1,3 +1,4 @@
+import { keyedItems } from "../../utils/keyedItems";
 import { useState, useSyncExternalStore } from "react";
 import { Download, Trash2 } from "lucide-react";
 import { application } from "../../app/application";
@@ -176,8 +177,8 @@ export default function RuntimeDiagnostics() {
             </tr>
           </thead>
           <tbody>
-            {shown.map((event, index) => (
-              <tr key={`${event.session}:${event.at}:${index}`}>
+            {keyedItems(shown).map(({ item: event, key }) => (
+              <tr key={key}>
                 <td>
                   <Timestamp value={event.at} />
                 </td>

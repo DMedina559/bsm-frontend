@@ -9,9 +9,9 @@ export default function BackupContents({
   disabled = false,
   allowDefault = false,
 }) {
-  const firstChoice = useRef(null);
+  const firstChoiceRef = useRef(null);
   useEffect(() => {
-    firstChoice.current?.setCustomValidity(
+    firstChoiceRef.current?.setCustomValidity(
       mode === "selected" && components.length === 0
         ? "Select at least one component."
         : "",
@@ -43,7 +43,7 @@ export default function BackupContents({
           {Object.entries(backupComponents).map(([key, label], index) => (
             <label className="backup-component-choice" key={key}>
               <input
-                ref={index === 0 ? firstChoice : undefined}
+                ref={index === 0 ? firstChoiceRef : undefined}
                 type="checkbox"
                 checked={components.includes(key)}
                 onChange={(e) =>

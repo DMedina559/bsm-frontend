@@ -1,3 +1,4 @@
+import { keyedItems } from "../utils/keyedItems";
 import React, { useRef, useState } from "react";
 import themePreviews from "../utils/themePreviews.json";
 import Modal from "./Modal";
@@ -28,7 +29,7 @@ export default function PaletteEditor() {
   const [draft, setDraft] = useState(DEFAULT_PALETTE);
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
-  const input = useRef(null);
+  const inputRef = useRef(null);
   const run = (action) => {
     try {
       action();
@@ -74,7 +75,7 @@ export default function PaletteEditor() {
           <button
             type="button"
             className="action-button secondary"
-            onClick={() => input.current.click()}
+            onClick={() => inputRef.current.click()}
           >
             Import palette
           </button>
@@ -113,11 +114,11 @@ export default function PaletteEditor() {
             className="theme-swatch theme-swatch-default"
             aria-hidden="true"
           >
-            {(themePreviews[theme] || themePreviews.default).colors.map(
-              (color, index) => (
-                <i key={index} style={{ background: color }} />
-              ),
-            )}
+            {keyedItems(
+              (themePreviews[theme] || themePreviews.default).colors,
+            ).map(({ item: color, key }) => (
+              <i key={key} style={{ background: color }} />
+            ))}
           </span>
           <strong>Use account theme</strong>
           <small>
@@ -171,7 +172,7 @@ export default function PaletteEditor() {
         ))}
       </div>
       <input
-        ref={input}
+        ref={inputRef}
         type="file"
         accept=".json,application/json"
         aria-label="Import palette JSON"

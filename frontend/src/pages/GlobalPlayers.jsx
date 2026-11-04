@@ -234,8 +234,8 @@ const GlobalPlayers = () => {
               </thead>
               <tbody>
                 {players.length > 0 ? (
-                  players.map((p, idx) => (
-                    <tr key={idx}>
+                  players.map((p) => (
+                    <tr key={p.xuid ?? p.uuid ?? p.name}>
                       <td
                         style={{
                           fontWeight: "bold",

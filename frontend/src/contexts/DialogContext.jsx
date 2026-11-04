@@ -1,29 +1,29 @@
 import React, {
   createContext,
   useCallback,
-  useContext,
+  use,
   useEffect,
   useRef,
   useState,
 } from "react";
 import Modal from "../components/Modal";
 const DialogContext = createContext();
-export const useDialog = () => useContext(DialogContext);
+export const useDialog = () => use(DialogContext);
 export function DialogProvider({ children }) {
   const [dialog, setDialog] = useState(null);
   const [value, setValue] = useState("");
-  const resolver = useRef(null);
+  const resolverRef = useRef(null);
   const settle = useCallback((result) => {
-    resolver.current?.(result);
-    resolver.current = null;
+    resolverRef.current?.(result);
+    resolverRef.current = null;
     setDialog(null);
   }, []);
   const open = useCallback(
     (type, message) =>
       new Promise((resolve) => {
         // Only one interactive confirmation may be active at a time.
-        resolver.current?.(false);
-        resolver.current = resolve;
+        resolverRef.current?.(false);
+        resolverRef.current = resolve;
         setValue("");
         setDialog({ type, message });
       }),
@@ -31,7 +31,7 @@ export function DialogProvider({ children }) {
   );
   useEffect(
     () => () => {
-      resolver.current?.(false);
+      resolverRef.current?.(false);
     },
     [],
   );
@@ -44,7 +44,7 @@ export function DialogProvider({ children }) {
     [open],
   );
   return (
-    <DialogContext.Provider value={{ confirmAction, promptAction }}>
+    <DialogContext value={{ confirmAction, promptAction }}>
       {children}
       {dialog && (
         <Modal
@@ -95,6 +95,6 @@ export function DialogProvider({ children }) {
           </form>
         </Modal>
       )}
-    </DialogContext.Provider>
+    </DialogContext>
   );
 }

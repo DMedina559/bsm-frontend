@@ -11,9 +11,9 @@ test("token expiry follows display timezone changes across a date boundary", () 
     permissions: [],
   };
   const view = (timezone) => (
-    <TimeContext.Provider value={{ timezone }}>
+    <TimeContext value={{ timezone }}>
       <TokenAccessNotice account={account} />
-    </TimeContext.Provider>
+    </TimeContext>
   );
   const { rerender } = render(view("UTC"));
   const utc = screen.getByText(/^Expires /).textContent;

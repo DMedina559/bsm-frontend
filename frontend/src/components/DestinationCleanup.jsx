@@ -19,17 +19,17 @@ export default function DestinationCleanup(props) {
 
 function Cleanup({ serverName, destination }) {
   const [plan, setPlan] = useState(null);
-  const scope = useRef(null);
+  const scopeRef = useRef(null);
   const { confirmAction } = useDialog();
   const { addToast } = useToast();
   useEffect(() => {
     const controller = new AbortController();
-    scope.current = controller;
+    scopeRef.current = controller;
     return () => controller.abort();
   }, []);
   const write = useResourceMutation(
     async (token, { session }) => {
-      const signal = scope.current.signal;
+      const signal = scopeRef.current.signal;
       const result = await callOperation("cleanup_backup_destination", {
         path: { server_name: serverName, destination },
         body: { token },
@@ -66,7 +66,7 @@ function Cleanup({ serverName, destination }) {
   const run = async (token) => {
     try {
       const next = await write.mutateAsync(token);
-      if (!scope.current.signal.aborted) setPlan(next);
+      if (!scopeRef.current.signal.aborted) setPlan(next);
     } catch (error) {
       if (error.name !== "AbortError") addToast(error.message, "error");
       setPlan(null);

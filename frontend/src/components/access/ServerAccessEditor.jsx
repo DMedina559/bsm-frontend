@@ -40,8 +40,8 @@ export default function ServerAccessEditor({ userId, userRole }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const controller = useRef(null);
-  useEffect(() => () => controller.current?.abort(), []);
+  const controllerRef = useRef(null);
+  useEffect(() => () => controllerRef.current?.abort(), []);
   useEffect(() => {
     if (access.data) {
       setMode(access.data.mode);
@@ -79,7 +79,7 @@ export default function ServerAccessEditor({ userId, userRole }) {
     setError("");
     setMessage("");
     const abort = new AbortController();
-    controller.current = abort;
+    controllerRef.current = abort;
     try {
       await callOperation("set_account_server_access", {
         path: { user_id: userId },

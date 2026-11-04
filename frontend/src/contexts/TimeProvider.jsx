@@ -22,5 +22,5 @@ export default function TimeProvider({ children }) {
     }),
     [applicationTimezone, mode],
   );
-  return <TimeContext.Provider value={value}>{children}</TimeContext.Provider>;
+  return <TimeContext value={value}>{children}</TimeContext>;
 }

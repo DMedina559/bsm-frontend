@@ -24,13 +24,7 @@ import { callOperation } from "../api/operations";
 import { sessionRuntime } from "../app/sessionRuntime";
 import { queryClient } from "../app/queryClient";
 import { operationCoordinator } from "../app/operationCoordinator";
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { createContext, use, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "../app/queryKeys";
 import { getBackendIdentity } from "../app/backendIdentity";
@@ -43,7 +37,7 @@ import { logger } from "../utils/logger";
 
 const AuthContext = createContext();
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => use(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const identityRef = useRef(null);
@@ -53,7 +47,7 @@ export const AuthProvider = ({ children }) => {
   const backendRef = useRef(getBackendIdentity());
   const authenticationModeRef = useRef(getAuthenticationMode());
   const instanceIssueRef = useRef(getInstanceIssue());
-  const checkGeneration = useRef(0);
+  const checkGenerationRef = useRef(0);
   const [loading, setLoading] = useState(true);
   const [needsSetup, setNeedsSetup] = useState(false);
   const [sessionGeneration, setSessionGeneration] = useState(
@@ -134,9 +128,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   const checkUser = async () => {
-    const check = ++checkGeneration.current;
+    const check = ++checkGenerationRef.current;
     await queryClient.cancelQueries({ queryKey: queryKeys.account() });
-    const current = () => check === checkGeneration.current;
+    const current = () => check === checkGenerationRef.current;
     if (getInstanceIssue()) {
       setUser(null);
       setNeedsSetup(false);
@@ -245,7 +239,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     checkUser();
     return () => {
-      checkGeneration.current += 1;
+      checkGenerationRef.current += 1;
     };
     // The initial check runs once; subsequent checks are explicitly requested.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -273,7 +267,7 @@ export const AuthProvider = ({ children }) => {
           /* Storage may be unavailable. */
         }
       }
-      checkGeneration.current += 1;
+      checkGenerationRef.current += 1;
       setLoading(true);
       resetSession();
       identityRef.current = null;
@@ -328,7 +322,7 @@ export const AuthProvider = ({ children }) => {
     rememberDevice = false,
   ) => {
     if (isTokenAuthentication()) clearCredentials();
-    checkGeneration.current += 1;
+    checkGenerationRef.current += 1;
     resetSession();
     identityRef.current = null;
     setUser(null);
@@ -347,17 +341,21 @@ export const AuthProvider = ({ children }) => {
     if (rememberDevice) formData.append("remember_device", "true");
     if (device) formData.append("trusted_device_token", device);
 
-    const attempt = checkGeneration.current;
+    const attempt = checkGenerationRef.current;
     let data;
     try {
       data = await callOperation("login", { body: formData, signal });
     } catch (failure) {
-      if (failure.mfaRequired && attempt === checkGeneration.current && device)
+      if (
+        failure.mfaRequired &&
+        attempt === checkGenerationRef.current &&
+        device
+      )
         forgetTrustedDevice(username, backend);
       throw failure;
     }
 
-    if (attempt !== checkGeneration.current) return data;
+    if (attempt !== checkGenerationRef.current) return data;
     if (rememberDevice) rememberTrustedDevice(username, data, backend);
     if (data.access_token || getAuthenticationMode() === "cookie-recovery") {
       logger.info(`[Auth] Login successful`, { username });
@@ -384,7 +382,7 @@ export const AuthProvider = ({ children }) => {
       generation !== sessionRuntime.capture().generation
     )
       throw new DOMException("Connection changed", "AbortError");
-    checkGeneration.current += 1;
+    checkGenerationRef.current += 1;
     resetSession();
     identityRef.current = null;
     setUser(null);
@@ -400,7 +398,7 @@ export const AuthProvider = ({ children }) => {
     signal,
   ) => {
     if (isTokenAuthentication()) clearCredentials();
-    checkGeneration.current += 1;
+    checkGenerationRef.current += 1;
     resetSession();
     identityRef.current = null;
     setUser(null);
@@ -409,14 +407,14 @@ export const AuthProvider = ({ children }) => {
       username: trimmedUsername,
       rememberMe,
     });
-    const attempt = checkGeneration.current;
+    const attempt = checkGenerationRef.current;
     const options = await callOperation("begin_passkey_login", {
       body: { username: trimmedUsername },
       signal,
     });
-    if (attempt !== checkGeneration.current || signal?.aborted) return null;
+    if (attempt !== checkGenerationRef.current || signal?.aborted) return null;
     const credential = await getPasskeyAssertion(options.public_key, signal);
-    if (attempt !== checkGeneration.current || signal?.aborted) return null;
+    if (attempt !== checkGenerationRef.current || signal?.aborted) return null;
     const data = await callOperation("complete_passkey_login", {
       body: {
         challenge_id: options.challenge_id,
@@ -425,7 +423,7 @@ export const AuthProvider = ({ children }) => {
       },
       signal,
     });
-    if (attempt !== checkGeneration.current) return data;
+    if (attempt !== checkGenerationRef.current) return data;
     if (data.access_token || getAuthenticationMode() === "cookie-recovery") {
       logger.info("[Auth] Passkey login successful");
       if (getAuthenticationMode() === "bearer")
@@ -439,17 +437,17 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async ({ server = true } = {}) => {
-    checkGeneration.current += 1;
+    checkGenerationRef.current += 1;
     identityRef.current = null;
     setUser(null);
-    const attempt = checkGeneration.current;
+    const attempt = checkGenerationRef.current;
     try {
       logger.info("[Auth] Logging out user", { username: user?.username });
       if (server && !user?.credential_id) await callOperation("logout");
     } catch (e) {
       logger.warn("[Auth] Logout failed on server", { error: e });
     }
-    if (attempt !== checkGeneration.current) return;
+    if (attempt !== checkGenerationRef.current) return;
     resetSession();
     clearCredentials();
     queryClient.clear();
@@ -459,7 +457,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider
+    <AuthContext
       value={{
         user,
         login,
@@ -479,6 +477,6 @@ export const AuthProvider = ({ children }) => {
       }}
     >
       {children}
-    </AuthContext.Provider>
+    </AuthContext>
   );
 };

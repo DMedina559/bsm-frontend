@@ -1,3 +1,4 @@
+import { keyedItems } from "../../utils/keyedItems";
 import React, { useId, useState } from "react";
 import { ChevronRight, Copy, Check, Braces, Search } from "lucide-react";
 import {
@@ -74,8 +75,8 @@ function TypeLabel({ schema, value, onModel }) {
   if (alternatives)
     return (
       <span className="ae-type">
-        {alternatives.map((part, index) => (
-          <React.Fragment key={index}>
+        {keyedItems(alternatives).map(({ item: part, key }, index) => (
+          <React.Fragment key={key}>
             {index > 0 && " | "}
             <TypeLabel schema={schema} value={part} onModel={onModel} />
           </React.Fragment>
@@ -175,16 +176,18 @@ export function SchemaView({ schema, value, onModel, depth = 0 }) {
               ))}
             </div>
           )}
-          {(spec.anyOf ?? spec.oneOf ?? []).map((part, i) => (
-            <div key={i} className="ae-schema-alternative">
-              <SchemaView
-                schema={schema}
-                value={part}
-                onModel={onModel}
-                depth={depth + 1}
-              />
-            </div>
-          ))}
+          {keyedItems(spec.anyOf ?? spec.oneOf ?? []).map(
+            ({ item: part, key }) => (
+              <div key={key} className="ae-schema-alternative">
+                <SchemaView
+                  schema={schema}
+                  value={part}
+                  onModel={onModel}
+                  depth={depth + 1}
+                />
+              </div>
+            ),
+          )}
           {spec.type === "array" && (
             <SchemaView
               schema={schema}
@@ -488,8 +491,8 @@ function ArrayView({ value, depth }) {
               </tr>
             </thead>
             <tbody>
-              {rows.map((row, index) => (
-                <tr key={index}>
+              {keyedItems(rows).map(({ item: row, key: rowKey }) => (
+                <tr key={rowKey}>
                   {columns.map((key) => (
                     <td key={key}>
                       {row[key] !== null && typeof row[key] === "object" ? (
@@ -513,8 +516,8 @@ function ArrayView({ value, depth }) {
         </div>
       ) : (
         <ul className="ae-value-list">
-          {rows.map((item, index) => (
-            <li key={index}>
+          {keyedItems(rows).map(({ item, key }, index) => (
+            <li key={key}>
               <span className="ae-row-index">{current * 25 + index + 1}</span>
               <DataView value={item} depth={depth + 1} />
             </li>

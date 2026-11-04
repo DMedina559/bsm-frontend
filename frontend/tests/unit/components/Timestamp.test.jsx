@@ -9,9 +9,9 @@ describe("Timestamp", () => {
   it("changes presentation without changing the stored instant", () => {
     const value = "2026-10-27T01:00:00Z";
     const view = (timezone) => (
-      <TimeContext.Provider value={{ timezone }}>
+      <TimeContext value={{ timezone }}>
         <Timestamp value={value} />
-      </TimeContext.Provider>
+      </TimeContext>
     );
     const { rerender } = render(view("America/Los_Angeles"));
     const time = screen.getByTitle(/UTC: 2026-10-27T01:00:00.000Z/);

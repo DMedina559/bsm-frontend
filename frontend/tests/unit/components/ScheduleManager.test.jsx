@@ -193,9 +193,9 @@ describe("Schedule manager", () => {
       task_types: ["backup:create", "backup:verify"],
     });
     const { container } = render(
-      <TimeContext.Provider value={{ timezone: "America/Los_Angeles" }}>
+      <TimeContext value={{ timezone: "America/Los_Angeles" }}>
         <ScheduleManager serverName="alpha" />
-      </TimeContext.Provider>,
+      </TimeContext>,
     );
     expect(
       await screen.findByText(/Automatic retries exhausted/),

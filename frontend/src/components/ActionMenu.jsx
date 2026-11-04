@@ -20,19 +20,19 @@ export default function ActionMenu({
 }) {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
-  const trigger = useRef(null);
-  const panel = useRef(null);
-  const anchor = useRef(null);
+  const triggerRef = useRef(null);
+  const panelRef = useRef(null);
+  const anchorRef = useRef(null);
   const id = useId();
   const close = (focus = false) => {
     setOpen(false);
-    if (focus) trigger.current?.focus({ preventScroll: true });
+    if (focus) triggerRef.current?.focus({ preventScroll: true });
   };
   useLayoutEffect(() => {
     if (!open) return;
-    const rect = trigger.current.getBoundingClientRect();
-    const menu = panel.current.getBoundingClientRect();
-    anchor.current = rect;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const menu = panelRef.current.getBoundingClientRect();
+    anchorRef.current = rect;
     setPosition({
       left: Math.max(
         8,
@@ -43,7 +43,7 @@ export default function ActionMenu({
           ? rect.bottom + 4
           : Math.max(8, rect.top - menu.height - 4),
     });
-    panel.current
+    panelRef.current
       .querySelector("button:not(:disabled)")
       ?.focus({ preventScroll: true });
   }, [open]);
@@ -51,8 +51,8 @@ export default function ActionMenu({
     if (!open) return;
     const outside = (event) => {
       if (
-        !trigger.current?.contains(event.target) &&
-        !panel.current?.contains(event.target)
+        !triggerRef.current?.contains(event.target) &&
+        !panelRef.current?.contains(event.target)
       )
         setOpen(false);
     };
@@ -63,17 +63,20 @@ export default function ActionMenu({
       }
     };
     const dismiss = (event) => {
-      if (event.target instanceof Node && panel.current?.contains(event.target))
+      if (
+        event.target instanceof Node &&
+        panelRef.current?.contains(event.target)
+      )
         return;
-      const rect = trigger.current?.getBoundingClientRect();
+      const rect = triggerRef.current?.getBoundingClientRect();
       // A queued scroll from bringing the trigger into view must not close a
       // newly opened menu. Dismiss only when its anchor actually moves.
       if (
         event.type === "resize" ||
         !rect ||
-        !anchor.current ||
+        !anchorRef.current ||
         ["top", "left", "right", "bottom"].some(
-          (edge) => Math.abs(rect[edge] - anchor.current[edge]) > 0.5,
+          (edge) => Math.abs(rect[edge] - anchorRef.current[edge]) > 0.5,
         )
       )
         setOpen(false);
@@ -91,15 +94,15 @@ export default function ActionMenu({
   }, [open]);
   const blur = (event) => {
     if (
-      !panel.current?.contains(event.relatedTarget) &&
-      !trigger.current?.contains(event.relatedTarget)
+      !panelRef.current?.contains(event.relatedTarget) &&
+      !triggerRef.current?.contains(event.relatedTarget)
     )
       setOpen(false);
   };
   return (
     <>
       <button
-        ref={trigger}
+        ref={triggerRef}
         type="button"
         className={`${children == null ? "icon-button " : ""}action-menu-trigger ${triggerClassName}`}
         disabled={disabled}
@@ -121,7 +124,7 @@ export default function ActionMenu({
       {open &&
         createPortal(
           <div
-            ref={panel}
+            ref={panelRef}
             id={id}
             role="menu"
             aria-label={label}
@@ -130,7 +133,7 @@ export default function ActionMenu({
             onBlur={blur}
             onKeyDown={(event) => {
               const buttons = [
-                ...panel.current.querySelectorAll("button:not(:disabled)"),
+                ...panelRef.current.querySelectorAll("button:not(:disabled)"),
               ];
               const index = buttons.indexOf(document.activeElement);
               const next =

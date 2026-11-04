@@ -108,11 +108,11 @@ export default function Passkeys({ status, userId }) {
   const [newName, setNewName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const controller = useRef(null);
+  const controllerRef = useRef(null);
   useEffect(() => {
     setBusy(false);
     setError("");
-    return () => controller.current?.abort();
+    return () => controllerRef.current?.abort();
   }, [identity, sessionGeneration, userId]);
 
   const queryKey = [
@@ -147,8 +147,8 @@ export default function Passkeys({ status, userId }) {
     event.preventDefault();
     if (busy || !supported) return;
     const abort = new AbortController();
-    controller.current?.abort();
-    controller.current = abort;
+    controllerRef.current?.abort();
+    controllerRef.current = abort;
     setBusy(true);
     setError("");
     try {
@@ -196,8 +196,8 @@ export default function Passkeys({ status, userId }) {
     )
       return false;
     const abort = new AbortController();
-    controller.current?.abort();
-    controller.current = abort;
+    controllerRef.current?.abort();
+    controllerRef.current = abort;
     setBusy(true);
     setError("");
     try {

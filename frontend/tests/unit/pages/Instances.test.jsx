@@ -237,11 +237,11 @@ it("uses the selected display timezone for connection and task timestamps", asyn
   });
   writeInstanceToken(profile.url, "test-token");
   const view = (timezone) => (
-    <TimeContext.Provider value={{ timezone }}>
+    <TimeContext value={{ timezone }}>
       <MemoryRouter>
         <Instances />
       </MemoryRouter>
-    </TimeContext.Provider>
+    </TimeContext>
   );
   const { container, rerender } = render(view("UTC"));
   const snapshot = sessions.get(profile.id).getSnapshot();

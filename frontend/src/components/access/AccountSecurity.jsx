@@ -30,23 +30,23 @@ function SecondFactor({ status, identity, sessionGeneration }) {
   const [downloadMessage, setDownloadMessage] = useState("");
   const [copyMessage, setCopyMessage] = useState("");
   const [copyFailed, setCopyFailed] = useState(false);
-  const copyController = useRef(null);
-  const copyField = useRef(null);
+  const copyControllerRef = useRef(null);
+  const copyFieldRef = useRef(null);
   useEffect(() => {
     setCopyMessage("");
     setCopyFailed(false);
-    return () => copyController.current?.abort();
+    return () => copyControllerRef.current?.abort();
   }, [codes]);
   useEffect(() => {
     if (copyFailed) {
-      copyField.current?.focus();
-      copyField.current?.select();
+      copyFieldRef.current?.focus();
+      copyFieldRef.current?.select();
     }
   }, [copyFailed]);
   async function copyCodes() {
     const abort = new AbortController();
-    copyController.current?.abort();
-    copyController.current = abort;
+    copyControllerRef.current?.abort();
+    copyControllerRef.current = abort;
     setCopyMessage("Copying recovery codes…");
     setCopyFailed(false);
     try {
@@ -61,23 +61,23 @@ function SecondFactor({ status, identity, sessionGeneration }) {
       }
     }
   }
-  const downloadUrl = useRef(null);
-  const saveController = useRef(null);
+  const downloadUrlRef = useRef(null);
+  const saveControllerRef = useRef(null);
   const savingCodesRef = useRef(false);
   const [savingCodes, setSavingCodes] = useState(false);
   // A save dialog may stay open indefinitely. Keep its source alive until the
   // codes are dismissed, replaced, or this view is unmounted.
   useEffect(
     () => () => {
-      saveController.current?.abort();
+      saveControllerRef.current?.abort();
       savingCodesRef.current = false;
-      if (downloadUrl.current) URL.revokeObjectURL(downloadUrl.current);
-      downloadUrl.current = null;
+      if (downloadUrlRef.current) URL.revokeObjectURL(downloadUrlRef.current);
+      downloadUrlRef.current = null;
     },
     [codes],
   );
-  const controller = useRef(null);
-  useEffect(() => () => controller.current?.abort(), []);
+  const controllerRef = useRef(null);
+  useEffect(() => () => controllerRef.current?.abort(), []);
   async function run(action) {
     if (
       action === "disable" &&
@@ -94,7 +94,7 @@ function SecondFactor({ status, identity, sessionGeneration }) {
     )
       return;
     const abort = new AbortController();
-    controller.current = abort;
+    controllerRef.current = abort;
     setBusy(true);
     setError("");
     try {
@@ -146,7 +146,7 @@ function SecondFactor({ status, identity, sessionGeneration }) {
     if (savingCodes || savingCodesRef.current) return;
     savingCodesRef.current = true;
     const controller = new AbortController();
-    saveController.current = controller;
+    saveControllerRef.current = controller;
     const content =
       "Bedrock Server Manager recovery codes\nEach code can be used once. Keep these private.\n\n" +
       codes.join("\n") +
@@ -163,12 +163,12 @@ function SecondFactor({ status, identity, sessionGeneration }) {
         setDownloadMessage("Recovery codes saved.");
         return;
       }
-      if (!downloadUrl.current) {
-        downloadUrl.current = URL.createObjectURL(
+      if (!downloadUrlRef.current) {
+        downloadUrlRef.current = URL.createObjectURL(
           new Blob([content], { type: "text/plain;charset=utf-8" }),
         );
       }
-      anchor.href = downloadUrl.current;
+      anchor.href = downloadUrlRef.current;
       anchor.download = "bsm-recovery-codes.txt";
       anchor.rel = "noopener";
       anchor.style.display = "none";
@@ -273,7 +273,7 @@ function SecondFactor({ status, identity, sessionGeneration }) {
           </ul>
           {copyFailed && (
             <textarea
-              ref={copyField}
+              ref={copyFieldRef}
               className="form-input"
               rows={6}
               readOnly

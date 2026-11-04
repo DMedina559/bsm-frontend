@@ -23,11 +23,11 @@ export default function SignInForm({
   const [rememberDevice, setRememberDevice] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const controller = useRef(null);
+  const controllerRef = useRef(null);
   const id = useId();
-  useEffect(() => () => controller.current?.abort(), []);
+  useEffect(() => () => controllerRef.current?.abort(), []);
   function changeMethod(value) {
-    controller.current?.abort();
+    controllerRef.current?.abort();
     setMethod(value);
     setPassword("");
     setToken("");
@@ -43,7 +43,7 @@ export default function SignInForm({
     event.preventDefault();
     if (busy || disabled) return;
     const request = new AbortController();
-    controller.current = request;
+    controllerRef.current = request;
     const signal = request.signal;
     setBusy(true);
     setError("");
@@ -104,7 +104,7 @@ export default function SignInForm({
   async function signInWithPasskey() {
     if (busy || disabled || !passkeyAvailable) return;
     const request = new AbortController();
-    controller.current = request;
+    controllerRef.current = request;
     const signal = request.signal;
     setBusy(true);
     setError("");

@@ -10,7 +10,7 @@ import { reconcileSocketMessage } from "../app/applicationState";
 import { operationCoordinator } from "../app/operationCoordinator";
 import React, {
   createContext,
-  useContext,
+  use,
   useEffect,
   useState,
   useCallback,
@@ -31,7 +31,7 @@ const defaultSocketContext = Object.freeze({
 
 const WebSocketContext = createContext(null);
 export const useWebSocket = (options = {}) => {
-  const context = useContext(WebSocketContext);
+  const context = use(WebSocketContext);
   if (!context) {
     if (options?.optional) return defaultSocketContext;
     throw new Error("useWebSocket must be used within a WebSocketProvider");
@@ -183,9 +183,5 @@ export const WebSocketProvider = ({ children }) => {
       addMessageListener,
     ],
   );
-  return (
-    <WebSocketContext.Provider value={value}>
-      {children}
-    </WebSocketContext.Provider>
-  );
+  return <WebSocketContext value={value}>{children}</WebSocketContext>;
 };

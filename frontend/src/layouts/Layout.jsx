@@ -57,13 +57,13 @@ const Layout = () => {
   const mainRef = useRef(null);
   const navigationRef = useRef(null);
   const menuRef = useRef(null);
-  const wasMobileOpen = useRef(false);
+  const wasMobileOpenRef = useRef(false);
   useFocusTrap(navigationRef, mobileOpen, () => setMobileOpen(false));
   useEffect(() => {
-    if (wasMobileOpen.current && !mobileOpen && isMobile) {
+    if (wasMobileOpenRef.current && !mobileOpen && isMobile) {
       menuRef.current?.focus({ preventScroll: true });
     }
-    wasMobileOpen.current = mobileOpen;
+    wasMobileOpenRef.current = mobileOpen;
   }, [mobileOpen, isMobile]);
   useEffect(() => {
     document.title = `${instanceTitle ? `${instanceTitle} · ` : ""}${title} · Bedrock Server Manager`;

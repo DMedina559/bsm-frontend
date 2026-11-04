@@ -67,13 +67,13 @@ export default function IntegrationTokens() {
   const [created, setCreated] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const controller = useRef(null);
+  const controllerRef = useRef(null);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 60000);
     return () => clearInterval(interval);
   }, []);
-  useEffect(() => () => controller.current?.abort(), []);
+  useEffect(() => () => controllerRef.current?.abort(), []);
   useEffect(() => {
     const refresh = () =>
       void queryClient.invalidateQueries({
@@ -92,7 +92,7 @@ export default function IntegrationTokens() {
     setError("");
     setCreated(null);
     const abort = new AbortController();
-    controller.current = abort;
+    controllerRef.current = abort;
     try {
       // The one-time secret deliberately stays outside query/mutation caches.
       const result = await callOperation("create_integration_token", {
@@ -125,7 +125,7 @@ export default function IntegrationTokens() {
     setBusy(true);
     setError("");
     const abort = new AbortController();
-    controller.current = abort;
+    controllerRef.current = abort;
     try {
       await callOperation("revoke_integration_token", {
         path: { token_id: id },
@@ -147,7 +147,7 @@ export default function IntegrationTokens() {
     )
       return;
     const abort = new AbortController();
-    controller.current = abort;
+    controllerRef.current = abort;
     setBusy(true);
     setError("");
     setCreated(null);
@@ -172,7 +172,7 @@ export default function IntegrationTokens() {
     )
       return;
     const abort = new AbortController();
-    controller.current = abort;
+    controllerRef.current = abort;
     setBusy(true);
     setError("");
     try {

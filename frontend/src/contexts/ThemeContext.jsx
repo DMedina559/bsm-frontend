@@ -5,7 +5,7 @@ import { resolveOperationUrl } from "../api/operations";
 import { usePreference } from "../app/usePreference";
 import React, {
   createContext,
-  useContext,
+  use,
   useEffect,
   useRef,
   useMemo,
@@ -25,7 +25,7 @@ import {
 import { validatePalette, paletteCss } from "../utils/palettes";
 
 const ThemeContext = createContext();
-export const useTheme = () => useContext(ThemeContext);
+export const useTheme = () => use(ThemeContext);
 
 export const ThemeProvider = ({ children }) => {
   const { user, updateAccount } = useAuth();
@@ -308,7 +308,7 @@ export const ThemeProvider = ({ children }) => {
   };
 
   return (
-    <ThemeContext.Provider
+    <ThemeContext
       value={{
         palettes: paletteState.palettes,
         activePalette: paletteState.active,
@@ -327,6 +327,6 @@ export const ThemeProvider = ({ children }) => {
       }}
     >
       {children}
-    </ThemeContext.Provider>
+    </ThemeContext>
   );
 };

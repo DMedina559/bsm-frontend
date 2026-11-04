@@ -2,9 +2,8 @@ import { useEffect } from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider, Link } from "react-router-dom";
 import { expect, it, vi } from "vitest";
-import DraftNavigationGuard, {
-  isSettingsTabChange,
-} from "../../../src/components/DraftNavigationGuard";
+import DraftNavigationGuard from "../../../src/components/DraftNavigationGuard";
+import { isSettingsTabChange } from "../../../src/utils/settingsNavigation";
 import { draftRegistry } from "../../../src/app/draftRegistry";
 const confirm = vi.hoisted(() => vi.fn());
 vi.mock("../../../src/contexts/DialogContext", () => ({

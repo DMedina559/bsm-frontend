@@ -59,7 +59,7 @@ function EnumArraySetting({
   required,
 }) {
   const selected = Array.isArray(value) ? value : [];
-  const input = useRef(null);
+  const inputRef = useRef(null);
   const enforce = required || Array.isArray(value);
   const error =
     enforce && selected.length < (field.minItems ?? 0)
@@ -68,7 +68,7 @@ function EnumArraySetting({
         ? `Choose at most ${field.maxItems} options.`
         : "";
   useEffect(() => {
-    input.current?.setCustomValidity(error);
+    inputRef.current?.setCustomValidity(error);
   }, [error]);
   const choices = [...new Set([...items.enum, ...selected])];
   const labels =
@@ -88,7 +88,7 @@ function EnumArraySetting({
               key={JSON.stringify(choice)}
             >
               <input
-                ref={index === 0 ? input : undefined}
+                ref={index === 0 ? inputRef : undefined}
                 type="checkbox"
                 checked={selected.includes(choice)}
                 aria-invalid={!!error}
