@@ -1768,29 +1768,6 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  "/api/server/{server_name}/backup/action": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Post Backup Action
-     * @description Initiates a background task to perform a backup action for a specific server.
-     *
-     *     Valid backup types are "world", "config" (requires ``file_to_backup`` in payload),
-     *     and "all".
-     */
-    post: operations["create_backup"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   "/api/server/{server_name}/backup/list/{backup_type}": {
     parameters: {
       query?: never;
@@ -3293,22 +3270,6 @@ export interface components {
       timestamp: string;
       /** User Id */
       user_id: number;
-    };
-    /**
-     * BackupActionPayload
-     * @description Request model for triggering a backup action.
-     */
-    BackupActionPayload: {
-      /**
-       * Backup Type
-       * @description Type of backup: 'world', 'config', or 'all'.
-       */
-      backup_type: string;
-      /**
-       * File To Backup
-       * @description Name of config file if backup_type is 'config' (e.g., 'server.properties').
-       */
-      file_to_backup?: string | null;
     };
     /** BackupCopy */
     BackupCopy: {
@@ -18303,113 +18264,6 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": components["schemas"]["DestinationCleanupPayload"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      202: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["TaskAcceptedResponse"];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorEnvelope"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorEnvelope"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorEnvelope"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorEnvelope"];
-        };
-      };
-      /** @description Conflict */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorEnvelope"];
-        };
-      };
-      /** @description Unprocessable Entity */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorEnvelope"];
-        };
-      };
-      /** @description Too Many Requests */
-      429: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorEnvelope"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorEnvelope"];
-        };
-      };
-      /** @description Service Unavailable */
-      503: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["ErrorEnvelope"];
-        };
-      };
-    };
-  };
-  create_backup: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        server_name: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["BackupActionPayload"];
       };
     };
     responses: {

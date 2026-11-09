@@ -3546,41 +3546,6 @@
     "bodyTypes": ["application/json"],
     "responseType": "json"
   },
-  "create_backup": {
-    "security": [
-      {
-        "OAuth2PasswordBearer": ["backups:create"]
-      },
-      {
-        "APIKeyCookie": []
-      },
-      {
-        "IntegrationToken": []
-      }
-    ],
-    "access": {
-      "additional_checks": [],
-      "allowed_roles": ["moderator", "admin"],
-      "authentication": "required",
-      "classification": "permission",
-      "integration_tokens": "supported",
-      "required_permissions": ["backups:create"],
-      "resource_scope": "server",
-      "version": 1
-    },
-    "method": "POST",
-    "path": "/api/server/{server_name}/backup/action",
-    "parameters": [
-      {
-        "name": "server_name",
-        "in": "path",
-        "required": true
-      }
-    ],
-    "bodyRequired": true,
-    "bodyTypes": ["application/json"],
-    "responseType": "json"
-  },
   "list_server_backups": {
     "security": [
       {
