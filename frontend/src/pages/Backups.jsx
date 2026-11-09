@@ -258,9 +258,10 @@ function ServerBackups({ prepared, onPrepared }) {
       },
     });
     if (result) {
+      const warnings = result.backup?.warnings ?? [];
       addToast(
-        result.backup?.error ?? "Server backup created.",
-        result.backup?.error ? "warning" : "success",
+        warnings.length ? warnings.join(" ") : "Server backup created.",
+        warnings.length ? "warning" : "success",
       );
       await snapshots.refetch();
     }

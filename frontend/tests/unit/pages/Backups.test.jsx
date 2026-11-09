@@ -189,6 +189,30 @@ describe("Backups", () => {
       }),
     );
   });
+  it("shows warnings from a compact creation result without a manifest", async () => {
+    const get = api.get.getMockImplementation();
+    api.get.mockImplementation((url, options) =>
+      url.endsWith("/api/tasks/status/create")
+        ? Promise.resolve({
+            status: "completed",
+            result: {
+              backup: {
+                ...archive,
+                components: ["world"],
+                file_count: 12,
+                warnings: ["Retention could not remove some older backups."],
+              },
+            },
+          })
+        : get(url, options),
+    );
+    render(<Backups />);
+    await screen.findByText("snapshot.bsmbackup");
+    fireEvent.click(screen.getByRole("button", { name: "Create backup" }));
+    expect(
+      await screen.findByText("Retention could not remove some older backups."),
+    ).toBeInTheDocument();
+  });
   it("submits world-only coverage without root pack overrides", async () => {
     render(<Backups />);
     await screen.findByText("snapshot.bsmbackup");

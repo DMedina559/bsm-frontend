@@ -27,7 +27,7 @@
       "bsm_settings"
     ]
   },
-  "schemaHash": "a8b5d99401cf827bcf0a199802ebde878967c4c262d22f376c6ecfa63705ebe2",
+  "schemaHash": "944747b9d6083f58080daf7a5cba4537f2ab3b1967950ff42de692b30cb84839",
   "openapiVersion": "3.1.0",
   "title": "Bedrock Server Manager",
   "source": "DMedina559/bedrock-server-manager: bedrock_server_manager.web.contract",
@@ -45,7 +45,6 @@
     "complete_passkey_registration",
     "confirm_account_mfa",
     "control_schedule",
-    "create_backup",
     "create_first_user",
     "create_integration_token",
     "create_server_snapshot",

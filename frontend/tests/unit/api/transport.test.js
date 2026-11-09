@@ -196,18 +196,18 @@ it("encodes server parameters and preserves task tracking for generated backup c
     headers: new Headers({ "content-type": "application/json" }),
     json: async () => ({ status: "accepted", task_id: "backup-123" }),
   });
-  const body = { backup_type: "world" };
-  await callOperation("create_backup", {
+  const body = { mode: "world" };
+  await callOperation("create_server_snapshot", {
     path: { server_name: "my server/one" },
     body,
   });
   const [url, options] = fetch.mock.calls[0];
-  expect(url).toBe("/api/server/my%20server%2Fone/backup/action");
+  expect(url).toBe("/api/server/my%20server%2Fone/backups");
   expect(options.method).toBe("POST");
   expect(JSON.parse(options.body)).toEqual(body);
   expect(operationCoordinator.get("backup-123")).toMatchObject({
     serverName: "my server/one",
-    kind: "create_backup",
+    kind: "create_server_snapshot",
     status: "pending",
   });
   operationCoordinator.clear();
@@ -227,9 +227,9 @@ it("does not register an old mutation task after the backend restarts", async ()
       }),
   );
   const { callOperation } = await import("../../../src/api/operations");
-  const pending = callOperation("create_backup", {
+  const pending = callOperation("create_server_snapshot", {
     path: { server_name: "alpha" },
-    body: { backup_type: "world" },
+    body: { mode: "world" },
   });
   stateReconciler.accept(
     ["monitor"],
