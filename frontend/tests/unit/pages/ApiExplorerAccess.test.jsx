@@ -9,7 +9,7 @@ it("summarizes missing capabilities and keeps the searchable account catalog col
       connected
       policy={{
         classification: "permission",
-        required_permissions: ["servers:control", "servers:read"],
+        required_permissions: ["servers:lifecycle", "servers:read"],
         allowed_roles: ["admin", "moderator"],
         resource_scope: "server",
         integration_tokens: "supported",

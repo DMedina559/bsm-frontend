@@ -258,12 +258,12 @@ test("cookie-free uploads use fetch rather than same-origin XHR", async () => {
 test("operation discovery preserves security and access metadata with an unknown fallback", async () => {
   const { buildOperationRegistry } =
     await import("@bedrock-server-manager/api-client/operationRegistry");
-  const security = [{ bearer: ["servers:control"] }, { cookie: [] }];
+  const security = [{ bearer: ["servers:lifecycle"] }, { cookie: [] }];
   const access = {
     version: 1,
     classification: "permission",
     authentication: "required",
-    required_permissions: ["servers:control"],
+    required_permissions: ["servers:lifecycle"],
     allowed_roles: ["moderator", "admin"],
     additional_checks: [],
   };

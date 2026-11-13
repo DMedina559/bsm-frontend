@@ -91,7 +91,7 @@ it("renders conditional credential alternatives instead of an undeclared flat re
   render(
     <AccessPolicy
       connected
-      permissions={["logs:read"]}
+      permissions={["servers:logs"]}
       policy={{
         classification: "custom",
         required_permissions: [],
@@ -99,12 +99,12 @@ it("renders conditional credential alternatives instead of an undeclared flat re
           {
             condition: "Server log",
             schemes: ["IntegrationToken"],
-            permissions: ["logs:read"],
+            permissions: ["servers:logs"],
           },
           {
             condition: "Application log",
             schemes: ["OAuth2PasswordBearer"],
-            permissions: ["logs:read_application"],
+            permissions: ["application:logs"],
           },
           {
             condition: "Local supervisor",
@@ -117,7 +117,7 @@ it("renders conditional credential alternatives instead of an undeclared flat re
   );
   expect(screen.getByText("Server log")).toBeVisible();
   expect(screen.getByText("Application log")).toBeVisible();
-  expect(screen.getByText("logs:read_application")).toBeVisible();
+  expect(screen.getByText("application:logs")).toBeVisible();
   expect(
     screen.getByText(
       "Dedicated local credential; account capabilities do not apply.",

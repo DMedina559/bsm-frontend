@@ -6,6 +6,7 @@ describe("getScopeCategory", () => {
     expect(getScopeCategory("servers:lifecycle")).toBe("servers");
     expect(getScopeCategory("servers:command")).toBe("servers");
     expect(getScopeCategory("servers:read")).toBe("servers");
+    expect(getScopeCategory("servers:logs")).toBe("servers");
   });
 
   it("categorizes properties permissions", () => {
@@ -46,7 +47,7 @@ describe("getScopeCategory", () => {
     expect(getScopeCategory("runtime:metrics")).toBe("system");
     expect(getScopeCategory("diagnostics:read")).toBe("system");
     expect(getScopeCategory("audit:read")).toBe("system");
-    expect(getScopeCategory("logs:read")).toBe("system");
+    expect(getScopeCategory("application:logs")).toBe("system");
     expect(getScopeCategory("tasks:read")).toBe("system");
   });
 
