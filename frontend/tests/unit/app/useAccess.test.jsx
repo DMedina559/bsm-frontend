@@ -127,6 +127,15 @@ describe("useAccess with dynamic policy discovery", () => {
     expect(result.current.canReadProperties).toBe(true);
   });
 
+  it("separates server and application log permissions", async () => {
+    mockUser.permissions = ["servers:read", "servers:logs"];
+    const { result } = renderHook(() => useServerAccess("Alpha"));
+    expect(result.current.canLogs).toBe(true);
+    expect(result.current.can(ACTIONS.LOGS_APP)).toBe(false);
+    expect(result.current.can("logs:read")).toBe(false);
+    expect(result.current.can("logs:read_application")).toBe(false);
+  });
+
   it("respects per-server assigned access", async () => {
     mockUser.server_access = "assigned";
     mockUser.permissions = [

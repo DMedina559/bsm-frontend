@@ -10599,6 +10599,7 @@
               "addons:read": "Read installed server add-ons and pack icons",
               "allowlist:manage": "Add or remove allowlisted players",
               "allowlist:read": "Read a server allowlist",
+              "application:logs": "Read application logs across the installation",
               "audit:read": "Read installation-wide administrative audit history",
               "backups:create": "Create backups of authorized servers",
               "backups:destinations": "Prepare server copies and clean up external backup destinations",
@@ -10616,8 +10617,6 @@
               "downloads:prune": "Prune cached server download archives",
               "downloads:read": "Read cached custom server download archives",
               "health:read": "Check application health and readiness",
-              "logs:read": "Read logs for authorized servers",
-              "logs:read_application": "Read application logs across the installation",
               "permissions:manage": "Change Minecraft player permission levels, including operator access",
               "permissions:read": "Read Minecraft player permission levels",
               "players:manage": "Scan all server logs or edit the global player directory",
@@ -10630,7 +10629,7 @@
               "runtime:metrics": "Read application and host performance metrics",
               "runtime:read": "Inspect the hosting web runtime",
               "runtime:shutdown": "Shut down the hosting web runtime",
-              "scheduler:manage": "Create, change, delete or run global scheduled work",
+              "scheduler:manage": "Configure and run installation-wide automation, including commands, updates, world resets and maintenance; jobs run as the application",
               "scheduler:read": "Read global schedules and run history",
               "servers:command": "Send interactive console commands to running servers",
               "servers:configure": "Change managed server settings such as automatic updates",
@@ -10638,6 +10637,7 @@
               "servers:inspect": "Inspect server details and configuration summaries",
               "servers:install": "Install new servers and update server software binaries",
               "servers:lifecycle": "Start, stop and restart game servers",
+              "servers:logs": "Read logs for authorized servers",
               "servers:read": "List visible servers and read their status and resource usage",
               "sessions:admin": "Inspect or revoke account logins and reset other accounts' MFA",
               "sessions:manage": "Manage your login sessions and security settings",
@@ -20499,7 +20499,7 @@
         },
         "security": [
           {
-            "OAuth2PasswordBearer": ["logs:read"]
+            "OAuth2PasswordBearer": ["servers:logs"]
           },
           {
             "APIKeyCookie": []
@@ -20508,7 +20508,7 @@
             "IntegrationToken": []
           },
           {
-            "OAuth2PasswordBearer": ["logs:read_application"]
+            "OAuth2PasswordBearer": ["application:logs"]
           },
           {
             "APIKeyCookie": []
@@ -20527,7 +20527,7 @@
           "credential_alternatives": [
             {
               "condition": "topic=server_log:<server>",
-              "permissions": ["logs:read"],
+              "permissions": ["servers:logs"],
               "schemes": [
                 "OAuth2PasswordBearer",
                 "APIKeyCookie",
@@ -20536,7 +20536,7 @@
             },
             {
               "condition": "topic=app_log or app_logs",
-              "permissions": ["logs:read_application"],
+              "permissions": ["application:logs"],
               "schemes": [
                 "OAuth2PasswordBearer",
                 "APIKeyCookie",

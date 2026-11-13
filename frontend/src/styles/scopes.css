@@ -124,7 +124,7 @@
 [data-scope^="diagnostics:"],
 [data-scope^="audit:"],
 [data-scope^="tasks:"],
-[data-scope^="logs:"] {
+[data-scope^="application:"] {
   --scope-text: #fb7185;
   --scope-bg: rgba(251, 113, 133, 0.1);
   --scope-border: rgba(251, 113, 133, 0.35);
@@ -247,7 +247,7 @@
   [data-scope^="diagnostics:"],
   [data-scope^="audit:"],
   [data-scope^="tasks:"],
-  [data-scope^="logs:"] {
+  [data-scope^="application:"] {
     --scope-text: #be123c;
     --scope-bg: #fff1f2;
     --scope-border: #fecdd3;

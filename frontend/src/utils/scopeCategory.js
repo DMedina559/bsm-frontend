@@ -47,7 +47,7 @@ export function getScopeCategory(scope) {
     case "diagnostics":
     case "audit":
     case "tasks":
-    case "logs":
+    case "application":
       return "system";
     case "plugins":
     case "plugin":

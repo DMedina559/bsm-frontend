@@ -395,7 +395,7 @@ function EffectiveAccess({ user, identity, sessionGeneration }) {
             className="form-input"
             value={permission}
             onChange={(event) => setPermission(event.target.value)}
-            placeholder="servers:control"
+            placeholder="servers:lifecycle"
           />
         </label>
         <label className="form-label">

@@ -148,7 +148,7 @@ it("explains capability restrictions and supports recent verification without ca
   show();
   fireEvent.click(screen.getByRole("tab", { name: "My access" }));
   fireEvent.change(screen.getByLabelText("Check a permission"), {
-    target: { value: "servers:control" },
+    target: { value: "servers:lifecycle" },
   });
   expect(
     screen.getByText(/does not include this permission/),
