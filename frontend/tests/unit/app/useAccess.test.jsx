@@ -93,3 +93,11 @@ it("does not reuse another credential's discovered grants", async () => {
   rerender();
   expect(result.current.canStart).toBe(false);
 });
+
+it("does not request a contract while the backend requires MFA enrollment", () => {
+  user = { ...user, mfa_enrollment_required: true };
+  const { result } = renderHook(() => useAccess());
+  expect(loadAccessSchema).not.toHaveBeenCalled();
+  expect(result.current.loading).toBe(false);
+  expect(result.current.can("start_server", "Alpha")).toBe(false);
+});

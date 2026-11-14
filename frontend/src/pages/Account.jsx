@@ -167,7 +167,7 @@ export default function Account() {
           </div>
         </dl>
       </section>
-      {can("get_account_security") ? (
+      {user?.mfa_enrollment_required || can("get_account_security") ? (
         <AccountSecurity key={`${user.id}:${sessionGeneration}`}>
           {passwordPanel}
         </AccountSecurity>

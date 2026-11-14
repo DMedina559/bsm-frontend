@@ -25,7 +25,7 @@ export function useAccess() {
       ],
       queryFn: async ({ signal }) =>
         runtimeOperations(await loadAccessSchema({ signal })),
-      enabled: Boolean(user),
+      enabled: Boolean(user) && !user.mfa_enrollment_required,
       staleTime: 60000,
       retry: false,
     },
@@ -80,7 +80,8 @@ export function useAccess() {
     permissionsFor: (id, options) =>
       operationPermissions(currentOperations, id, options),
     operations: currentOperations,
-    loading: operations.isPending,
+    loading:
+      Boolean(user) && !user.mfa_enrollment_required && operations.isPending,
     error: operations.error,
     policy: policy.data,
     policyQuery: policy,

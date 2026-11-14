@@ -81,3 +81,21 @@ describe("Account", () => {
     });
   });
 });
+
+it("keeps required MFA enrollment reachable before runtime discovery is available", async () => {
+  api.request.mockResolvedValue(
+    accessUser("admin", {
+      id: 1,
+      username: "enrollment-admin",
+      permissions: ["account:read", "sessions:manage"],
+      mfa_enrollment_required: true,
+    }),
+  );
+  render(<Account />);
+  expect(
+    await screen.findByText(/Your administrator requires MFA/),
+  ).toBeVisible();
+  expect(
+    screen.getByRole("button", { name: "Set up authenticator", exact: true }),
+  ).toBeVisible();
+});
