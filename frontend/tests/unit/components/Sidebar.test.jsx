@@ -1,3 +1,5 @@
+import * as accessApi from "../../../src/api/access";
+import { accessSchema } from "../../support/accessFixtures";
 import { accessUser } from "../../support/accessFixtures";
 import { render, screen, waitFor, fireEvent, act } from "../../support/utils";
 import Sidebar from "../../../src/components/Sidebar";
@@ -275,4 +277,43 @@ describe("Sidebar", () => {
     const linkB = screen.getByText("Plugin B").closest("a");
     expect(linkB).not.toHaveClass("active");
   });
+});
+
+it("uses the settings operation's runtime scope rather than the process-read scope for navigation", async () => {
+  const schema = structuredClone(accessSchema);
+  for (const item of Object.values(schema.paths)) {
+    for (const operation of Object.values(item)) {
+      if (operation?.operationId === "get_server_settings")
+        operation["x-bsm-access"].required_permissions = ["future:settings"];
+    }
+  }
+  const discovery = vi
+    .spyOn(accessApi, "loadAccessSchema")
+    .mockResolvedValue(schema);
+  api.request.mockImplementation(async (url) =>
+    url === "/api/account"
+      ? accessUser("admin", {
+          username: "testuser",
+          permissions: ["account:read", "future:settings"],
+        })
+      : url === "/api/servers"
+        ? {
+            status: "success",
+            servers: [{ name: "TestServer", status: "stopped" }],
+          }
+        : {},
+  );
+  try {
+    render(<Sidebar />);
+    await waitFor(() =>
+      expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute(
+        "href",
+        "/server-config",
+      ),
+    );
+    expect(screen.queryByRole("link", { name: "Monitor" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Install Server" })).toBeNull();
+  } finally {
+    discovery.mockRestore();
+  }
 });
