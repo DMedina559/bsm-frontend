@@ -99,3 +99,62 @@ it("keeps required MFA enrollment reachable before runtime discovery is availabl
     screen.getByRole("button", { name: "Set up authenticator", exact: true }),
   ).toBeVisible();
 });
+
+it("retains one-time recovery codes while enrollment completion refreshes runtime permissions", async () => {
+  let required = true;
+  let completedAccountRead = false;
+  api.request.mockImplementation(async (url) => {
+    if (url === "/api/account") {
+      if (!required) completedAccountRead = true;
+      return accessUser("admin", {
+        id: 1,
+        username: "enrollment-admin",
+        permissions: ["account:read", "sessions:manage"],
+        policy_revision: required ? "enrolling" : "complete",
+        mfa_enrollment_required: required,
+      });
+    }
+    return { status: "success" };
+  });
+  api.get.mockImplementation(async (url) =>
+    url === "/api/setup/status"
+      ? { needs_setup: false }
+      : url === "/api/account/security"
+        ? { enabled: !required }
+        : [],
+  );
+  api.post.mockImplementation(async (url) => {
+    if (url.endsWith("/mfa/enroll"))
+      return {
+        secret: "synthetic-setup-key",
+        qr_svg: "data:image/svg+xml;base64,PHN2Zy8+",
+      };
+    if (url.endsWith("/mfa/confirm")) {
+      required = false;
+      return { recovery_codes: ["retained-recovery-code"] };
+    }
+    return { status: "success" };
+  });
+  render(<Account />);
+  fireEvent.click(
+    await screen.findByRole("button", {
+      name: "Set up authenticator",
+      exact: true,
+    }),
+  );
+  await screen.findByLabelText("Setup key");
+  fireEvent.change(screen.getByLabelText("Six-digit authenticator code"), {
+    target: { value: "123456" },
+  });
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "Enable two-factor authentication",
+      exact: true,
+    }),
+  );
+  await waitFor(() => expect(completedAccountRead).toBe(true));
+  expect(await screen.findByText("retained-recovery-code")).toBeVisible();
+  expect(
+    screen.getByRole("heading", { name: "Save your recovery codes" }),
+  ).toBeVisible();
+});
