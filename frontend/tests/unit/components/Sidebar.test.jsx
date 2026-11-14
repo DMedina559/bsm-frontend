@@ -1,3 +1,4 @@
+import { accessUser } from "../../support/accessFixtures";
 import { render, screen, waitFor, fireEvent, act } from "../../support/utils";
 import Sidebar from "../../../src/components/Sidebar";
 import { vi, describe, it, expect, beforeEach } from "vitest";
@@ -37,7 +38,7 @@ describe("Sidebar", () => {
     // Default mocks
     api.request.mockImplementation((url) => {
       if (url === "/api/account")
-        return Promise.resolve({ username: "testuser", role: "admin" });
+        return Promise.resolve(accessUser("admin", { username: "testuser" }));
       if (url === "/api/servers")
         return Promise.resolve({
           status: "success",
@@ -58,7 +59,7 @@ describe("Sidebar", () => {
         });
       // Fallback for context calls if they use get
       if (url === "/api/account")
-        return Promise.resolve({ username: "testuser", role: "admin" });
+        return Promise.resolve(accessUser("admin", { username: "testuser" }));
       if (url === "/api/servers")
         return Promise.resolve({
           status: "success",
@@ -245,7 +246,7 @@ describe("Sidebar", () => {
           app_version: "4.0.0b2.dev4",
         });
       if (url === "/api/account")
-        return Promise.resolve({ username: "testuser", role: "admin" });
+        return Promise.resolve(accessUser("admin", { username: "testuser" }));
       if (url === "/api/servers")
         return Promise.resolve({
           status: "success",

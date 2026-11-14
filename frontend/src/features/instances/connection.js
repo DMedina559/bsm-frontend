@@ -1,3 +1,4 @@
+import { runtimeOperations, operationAccess } from "../../app/permissions";
 import {
   readTrustedDevice,
   rememberTrustedDevice,
@@ -135,6 +136,7 @@ export function createInstanceConnection(
     );
   }
   async function load() {
+    const previousPolicyRevision = state.user?.policy_revision;
     try {
       validateBackendUrl(profile.url);
       const user = await client.callOperation("get_account");
@@ -168,16 +170,36 @@ export function createInstanceConnection(
           /* Invalid history must not block connection. */
         }
       }
+      let accessOperations;
+      try {
+        accessOperations =
+          state.accessOperations &&
+          user.policy_revision &&
+          user.policy_revision === previousPolicyRevision
+            ? state.accessOperations
+            : runtimeOperations(
+                await transport.request("/api/openapi.json", {
+                  method: "GET",
+                  credentials: "omit",
+                }),
+              );
+      } catch (error) {
+        publish({ accessOperations: null });
+        throw error;
+      }
+      const allowed = (id) =>
+        ["allowed", "conditional"].includes(
+          operationAccess(accessOperations, id, { user }).state,
+        );
       const results = await Promise.allSettled([
-        !Array.isArray(user.permissions) ||
-        user.permissions.includes("servers:read")
+        allowed("list_servers")
           ? client.callOperation("list_servers")
           : Promise.resolve({ servers: [] }),
         client.callOperation("get_system_info"),
-        user.server_access === "assigned" &&
-        user.permissions?.includes("servers:read")
+        user.server_access === "assigned" && allowed("list_access_servers")
           ? client.callOperation("list_access_servers")
           : Promise.resolve([]),
+        client.callOperation("get_access_policy"),
       ]);
       if (disposed) return;
       const fleet = results[0];
@@ -240,6 +262,9 @@ export function createInstanceConnection(
       publish({
         status: "online",
         user,
+        accessOperations,
+        accessPolicy:
+          results[3].status === "fulfilled" ? results[3].value : null,
         serverAccess:
           results[2].status === "fulfilled" && Array.isArray(results[2].value)
             ? results[2].value
@@ -545,6 +570,19 @@ export function createInstanceConnection(
         throw new Error("Unsupported instance action.");
       if (!state.servers.some((server) => server.name === serverName))
         throw new Error("This server is not in the instance's current fleet.");
+      if (
+        !["allowed", "conditional"].includes(
+          operationAccess(state.accessOperations, action, {
+            user: state.user,
+            policy: state.accessPolicy,
+            resources: state.serverAccess,
+            serverName,
+          }).state,
+        )
+      )
+        throw new Error(
+          "This operation is unavailable for the current instance credential.",
+        );
       // Persist before dispatch: disposal can abort the response after the server
       // has accepted the write. A new owner must recover it as unknown.
       sendingId = `request:${crypto.randomUUID()}`;

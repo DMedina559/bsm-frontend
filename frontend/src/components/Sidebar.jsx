@@ -1,6 +1,5 @@
 import { navigationLabel } from "../utils/navigationLabel";
 import { useAccess } from "../app/useAccess";
-import { PERMISSIONS } from "../app/permissions";
 import { sessionSettings } from "../app/browserStorage";
 import { useResourceQuery } from "../app/resourceQueries";
 import { usePreference } from "../app/usePreference";
@@ -41,8 +40,8 @@ import {
 import "../styles/sidebar.css";
 const Sidebar = ({ mobileOpen, setMobileOpen }) => {
   const location = useLocation();
-  const { can } = useAccess();
-  const { logout, user } = useAuth();
+  const { can, loading: accessLoading, error: accessError } = useAccess();
+  const { logout } = useAuth();
   const { addToast } = useToast();
   const {
     servers,
@@ -52,7 +51,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
     loading,
   } = useServer();
   const pluginQuery = useResourceQuery("pluginPages", undefined, {
-    enabled: can(PERMISSIONS.PLUGINS_PAGES),
+    enabled: can("get_plugin_pages"),
   });
   const infoQuery = useResourceQuery("applicationInfo");
   const pluginPages = pluginQuery.data ?? [];
@@ -87,7 +86,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
           label: "Application Monitor",
           icon: Activity,
         },
-        ...(user?.role === "admin"
+        ...(can("install_server")
           ? [
               {
                 path: "/server-install",
@@ -174,7 +173,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
     {
       label: "Administration",
       items: [
-        ...(user?.role === "admin"
+        ...(can("list_schedules")
           ? [{ path: "/scheduler", label: "Scheduler", icon: CalendarClock }]
           : []),
         {
@@ -211,22 +210,25 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
     })),
   }));
   const required = {
-    "/application-monitor": PERMISSIONS.RUNTIME_METRICS,
-    "/server-install": PERMISSIONS.SERVERS_INSTALL,
-    "/monitor": PERMISSIONS.SERVERS_READ,
-    "/online-players": PERMISSIONS.SERVERS_READ,
-    "/server-config": PERMISSIONS.SERVERS_READ,
-    "/server-properties": PERMISSIONS.PROPERTIES_READ,
-    "/access-control": PERMISSIONS.ALLOWLIST_READ,
-    "/backups": PERMISSIONS.BACKUPS_READ,
-    "/content": PERMISSIONS.CONTENT_MANAGE,
-    "/global-players": PERMISSIONS.PLAYERS_READ,
-    "/bsm-settings": PERMISSIONS.SETTINGS_READ,
-    "/scheduler": PERMISSIONS.SCHEDULER_READ,
-    "/users": PERMISSIONS.USERS_READ,
-    "/audit-log": PERMISSIONS.AUDIT_READ,
-    "/plugins": PERMISSIONS.PLUGINS_READ,
-    "/plugin-settings": PERMISSIONS.PLUGINS_READ,
+    "/application-monitor": [
+      "get_application_metrics",
+      "get_application_diagnostics",
+    ],
+    "/server-install": "install_server",
+    "/monitor": "get_server_process_info",
+    "/online-players": "get_server_process_info",
+    "/server-config": "get_server_process_info",
+    "/server-properties": "get_properties",
+    "/access-control": "get_allowlist",
+    "/backups": "list_server_snapshots",
+    "/content": "list_available_worlds",
+    "/global-players": "list_players",
+    "/bsm-settings": "get_settings",
+    "/scheduler": "list_schedules",
+    "/users": "list_users",
+    "/audit-log": "list_audit_logs",
+    "/plugins": "list_plugins",
+    "/plugin-settings": "list_plugins",
   };
   const filtered = groups
     .map((group) => ({
@@ -234,10 +236,11 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
       items: group.items.filter(
         (item) =>
           (!required[item.path] ||
-            can(
-              required[item.path],
-              item.server ? selectedServer : undefined,
-            )) &&
+            [required[item.path]]
+              .flat()
+              .some((id) =>
+                can(id, item.server ? selectedServer : undefined),
+              )) &&
           `${group.label} ${item.label}`
             .toLowerCase()
             .includes(query.trim().toLowerCase()),
@@ -250,6 +253,13 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
       aria-label="Main navigation"
       className={`sidebar-nav ${effectiveCollapsed ? "collapsed" : ""} ${mobileOpen ? "mobile-open" : ""}`}
     >
+      {accessLoading && <p role="status">Loading access permissions…</p>}
+      {accessError && (
+        <p role="status">
+          Access permissions could not be loaded. Protected controls are
+          unavailable.
+        </p>
+      )}
       <header className="sidebar-header">
         <img
           className="sidebar-brand-icon"

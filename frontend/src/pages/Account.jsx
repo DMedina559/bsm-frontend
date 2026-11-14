@@ -1,3 +1,4 @@
+import { useAccess } from "../app/useAccess";
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Save, User, Settings2 } from "lucide-react";
@@ -10,6 +11,7 @@ import IntegrationTokens from "../components/access/IntegrationTokens";
 import "../styles/access.css";
 import "../styles/frontend-settings.css";
 export default function Account() {
+  const { can } = useAccess();
   const { user, sessionGeneration } = useAuth();
   const { addToast } = useToast();
   const [passwords, setPasswords] = useState({
@@ -165,18 +167,16 @@ export default function Account() {
           </div>
         </dl>
       </section>
-      {user?.permissions?.includes("sessions:manage") ? (
+      {can("get_account_security") ? (
         <AccountSecurity key={`${user.id}:${sessionGeneration}`}>
           {passwordPanel}
         </AccountSecurity>
       ) : (
         <>
-          {user?.permissions?.includes("tokens:manage") && (
+          {can("list_integration_tokens") && (
             <IntegrationTokens key={`${user.id}:${sessionGeneration}`} />
           )}
-          {(!Array.isArray(user?.permissions) ||
-            user.permissions.includes("account:manage")) &&
-            passwordPanel}
+          {can("change_password") && passwordPanel}
         </>
       )}
     </div>

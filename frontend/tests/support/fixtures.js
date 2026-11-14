@@ -1,3 +1,4 @@
+import { accessSchema, accessUser } from "./accessFixtures.js";
 export const servers = [
   {
     name: "Survival",
@@ -18,6 +19,7 @@ export const servers = [
   },
 ];
 export const user = {
+  ...accessUser("admin"),
   username: "admin",
   id: 1,
   role: "admin",
@@ -28,6 +30,26 @@ export function fixtureResponse(url) {
   if (url.pathname === "/api/account/security/devices") return [];
 
   const p = url.pathname;
+  if (
+    [
+      "/api/account/sessions",
+      "/api/account/tokens",
+      "/api/account/passkeys",
+      "/api/account/security/activity",
+    ].includes(p)
+  )
+    return [];
+  if (p === "/api/access/policy")
+    return {
+      revision: "fixture",
+      permissions: Object.fromEntries(
+        user.permissions.map((scope) => [scope, scope]),
+      ),
+      token_permissions: user.permissions,
+      server_permissions: [],
+      role_permissions: { admin: user.permissions },
+    };
+  if (p === "/api/openapi.json") return accessSchema;
   if (p === "/api/setup/status") return { needs_setup: false };
   if (p === "/api/account") return user;
   if (p === "/auth/reauth")

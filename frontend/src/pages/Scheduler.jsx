@@ -1,3 +1,4 @@
+import { useAccess } from "../app/useAccess";
 import React, { useState } from "react";
 import { CalendarClock } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
@@ -6,7 +7,8 @@ import ScheduleManager from "../components/ScheduleManager";
 import "../styles/backup-settings.css";
 
 export default function Scheduler() {
-  const { user, sessionGeneration } = useAuth();
+  const { sessionGeneration } = useAuth();
+  const { can } = useAccess();
   const { servers, selectedServer } = useServer();
   const [filter, setFilter] = useState("");
   const names = (
@@ -16,10 +18,10 @@ export default function Scheduler() {
         )
       : Object.keys(servers ?? {})
   ).filter(Boolean);
-  if (user?.role !== "admin")
+  if (!can("list_schedules"))
     return (
       <div className="container">
-        <p>Administrator access is required to manage schedules.</p>
+        <p>Scheduler access is required to view schedules.</p>
       </div>
     );
   return (

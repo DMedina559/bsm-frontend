@@ -1,3 +1,7 @@
+import { accessSchema, accessUser } from "../../support/accessFixtures";
+vi.mock("../../../src/api/access", () => ({
+  loadAccessSchema: vi.fn(async () => accessSchema),
+}));
 import { render, screen, fireEvent, waitFor } from "../../support/utils";
 import Backups from "../../../src/pages/Backups";
 import { vi, describe, it, expect, beforeEach } from "vitest";
@@ -75,7 +79,7 @@ describe("Backups", () => {
     localStorage.setItem("selectedServer", "TestServer");
     api.request.mockImplementation((url) => {
       if (url === "/api/account")
-        return Promise.resolve({ username: "testuser", role: "admin" });
+        return Promise.resolve(accessUser("admin", { username: "testuser" }));
       if (url === "/api/servers")
         return Promise.resolve({
           status: "success",
@@ -364,7 +368,7 @@ it("does not report an empty archive list when the initial request fails", async
   api.request.mockImplementation((url) =>
     Promise.resolve(
       url === "/api/account"
-        ? { username: "testuser", role: "admin" }
+        ? accessUser("admin", { username: "testuser" })
         : url === "/api/servers"
           ? { status: "success", servers: [{ name: "TestServer" }] }
           : {},
@@ -398,7 +402,7 @@ it("keeps read-only controls and inspector dismissal available during a drill", 
   api.request.mockImplementation((url) =>
     Promise.resolve(
       url === "/api/account"
-        ? { username: "testuser", role: "admin" }
+        ? accessUser("admin", { username: "testuser" })
         : url === "/api/servers"
           ? { status: "success", servers: [{ name: "TestServer" }] }
           : {},
@@ -478,7 +482,7 @@ it("opens the prepared target archive for restore review after switching servers
   api.request.mockImplementation((url) =>
     Promise.resolve(
       url === "/api/account"
-        ? { username: "testuser", role: "admin" }
+        ? accessUser("admin", { username: "testuser" })
         : url === "/api/servers"
           ? {
               status: "success",

@@ -1,3 +1,4 @@
+import { accessUser } from "../../support/accessFixtures";
 import { render, screen, fireEvent, waitFor } from "../../support/utils";
 import Account from "../../../src/pages/Account";
 import { vi, describe, it, expect, beforeEach } from "vitest";
@@ -25,7 +26,12 @@ describe("Account", () => {
   });
 
   it("renders account info", async () => {
-    api.request.mockResolvedValue({ username: "testuser", role: "admin" });
+    api.request.mockResolvedValue(
+      accessUser("admin", {
+        username: "testuser",
+        permissions: ["account:manage"],
+      }),
+    );
 
     render(<Account />);
 
@@ -38,13 +44,19 @@ describe("Account", () => {
   });
 
   it("updates password", async () => {
-    api.request.mockResolvedValue({ username: "testuser", role: "admin" });
+    api.request.mockResolvedValue(
+      accessUser("admin", {
+        username: "testuser",
+        permissions: ["account:manage"],
+      }),
+    );
     render(<Account />);
 
     await waitFor(() => {
       expect(screen.getByText("My Account")).toBeInTheDocument();
     });
 
+    await screen.findByLabelText("New Password");
     expect(screen.getByLabelText("New Password")).toHaveAttribute(
       "minlength",
       "8",

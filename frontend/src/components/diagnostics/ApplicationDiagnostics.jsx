@@ -71,7 +71,7 @@ export default function ApplicationDiagnostics() {
     optional: true,
   });
   const { can } = useAccess();
-  const canDiagnostics = can("diagnostics:read");
+  const canDiagnostics = can("get_application_diagnostics");
 
   useEffect(() => {
     if (!canDiagnostics || view === "frontend" || !isConnected) return;

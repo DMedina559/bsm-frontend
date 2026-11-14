@@ -1,3 +1,4 @@
+import { useAccess } from "../../app/useAccess";
 import { trustedDeviceOptions } from "../../app/trustedDevices";
 import { getScopeCategory } from "../../utils/scopeCategory";
 import RememberedDevices from "./RememberedDevices";
@@ -360,11 +361,12 @@ function SecondFactor({ status, identity, sessionGeneration }) {
 }
 
 function EffectiveAccess({ user, identity, sessionGeneration }) {
+  const { can, policy } = useAccess();
   const servers = useQuery(
     {
       queryKey: ["access-servers", identity, sessionGeneration],
       queryFn: ({ signal }) => callOperation("list_access_servers", { signal }),
-      enabled: user.permissions?.includes("servers:read") === true,
+      enabled: can("list_access_servers"),
     },
     queryClient,
   );
@@ -376,7 +378,9 @@ function EffectiveAccess({ user, identity, sessionGeneration }) {
     ? null
     : !permissions.includes(permission)
       ? "Your current role or credential does not include this permission."
-      : selected && !selected.permissions.includes(permission)
+      : selected &&
+          policy?.server_permissions?.includes(permission) &&
+          !selected.permissions.includes(permission)
         ? "This server’s assignment does not grant that permission."
         : "The permission is present. Ownership, resource limits, and operation-specific checks still apply.";
   return (
@@ -395,7 +399,7 @@ function EffectiveAccess({ user, identity, sessionGeneration }) {
             className="form-input"
             value={permission}
             onChange={(event) => setPermission(event.target.value)}
-            placeholder="servers:lifecycle"
+            placeholder={permissions[0] ?? "Permission name"}
           />
         </label>
         <label className="form-label">

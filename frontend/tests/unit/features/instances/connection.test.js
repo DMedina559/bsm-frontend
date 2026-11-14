@@ -1,3 +1,4 @@
+import { accessSchema, accessUser } from "../../../support/accessFixtures";
 import { describe, it, expect, vi, afterEach, beforeEach } from "vitest";
 import { createInstanceConnection } from "../../../../src/features/instances/connection";
 
@@ -45,11 +46,12 @@ function responder(requests) {
       credentials: options.credentials,
       body: options.body,
     });
+    if (url.endsWith("/api/openapi.json")) return Response.json(accessSchema);
     if (url.endsWith("/api/account"))
       return Response.json({
         id: 1,
         username: new URL(url).host,
-        role: "admin",
+        ...accessUser("admin"),
       });
     if (url.endsWith("/api/servers"))
       return Response.json({
@@ -204,7 +206,7 @@ it("refreshes only the instance that receives a socket lifecycle event", async (
   ).toHaveLength(bRequests);
   expect(
     requests.filter((request) => request.url.includes("one.test")),
-  ).toHaveLength(aRequests + 3);
+  ).toHaveLength(aRequests + 5);
 });
 
 it("forces a new fleet read when an action overlaps an older refresh", async () => {
@@ -485,4 +487,44 @@ it("preserves an MFA challenge and sends the code only to the selected backend",
     "mfa-token",
     true,
   );
+});
+
+it("rediscovers operation requirements when an instance policy revision changes", async () => {
+  let revision = "one";
+  const base = responder([]);
+  const fetch = vi.fn(async (url, options) => {
+    if (url.endsWith("/api/account"))
+      return Response.json({
+        ...accessUser("admin"),
+        id: 1,
+        username: "admin",
+        policy_revision: revision,
+      });
+    if (url.endsWith("/api/openapi.json")) {
+      const current = structuredClone(accessSchema);
+      if (revision === "two")
+        for (const item of Object.values(current.paths)) {
+          for (const operation of Object.values(item))
+            if (operation?.operationId === "start_server")
+              operation["x-bsm-access"].required_permissions = ["future:start"];
+        }
+      return Response.json(current);
+    }
+    return base(url, options);
+  });
+  const session = create("https://runtime-policy.test", fetch);
+  await session.start();
+  expect(
+    session.getSnapshot().accessOperations.start_server.access
+      .required_permissions,
+  ).toContain("servers:lifecycle");
+  revision = "two";
+  await session.refresh();
+  expect(
+    session.getSnapshot().accessOperations.start_server.access
+      .required_permissions,
+  ).toEqual(["future:start"]);
+  expect(
+    fetch.mock.calls.filter(([url]) => url.endsWith("/api/openapi.json")),
+  ).toHaveLength(2);
 });

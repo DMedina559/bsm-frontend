@@ -1,173 +1,152 @@
-/**
- * Centralized Application Permissions and Actions.
- * Aligned with backend access policy definitions.
- */
+import { buildOperationRegistry } from "@bedrock-server-manager/api-client/operationRegistry";
 
-export const ACTIONS = Object.freeze({
-  SERVER_LIFECYCLE: "server.lifecycle",
-  SERVER_COMMAND: "server.command",
-  SERVER_INSTALL: "server.install",
-  SERVER_DELETE: "server.delete",
-  SERVER_CONFIGURE: "server.configure",
-  SERVER_READ: "server.read",
-  SERVER_INSPECT: "server.inspect",
-  PROPERTIES_MANAGE: "properties.manage",
-  PROPERTIES_READ: "properties.read",
-  ALLOWLIST_READ: "allowlist.read",
-  ALLOWLIST_MANAGE: "allowlist.manage",
-  PERMISSIONS_READ: "permissions.read",
-  PERMISSIONS_MANAGE: "permissions.manage",
-  BANS_READ: "bans.read",
-  BANS_MANAGE: "bans.manage",
-  PLAYERS_READ: "players.read",
-  PLAYERS_MANAGE: "players.manage",
-  BACKUPS_READ: "backups.read",
-  BACKUPS_CREATE: "backups.create",
-  BACKUPS_RESTORE: "backups.restore",
-  BACKUPS_MANAGE: "backups.manage",
-  BACKUPS_PRUNE: "backups.prune",
-  BACKUPS_KEYS: "backups.keys",
-  BACKUPS_EXPORT: "backups.export",
-  BACKUPS_DESTINATIONS: "backups.destinations",
-  CONTENT_READ: "content.read",
-  CONTENT_MANAGE: "content.manage",
-  WORLDS_READ: "worlds.read",
-  WORLDS_MANAGE: "worlds.manage",
-  WORLDS_RESET: "worlds.reset",
-  ADDONS_READ: "addons.read",
-  ADDONS_MANAGE: "addons.manage",
-  DOWNLOADS_READ: "downloads.read",
-  DOWNLOADS_PRUNE: "downloads.prune",
-  LOGS_READ: "logs.read",
-  LOGS_APP: "logs.app",
-  RUNTIME_METRICS: "runtime.metrics",
-  SETTINGS_READ: "settings.read",
-  SETTINGS_MANAGE: "settings.manage",
-  USERS_READ: "users.read",
-  USERS_MANAGE: "users.manage",
-  SCHEDULER_READ: "scheduler.read",
-  SCHEDULER_MANAGE: "scheduler.manage",
-  PLUGINS_READ: "plugins.read",
-  PLUGINS_PAGES: "plugins.pages",
-  PLUGINS_MANAGE: "plugins.manage",
-  AUDIT_READ: "audit.read",
-  DIAGNOSTICS_READ: "diagnostics.read",
-  HEALTH_READ: "health.read",
-});
+/** Interpret only the connected backend's advertised access policy. */
+export function runtimeOperations(schema) {
+  if (
+    typeof schema?.openapi !== "string" ||
+    !schema.openapi.startsWith("3.") ||
+    !schema.paths ||
+    typeof schema.paths !== "object" ||
+    Array.isArray(schema.paths)
+  )
+    throw new Error("The backend did not return a valid OpenAPI contract.");
+  return buildOperationRegistry(schema);
+}
 
-/**
- * Raw permission constants defined by backend access policy.
- */
-export const PERMISSIONS = Object.freeze({
-  HEALTH_READ: "health:read",
-  RUNTIME_METRICS: "runtime:metrics",
-  RUNTIME_READ: "runtime:read",
-  RUNTIME_SHUTDOWN: "runtime:shutdown",
-  DIAGNOSTICS_READ: "diagnostics:read",
-  AUDIT_READ: "audit:read",
-  TASKS_READ: "tasks:read",
-  ACCOUNT_READ: "account:read",
-  ACCOUNT_MANAGE: "account:manage",
-  SESSIONS_MANAGE: "sessions:manage",
-  SESSIONS_ADMIN: "sessions:admin",
-  TOKENS_MANAGE: "tokens:manage",
-  ACCESS_MANAGE: "access:manage",
-  USERS_READ: "users:read",
-  USERS_MANAGE: "users:manage",
-  SERVERS_READ: "servers:read",
-  SERVERS_INSPECT: "servers:inspect",
-  SERVERS_LIFECYCLE: "servers:lifecycle",
-  SERVERS_COMMAND: "servers:command",
-  SERVERS_CONFIGURE: "servers:configure",
-  SERVERS_INSTALL: "servers:install",
-  SERVERS_DELETE: "servers:delete",
-  PROPERTIES_READ: "properties:read",
-  PROPERTIES_MANAGE: "properties:manage",
-  PLAYERS_READ: "players:read",
-  PLAYERS_MANAGE: "players:manage",
-  ALLOWLIST_READ: "allowlist:read",
-  ALLOWLIST_MANAGE: "allowlist:manage",
-  PERMISSIONS_READ: "permissions:read",
-  PERMISSIONS_MANAGE: "permissions:manage",
-  BANS_READ: "bans:read",
-  BANS_MANAGE: "bans:manage",
-  BACKUPS_READ: "backups:read",
-  BACKUPS_CREATE: "backups:create",
-  BACKUPS_RESTORE: "backups:restore",
-  BACKUPS_MANAGE: "backups:manage",
-  BACKUPS_PRUNE: "backups:prune",
-  BACKUPS_KEYS: "backups:keys",
-  BACKUPS_EXPORT: "backups:export",
-  BACKUPS_DESTINATIONS: "backups:destinations",
-  CONTENT_READ: "content:read",
-  CONTENT_MANAGE: "content:manage",
-  WORLDS_READ: "worlds:read",
-  WORLDS_MANAGE: "worlds:manage",
-  WORLDS_RESET: "worlds:reset",
-  ADDONS_READ: "addons:read",
-  ADDONS_MANAGE: "addons:manage",
-  DOWNLOADS_READ: "downloads:read",
-  DOWNLOADS_PRUNE: "downloads:prune",
-  LOGS_READ: "servers:logs",
-  LOGS_READ_APPLICATION: "application:logs",
-  SCHEDULER_READ: "scheduler:read",
-  SCHEDULER_MANAGE: "scheduler:manage",
-  PLUGINS_PAGES: "plugins:pages",
-  PLUGINS_READ: "plugins:read",
-  PLUGINS_MANAGE: "plugins:manage",
-});
+function alternativeMatches(condition, query) {
+  // Contextual log policies advertise the topic boundary, not a single scope.
+  if (condition === "topic=server_log:<server>")
+    return (
+      typeof query?.topic === "string" && query.topic.startsWith("server_log:")
+    );
+  if (condition === "topic=app_log or app_logs")
+    return ["app_log", "app_logs"].includes(query?.topic);
+  return false;
+}
 
-/**
- * Mapping of high-level actions to backend permissions.
- */
-export const ACTION_PERMISSIONS = Object.freeze({
-  [ACTIONS.SERVER_LIFECYCLE]: PERMISSIONS.SERVERS_LIFECYCLE,
-  [ACTIONS.SERVER_COMMAND]: PERMISSIONS.SERVERS_COMMAND,
-  [ACTIONS.SERVER_INSTALL]: PERMISSIONS.SERVERS_INSTALL,
-  [ACTIONS.SERVER_DELETE]: PERMISSIONS.SERVERS_DELETE,
-  [ACTIONS.SERVER_CONFIGURE]: PERMISSIONS.SERVERS_CONFIGURE,
-  [ACTIONS.SERVER_READ]: PERMISSIONS.SERVERS_READ,
-  [ACTIONS.SERVER_INSPECT]: PERMISSIONS.SERVERS_INSPECT,
-  [ACTIONS.PROPERTIES_MANAGE]: PERMISSIONS.PROPERTIES_MANAGE,
-  [ACTIONS.PROPERTIES_READ]: PERMISSIONS.PROPERTIES_READ,
-  [ACTIONS.ALLOWLIST_READ]: PERMISSIONS.ALLOWLIST_READ,
-  [ACTIONS.ALLOWLIST_MANAGE]: PERMISSIONS.ALLOWLIST_MANAGE,
-  [ACTIONS.PERMISSIONS_READ]: PERMISSIONS.PERMISSIONS_READ,
-  [ACTIONS.PERMISSIONS_MANAGE]: PERMISSIONS.PERMISSIONS_MANAGE,
-  [ACTIONS.BANS_READ]: PERMISSIONS.BANS_READ,
-  [ACTIONS.BANS_MANAGE]: PERMISSIONS.BANS_MANAGE,
-  [ACTIONS.PLAYERS_READ]: PERMISSIONS.PLAYERS_READ,
-  [ACTIONS.PLAYERS_MANAGE]: PERMISSIONS.PLAYERS_MANAGE,
-  [ACTIONS.BACKUPS_READ]: PERMISSIONS.BACKUPS_READ,
-  [ACTIONS.BACKUPS_CREATE]: PERMISSIONS.BACKUPS_CREATE,
-  [ACTIONS.BACKUPS_RESTORE]: PERMISSIONS.BACKUPS_RESTORE,
-  [ACTIONS.BACKUPS_MANAGE]: PERMISSIONS.BACKUPS_MANAGE,
-  [ACTIONS.BACKUPS_PRUNE]: PERMISSIONS.BACKUPS_PRUNE,
-  [ACTIONS.BACKUPS_KEYS]: PERMISSIONS.BACKUPS_KEYS,
-  [ACTIONS.BACKUPS_EXPORT]: PERMISSIONS.BACKUPS_EXPORT,
-  [ACTIONS.BACKUPS_DESTINATIONS]: PERMISSIONS.BACKUPS_DESTINATIONS,
-  [ACTIONS.CONTENT_READ]: PERMISSIONS.CONTENT_READ,
-  [ACTIONS.CONTENT_MANAGE]: PERMISSIONS.CONTENT_MANAGE,
-  [ACTIONS.WORLDS_READ]: PERMISSIONS.WORLDS_READ,
-  [ACTIONS.WORLDS_MANAGE]: PERMISSIONS.WORLDS_MANAGE,
-  [ACTIONS.WORLDS_RESET]: PERMISSIONS.WORLDS_RESET,
-  [ACTIONS.ADDONS_READ]: PERMISSIONS.ADDONS_READ,
-  [ACTIONS.ADDONS_MANAGE]: PERMISSIONS.ADDONS_MANAGE,
-  [ACTIONS.DOWNLOADS_READ]: PERMISSIONS.DOWNLOADS_READ,
-  [ACTIONS.DOWNLOADS_PRUNE]: PERMISSIONS.DOWNLOADS_PRUNE,
-  [ACTIONS.LOGS_READ]: PERMISSIONS.LOGS_READ,
-  [ACTIONS.LOGS_APP]: PERMISSIONS.LOGS_READ_APPLICATION,
-  [ACTIONS.RUNTIME_METRICS]: PERMISSIONS.RUNTIME_METRICS,
-  [ACTIONS.SETTINGS_READ]: PERMISSIONS.SETTINGS_READ,
-  [ACTIONS.SETTINGS_MANAGE]: PERMISSIONS.SETTINGS_MANAGE,
-  [ACTIONS.USERS_READ]: PERMISSIONS.USERS_READ,
-  [ACTIONS.USERS_MANAGE]: PERMISSIONS.USERS_MANAGE,
-  [ACTIONS.SCHEDULER_READ]: PERMISSIONS.SCHEDULER_READ,
-  [ACTIONS.SCHEDULER_MANAGE]: PERMISSIONS.SCHEDULER_MANAGE,
-  [ACTIONS.PLUGINS_READ]: PERMISSIONS.PLUGINS_READ,
-  [ACTIONS.PLUGINS_PAGES]: PERMISSIONS.PLUGINS_PAGES,
-  [ACTIONS.PLUGINS_MANAGE]: PERMISSIONS.PLUGINS_MANAGE,
-  [ACTIONS.AUDIT_READ]: PERMISSIONS.AUDIT_READ,
-  [ACTIONS.DIAGNOSTICS_READ]: PERMISSIONS.DIAGNOSTICS_READ,
-  [ACTIONS.HEALTH_READ]: PERMISSIONS.HEALTH_READ,
-});
+export function operationPermissions(operations, id, { query } = {}) {
+  const access = operations?.[id]?.access;
+  if (access?.version !== 1 || !Array.isArray(access.required_permissions))
+    return null;
+  if (access.credential_alternatives?.length) {
+    const alternative = access.credential_alternatives.find((item) =>
+      alternativeMatches(item.condition, query),
+    );
+    if (!alternative || !Array.isArray(alternative.permissions)) return null;
+    return [
+      ...new Set([...access.required_permissions, ...alternative.permissions]),
+    ];
+  }
+  return access.required_permissions;
+}
+
+/** UI availability is advisory: contextual checks are still enforced by BSM. */
+export function operationAccess(
+  operations,
+  id,
+  { user, policy, resources, serverName, query } = {},
+) {
+  const unknown = { state: "unknown", permissions: [] };
+  if (!operations) return unknown;
+  if (!Object.hasOwn(operations, id))
+    return { ...unknown, state: "unsupported" };
+  const access = operations[id].access;
+  if (access?.version !== 1) return unknown;
+  const required = operationPermissions(operations, id, { query });
+  if (!required) return unknown;
+  if (access.classification === "public" && access.authentication === "none")
+    return { state: "allowed", permissions: required };
+  if (!user) return { state: "denied", permissions: required };
+  if (user.credential_id && access.integration_tokens === "unsupported")
+    return { state: "denied", permissions: required };
+  if (!Array.isArray(user.permissions)) return unknown;
+  if (required.some((permission) => !user.permissions.includes(permission)))
+    return { state: "denied", permissions: required };
+  if (access.classification === "legacy-role") {
+    if (!Array.isArray(access.allowed_roles)) return unknown;
+    if (!access.allowed_roles.includes(user.role))
+      return { state: "denied", permissions: required };
+  } else if (
+    !["permission", "authenticated", "contextual"].includes(
+      access.classification,
+    ) &&
+    !(
+      access.classification === "custom" &&
+      access.credential_alternatives?.length
+    )
+  )
+    return unknown;
+  if (
+    access.resource_scope === "server" ||
+    query?.topic?.startsWith("server_log:")
+  ) {
+    if (!serverName) return { state: "conditional", permissions: required };
+    if (user.server_access === "assigned") {
+      if (
+        !Array.isArray(resources) ||
+        !Array.isArray(policy?.server_permissions)
+      )
+        return unknown;
+      const server = resources.find((item) => item.name === serverName);
+      if (
+        !server ||
+        required.some(
+          (permission) =>
+            policy.server_permissions.includes(permission) &&
+            !server.permissions?.includes(permission),
+        )
+      )
+        return { state: "denied", permissions: required };
+    }
+  }
+  return {
+    state:
+      access.additional_checks?.length ||
+      ["contextual", "custom"].includes(access.classification)
+        ? "conditional"
+        : "allowed",
+    permissions: required,
+  };
+}
+
+// Presets describe intended operations; scope names always come from live metadata.
+export const TOKEN_PRESETS = {
+  monitoring: [
+    "get_account",
+    "get_application_health",
+    "list_servers",
+    "list_tasks",
+  ],
+  operator: [
+    "get_account",
+    "get_application_health",
+    "list_servers",
+    "get_server_process_info",
+    "start_server",
+    "stop_server",
+    "restart_server",
+    "send_command",
+    "get_log_history",
+    "list_tasks",
+  ],
+  backups: [
+    "get_account",
+    "get_application_health",
+    "list_servers",
+    "list_server_snapshots",
+    "create_server_snapshot",
+    "list_tasks",
+  ],
+};
+export function tokenPresetPermissions(operations, allowed = [], preset) {
+  if (preset === "full") return allowed;
+  const required = (TOKEN_PRESETS[preset] ?? []).flatMap(
+    (id) =>
+      operationPermissions(operations, id, {
+        query: { topic: "server_log:<server>" },
+      }) ?? [],
+  );
+  return [...new Set(required)].filter((permission) =>
+    allowed.includes(permission),
+  );
+}

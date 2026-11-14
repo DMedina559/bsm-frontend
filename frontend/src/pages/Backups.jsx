@@ -1,3 +1,4 @@
+import { useAccess } from "../app/useAccess";
 import { keyedItems } from "../utils/keyedItems";
 import BackupContents from "../components/BackupContents";
 import { defaultBackupComponents } from "../utils/backupContents";
@@ -80,7 +81,8 @@ function ServerBackups({ prepared, onPrepared }) {
     formatByteValue(value, units.memory, units.precision);
   const { date } = useTimeFormat();
   const { selectedServer, setSelectedServer, refreshServers } = useServer();
-  const { user, sessionGeneration } = useAuth();
+  const { sessionGeneration } = useAuth();
+  const { can } = useAccess();
   const { confirmAction } = useDialog();
   const { addToast } = useToast();
   const snapshots = useResourceQuery("snapshots", selectedServer, {
@@ -433,7 +435,7 @@ function ServerBackups({ prepared, onPrepared }) {
           >
             <Trash2 size={16} /> Prune
           </button>
-          {user?.role === "admin" && (
+          {can("get_settings") && (
             <Link
               className="action-button secondary"
               to="/bsm-settings?tab=backups"
@@ -459,7 +461,7 @@ function ServerBackups({ prepared, onPrepared }) {
               {(health.data.readiness_reasons ?? []).map((reason) => (
                 <li key={reason}>
                   {reason}
-                  {user?.role === "admin" &&
+                  {can("get_settings") &&
                   /destination|external|key|scheduled/.test(
                     reason.toLowerCase(),
                   ) ? (
@@ -691,7 +693,7 @@ function ServerBackups({ prepared, onPrepared }) {
       )}
       <div className="backup-section-heading backup-history-heading">
         <h2>Recovery points</h2>
-        {user?.role === "admin" && (
+        {can("list_schedules") && (
           <Link className="action-button secondary" to="/scheduler">
             Schedules
           </Link>
@@ -1386,7 +1388,7 @@ function ServerBackups({ prepared, onPrepared }) {
             aria-labelledby={`${inspectorId}-manage-tab`}
             hidden={inspectorTab !== "manage"}
           >
-            {manifest && user?.role === "admin" && (
+            {manifest && can("export_decrypted_snapshot", selectedServer) && (
               <button
                 className="action-button secondary"
                 disabled={busy}
@@ -1447,7 +1449,7 @@ function ServerBackups({ prepared, onPrepared }) {
                 Copy
               </button>
             </details>
-            {user?.role === "admin" && (
+            {can("prepare_backup_copy", selectedServer) && (
               <details>
                 <summary>Restore as a new server</summary>
                 <p>

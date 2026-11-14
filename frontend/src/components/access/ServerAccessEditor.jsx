@@ -1,3 +1,4 @@
+import { useAccess } from "../../app/useAccess";
 import AccessPreview from "./AccessPreview";
 import React, { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -8,6 +9,13 @@ import { useAuth } from "../../contexts/AuthContext";
 
 export default function ServerAccessEditor({ userId, userRole }) {
   const { user, sessionGeneration } = useAuth();
+  const {
+    permissionsFor,
+    policyQuery: policy,
+    loading: accessLoading,
+    error: accessError,
+  } = useAccess();
+  const requiredRead = permissionsFor("list_servers") ?? [];
   const identity = getPreferenceIdentity(user);
   const key = ["account-server-access", identity, sessionGeneration, userId];
   const access = useQuery(
@@ -25,13 +33,6 @@ export default function ServerAccessEditor({ userId, userRole }) {
     {
       queryKey: ["access-servers", identity, sessionGeneration],
       queryFn: ({ signal }) => callOperation("list_access_servers", { signal }),
-    },
-    queryClient,
-  );
-  const policy = useQuery(
-    {
-      queryKey: ["access-policy", identity, sessionGeneration],
-      queryFn: ({ signal }) => callOperation("get_access_policy", { signal }),
     },
     queryClient,
   );
@@ -64,11 +65,11 @@ export default function ServerAccessEditor({ userId, userRole }) {
       const current = previous[serverId] ?? [];
       const next = current.includes(permission)
         ? current.filter((item) => item !== permission)
-        : [...new Set(["servers:read", ...current, permission])];
+        : [...new Set([...requiredRead, ...current, permission])];
       return {
         ...previous,
         [serverId]:
-          permission === "servers:read" && current.includes(permission)
+          requiredRead.includes(permission) && current.includes(permission)
             ? []
             : next,
       };
@@ -103,6 +104,7 @@ export default function ServerAccessEditor({ userId, userRole }) {
     error ||
     access.error?.message ||
     policy.error?.message ||
+    accessError?.message ||
     servers.error?.message;
   return (
     <section className="settings-panel" aria-labelledby="server-access-heading">
@@ -126,7 +128,10 @@ export default function ServerAccessEditor({ userId, userRole }) {
           servers={servers.data ?? []}
         />
       )}
-      {access.isPending || servers.isPending || policy.isPending ? (
+      {access.isPending ||
+      servers.isPending ||
+      policy.isPending ||
+      accessLoading ? (
         <p role="status">Loading server access…</p>
       ) : (
         <>

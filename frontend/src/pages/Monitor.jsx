@@ -1,5 +1,4 @@
 import { useAccess } from "../app/useAccess";
-import { PERMISSIONS } from "../app/permissions";
 import { useTimeFormat } from "../app/useTimeFormat";
 import { useMetricFormat } from "../app/useMetricFormat";
 import { callOperation } from "../api/operations";
@@ -283,9 +282,7 @@ const Monitor = () => {
             className="action-button start-button"
             onClick={() => sendAction("start")}
             disabled={
-              loadingAction ||
-              isRunning ||
-              !can(PERMISSIONS.SERVERS_LIFECYCLE, selectedServer)
+              loadingAction || isRunning || !can("start_server", selectedServer)
             }
           >
             <Play size={16} aria-hidden="true" /> Start
@@ -295,9 +292,7 @@ const Monitor = () => {
             className="action-button danger-button"
             onClick={() => sendAction("stop")}
             disabled={
-              loadingAction ||
-              !isRunning ||
-              !can(PERMISSIONS.SERVERS_LIFECYCLE, selectedServer)
+              loadingAction || !isRunning || !can("stop_server", selectedServer)
             }
           >
             <Square size={16} aria-hidden="true" /> Stop
@@ -306,10 +301,7 @@ const Monitor = () => {
             type="button"
             className="action-button warning-button"
             onClick={() => sendAction("restart")}
-            disabled={
-              loadingAction ||
-              !can(PERMISSIONS.SERVERS_LIFECYCLE, selectedServer)
-            }
+            disabled={loadingAction || !can("restart_server", selectedServer)}
           >
             <RotateCcw size={16} aria-hidden="true" /> Restart
           </button>
@@ -486,7 +478,7 @@ const Monitor = () => {
                 disabled={
                   loadingAction ||
                   !isRunning ||
-                  !can(PERMISSIONS.SERVERS_COMMAND, selectedServer)
+                  !can("send_command", selectedServer)
                 }
               />
             </div>
@@ -497,7 +489,7 @@ const Monitor = () => {
                 loadingAction ||
                 !command.trim() ||
                 !isRunning ||
-                !can(PERMISSIONS.SERVERS_COMMAND, selectedServer)
+                !can("send_command", selectedServer)
               }
             >
               Send

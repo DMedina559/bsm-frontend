@@ -1,3 +1,4 @@
+import { accessUser } from "./accessFixtures";
 import { assertApiRequest, hasApiRoute } from "./apiContract";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../../src/app/queryClient";
@@ -22,7 +23,7 @@ beforeEach(() => {
   if (vi.isMockFunction(api.request))
     fixtures.request.mockImplementation(async (url) =>
       url === "/api/account"
-        ? { username: "testuser", role: "admin" }
+        ? accessUser("admin", { username: "testuser" })
         : { status: "success" },
     );
 });

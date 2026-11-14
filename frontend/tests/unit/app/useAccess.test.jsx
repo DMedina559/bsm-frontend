@@ -1,186 +1,95 @@
 /** @vitest-environment jsdom */
 import React from "react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { beforeEach, expect, it, vi } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { useAccess, useServerAccess } from "../../../src/app/useAccess";
-import { ACTIONS, PERMISSIONS } from "../../../src/app/permissions";
 import { queryClient } from "../../../src/app/queryClient";
 import { callOperation } from "../../../src/api/operations";
-
-vi.mock("../../../src/api/operations", () => ({
-  callOperation: vi.fn(),
-}));
-
-let mockUser = {
-  id: 1,
-  username: "testuser",
-  role: "moderator",
-  server_access: "all",
-  permissions: ["servers:read", "servers:lifecycle", "servers:command"],
-};
-
+import { loadAccessSchema } from "../../../src/api/access";
+vi.mock("../../../src/api/operations", () => ({ callOperation: vi.fn() }));
+vi.mock("../../../src/api/access", () => ({ loadAccessSchema: vi.fn() }));
+let user;
+let generation;
 vi.mock("../../../src/contexts/AuthContext", () => ({
-  useAuth: () => ({
-    user: mockUser,
-    sessionGeneration: 1,
-  }),
+  useAuth: () => ({ user, sessionGeneration: generation }),
 }));
-
-describe("useAccess with dynamic policy discovery", () => {
-  beforeEach(() => {
-    queryClient.clear();
-    vi.clearAllMocks();
-    mockUser = {
-      id: 1,
-      username: "testuser",
-      role: "moderator",
-      server_access: "all",
-      permissions: ["servers:read", "servers:lifecycle", "servers:command"],
-    };
-  });
-
-  it("resolves dynamic scope names from backend get_access_policy", async () => {
-    callOperation.mockImplementation(async (op) => {
-      if (op === "get_access_policy") {
-        return {
-          revision: "rev-1",
-          permissions: {
-            "servers:lifecycle": "Start, stop and restart game servers",
-            "servers:command":
-              "Send interactive console commands to running servers",
-            "servers:read": "List visible servers",
-          },
-        };
-      }
-      return {};
-    });
-
-    const { result } = renderHook(() => useAccess());
-
-    await waitFor(() => expect(result.current.policy).toBeDefined());
-
-    // Checks using semantic action keys
-    expect(result.current.can(ACTIONS.SERVER_LIFECYCLE)).toBe(true);
-    expect(result.current.can(ACTIONS.SERVER_COMMAND)).toBe(true);
-    expect(result.current.can(ACTIONS.SERVER_INSTALL)).toBe(false);
-
-    // Checks using new direct permission names
-    expect(result.current.can(PERMISSIONS.SERVERS_LIFECYCLE)).toBe(true);
-    expect(result.current.can(PERMISSIONS.SERVERS_COMMAND)).toBe(true);
-  });
-
-  it("denies access when user does not hold the required permission", async () => {
-    mockUser.permissions = ["servers:read"];
-
-    callOperation.mockImplementation(async (op) => {
-      if (op === "get_access_policy") {
-        return {
-          revision: "rev-2",
-          permissions: {
-            "servers:lifecycle": "Start, stop and restart game servers",
-            "servers:command":
-              "Send interactive console commands to running servers",
-            "servers:read": "List visible servers",
-          },
-        };
-      }
-      return {};
-    });
-
-    const { result } = renderHook(() => useAccess());
-
-    await waitFor(() => expect(result.current.policy).toBeDefined());
-
-    expect(result.current.can(ACTIONS.SERVER_LIFECYCLE)).toBe(false);
-    expect(result.current.can(ACTIONS.SERVER_COMMAND)).toBe(false);
-    expect(result.current.can(ACTIONS.SERVER_READ)).toBe(true);
-  });
-
-  it("evaluates useServerAccess capabilities accurately", async () => {
-    mockUser.permissions = [
-      "servers:read",
-      "servers:lifecycle",
-      "properties:manage",
-    ];
-
-    callOperation.mockImplementation(async (op) => {
-      if (op === "get_access_policy") {
-        return {
-          revision: "rev-2",
-          permissions: {
-            "servers:lifecycle": "Start, stop and restart game servers",
-            "properties:manage": "Edit properties",
-          },
-        };
-      }
-      return {};
-    });
-
-    const { result } = renderHook(() => useServerAccess("Survival"));
-
-    await waitFor(() => expect(result.current.policy).toBeDefined());
-
-    expect(result.current.canLifecycle).toBe(true);
-    expect(result.current.canCommand).toBe(false);
-    expect(result.current.canUpdate).toBe(false);
-    expect(result.current.canProperties).toBe(true);
-    expect(result.current.canReadProperties).toBe(true);
-  });
-
-  it("separates server and application log permissions", async () => {
-    mockUser.permissions = ["servers:read", "servers:logs"];
-    const { result } = renderHook(() => useServerAccess("Alpha"));
-    expect(result.current.canLogs).toBe(true);
-    expect(result.current.can(ACTIONS.LOGS_APP)).toBe(false);
-    expect(result.current.can("logs:read")).toBe(false);
-    expect(result.current.can("logs:read_application")).toBe(false);
-  });
-
-  it("respects per-server assigned access", async () => {
-    mockUser.server_access = "assigned";
-    mockUser.permissions = [
-      "servers:read",
-      "servers:lifecycle",
-      "servers:command",
-    ];
-
-    callOperation.mockImplementation(async (op) => {
-      if (op === "get_access_policy") {
-        return {
-          revision: "rev-3",
-          permissions: {
-            "servers:lifecycle": "Lifecycle",
-            "servers:command": "Command",
-            "servers:read": "Read",
-          },
-        };
-      }
-      if (op === "list_access_servers") {
-        return [
-          {
-            id: "server-1",
-            name: "Alpha",
-            permissions: ["servers:read", "servers:lifecycle"],
-          },
-          {
-            id: "server-2",
-            name: "Beta",
-            permissions: ["servers:read"],
-          },
-        ];
-      }
-      return {};
-    });
-
-    const { result: alpha } = renderHook(() => useServerAccess("Alpha"));
-    const { result: beta } = renderHook(() => useServerAccess("Beta"));
-
-    await waitFor(() => expect(alpha.current.resources).toBeDefined());
-
-    expect(alpha.current.canLifecycle).toBe(true);
-    expect(alpha.current.canCommand).toBe(false);
-
-    expect(beta.current.canLifecycle).toBe(false);
-    expect(beta.current.canCommand).toBe(false);
-  });
+const operation = (id, scopes, scope = "server") => ({
+  operationId: id,
+  "x-bsm-access": {
+    version: 1,
+    classification: "permission",
+    authentication: "required",
+    resource_scope: scope,
+    required_permissions: scopes,
+  },
+});
+const schema = (scope) => ({
+  openapi: "3.1.0",
+  paths: {
+    "/start": { post: operation("start_server", [scope]) },
+    "/stop": { post: operation("stop_server", ["future:stop"]) },
+    "/resources": {
+      get: operation("list_access_servers", ["future:list"], "collection"),
+    },
+  },
+});
+beforeEach(() => {
+  queryClient.clear();
+  vi.clearAllMocks();
+  generation = 1;
+  user = {
+    id: 1,
+    role: "admin",
+    permissions: ["future:start", "future:list"],
+    server_access: "assigned",
+    policy_revision: "r1",
+  };
+  loadAccessSchema.mockResolvedValue(schema("future:start"));
+  callOperation.mockImplementation(async (id) =>
+    id === "get_access_policy"
+      ? { server_permissions: ["future:start", "future:stop", "future:list"] }
+      : [
+          { name: "Alpha", permissions: ["future:start", "future:list"] },
+          { name: "Beta", permissions: ["future:list"] },
+        ],
+  );
+});
+it("waits for runtime discovery and per-server grants, and checks lifecycle operations separately", async () => {
+  const { result } = renderHook(() => useServerAccess("Alpha"));
+  expect(result.current.canStart).toBe(false);
+  await waitFor(() => expect(result.current.canStart).toBe(true));
+  expect(result.current.canStop).toBe(false);
+  expect(result.current.can("start_server", "Beta")).toBe(false);
+  expect(result.current.can("unknown")).toBe(false);
+});
+it("refreshes scope names after a backend policy revision instead of keeping the old table", async () => {
+  const { result, rerender } = renderHook(() => useAccess());
+  await waitFor(() =>
+    expect(result.current.can("start_server", "Alpha")).toBe(true),
+  );
+  user = { ...user, policy_revision: "r2", permissions: ["renamed:start"] };
+  loadAccessSchema.mockResolvedValue(schema("renamed:start"));
+  callOperation.mockResolvedValue({ server_permissions: ["renamed:start"] });
+  rerender();
+  await waitFor(() =>
+    expect(result.current.permissionsFor("start_server")).toEqual([
+      "renamed:start",
+    ]),
+  );
+  expect(result.current.can("start_server", "Alpha")).toBe(false);
+});
+it("keeps discovery failures unknown without granting administrator access", async () => {
+  loadAccessSchema.mockRejectedValue(new Error("Discovery unavailable"));
+  const { result } = renderHook(() => useAccess());
+  await waitFor(() => expect(result.current.error).toBeDefined());
+  expect(result.current.can("start_server", "Alpha")).toBe(false);
+  expect(result.current.access("start_server").state).toBe("unknown");
+});
+it("does not reuse another credential's discovered grants", async () => {
+  const { result, rerender } = renderHook(() => useServerAccess("Alpha"));
+  await waitFor(() => expect(result.current.canStart).toBe(true));
+  generation = 2;
+  user = { ...user, permissions: [], credential_id: "read-only" };
+  rerender();
+  expect(result.current.canStart).toBe(false);
 });

@@ -1,3 +1,4 @@
+import { accessUser } from "../../support/accessFixtures";
 import { render, screen, fireEvent, waitFor } from "../../support/utils";
 import Users from "../../../src/pages/Users";
 import { vi, describe, it, expect, beforeEach } from "vitest";
@@ -11,7 +12,9 @@ vi.mock("../../../src/api/transport", async (importOriginal) => {
 describe("Users", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    api.request.mockResolvedValue({ username: "admin", role: "admin", id: 1 });
+    api.request.mockResolvedValue(
+      accessUser("admin", { username: "admin", id: 1 }),
+    );
 
     api.get.mockImplementation((url) => {
       if (url === "/api/users/list") {
