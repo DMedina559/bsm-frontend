@@ -288,13 +288,24 @@ test("server cards open Monitor and offer settings shortcuts", async ({
     name: "alice-server server",
     exact: true,
   });
+  // Hover scrolls its target into view. Establish the baseline after that
+  // scrolling so WebKit viewport changes are not mistaken for hover movement.
+  await card.scrollIntoViewIfNeeded();
+  const documentBounds = () =>
+    card.evaluate((element) => {
+      const bounds = element.getBoundingClientRect();
+      return { x: bounds.x + window.scrollX, y: bounds.y + window.scrollY };
+    });
   // Hover feedback must keep the card's full-area hit target stationary.
-  const initialBounds = await card.boundingBox();
+  const initialBounds = await documentBounds();
   await card.hover({ position: { x: 12, y: 12 } });
   await expect
     .poll(async () => {
-      const hoveredBounds = await card.boundingBox();
-      return Math.abs(hoveredBounds.y - initialBounds.y);
+      const hoveredBounds = await documentBounds();
+      return Math.max(
+        Math.abs(hoveredBounds.x - initialBounds.x),
+        Math.abs(hoveredBounds.y - initialBounds.y),
+      );
     })
     .toBeLessThan(0.5);
   // Click card padding to exercise the full-card hit area rather than its title.
