@@ -6,6 +6,7 @@ export function createHost() {
   const listeners = new Map();
   const sockets = [];
   let online = true;
+  let visible = true;
   const scheduler = {
     now: () => now,
     random: () => 0.5,
@@ -28,7 +29,7 @@ export function createHost() {
   };
   const platform = {
     isOnline: () => online,
-    isVisible: () => true,
+    isVisible: () => visible,
     getToken: () => "secret",
     createWebSocket(url) {
       const socket = {
@@ -62,6 +63,10 @@ export function createHost() {
     emit,
     listenerCount: () =>
       [...listeners.values()].reduce((count, set) => count + set.size, 0),
+    setVisible(value) {
+      visible = value;
+      emit("visibilitychange");
+    },
     setOnline(value) {
       online = value;
       emit(value ? "online" : "offline");

@@ -25,7 +25,8 @@
     "dev:web": "npm run dev --workspace=bsm-frontend",
     "test:tooling": "node --test scripts/test/*.test.mjs",
     "check:implementations": "node scripts/check-implementations.mjs",
-    "pack:frontend": "node scripts/pack-frontend.mjs"
+    "pack:frontend": "node scripts/pack-frontend.mjs",
+    "check:archives": "node scripts/check-package-archives.mjs"
   },
   "engines": {
     "node": "^22.13.0 || >=24"

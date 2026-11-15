@@ -10,8 +10,8 @@ development uses Node.js 22.12 or later.
 
 ## Use the client
 
-This package is built within the workspace and is configured for npm publication.
-Registry installation requires an SDK release. To test an unreleased checkout,
+Install a published version with `npm install @bedrock-server-manager/api-client`.
+To test an unreleased checkout,
 run root `npm ci`, then `npm pack --workspace=@bedrock-server-manager/api-client`.
 Install the resulting archive in the consuming project with `npm install` and
 its archive path. The archive contains the built SDK and needs no Python tooling.
@@ -152,3 +152,29 @@ options share the normal bearer authentication, backend URL resolution, session
 guards, and abort signals. A timeout of zero disables only the deadline.
 
 Backup pickers can read `contractMetadata.backupContents` from `@bedrock-server-manager/api-client/metadata`. Its component IDs, labels and defaults are generated from the backend Pydantic creation schema, shared with plugin settings. Full-directory capture uses `mode: "full"`; it is not an individual component choice.
+
+## React Native integration
+
+The client has no React or DOM dependency. Supply native `fetch` (or an adapter)
+and your secure credential provider to `createHttpTransport`; keep credentials
+out of persisted preference storage. The host must provide the standard URL,
+Headers, FormData, Blob, AbortController, AbortSignal.any/timeout, and DOMException
+APIs. Older runtimes need compatible polyfills before use. Query serialization
+does not require URLSearchParams.size.
+
+For native uploads, prefer building FormData in the app using its file picker
+result (`{ uri, name, type }`) and passing that FormData as the operation body.
+When constructing multipart data from an object, the client also preserves URI
+file descriptors and converts ordinary scalar fields to strings. File access,
+permissions, and the lifetime of temporary URIs remain the app's responsibility.
+
+Streaming downloads require a fetch adapter exposing response.body.getReader().
+Without a readable body, blob downloads and final progress reporting still work;
+`downloadTo` requires stream support. Use a native file-transfer adapter for large
+files if the platform only offers buffered responses. Cancellation and deadlines
+reject pending credential, fetch, and decoder promises even if an adapter ignores
+the signal; the adapter must honor cancellation to stop its underlying native I/O.
+
+Use root `npm run check:archives` to validate the publishable packages in a clean
+consumer directory before release. A successful Metro export validates bundling,
+not installation or on-device execution.

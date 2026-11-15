@@ -307,3 +307,54 @@ test("response metadata is available for JSON, errors and empty responses", asyn
     assert.equal(metadata.headers["content-type"], "application/json");
   }
 });
+
+test("cancellation interrupts native fetch and body adapters that do not reject on abort", async () => {
+  for (const stage of ["fetch", "json", "text", "blob"]) {
+    const controller = new AbortController();
+    let entered;
+    const ready = new Promise((resolve) => {
+      entered = resolve;
+    });
+    const pending = () => {
+      entered();
+      return new Promise(() => {});
+    };
+    const response = {
+      ok: true,
+      status: 200,
+      headers: new Headers({
+        "content-type":
+          stage === "json" ? "application/json" : "application/octet-stream",
+      }),
+      [stage]: pending,
+    };
+    const client = transport(
+      stage === "fetch" ? pending : async () => response,
+    );
+    const result = client.request("/api/test", {
+      signal: controller.signal,
+      responseType: stage === "blob" ? "blob" : "json",
+    });
+    await ready;
+    const reason = new Error("account changed");
+    controller.abort(reason);
+    await assert.rejects(result, (error) => error === reason);
+  }
+});
+
+test("deadline interrupts a native body decoder that ignores the request signal", async () => {
+  const keepAlive = setTimeout(() => {}, 1000);
+  try {
+    await assert.rejects(
+      transport(async () => ({
+        ok: true,
+        status: 200,
+        headers: new Headers({ "content-type": "application/json" }),
+        json: () => new Promise(() => {}),
+      })).request("/api/test", { timeout: 10 }),
+      { name: "TimeoutError" },
+    );
+  } finally {
+    clearTimeout(keepAlive);
+  }
+});
