@@ -393,3 +393,133 @@ it.each([true, false])(
     }
   },
 );
+
+it("continues the original sensitive action once after verification with refreshed CSRF headers", async () => {
+  setApiBaseUrl("");
+  setCredentials("session", false);
+  const challenge = new Response(
+    JSON.stringify({ detail: "Verify identity" }),
+    {
+      status: 403,
+      headers: {
+        "Content-Type": "application/json",
+        "X-BSM-Recent-Auth": "required",
+      },
+    },
+  );
+  globalThis.fetch = vi
+    .fn()
+    .mockResolvedValueOnce(challenge)
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ verified_until: 999 }), {
+        headers: {
+          "Content-Type": "application/json",
+          "X-BSM-CSRF-Token": "fresh-proof",
+        },
+      }),
+    )
+    .mockResolvedValueOnce(Response.json({ recovery_codes: ["new-code"] }));
+  let pending;
+  const prompt = (event) => {
+    event.preventDefault();
+    pending = event.detail;
+  };
+  window.addEventListener("bsm:security-verification-required", prompt);
+  try {
+    const body = { otp: "123456" };
+    const result = request("/api/account/security/recovery-codes", {
+      method: "POST",
+      body,
+    });
+    await vi.waitFor(() => expect(pending).toBeDefined());
+    expect(fetch).toHaveBeenCalledTimes(1);
+    await request("/api/account/security/verify", {
+      method: "POST",
+      body: { password: "proof" },
+    });
+    pending.resume();
+    await expect(result).resolves.toEqual({ recovery_codes: ["new-code"] });
+    expect(fetch).toHaveBeenCalledTimes(3);
+    expect(fetch.mock.calls[2][0]).toBe(fetch.mock.calls[0][0]);
+    expect(fetch.mock.calls[2][1].body).toBe(fetch.mock.calls[0][1].body);
+    expect(
+      new Headers(fetch.mock.calls[2][1].headers).get("X-CSRF-Token"),
+    ).toBe("fresh-proof");
+  } finally {
+    window.removeEventListener("bsm:security-verification-required", prompt);
+  }
+});
+
+it.each(["dismiss", "abort", "logout", "backend"])(
+  "does not continue a challenged action after %s",
+  async (reason) => {
+    const { sessionRuntime } = await import("../../../src/app/sessionRuntime");
+    setApiBaseUrl("");
+    setCredentials("session", false);
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ detail: "Verify" }), {
+        status: 403,
+        headers: {
+          "Content-Type": "application/json",
+          "X-BSM-Recent-Auth": "required",
+        },
+      }),
+    );
+    let pending;
+    const prompt = (event) => {
+      event.preventDefault();
+      pending = event.detail;
+    };
+    const controller = new AbortController();
+    window.addEventListener("bsm:security-verification-required", prompt);
+    try {
+      const result = request("/api/sensitive", {
+        method: "DELETE",
+        signal: controller.signal,
+      });
+      const rejected = expect(result).rejects.toMatchObject({
+        name: "AbortError",
+      });
+      await vi.waitFor(() => expect(pending).toBeDefined());
+      if (reason === "dismiss") pending.cancel();
+      if (reason === "abort") controller.abort();
+      if (reason === "logout") sessionRuntime.reset();
+      if (reason === "backend") setApiBaseUrl("https://other.example");
+      pending.resume();
+      await rejected;
+      expect(fetch).toHaveBeenCalledTimes(1);
+    } finally {
+      window.removeEventListener("bsm:security-verification-required", prompt);
+      setApiBaseUrl("");
+    }
+  },
+);
+
+it("does not loop verification when the retried action is challenged again", async () => {
+  setApiBaseUrl("");
+  setCredentials("session", false);
+  globalThis.fetch = vi.fn().mockImplementation(
+    async () =>
+      new Response(JSON.stringify({ detail: "Verify" }), {
+        status: 403,
+        headers: {
+          "Content-Type": "application/json",
+          "X-BSM-Recent-Auth": "required",
+        },
+      }),
+  );
+  const prompt = vi.fn((event) => {
+    event.preventDefault();
+    event.detail.resume();
+  });
+  window.addEventListener("bsm:security-verification-required", prompt);
+  try {
+    await expect(
+      request("/api/sensitive", { method: "POST" }),
+    ).rejects.toMatchObject({ status: 403 });
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(prompt).toHaveBeenCalledTimes(1);
+  } finally {
+    window.removeEventListener("bsm:security-verification-required", prompt);
+  }
+});

@@ -59,7 +59,48 @@ const transport = createHttpTransport({
 });
 let lastPolicyRevision = null;
 const csrfTokens = new Map();
+function waitForVerification({ backend, session, options, error }) {
+  const signal = AbortSignal.any([
+    session.signal,
+    ...(options.signal ? [options.signal] : []),
+    ...(options.session?.signal ? [options.session.signal] : []),
+  ]);
+  return new Promise((resolve, reject) => {
+    const finish = (failure) => {
+      signal.removeEventListener("abort", aborted);
+      if (failure) reject(failure);
+      else if (
+        !sessionRuntime.isCurrent(session) ||
+        getBackendIdentity() !== backend
+      )
+        reject(new DOMException("Session changed", "AbortError"));
+      else resolve();
+    };
+    const aborted = () =>
+      finish(signal.reason ?? new DOMException("Cancelled", "AbortError"));
+    signal.addEventListener("abort", aborted, { once: true });
+    if (signal.aborted) return aborted();
+    const event = new CustomEvent("bsm:security-verification-required", {
+      cancelable: true,
+      detail: {
+        backend,
+        resume: () => finish(),
+        cancel: () =>
+          finish(
+            new DOMException("Identity verification cancelled", "AbortError"),
+          ),
+      },
+    });
+    // A mounted verification dialog must explicitly claim ownership.
+    if (window.dispatchEvent(event)) finish(error);
+  });
+}
+
 export function request(url, options = {}) {
+  return sendRequest(url, options);
+}
+
+function sendRequest(url, options, verified = false) {
   if (
     navigator.onLine === false &&
     !["GET", "HEAD", "OPTIONS"].includes(
@@ -70,7 +111,8 @@ export function request(url, options = {}) {
       new Error("Reconnect before making changes. Requests are not queued."),
     );
   const backend = getBackendIdentity();
-  const generation = sessionRuntime.capture().generation;
+  const session = sessionRuntime.capture();
+  const generation = session.generation;
   let revision;
   let recentRequired = false;
   let mfaRequired = false;
@@ -132,7 +174,7 @@ export function request(url, options = {}) {
       }
       return data;
     })
-    .catch((error) => {
+    .catch(async (error) => {
       if (error.status === 401 && mfaRequired) error.mfaRequired = true;
       if (error.status === 401 && passkeyRequired) error.passkeyRequired = true;
       if (
@@ -147,14 +189,32 @@ export function request(url, options = {}) {
       if (
         error.status === 403 &&
         recentRequired &&
-        sessionRuntime.capture().generation === generation &&
+        !verified &&
+        !error.committed &&
+        ![
+          "/api/account/security",
+          "/api/account/security/verify",
+          "/api/account/security/passkeys/verify/options",
+          "/api/account/security/passkeys/verify",
+        ].includes(url.split("?")[0]) &&
+        sessionRuntime.isCurrent(session) &&
         getBackendIdentity() === backend
-      )
-        window.dispatchEvent(
-          new CustomEvent("bsm:security-verification-required", {
-            detail: { backend },
-          }),
+      ) {
+        await waitForVerification({ backend, session, options, error });
+        session.signal.throwIfAborted();
+        options.signal?.throwIfAborted();
+        options.session?.signal.throwIfAborted();
+        if (
+          !sessionRuntime.isCurrent(session) ||
+          getBackendIdentity() !== backend
+        )
+          throw new DOMException("Session changed", "AbortError");
+        return sendRequest(
+          url,
+          { ...options, session: options.session ?? session },
+          true,
         );
+      }
       throw error;
     });
 }

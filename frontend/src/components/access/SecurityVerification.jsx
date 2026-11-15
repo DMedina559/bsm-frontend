@@ -24,6 +24,7 @@ export default function SecurityVerification() {
   const [trustedUntil, setTrustedUntil] = useState(null);
   const userId = user?.id;
   const [open, setOpen] = useState(false);
+  const [hasPendingAction, setHasPendingAction] = useState(false);
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
@@ -31,7 +32,11 @@ export default function SecurityVerification() {
   const [needsFactor, setNeedsFactor] = useState(false);
   const [passkeysEnabled, setPasskeysEnabled] = useState(false);
   const controllerRef = useRef(null);
+  const pendingRef = useRef(new Set());
+  const openRef = useRef(false);
   useEffect(() => {
+    openRef.current = false;
+    setHasPendingAction(false);
     setOpen(false);
     setPassword("");
     setOtp("");
@@ -44,6 +49,13 @@ export default function SecurityVerification() {
         (!event.detail?.backend ||
           event.detail.backend === getBackendIdentity())
       ) {
+        event.preventDefault();
+        if (event.detail?.resume) {
+          pendingRef.current.add(event.detail);
+          setHasPendingAction(true);
+        }
+        if (openRef.current) return;
+        openRef.current = true;
         setError("");
         setPassword("");
         setOtp("");
@@ -74,23 +86,35 @@ export default function SecurityVerification() {
       }
     };
     window.addEventListener("bsm:security-verification-required", show);
+    const pending = pendingRef.current;
     return () => {
+      openRef.current = false;
+      pending.forEach((action) => action.cancel());
+      pending.clear();
       controllerRef.current?.abort();
       window.removeEventListener("bsm:security-verification-required", show);
     };
   }, [userId, user?.username, sessionGeneration]);
-  const close = () => {
+  const close = (verified = false) => {
+    const pending = [...pendingRef.current];
+    pendingRef.current.clear();
+    setHasPendingAction(false);
+    openRef.current = false;
     controllerRef.current?.abort();
     setOpen(false);
     setPassword("");
     setOtp("");
     setBusy(false);
+    pending.forEach((action) =>
+      verified === true ? action.resume() : action.cancel(),
+    );
   };
   async function verify(event) {
     event.preventDefault();
     setBusy(true);
     setError("");
     const abort = new AbortController();
+    controllerRef.current?.abort();
     controllerRef.current = abort;
     try {
       const backend = getConnectionIdentity();
@@ -112,16 +136,14 @@ export default function SecurityVerification() {
       await queryClient.invalidateQueries({
         queryKey: ["trusted-devices", getPreferenceIdentity(user)],
       });
+      if (abort.signal.aborted) return;
       window.dispatchEvent(
         new CustomEvent("bsm:security-verified", {
           detail: { backend: getBackendIdentity() },
         }),
       );
-      close();
-      addToast(
-        "Identity verified. You can retry the security action.",
-        "success",
-      );
+      close(true);
+      addToast("Identity verified.", "success");
     } catch (failure) {
       if (!abort.signal.aborted) {
         if (failure.passkeyRequired) {
@@ -169,16 +191,14 @@ export default function SecurityVerification() {
       await queryClient.invalidateQueries({
         queryKey: ["account-security", getPreferenceIdentity(user)],
       });
+      if (abort.signal.aborted) return;
       window.dispatchEvent(
         new CustomEvent("bsm:security-verified", {
           detail: { backend: getBackendIdentity() },
         }),
       );
-      close();
-      addToast(
-        "Identity verified with passkey. You can retry the security action.",
-        "success",
-      );
+      close(true);
+      addToast("Identity verified with passkey.", "success");
     } catch (failure) {
       if (!abort.signal.aborted && failure?.name !== "AbortError") {
         setError(failure.message);
@@ -188,11 +208,18 @@ export default function SecurityVerification() {
     }
   }
   return open ? (
-    <Modal title="Verify your identity" onClose={close} closeDisabled={busy}>
+    <Modal
+      title="Verify your identity"
+      onClose={() => close()}
+      closeDisabled={busy}
+    >
       <p>
         Security changes require a recent identity check. Verification lasts
         five minutes and does not extend your login.
       </p>
+      {hasPendingAction && (
+        <p>Your action will continue automatically after verification.</p>
+      )}
       {passkeysEnabled && isPasskeySupported() && (
         <div className="form-actions">
           <button
