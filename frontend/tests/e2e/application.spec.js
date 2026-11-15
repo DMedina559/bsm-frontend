@@ -1040,7 +1040,7 @@ test("custom theme palettes are visible instead of the striped fallback", async 
   await context.route("**/themes/palette_preview.css", (route) =>
     route.fulfill({
       contentType: "text/css",
-      body: ":root { --bsm-page:#123456; --bsm-surface:#234567; --bsm-accent:#345678; }",
+      body: ':root[data-theme="palette_preview"][data-mode="dark"][data-density] { --bsm-page:#123456; --bsm-surface:#234567; --bsm-accent:#345678; }',
     }),
   );
   await context.route("**/themes/unreadable_theme.css", (route) =>

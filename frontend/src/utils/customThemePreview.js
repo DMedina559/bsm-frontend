@@ -73,6 +73,7 @@ export function extractCustomThemePreview(
   theme,
   mode = "dark",
   mediaMatches = (query) => window.matchMedia?.(query).matches ?? false,
+  density = "comfortable",
 ) {
   if (typeof css !== "string" || css.length > 1024 * 1024) return null;
   try {
@@ -80,6 +81,7 @@ export function extractCustomThemePreview(
     const doc = document.implementation.createHTMLDocument("");
     doc.documentElement.dataset.theme = theme;
     doc.documentElement.dataset.mode = mode;
+    doc.documentElement.dataset.density = density;
     const targets = [doc.documentElement, doc.body];
     const declarations = targets.map(() => new Map());
     const visit = (nodes) =>

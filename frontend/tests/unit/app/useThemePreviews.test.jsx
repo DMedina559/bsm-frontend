@@ -79,3 +79,18 @@ it("isolates cached CSS between sessions and accounts", async () => {
   expect(result.current.custom).toBeUndefined();
   await waitFor(() => expect(result.current.custom.colors[2]).toBe("#abcdef"));
 });
+
+it("matches the selected density and updates the preview without downloading CSS again", async () => {
+  getBlob.mockResolvedValue({
+    text: async () =>
+      ':root[data-density="comfortable"] {--bsm-accent:#123456;} :root[data-density="compact"] {--bsm-accent:#abcdef;}',
+  });
+  const { result, rerender } = renderHook(
+    ({ density }) => useThemePreviews(["custom"], "dark", density),
+    { wrapper: setup(), initialProps: { density: "comfortable" } },
+  );
+  await waitFor(() => expect(result.current.custom?.colors[2]).toBe("#123456"));
+  rerender({ density: "compact" });
+  await waitFor(() => expect(result.current.custom?.colors[2]).toBe("#abcdef"));
+  expect(getBlob).toHaveBeenCalledTimes(1);
+});

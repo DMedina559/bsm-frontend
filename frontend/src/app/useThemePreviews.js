@@ -6,7 +6,7 @@ import { BUILT_IN_THEMES, themeStylesheetUrl } from "../utils/theme";
 import builtInPreviews from "../utils/themePreviews.json";
 import { extractCustomThemePreview } from "../utils/customThemePreview";
 
-export function useThemePreviews(themes, mode) {
+export function useThemePreviews(themes, mode, density = "comfortable") {
   const { user, sessionGeneration } = useAuth();
   const identity = getPreferenceIdentity(user);
   const custom = themes.filter((theme) => !BUILT_IN_THEMES.includes(theme));
@@ -23,7 +23,8 @@ export function useThemePreviews(themes, mode) {
         signal.throwIfAborted();
         return css;
       },
-      select: (css) => extractCustomThemePreview(css, theme, mode),
+      select: (css) =>
+        extractCustomThemePreview(css, theme, mode, undefined, density),
       staleTime: 5 * 60 * 1000,
       retry: false,
     })),

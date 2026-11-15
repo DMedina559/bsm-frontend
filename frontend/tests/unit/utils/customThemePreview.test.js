@@ -85,3 +85,30 @@ describe("custom CSS theme previews", () => {
     ).toEqual(["#030b0d", "#082223", "#123456"]);
   });
 });
+
+it("extracts the installed Minecraft theme format with density-qualified selectors", () => {
+  const css = readFileSync(
+    "tests/fixtures/themes/overworld_classic.css",
+    "utf8",
+  );
+  for (const density of ["comfortable", "compact"]) {
+    expect(
+      extractCustomThemePreview(
+        css,
+        "overworld_classic",
+        "dark",
+        undefined,
+        density,
+      ).colors,
+    ).toEqual(["#0c150d", "#142115", "#8aea8a"]);
+    expect(
+      extractCustomThemePreview(
+        css,
+        "overworld_classic",
+        "light",
+        undefined,
+        density,
+      ).colors,
+    ).toEqual(["#f1f6f1", "#fcfdfc", "#136c13"]);
+  }
+});

@@ -35,6 +35,7 @@ export default function AppearanceSettings({ section = "appearance" }) {
   const themePreviews = useThemePreviews(
     section === "appearance" ? availableThemes : [],
     mode,
+    appearance.density,
   );
   const themesNotice = themesQuery.error
     ? "Custom themes could not be loaded. Built-in themes are available."
