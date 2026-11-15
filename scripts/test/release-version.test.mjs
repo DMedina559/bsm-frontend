@@ -3,10 +3,10 @@ import assert from "node:assert/strict";
 import { resolveRelease } from "../release-version.mjs";
 
 for (const [tag, npmVersion, pythonVersion, distTag] of [
-  ["v1.4.0", "1.4.0", "1.4.0", "latest"],
-  ["v1.4.0-alpha.0", "1.4.0-alpha.0", "1.4.0a0", "next"],
-  ["v1.4.0-beta.3", "1.4.0-beta.3", "1.4.0b3", "next"],
-  ["v1.4.0-rc.1", "1.4.0-rc.1", "1.4.0rc1", "next"],
+  ["1.4.0", "1.4.0", "1.4.0", "latest"],
+  ["1.4.0-alpha.0", "1.4.0-alpha.0", "1.4.0a0", "next"],
+  ["1.4.0-beta.3", "1.4.0-beta.3", "1.4.0b3", "next"],
+  ["1.4.0-rc.1", "1.4.0-rc.1", "1.4.0rc1", "next"],
 ]) {
   test(`${tag} releases every package with one coordinated version`, () => {
     const release = resolveRelease(tag);
@@ -31,7 +31,7 @@ for (const [tag, npmVersion, pythonVersion, distTag] of [
 }
 
 test("GitHub prerelease flag keeps stable-looking versions off latest", () => {
-  assert.equal(resolveRelease("v1.4.0", true).distTag, "next");
+  assert.equal(resolveRelease("1.4.0", true).distTag, "next");
 });
 
 test("old individual tags, ambiguous versions, and unmappable Python prereleases are rejected", () => {
@@ -41,16 +41,17 @@ test("old individual tags, ambiguous versions, and unmappable Python prereleases
     "storage-v1.4.0",
     "frontend-1.4.0",
     "frontend-1.4.0b1",
-    "1.4.0",
-    "v01.4.0",
-    "v1.04.0",
-    "v1.4.00",
-    "v1.4.0b1",
-    "v1.4.0-beta.01",
-    "v1.4.0-beta",
-    "v1.4.0-preview.1",
-    "v1.4.0+build.1",
-    "v1.4.0; echo bad",
+    "v1.4.0",
+    "v1.4.0-beta.1",
+    "01.4.0",
+    "1.04.0",
+    "1.4.00",
+    "1.4.0b1",
+    "1.4.0-beta.01",
+    "1.4.0-beta",
+    "1.4.0-preview.1",
+    "1.4.0+build.1",
+    "1.4.0; echo bad",
     undefined,
   ])
     assert.throws(() => resolveRelease(tag));

@@ -16,7 +16,7 @@ import { resolveRelease } from "../release-version.mjs";
 function fixture(t, patch = {}) {
   const directory = mkdtempSync(join(tmpdir(), "bsm-release-"));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
-  const release = resolveRelease("v1.4.0-beta.3");
+  const release = resolveRelease("1.4.0-beta.3");
   const artifacts = join(directory, "downloaded");
   const paths = release.packages.map((pkg) => {
     const contents = join(directory, pkg.product);

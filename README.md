@@ -125,8 +125,8 @@ backend until requests are sent.
 
 ## Releases
 
-Publish one GitHub release tagged `v<major>.<minor>.<patch>` to release the frontend
-and all shared packages together. For example, `v1.4.0` publishes:
+Publish one GitHub release tagged `<major>.<minor>.<patch>` to release the frontend
+and all shared packages together. For example, `1.4.0` publishes:
 
 | Distribution                         | Version |
 | ------------------------------------ | ------- |
@@ -136,7 +136,7 @@ and all shared packages together. For example, `v1.4.0` publishes:
 | `@bedrock-server-manager/frontend`   | `1.4.0` |
 | PyPI `bsm-frontend`                  | `1.4.0` |
 
-Use `v1.4.0-alpha.1`, `v1.4.0-beta.1`, or `v1.4.0-rc.1` for prereleases.
+Use `1.4.0-alpha.1`, `1.4.0-beta.1`, or `1.4.0-rc.1` for prereleases.
 All npm packages receive the same SemVer version and the `next` channel; Python
 uses the equivalent `1.4.0a1`, `1.4.0b1`, or `1.4.0rc1` spelling. Stable releases
 use `latest` unless explicitly marked as GitHub prereleases. Arbitrary prerelease

@@ -81,7 +81,7 @@ npm run check --workspace=@bedrock-server-manager/storage
 
 Installation prepares `dist/`; rebuild it after changing source. The package owns
 its tests, lint, and consumer type checks. This package releases with the other shared packages and frontend from one
-`v<SemVer>` GitHub release tag; prereleases use npm's `next` distribution tag.
+`<SemVer>` GitHub release tag; prereleases use npm's `next` distribution tag.
 
 ## React Native persistence
 

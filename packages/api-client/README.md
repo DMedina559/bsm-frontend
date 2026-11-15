@@ -114,7 +114,7 @@ schema. `npm pack` rebuilds this output before creating an archive.
 ## Releases
 
 This SDK, runtime, storage, frontend assets, and Python frontend distribution
-release together from one GitHub tag such as `v1.4.0` or `v1.4.0-beta.1`.
+release together from one GitHub tag such as `1.4.0` or `1.4.0-beta.1`.
 All npm packages use the same version; prereleases publish to `next`.
 The workflow sets versions in its disposable checkout and publishes verified
 archives after all validation passes. No manual manifest version commit is needed.

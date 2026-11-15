@@ -3,14 +3,14 @@ export const releaseProducts = ["api-client", "runtime", "storage", "frontend"];
 /** One canonical release identity for the coordinated npm and Python distributions. */
 export function resolveRelease(tag, prerelease = false) {
   const match =
-    /^v((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))(?:-(alpha|beta|rc)\.(0|[1-9]\d*))?$/.exec(
+    /^((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))(?:-(alpha|beta|rc)\.(0|[1-9]\d*))?$/.exec(
       tag,
     );
   if (!match)
     throw new Error(
-      "Expected v<major>.<minor>.<patch> or v<version>-alpha|beta|rc.<number>.",
+      "Expected <major>.<minor>.<patch> or <version>-alpha|beta|rc.<number>.",
     );
-  const npmVersion = tag.slice(1);
+  const npmVersion = tag;
   const pythonVersion =
     match[1] +
     (match[2]

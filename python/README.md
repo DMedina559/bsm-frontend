@@ -83,14 +83,14 @@ that configuration explicitly when invoking it from another directory.
 
 ## Releases
 
-Publish a GitHub release tagged `v1.4.0` or `v1.4.0-beta.1`. The coordinated
+Publish a GitHub release tagged `1.4.0` or `1.4.0-beta.1`. The coordinated
 workflow publishes all four npm packages and this Python distribution only after
 shared validation passes. npm uses `1.4.0-beta.1`; Python uses the equivalent
 `1.4.0b1`. Both frontend archives contain the same compiled web assets.
 
 Version discovery still recognizes historical frontend and unprefixed tags in
 the parent repository and ignores former SDK-only tags. New publications require
-the unified `v<SemVer>` tag. The workflow uses the existing `release` environment
+the unified `<SemVer>` tag. The workflow uses the existing `release` environment
 and PyPI trusted publisher; retries skip files already published.
 See the [workspace release guide](https://github.com/DMedina559/bsm-frontend#releases)
 for the full release process and npm trusted publishing setup.
