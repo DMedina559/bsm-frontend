@@ -9,7 +9,7 @@ permissions:
 
 # Complete one coordinated publication before another release can change channels.
 concurrency:
-  group: ${{ github.workflow }}
+  group: publish-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
