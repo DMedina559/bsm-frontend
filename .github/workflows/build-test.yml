@@ -128,8 +128,10 @@ jobs:
           npm ci
           python -m pip install build setuptools-scm -e './backend' -e './python[dev]'
 
-      - name: Build frontend
-        run: npm run build
+      - name: Build frontend and Python assets
+        run: |
+          npm run build
+          node scripts/build-python.mjs
 
       - name: Install browsers
         working-directory: ./frontend
