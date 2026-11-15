@@ -5,8 +5,12 @@ import { useToast } from "../contexts/ToastContext";
 import { usePreference } from "../app/usePreference";
 import { useResourceQuery } from "../app/resourceQueries";
 import { DEFAULT_METRIC_UNITS } from "../utils/metricUnits";
-import { BUILT_IN_THEMES, THEME_LABELS } from "../utils/theme";
-import themePreviews from "../utils/themePreviews.json";
+import {
+  BUILT_IN_THEMES,
+  THEME_LABELS,
+  availableThemeNames,
+} from "../utils/theme";
+import { useThemePreviews } from "../app/useThemePreviews";
 import TimeDisplaySettings from "../components/appearance/TimeDisplaySettings";
 import MetricUnitSettings from "../components/metrics/MetricUnitSettings";
 import PanoramaSettings from "../components/appearance/PanoramaSettings";
@@ -21,18 +25,18 @@ export default function AppearanceSettings({ section = "appearance" }) {
     themeError,
     themeSaving,
     appearance,
+    mode,
     updateAppearance,
     resetAppearance,
   } = useTheme();
   const { addToast } = useToast();
   const themesQuery = useResourceQuery("themes");
-  const availableThemes = [
-    ...new Set([
-      ...BUILT_IN_THEMES,
-      ...(theme && !BUILT_IN_THEMES.includes(theme) ? [theme] : []),
-      ...(themesQuery.data ?? []),
-    ]),
-  ];
+  const availableThemes = availableThemeNames(themesQuery.data ?? [], theme);
+  const themePreviews = useThemePreviews(
+    section === "appearance" ? availableThemes : [],
+    mode,
+    appearance.density,
+  );
   const themesNotice = themesQuery.error
     ? "Custom themes could not be loaded. Built-in themes are available."
     : null;
@@ -92,14 +96,14 @@ export default function AppearanceSettings({ section = "appearance" }) {
                     type="button"
                   >
                     <span
-                      className={`theme-swatch theme-swatch-${BUILT_IN_THEMES.includes(item) ? item : "custom"}`}
+                      className={`theme-swatch theme-swatch-${BUILT_IN_THEMES.includes(item) ? item : "custom"}${Object.hasOwn(themePreviews, item) ? " theme-swatch-preview" : ""}`}
                       aria-hidden="true"
                     >
                       {[0, 1, 2].map((index) => (
                         <i
                           key={index}
                           style={
-                            themePreviews[item]
+                            Object.hasOwn(themePreviews, item)
                               ? {
                                   background: themePreviews[item].colors[index],
                                 }

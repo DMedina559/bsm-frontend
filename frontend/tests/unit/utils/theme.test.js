@@ -97,3 +97,21 @@ it("validates panorama layout, movement, and motion preferences", () => {
     reducedMotion: "reduce",
   });
 });
+
+it("keeps custom themes in alphabetical order when the selected theme changes", async () => {
+  const { availableThemeNames, BUILT_IN_THEMES } =
+    await import("../../../src/utils/theme");
+  const installed = ["zebra", "default", "Alpha", "theme10", "theme2", "zebra"];
+  const expected = [...BUILT_IN_THEMES, "Alpha", "theme2", "theme10", "zebra"];
+  expect(availableThemeNames(installed, "zebra")).toEqual(expected);
+  expect(availableThemeNames(installed, "Alpha")).toEqual(expected);
+  expect(availableThemeNames(installed, "default")).toEqual(expected);
+  expect(availableThemeNames(installed, "missing")).toEqual([
+    ...BUILT_IN_THEMES,
+    "Alpha",
+    "missing",
+    "theme2",
+    "theme10",
+    "zebra",
+  ]);
+});
