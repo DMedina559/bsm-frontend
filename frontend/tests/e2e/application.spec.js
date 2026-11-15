@@ -1026,3 +1026,54 @@ test("administrators inspect global activity and follow operation traces", async
   ).toBeFocused();
   await expect(page.getByText(/Operations: available/)).toBeVisible();
 });
+
+test("custom theme palettes are visible instead of the striped fallback", async ({
+  context,
+  page,
+}) => {
+  await backend(context);
+  await context.route("**/api/info/themes", (route) =>
+    route.fulfill({
+      json: { themes: ["palette_preview", "unreadable_theme"] },
+    }),
+  );
+  await context.route("**/themes/palette_preview.css", (route) =>
+    route.fulfill({
+      contentType: "text/css",
+      body: ":root { --bsm-page:#123456; --bsm-surface:#234567; --bsm-accent:#345678; }",
+    }),
+  );
+  await context.route("**/themes/unreadable_theme.css", (route) =>
+    route.fulfill({ status: 404, body: "Not found" }),
+  );
+  await login(page, "alice");
+  await page.goto("frontend-settings?tab=appearance");
+  const custom = page
+    .locator(".theme-card")
+    .filter({ has: page.getByText("palette preview", { exact: true }) });
+  await expect(custom).toBeVisible();
+  const swatch = custom.locator(".theme-swatch");
+  await expect(swatch).toHaveClass(/theme-swatch-preview/);
+  for (const [index, color] of [
+    "rgb(18, 52, 86)",
+    "rgb(35, 69, 103)",
+    "rgb(52, 86, 120)",
+  ].entries())
+    await expect(swatch.locator("i").nth(index)).toHaveCSS(
+      "background-color",
+      color,
+    );
+  const fallback = page
+    .locator(".theme-card")
+    .filter({ has: page.getByText("unreadable theme", { exact: true }) })
+    .locator(".theme-swatch");
+  await expect(fallback).not.toHaveClass(/theme-swatch-preview/);
+  await expect(fallback).toHaveCSS(
+    "background-image",
+    /repeating-linear-gradient/,
+  );
+  await expect(fallback.locator("i").first()).toHaveCSS(
+    "background-color",
+    "rgba(0, 0, 0, 0)",
+  );
+});

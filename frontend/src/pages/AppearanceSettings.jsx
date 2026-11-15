@@ -95,7 +95,7 @@ export default function AppearanceSettings({ section = "appearance" }) {
                     type="button"
                   >
                     <span
-                      className={`theme-swatch theme-swatch-${BUILT_IN_THEMES.includes(item) ? item : "custom"}`}
+                      className={`theme-swatch theme-swatch-${BUILT_IN_THEMES.includes(item) ? item : "custom"}${Object.hasOwn(themePreviews, item) ? " theme-swatch-preview" : ""}`}
                       aria-hidden="true"
                     >
                       {[0, 1, 2].map((index) => (
