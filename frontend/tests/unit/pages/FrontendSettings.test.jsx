@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
@@ -28,13 +29,15 @@ vi.mock("../../../src/contexts/ThemeContext", () => ({
 const identity = () => getPreferenceIdentity({ id: 909 });
 function show(tab) {
   return render(
-    <MemoryRouter initialEntries={[`/frontend-settings?tab=${tab}`]}>
-      <ToastProvider>
-        <DialogProvider>
-          <FrontendSettings />
-        </DialogProvider>
-      </ToastProvider>
-    </MemoryRouter>,
+    <QueryClientProvider client={new QueryClient()}>
+      <MemoryRouter initialEntries={[`/frontend-settings?tab=${tab}`]}>
+        <ToastProvider>
+          <DialogProvider>
+            <FrontendSettings />
+          </DialogProvider>
+        </ToastProvider>
+      </MemoryRouter>
+    </QueryClientProvider>,
   );
 }
 afterEach(() => {

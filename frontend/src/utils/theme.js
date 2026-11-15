@@ -101,3 +101,20 @@ export function themeStylesheetUrl(theme, assetBase, revision = "") {
     ? `${base}/assets/css/themes/${theme}.css${revision ? `?v=${encodeURIComponent(revision)}` : ""}`
     : `/themes/${encodeURIComponent(theme)}.css`;
 }
+
+/** Account selection must not change the ordering of installed theme cards. */
+export function availableThemeNames(installed = [], selected) {
+  const custom = [
+    ...new Set(
+      [...installed, selected].filter(
+        (name) =>
+          typeof name === "string" && name && !BUILT_IN_THEMES.includes(name),
+      ),
+    ),
+  ].sort(
+    (a, b) =>
+      a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }) ||
+      a.localeCompare(b),
+  );
+  return [...BUILT_IN_THEMES, ...custom];
+}

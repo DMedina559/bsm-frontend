@@ -23,6 +23,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@tanstack/react-query": "^5.105.3",
+    "css-tree": "3.2.1",
     "json5": "^2.2.3",
     "lucide-react": "^1.66.0",
     "react": "^19.3.1",
