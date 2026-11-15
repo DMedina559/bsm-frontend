@@ -136,7 +136,8 @@ and all shared packages together. For example, `1.4.0` publishes:
 | `@bedrock-server-manager/frontend`   | `1.4.0` |
 | PyPI `bsm-frontend`                  | `1.4.0` |
 
-Use `1.4.0-alpha.1`, `1.4.0-beta.1`, or `1.4.0-rc.1` for prereleases.
+For prereleases, use `1.4.0a1`, `1.4.0b1`, or `1.4.0rc1`. The equivalent
+`1.4.0-alpha.1`, `1.4.0-beta.1`, and `1.4.0-rc.1` tags are also accepted.
 All npm packages receive the same SemVer version and the `next` channel; Python
 uses the equivalent `1.4.0a1`, `1.4.0b1`, or `1.4.0rc1` spelling. Stable releases
 use `latest` unless explicitly marked as GitHub prereleases. Arbitrary prerelease

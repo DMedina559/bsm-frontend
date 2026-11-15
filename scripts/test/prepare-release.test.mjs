@@ -16,7 +16,7 @@ import { resolveRelease } from "../release-version.mjs";
 test("sets every package and lockfile version together while keeping frontend source private", (t) => {
   const root = mkdtempSync(join(tmpdir(), "bsm-release-versions-"));
   t.after(() => rmSync(root, { recursive: true, force: true }));
-  const release = resolveRelease("1.4.0-beta.3");
+  const release = resolveRelease("1.4.0b3");
   writeFileSync(
     join(root, "package.json"),
     JSON.stringify({

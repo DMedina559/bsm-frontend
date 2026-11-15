@@ -6,6 +6,9 @@ for (const [tag, npmVersion, pythonVersion, distTag] of [
   ["1.4.0", "1.4.0", "1.4.0", "latest"],
   ["1.4.0-alpha.0", "1.4.0-alpha.0", "1.4.0a0", "next"],
   ["1.4.0-beta.3", "1.4.0-beta.3", "1.4.0b3", "next"],
+  ["1.4.0a0", "1.4.0-alpha.0", "1.4.0a0", "next"],
+  ["1.4.0b3", "1.4.0-beta.3", "1.4.0b3", "next"],
+  ["1.4.0rc1", "1.4.0-rc.1", "1.4.0rc1", "next"],
   ["1.4.0-rc.1", "1.4.0-rc.1", "1.4.0rc1", "next"],
 ]) {
   test(`${tag} releases every package with one coordinated version`, () => {
@@ -46,7 +49,11 @@ test("old individual tags, ambiguous versions, and unmappable Python prereleases
     "01.4.0",
     "1.04.0",
     "1.4.00",
-    "1.4.0b1",
+    "1.4.0b01",
+    "1.4.0a01",
+    "1.4.0rc01",
+    "1.4.0b",
+    "v1.4.0b3",
     "1.4.0-beta.01",
     "1.4.0-beta",
     "1.4.0-preview.1",
@@ -55,4 +62,14 @@ test("old individual tags, ambiguous versions, and unmappable Python prereleases
     undefined,
   ])
     assert.throws(() => resolveRelease(tag));
+});
+
+test("Python-style and SemVer prerelease tags select the exact same release artifacts", () => {
+  for (const [python, semver] of [
+    ["1.4.0a0", "1.4.0-alpha.0"],
+    ["1.4.0b3", "1.4.0-beta.3"],
+    ["1.4.0rc1", "1.4.0-rc.1"],
+  ]) {
+    assert.deepEqual(resolveRelease(python), resolveRelease(semver));
+  }
 });

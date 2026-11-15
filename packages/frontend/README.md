@@ -19,7 +19,7 @@ Credentials are scoped to the selected backend. Compatibility checks report
 missing backend API operations without assuming version strings are comparable.
 
 One GitHub release publishes this package, the API client, runtime, storage, and
-Python frontend distribution together. A tag such as `1.4.0-beta.1` gives all npm
+Python frontend distribution together. A tag such as `1.4.0b1` gives all npm
 packages version `1.4.0-beta.1` and Python version `1.4.0b1`. The npm and Python
 frontend distributions share the same verified web build. No manual version bump
 is required. See the [release guide](https://github.com/DMedina559/bsm-frontend#releases).
