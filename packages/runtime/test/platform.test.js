@@ -262,7 +262,7 @@ test("discovery retries are removed on reset and another runtime remains active"
   assert.equal(host.timers.size, 0);
   assert.equal(host.listenerCount(), 0);
   assert.equal(otherHost.timers.size, 1);
-  assert.equal(otherHost.listenerCount(), 2);
+  assert.equal(otherHost.listenerCount(), 3);
   stop();
   stopOther();
 });
@@ -369,4 +369,27 @@ test("application reset and disposal release the active owner, drafts, operation
   assert.equal(runtime.draftRegistry.dirty(), false);
   assert.equal(runtime.operationCoordinator.list().length, 0);
   assert.equal(data.size, 0);
+});
+
+test("foreground recovery refreshes tasks missed during mobile suspension and releases its listener", async () => {
+  const host = createHost();
+  let discoveries = 0;
+  const { runtime } = create(host, async () => {
+    discoveries++;
+    return [];
+  });
+  const stop = runtime.startOperationRecovery("account");
+  await flush();
+  assert.equal(discoveries, 1);
+  host.setVisible(false);
+  await flush();
+  assert.equal(discoveries, 1);
+  host.setVisible(true);
+  await flush();
+  assert.equal(discoveries, 2);
+  stop();
+  assert.equal(host.listenerCount(), 0);
+  host.setVisible(true);
+  await flush();
+  assert.equal(discoveries, 2);
 });

@@ -137,7 +137,7 @@ behavior. Cross-tab transport and IndexedDB remain frontend browser adapters.
 
 `runtime.diagnostics` exposes `getSnapshot`, `subscribe`, `setEnabled`, `clear`,
 and payload-free `record`/`subscriptions` methods. Recording is opt-in, capped at
-200 observations and cleared at session reset. Policy labels identify rejection
+1,000 observations and cleared at session reset. Policy labels identify rejection
 and refresh causes without storing query keys, values, URLs or identities.
 
 `stateReconciler.onObservation(listener)` observes accepted records; its cleanup
@@ -156,3 +156,23 @@ default. `setEnabled(false)` pauses recording without clearing observations; use
 current session's observations, and resets its counters. Durable history is owned
 by the embedding application, which must scope it by backend/account and retain
 only the documented safe policy metadata. The runtime remains browser-independent.
+
+## React Native hosts
+
+Map React Native AppState foreground transitions to `visibilitychange` and
+report foreground state through `isVisible()`. The runtime refreshes task discovery
+and pending task status on return to the foreground, including after timer
+suspension. Supply `online` and `offline` from the host's network monitor when
+available; AppState alone does not establish network reachability.
+
+Use a synchronous in-memory token accessor for WebSocket authentication. Hydrate
+credentials from the platform secure store before starting the runtime. HTTP
+transport credentials may be asynchronous. Account/backend changes must call
+`runtime.reset()` before reusing a cache or accepting work for the next identity.
+Call the returned owner `stop()` on unmount and `runtime.dispose()` when releasing
+the runtime. These cleanups are idempotent.
+
+Run root `npm run check:archives` to install all three shared package archives
+outside the workspace and verify their public exports, behavior, and consumer
+types. This checks packaging and host boundaries; device tests are still needed
+for OS suspension, native networking, and native file transfer behavior.

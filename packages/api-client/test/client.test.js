@@ -279,3 +279,86 @@ test("operation discovery preserves security and access metadata with an unknown
   assert.deepEqual(registry.one.access, access);
   assert.equal(registry.old.access.classification, "unknown");
 });
+
+test("query serialization works without the optional URLSearchParams size property", () => {
+  const descriptor = Object.getOwnPropertyDescriptor(
+    URLSearchParams.prototype,
+    "size",
+  );
+  try {
+    delete URLSearchParams.prototype.size;
+    const client = createApiClient({ request: async () => null });
+    const dynamic = client.createOperationClient({
+      openapi: "3.1.0",
+      paths: {
+        "/api/example": {
+          get: {
+            operationId: "example",
+            parameters: [
+              { name: "name", in: "query", schema: { type: "string" } },
+            ],
+            responses: { 200: { description: "OK" } },
+          },
+        },
+      },
+    });
+    assert.equal(
+      dynamic.resolveOperationUrl("example", { query: { name: "A B" } }),
+      "/api/example?name=A+B",
+    );
+  } finally {
+    if (descriptor)
+      Object.defineProperty(URLSearchParams.prototype, "size", descriptor);
+  }
+});
+
+test("multipart serialization preserves React Native URI files and prebuilt FormData", async () => {
+  const original = globalThis.FormData;
+  class NativeFormData {
+    parts = [];
+    append(key, value) {
+      this.parts.push([key, value]);
+    }
+  }
+  globalThis.FormData = NativeFormData;
+  try {
+    let sent;
+    const client = createApiClient({
+      request: async (_url, options) => {
+        sent = options.body;
+      },
+    });
+    const dynamic = client.createOperationClient({
+      openapi: "3.1.0",
+      paths: {
+        "/api/upload": {
+          post: {
+            operationId: "upload",
+            requestBody: {
+              content: {
+                "multipart/form-data": { schema: { type: "object" } },
+              },
+            },
+            responses: { 200: { description: "OK" } },
+          },
+        },
+      },
+    });
+    const file = {
+      uri: "file:///cache/world.zip",
+      name: "world.zip",
+      type: "application/zip",
+    };
+    await dynamic.callOperation("upload", { body: { file, enabled: false } });
+    assert.deepEqual(sent.parts, [
+      ["file", file],
+      ["enabled", "false"],
+    ]);
+    const form = new NativeFormData();
+    form.append("file", file);
+    await dynamic.callOperation("upload", { body: form });
+    assert.equal(sent, form);
+  } finally {
+    globalThis.FormData = original;
+  }
+});

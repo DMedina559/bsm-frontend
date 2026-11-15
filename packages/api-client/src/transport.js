@@ -33,12 +33,20 @@ export class ApiError extends Error {
 
 function abortable(value, signal) {
   return new Promise((resolve, reject) => {
-    const aborted = () => reject(signal.reason);
-    if (signal.aborted) return aborted();
+    const aborted = () => {
+      signal.removeEventListener("abort", aborted);
+      reject(signal.reason);
+    };
     signal.addEventListener("abort", aborted, { once: true });
-    Promise.resolve(value)
-      .then(resolve, reject)
-      .finally(() => signal.removeEventListener("abort", aborted));
+    const settle = (callback, result) => {
+      signal.removeEventListener("abort", aborted);
+      callback(result);
+    };
+    Promise.resolve(value).then(
+      (result) => settle(resolve, result),
+      (error) => settle(reject, error),
+    );
+    if (signal.aborted) aborted();
   });
 }
 
@@ -213,7 +221,7 @@ export function createHttpTransport({
         config.credentials !== "omit" &&
         typeof XMLHttpRequest !== "undefined"
           ? await uploadRequest(finalUrl, config, onUploadProgress, signal)
-          : await fetcher(finalUrl, config);
+          : await abortable(fetcher(finalUrl, config), signal);
       assertCurrent();
 
       onResponseMetadata?.({
@@ -238,7 +246,7 @@ export function createHttpTransport({
         if (downloadTo || onDownloadProgress) {
           if (!response.body) {
             if (!downloadTo && typeof response.blob === "function") {
-              data = await response.blob();
+              data = await abortable(response.blob(), signal);
               assertCurrent();
               onDownloadProgress?.(data.size, data.size || null);
             } else {
@@ -259,10 +267,10 @@ export function createHttpTransport({
             try {
               for (;;) {
                 assertCurrent();
-                const { done, value } = await reader.read();
+                const { done, value } = await abortable(reader.read(), signal);
                 if (done) break;
                 assertCurrent();
-                if (writer) await writer.write(value);
+                if (writer) await abortable(writer.write(value), signal);
                 else chunks.push(value);
                 loaded += value.byteLength;
                 const now = Date.now();
@@ -281,7 +289,7 @@ export function createHttpTransport({
                 onDownloadProgress(loaded, total);
               }
               if (writer) {
-                await writer.close();
+                await abortable(writer.close(), signal);
                 data = null;
               } else if (chunks.length <= 1) {
                 data = new Blob(chunks, {
@@ -308,10 +316,10 @@ export function createHttpTransport({
               writer?.releaseLock();
             }
           }
-        } else data = await response.blob();
+        } else data = await abortable(response.blob(), signal);
       } else if (contentType && contentType.includes("application/json")) {
         try {
-          data = await response.json();
+          data = await abortable(response.json(), signal);
         } catch (err) {
           signal.throwIfAborted();
           if (err.name === "AbortError" || err.name === "TimeoutError")
@@ -330,7 +338,7 @@ export function createHttpTransport({
         }
       } else {
         // If not JSON, treat as text (could be HTML error page, plain text, etc.)
-        const text = await response.text();
+        const text = await abortable(response.text(), signal);
 
         // If we expected JSON (based on Accept header) but got HTML (e.g. 404 page, 500 error page, or Login page redirect)
         // we should probably treat it as an error unless the caller explicitly handles it.
@@ -422,6 +430,7 @@ export function createHttpTransport({
       onResponse({ url, body, method: config.method, data });
       return data;
     } catch (error) {
+      if (signal.aborted) throw signal.reason;
       if (error.name === "AbortError" || error.name === "TimeoutError")
         throw error;
       if (error instanceof ApiError) {
