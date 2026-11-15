@@ -125,46 +125,51 @@ backend until requests are sent.
 
 ## Releases
 
-The SDK, runtime, storage, and frontend/Python distribution have independent
-release versions. The root workspace and source web application stay private.
+Publish one GitHub release tagged `v<major>.<minor>.<patch>` to release the frontend
+and all shared packages together. For example, `v1.4.0` publishes:
 
-| Release         | GitHub release tag                               | Workflow      | Required publishing setup                                                    |
-| --------------- | ------------------------------------------------ | ------------- | ---------------------------------------------------------------------------- |
-| API client      | `api-client-v<SDK version>`                      | `publish.yml` | npm trusted publishing through the `npm-release` environment                 |
-| Runtime         | `runtime-v<SemVer>`                              | `publish.yml` | npm trusted publishing through the `npm-release` environment                 |
-| Storage         | `storage-v<SemVer>`                              | `publish.yml` | npm trusted publishing through the `npm-release` environment                 |
-| Frontend assets | `frontend-<version>`, such as `frontend-1.3.0b8` | `publish.yml` | PyPI trusted publisher (`release`) and npm trusted publisher (`npm-release`) |
+| Distribution                         | Version |
+| ------------------------------------ | ------- |
+| `@bedrock-server-manager/api-client` | `1.4.0` |
+| `@bedrock-server-manager/runtime`    | `1.4.0` |
+| `@bedrock-server-manager/storage`    | `1.4.0` |
+| `@bedrock-server-manager/frontend`   | `1.4.0` |
+| PyPI `bsm-frontend`                  | `1.4.0` |
 
-For an SDK release, publish a GitHub release tagged `api-client-v0.1.1`, for example.
-The workflow validates the SemVer tag and sets the SDK package and lockfile
-version in its temporary checkout before validation and publication. No manual
-manifest update or version commit is required. The committed version remains a
-development baseline; the published package gets its version from the release tag.
-For a beta, use a tag such as `api-client-v0.2.0-beta.1` and mark the GitHub release
-as a prerelease. SemVer prereleases always publish to npm's `next` tag, even if
-the GitHub prerelease checkbox is omitted; stable releases use `latest` unless
-explicitly marked as GitHub prereleases.
+Use `v1.4.0-alpha.1`, `v1.4.0-beta.1`, or `v1.4.0-rc.1` for prereleases.
+All npm packages receive the same SemVer version and the `next` channel; Python
+uses the equivalent `1.4.0a1`, `1.4.0b1`, or `1.4.0rc1` spelling. Stable releases
+use `latest` unless explicitly marked as GitHub prereleases. Arbitrary prerelease
+labels and build metadata are rejected to keep the npm/Python mapping unambiguous.
 
-Runtime and storage follow the same tag-derived versioning and npm channel rules,
-using tags such as `runtime-v0.1.0-beta.1` and `storage-v0.1.0-beta.1`.
-The shared workflow validates and publishes only the selected package. Library
-archives pass isolated consumer checks before publication; frontend releases
-retain their full application and backend-contract validation. The npm publishing
-job checks the archive's package name, version, and public visibility and publishes
-it without rebuilding.
+`publish.yml` derives every package version from the tag in a disposable checkout,
+including workspace lockfile entries. No manual version bump commit is required.
+Every package is released even when only one changed. The root workspace, source
+web application, and unstaged frontend-assets workspace remain private.
+The mobile app keeps its own release cycle and can pin one shared package version.
 
-Frontend releases run shared validation, then publish the verified Python and
-npm archives without rebuilding. `frontend-1.3.0b8` produces Python version
-`1.3.0b8` and npm `@bedrock-server-manager/frontend` version `1.3.0-beta.8`.
-The source frontend-assets workspace stays private to prevent accidental
-publication of an unstaged package; the prepared archive is public.
-The `frontend-` prefix identifies the release; the published Python version and
-displayed application version omit it. Historical unprefixed and `v`-prefixed
-frontend tags remain readable for local builds, but new Python publications
-require a `frontend-` release tag. Publishing a GitHub release triggers the
-corresponding workflow; pushing a tag alone does not publish.
-SDK tags do not trigger Python publication or influence Python/frontend version
-discovery. Library builds and local package checks do not publish to a registry.
+Both registry jobs wait for full frontend/backend/browser tests, lint, contract
+and type checks, and isolated SDK archive checks. The workflow packs the tested
+SDKs and the frontend assets, then publishes those verified archives without
+rebuilding. Python and npm frontend assets come from the same compiled web build.
+Only publishing a GitHub release triggers publication; pushing a tag alone does
+not. Individual `api-client-v`, `runtime-v`, `storage-v`, and `frontend-` release
+tags are no longer accepted. Historical frontend tags remain readable locally.
+
+Configure npm trusted publishing for **each of the four packages**, using
+`publish.yml` and the `npm-release` environment. Enable **Allow npm dist-tag** for
+retry-time channel repair. Python uses the existing PyPI trusted publisher and
+`release` environment. No registry tokens are required.
+
+Publication is not atomic across packages or registries. Rerun failed jobs on the
+same GitHub release to finish a partial release. Before any npm publication, the
+job validates the full four-archive set and checks existing versions: it skips
+only archives with identical SHA-512 integrity, repairs their intended channel
+when necessary, and publishes missing packages. Different bytes at an existing
+version fail rather than being overwritten; use a new tag/version in that case.
+Registry errors other than a missing version fail the job. PyPI retries skip
+files already uploaded. Release publication is serialized without cancelling an
+in-progress publish. Inspect both registry jobs before announcing availability.
 
 ## Support and license
 

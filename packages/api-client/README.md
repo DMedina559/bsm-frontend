@@ -113,16 +113,13 @@ schema. `npm pack` rebuilds this output before creating an archive.
 
 ## Releases
 
-SDK versions use SemVer independently of frontend releases. A GitHub release tag
-must be `api-client-v<version>`, such as `api-client-v0.1.1` or
-`api-client-v0.2.0-beta.1`. The npm workflow derives the published package version
-from that tag, updates the manifest and lockfile in its temporary checkout, and
-checks the SDK and isolated consumer before publication. No manual package
-version update or version commit is needed. Mark beta releases as GitHub
-prereleases for clarity. SemVer prerelease versions automatically use npm's
-`next` tag even if the GitHub flag is omitted. See the
-[release guide](https://github.com/DMedina559/bsm-frontend#releases) for credentials
-and prerelease tags.
+This SDK, runtime, storage, frontend assets, and Python frontend distribution
+release together from one GitHub tag such as `v1.4.0` or `v1.4.0-beta.1`.
+All npm packages use the same version; prereleases publish to `next`.
+The workflow sets versions in its disposable checkout and publishes verified
+archives after all validation passes. No manual manifest version commit is needed.
+See the [release guide](https://github.com/DMedina559/bsm-frontend#releases)
+for publishing setup, Python version mapping, and retry behavior.
 
 ## Contract compatibility
 

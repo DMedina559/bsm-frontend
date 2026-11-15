@@ -26,7 +26,8 @@
     "test:tooling": "node --test scripts/test/*.test.mjs",
     "check:implementations": "node scripts/check-implementations.mjs",
     "pack:frontend": "node scripts/pack-frontend.mjs",
-    "check:archives": "node scripts/check-package-archives.mjs"
+    "check:archives": "node scripts/check-package-archives.mjs",
+    "release:prepare": "node scripts/prepare-release.mjs"
   },
   "engines": {
     "node": "^22.13.0 || >=24"

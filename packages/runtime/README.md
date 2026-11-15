@@ -112,9 +112,8 @@ npm run check --workspace=@bedrock-server-manager/runtime
 ```
 
 Installation prepares `dist/`; rebuild it after editing package source. `npm pack`
-builds the package for isolated consumer checks. GitHub releases tagged
-`runtime-v<SemVer>` publish this package independently; prereleases use npm's
-`next` distribution tag.
+builds the package for isolated consumer checks. This package releases with the other shared packages and frontend from one
+`v<SemVer>` GitHub release tag; prereleases use npm's `next` distribution tag.
 
 Unavailable tasks have a local `availability` state. A 404 stops polling without
 fabricating a backend revision or replacing the last authoritative snapshot.

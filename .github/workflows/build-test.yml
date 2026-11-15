@@ -33,18 +33,12 @@ jobs:
           node-version: "24"
           package-manager-cache: false
 
-      - name: Resolve frontend release identity
-        if: github.event_name == 'release' && startsWith(github.event.release.tag_name, 'frontend-')
+      - name: Set coordinated release versions
+        if: github.event_name == 'release'
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: |
-          node --input-type=module - <<'JS'
-          import { appendFileSync } from 'node:fs';
-          import { resolveReleaseTag } from './scripts/release-version.mjs';
-          const { version } = resolveReleaseTag('frontend', process.env.RELEASE_TAG);
-          appendFileSync(process.env.GITHUB_ENV, `SETUPTOOLS_SCM_PRETEND_VERSION_FOR_BSM_FRONTEND=${version}\nBSM_FRONTEND_VERSION=${version}\n`);
-          appendFileSync(process.env.GITHUB_OUTPUT, `version=${version}\n`);
-          JS
+          IS_PRERELEASE: ${{ github.event.release.prerelease }}
+        run: npm run release:prepare
 
       - uses: actions/setup-python@v7
         with:
@@ -94,7 +88,9 @@ jobs:
           node scripts/build-python.mjs
 
       - name: Run tests
-        run: npm test
+        run: |
+          npm test
+          npm run check:archives
 
       - name: Install browsers
         working-directory: ./frontend
@@ -121,6 +117,19 @@ jobs:
           RELEASE_TAG: ${{ github.event.release.tag_name || '' }}
           IS_PRERELEASE: ${{ github.event.release.prerelease || false }}
         run: npm run pack:frontend
+
+      - name: Pack verified shared packages
+        run: |
+          mkdir -p build/npm-release
+          npm pack --workspace=@bedrock-server-manager/api-client --workspace=@bedrock-server-manager/runtime --workspace=@bedrock-server-manager/storage --pack-destination build/npm-release --ignore-scripts
+
+      - name: Upload verified shared packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: shared-packages
+          path: build/npm-release/*.tgz
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Upload verified frontend distributions
         uses: actions/upload-artifact@v7
