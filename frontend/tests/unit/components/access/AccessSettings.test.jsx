@@ -1,3 +1,8 @@
+import { loadAccessSchema } from "../../../../src/api/access";
+import { accessSchema } from "../../../support/accessFixtures";
+vi.mock("../../../../src/api/access", () => ({
+  loadAccessSchema: vi.fn(async () => accessSchema),
+}));
 import React from "react";
 import { beforeEach, expect, it, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
@@ -31,6 +36,7 @@ const catalog = {
 beforeEach(() => {
   queryClient.clear();
   vi.clearAllMocks();
+  loadAccessSchema.mockResolvedValue(accessSchema);
   callOperation.mockImplementation(async (id) => {
     if (id === "get_access_policy") return catalog;
     if (id === "list_access_servers")
@@ -250,4 +256,63 @@ it("pages credential history and resets to the first page when changing filters"
   expect(
     screen.getByRole("button", { name: "Newer credentials" }),
   ).toBeDisabled();
+});
+
+it("builds the operator preset from renamed live scopes rather than the bundled scope names", async () => {
+  const future = structuredClone(accessSchema);
+  for (const item of Object.values(future.paths)) {
+    for (const operation of Object.values(item)) {
+      const access = operation?.["x-bsm-access"];
+      if (access?.required_permissions)
+        access.required_permissions = access.required_permissions.map(
+          (scope) =>
+            scope === "servers:lifecycle" ? "future:lifecycle" : scope,
+        );
+    }
+  }
+  loadAccessSchema.mockResolvedValue(future);
+  const original = callOperation.getMockImplementation();
+  callOperation.mockImplementation((id, ...args) =>
+    id === "get_access_policy"
+      ? Promise.resolve({
+          ...catalog,
+          token_permissions: [
+            ...capabilities.filter((scope) => scope !== "servers:lifecycle"),
+            "future:lifecycle",
+          ],
+        })
+      : original(id, ...args),
+  );
+  render(
+    <DialogProvider>
+      <IntegrationTokens />
+    </DialogProvider>,
+  );
+  await screen.findByLabelText("Credential name");
+  await waitFor(() =>
+    expect(
+      screen.getByRole("option", { name: "Server operator" }),
+    ).not.toBeDisabled(),
+  );
+  fireEvent.change(screen.getByLabelText("Credential name"), {
+    target: { value: "Future operator" },
+  });
+  fireEvent.change(screen.getByLabelText("Permission preset"), {
+    target: { value: "operator" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Create credential" }));
+  await waitFor(() =>
+    expect(callOperation).toHaveBeenCalledWith(
+      "create_integration_token",
+      expect.objectContaining({
+        body: expect.objectContaining({
+          permissions: expect.arrayContaining(["future:lifecycle"]),
+        }),
+      }),
+    ),
+  );
+  const created = callOperation.mock.calls.find(
+    ([id]) => id === "create_integration_token",
+  );
+  expect(created[1].body.permissions).not.toContain("servers:lifecycle");
 });

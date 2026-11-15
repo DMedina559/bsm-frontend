@@ -1,3 +1,4 @@
+import { operationAccess } from "../app/permissions";
 import Timestamp from "../components/Timestamp";
 import SignInForm from "../components/auth/SignInForm";
 import TokenAccessNotice from "../components/auth/TokenAccessNotice";
@@ -111,18 +112,15 @@ function InstanceCard({
   const blocked =
     window.location.protocol === "https:" &&
     new URL(profile.url).protocol === "http:";
-  const hasControlPerm = (perms) =>
-    Array.isArray(perms) && perms.includes("servers:lifecycle");
-  const canManage = Array.isArray(snapshot.user?.permissions)
-    ? hasControlPerm(snapshot.user.permissions)
-    : ["admin", "moderator"].includes(snapshot.user?.role);
-  const canControl = (server) =>
-    canManage &&
-    (snapshot.user?.server_access !== "assigned" ||
-      hasControlPerm(
-        snapshot.serverAccess?.find((resource) => resource.name === server.name)
-          ?.permissions,
-      ));
+  const canControl = (server, id) =>
+    ["allowed", "conditional"].includes(
+      operationAccess(snapshot.accessOperations, id, {
+        user: snapshot.user,
+        policy: snapshot.accessPolicy,
+        resources: snapshot.serverAccess,
+        serverName: server.name,
+      }).state,
+    );
   return (
     <article
       hidden={hidden}
@@ -258,7 +256,10 @@ function InstanceCard({
                     {server.version ? ` · ${server.version}` : ""}
                   </small>
                 </div>
-                {canControl(server) && (
+                {canControl(
+                  server,
+                  running(server) ? "stop_server" : "start_server",
+                ) && (
                   <button
                     className="instance-button"
                     disabled={

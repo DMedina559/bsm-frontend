@@ -1,3 +1,5 @@
+import { fixtureResponse } from "../support/fixtures.js";
+import { accessSchema, accessUser } from "../support/accessFixtures.js";
 import { test, expect } from "@playwright/test";
 // Drive the shipped app and real browser transports against controlled backend snapshots.
 async function backend(context, role = "admin") {
@@ -43,10 +45,11 @@ async function backend(context, role = "admin") {
           /(?:^|;\s*)access_token_cookie=([^;]+)/,
         )?.[1] ??
         sessionCookie;
-      let data = { status: "success" };
+      let data = fixtureResponse(new URL(request.url()));
       let status = 200;
       const headers = {};
-      if (path === "/api/setup/status") data = { needs_setup: false };
+      if (path === "/api/openapi.json") data = accessSchema;
+      else if (path === "/api/setup/status") data = { needs_setup: false };
       else if (path === "/auth/token") {
         const username = new URLSearchParams(request.postData()).get(
           "username",
@@ -71,7 +74,7 @@ async function backend(context, role = "admin") {
           data = {
             id: identity,
             username: identity,
-            role,
+            ...accessUser(role),
             theme: "default",
           };
           state.accounts.push(identity);

@@ -12,7 +12,6 @@ import OverviewFleetMetrics from "./OverviewFleetMetrics";
 import { useDialog } from "../contexts/DialogContext";
 import React, { useState } from "react";
 import { useServer } from "../contexts/ServerContext";
-import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { getApiProxyBasePath } from "../utils/basePath";
 import { useWebSocket } from "../contexts/WebSocketContext";
@@ -38,7 +37,6 @@ const Overview = () => {
     error,
     offlineSnapshot,
   } = useServer();
-  const { user } = useAuth();
   const { addToast } = useToast();
   const { isConnected, reconnect } = useWebSocket();
   const navigate = useNavigate();
@@ -232,7 +230,7 @@ const Overview = () => {
           </Link>
           <h2>Bedrock Server Manager</h2>
           <ApplicationHealth />
-          {can("runtime:metrics") && <ApplicationMetricsSummary />}
+          {can("get_application_metrics") && <ApplicationMetricsSummary />}
         </section>
         <OverviewFleetMetrics servers={servers} unavailable={unavailable} />
       </div>
@@ -303,7 +301,7 @@ const Overview = () => {
       ) : error && servers.length === 0 ? null : servers.length === 0 ? (
         <div className="message-box message-info overview-empty">
           <h3>No servers found.</h3>
-          {user?.role === "admin" && (
+          {can("install_server") && (
             <p>
               Go to &quot;Install Server&quot; in the sidebar to create one.
             </p>
@@ -317,7 +315,6 @@ const Overview = () => {
             <ServerCard
               key={server.name}
               serverName={server.name}
-              isAdmin={user?.role === "admin"}
               busy={Boolean(offlineSnapshot) || isServerPending(server.name)}
               onOpen={handleServerClick}
               onAction={handleAction}

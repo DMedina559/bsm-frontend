@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import { useAccess } from "../app/useAccess";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Save, User, Settings2 } from "lucide-react";
 import { useSensitiveMutation } from "../app/publicRequests";
@@ -10,7 +11,22 @@ import IntegrationTokens from "../components/access/IntegrationTokens";
 import "../styles/access.css";
 import "../styles/frontend-settings.css";
 export default function Account() {
+  const { can } = useAccess();
   const { user, sessionGeneration } = useAuth();
+  const accountScope = JSON.stringify([
+    user?.id ?? user?.username,
+    sessionGeneration,
+  ]);
+  const [enrollmentScope, setEnrollmentScope] = useState(
+    user?.mfa_enrollment_required ? accountScope : null,
+  );
+  useEffect(() => {
+    if (user?.mfa_enrollment_required) setEnrollmentScope(accountScope);
+  }, [accountScope, user?.mfa_enrollment_required]);
+  // Keep one-time recovery codes mounted while enrollment completion refreshes
+  // runtime metadata. A different account/session cannot retain this bootstrap.
+  const enrollmentFlow = enrollmentScope === accountScope;
+
   const { addToast } = useToast();
   const [passwords, setPasswords] = useState({
     currentPassword: "",
@@ -165,18 +181,18 @@ export default function Account() {
           </div>
         </dl>
       </section>
-      {user?.permissions?.includes("sessions:manage") ? (
+      {user?.mfa_enrollment_required ||
+      enrollmentFlow ||
+      can("get_account_security") ? (
         <AccountSecurity key={`${user.id}:${sessionGeneration}`}>
           {passwordPanel}
         </AccountSecurity>
       ) : (
         <>
-          {user?.permissions?.includes("tokens:manage") && (
+          {can("list_integration_tokens") && (
             <IntegrationTokens key={`${user.id}:${sessionGeneration}`} />
           )}
-          {(!Array.isArray(user?.permissions) ||
-            user.permissions.includes("account:manage")) &&
-            passwordPanel}
+          {can("change_password") && passwordPanel}
         </>
       )}
     </div>

@@ -52,7 +52,9 @@ const actionDefinitions = {
 function ServerCard({
   server,
   isAdmin = false,
-  canLifecycle = true,
+  canStart = true,
+  canStop = true,
+  canRestart = true,
   canCommand = true,
   canUpdate = true,
   busy,
@@ -171,11 +173,16 @@ function ServerCard({
       >
         {actions.map((action) => {
           const { Icon, label, title, className } = actionDefinitions[action];
-          const isLifecycle = ["start", "stop", "restart"].includes(action);
+          const lifecycleAllowed = {
+            start: canStart,
+            stop: canStop,
+            restart: canRestart,
+          };
           const disabled =
             !online ||
             busy ||
-            (isLifecycle && !canLifecycle) ||
+            (Object.hasOwn(lifecycleAllowed, action) &&
+              !lifecycleAllowed[action]) ||
             (action === "command" && (!canCommand || !running)) ||
             (action === "update" && (!canUpdate || !stable));
           return (
@@ -207,14 +214,22 @@ export const ConnectedServerCard = memo(function ConnectedServerCard({
   ...props
 }) {
   const server = useServerSnapshot(serverName);
-  const { canLifecycle, canCommand, canUpdate, canReadProperties } =
-    useServerAccess(serverName);
+  const {
+    canStart,
+    canStop,
+    canRestart,
+    canCommand,
+    canUpdate,
+    canReadProperties,
+  } = useServerAccess(serverName);
   return server ? (
     <MemoServerCard
       server={server}
       {...props}
-      isAdmin={props.isAdmin && canReadProperties}
-      canLifecycle={canLifecycle}
+      isAdmin={canReadProperties}
+      canStart={canStart}
+      canStop={canStop}
+      canRestart={canRestart}
       canCommand={canCommand}
       canUpdate={canUpdate}
     />

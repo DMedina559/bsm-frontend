@@ -1,3 +1,7 @@
+import { accessSchema, accessUser } from "../../support/accessFixtures";
+vi.mock("../../../src/api/access", () => ({
+  loadAccessSchema: vi.fn(async () => accessSchema),
+}));
 import { render, screen } from "../../support/utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import Scheduler from "../../../src/pages/Scheduler";
@@ -12,7 +16,7 @@ describe("Scheduler page", () => {
     vi.clearAllMocks();
     api.request.mockImplementation((url) =>
       Promise.resolve(
-        url === "/api/account" ? { username: "test", role: "admin" } : {},
+        url === "/api/account" ? accessUser("admin", { username: "test" }) : {},
       ),
     );
     api.get.mockImplementation((url) =>

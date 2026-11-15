@@ -1,3 +1,4 @@
+import { accessOperations, accessUser } from "../../support/accessFixtures";
 import React from "react";
 import { beforeEach, afterEach, expect, it, vi } from "vitest";
 import {
@@ -33,7 +34,8 @@ beforeEach(() => {
   createInstanceConnection.mockImplementation((profile, { onChange }) => {
     const snapshot = {
       status: "online",
-      user: { username: profile.id, role: "admin" },
+      user: accessUser("admin", { username: profile.id }),
+      accessOperations,
       servers: [{ name: "survival", status: "running" }],
       socket: "connected",
       info: { app_version: "4.0" },

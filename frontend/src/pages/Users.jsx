@@ -1,3 +1,4 @@
+import { useAccess } from "../app/useAccess";
 import Sessions from "../components/access/Sessions";
 import Passkeys from "../components/access/Passkeys";
 import ServerAccessEditor from "../components/access/ServerAccessEditor";
@@ -26,6 +27,7 @@ import {
 import { useAuth } from "../contexts/AuthContext";
 import { logger } from "../utils/logger";
 const Users = () => {
+  const { can } = useAccess();
   const { confirmAction } = useDialog();
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -224,7 +226,7 @@ const Users = () => {
     setGeneratedLink(null);
     setInviteRole("user");
   };
-  const isAdmin = currentUser?.role === "admin";
+  const canManageUsers = can("update_user_role");
   return (
     <div className="container">
       <QueryStatus query={resourceQuery} />
@@ -251,7 +253,7 @@ const Users = () => {
             />{" "}
             Refresh
           </button>
-          {isAdmin && (
+          {can("generate_registration_token") && (
             <button
               className="action-button"
               onClick={() => setShowInviteModal(true)}
@@ -361,7 +363,7 @@ const Users = () => {
                   </td>
                   <td className="actions-column">
                     <div className="table-actions table-actions-right">
-                      {isAdmin && (
+                      {canManageUsers && (
                         <>
                           <button
                             className="action-button secondary"
@@ -564,7 +566,7 @@ const Users = () => {
           onClose={() => setShowEditModal(false)}
           closeDisabled={actionLoading}
         >
-          {currentUser?.permissions?.includes("sessions:admin") &&
+          {can("list_account_login_sessions") &&
             editingUser.id !== currentUser.id && (
               <>
                 <Sessions
@@ -577,7 +579,7 @@ const Users = () => {
                 />
               </>
             )}
-          {currentUser?.permissions?.includes("access:manage") &&
+          {can("get_account_server_access") &&
             editingUser.role !== "admin" &&
             editingUser.id !== currentUser.id && (
               <ServerAccessEditor

@@ -1,3 +1,7 @@
+import { accessSchema } from "../../../support/accessFixtures";
+vi.mock("../../../../src/api/access", () => ({
+  loadAccessSchema: vi.fn(async () => accessSchema),
+}));
 import React from "react";
 import { beforeEach, expect, it, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";

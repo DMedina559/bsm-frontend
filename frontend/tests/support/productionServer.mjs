@@ -1,3 +1,4 @@
+import { accessUser } from "./accessFixtures.js";
 import { createServer, request as proxyRequest } from "node:http";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -62,7 +63,7 @@ for (const port of [4176, 4177]) {
         data = {
           id: token,
           username: token.slice(5),
-          role: "admin",
+          ...accessUser("admin"),
           theme: "default",
         };
     } else if (path === "/api/servers")

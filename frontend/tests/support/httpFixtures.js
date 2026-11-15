@@ -1,3 +1,4 @@
+import { accessSchema } from "./accessFixtures";
 import { vi } from "vitest";
 
 // HTTP fixtures remain separate from the production transport. The operation
@@ -46,6 +47,7 @@ export function createHttpTransport(actual) {
     downloadFile,
     setApiBaseUrl,
     request: vi.fn((url, options = {}) => {
+      if (url === "/api/openapi.json") return Promise.resolve(accessSchema);
       const method = options.method ?? "GET";
       if (
         transportRoutes.has(url.split("?")[0]) ||

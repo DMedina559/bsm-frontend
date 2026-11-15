@@ -1,3 +1,7 @@
+import { accessSchema, accessUser } from "../../../support/accessFixtures";
+vi.mock("../../../../src/api/access", () => ({
+  loadAccessSchema: vi.fn(async () => accessSchema),
+}));
 import { MemoryRouter } from "react-router-dom";
 import {
   act,
@@ -25,6 +29,7 @@ vi.mock("../../../../src/app/useApplicationMetrics", () => ({
 vi.mock("../../../../src/api/operations", () => ({
   callOperation: vi.fn(async (id, options) => {
     fixtures.calls.push([id, options]);
+    if (id === "get_access_policy") return { server_permissions: [] };
     if (id === "get_application_diagnostics") {
       if (fixtures.failure) throw new Error("Backend unreachable");
       return snapshot();
@@ -112,7 +117,7 @@ function snapshot() {
   };
 }
 beforeEach(() => {
-  fixtures.user = { username: "admin", role: "admin" };
+  fixtures.user = accessUser("admin", { username: "admin" });
   fixtures.calls = [];
   fixtures.failure = false;
 });
@@ -132,10 +137,15 @@ async function open() {
   fireEvent.click(screen.getByRole("tab", { name: "Diagnostics" }));
   await screen.findByText("Ready");
 }
-it("mounts diagnostics only for admins and supports keyboard tab navigation", async () => {
+it("mounts diagnostics only with the runtime permission and supports keyboard tab navigation", async () => {
   const view = mount();
-  expect(fixtures.calls).toHaveLength(0);
-  const metricTab = screen.getByRole("tab", { name: "Metrics", exact: true });
+  expect(
+    fixtures.calls.some(([id]) => id === "get_application_diagnostics"),
+  ).toBe(false);
+  const metricTab = await screen.findByRole("tab", {
+    name: "Metrics",
+    exact: true,
+  });
   metricTab.focus();
   fireEvent.keyDown(metricTab, { key: "ArrowRight" });
   await screen.findByText("Ready");
@@ -146,7 +156,7 @@ it("mounts diagnostics only for admins and supports keyboard tab navigation", as
   expect(
     screen.getByRole("region", { name: "Events diagnostics" }),
   ).toHaveTextContent("Stale reading");
-  fixtures.user = { username: "admin", role: "user" };
+  fixtures.user = accessUser("user", { username: "admin" });
   view.rerender(
     <QueryClientProvider client={new QueryClient()}>
       <MemoryRouter>

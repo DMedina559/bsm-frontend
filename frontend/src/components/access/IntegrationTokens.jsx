@@ -1,7 +1,8 @@
 import AccessPreview from "./AccessPreview";
 import CredentialSecret from "./CredentialSecret";
 import { getScopeCategory } from "../../utils/scopeCategory";
-import { PERMISSIONS } from "../../app/permissions";
+import { tokenPresetPermissions } from "../../app/permissions";
+import { useAccess } from "../../app/useAccess";
 import React, { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { callOperation } from "../../api/operations";
@@ -13,6 +14,7 @@ import { useAuth } from "../../contexts/AuthContext";
 
 export default function IntegrationTokens() {
   const { user, sessionGeneration } = useAuth();
+  const runtimeAccess = useAccess();
   const { confirmAction } = useDialog();
   const [preset, setPreset] = useState("monitoring");
   const time = useTimeFormat();
@@ -41,13 +43,7 @@ export default function IntegrationTokens() {
     },
     queryClient,
   );
-  const policy = useQuery(
-    {
-      queryKey: ["access-policy", identity, sessionGeneration],
-      queryFn: ({ signal }) => callOperation("get_access_policy", { signal }),
-    },
-    queryClient,
-  );
+  const policy = runtimeAccess.policyQuery;
   const servers = useQuery(
     {
       queryKey: ["access-servers", identity, sessionGeneration],
@@ -58,12 +54,7 @@ export default function IntegrationTokens() {
   const [name, setName] = useState("");
   const [days, setDays] = useState(30);
   const [neverExpire, setNeverExpire] = useState(false);
-  const [permissions, setPermissions] = useState([
-    "account:read",
-    "health:read",
-    "servers:read",
-    "tasks:read",
-  ]);
+  const [customPermissions, setCustomPermissions] = useState([]);
   const [allServers, setAllServers] = useState(true);
   const [selected, setSelected] = useState([]);
   const [created, setCreated] = useState(null);
@@ -189,32 +180,31 @@ export default function IntegrationTokens() {
       if (!abort.signal.aborted) setBusy(false);
     }
   }
-  const presets = {
-    full: policy.data?.token_permissions ?? [],
-    monitoring: ["account:read", "health:read", "servers:read", "tasks:read"],
-    operator: [
-      PERMISSIONS.ACCOUNT_READ,
-      PERMISSIONS.HEALTH_READ,
-      PERMISSIONS.SERVERS_READ,
-      PERMISSIONS.SERVERS_INSPECT,
-      PERMISSIONS.SERVERS_LIFECYCLE,
-      PERMISSIONS.SERVERS_COMMAND,
-      PERMISSIONS.LOGS_READ,
-      PERMISSIONS.TASKS_READ,
-    ],
-    backups: [
-      "account:read",
-      "health:read",
-      "servers:read",
-      "backups:read",
-      "backups:create",
-      "tasks:read",
-    ],
+  const allowedPermissions = policy.data?.token_permissions ?? [];
+  const presets = Object.fromEntries(
+    ["full", "monitoring", "operator", "backups"].map((key) => [
+      key,
+      tokenPresetPermissions(runtimeAccess.operations, allowedPermissions, key),
+    ]),
+  );
+  const permissions =
+    preset === "custom"
+      ? customPermissions.filter((permission) =>
+          allowedPermissions.includes(permission),
+        )
+      : (presets[preset] ?? []);
+  const canDelegate = (id) => {
+    const required = runtimeAccess.permissionsFor(id);
+    return (
+      required !== null &&
+      required.every((permission) => allowedPermissions.includes(permission))
+    );
   };
   const failure =
     error ||
     tokens.error?.message ||
     policy.error?.message ||
+    runtimeAccess.error?.message ||
     servers.error?.message;
   return (
     <section
@@ -283,30 +273,18 @@ export default function IntegrationTokens() {
                 onChange={(event) => {
                   const value = event.target.value;
                   setPreset(value);
-                  if (presets[value])
-                    setPermissions(
-                      presets[value].filter((permission) =>
-                        policy.data.token_permissions.includes(permission),
-                      ),
-                    );
                 }}
               >
                 <option value="monitoring">Monitoring</option>
                 <option
                   value="operator"
-                  disabled={
-                    !policy.data.token_permissions.includes(
-                      PERMISSIONS.SERVERS_LIFECYCLE,
-                    )
-                  }
+                  disabled={!canDelegate("start_server")}
                 >
                   Server operator
                 </option>
                 <option
                   value="backups"
-                  disabled={
-                    !policy.data.token_permissions.includes("backups:create")
-                  }
+                  disabled={!canDelegate("create_server_snapshot")}
                 >
                   Backup automation
                 </option>
@@ -332,7 +310,7 @@ export default function IntegrationTokens() {
                     checked={permissions.includes(permission)}
                     onChange={() => {
                       setPreset("custom");
-                      setPermissions(toggle(permissions, permission));
+                      setCustomPermissions(toggle(permissions, permission));
                     }}
                   />
                   {permission}
@@ -388,7 +366,11 @@ export default function IntegrationTokens() {
             className="action-button primary-button"
             type="submit"
             disabled={
-              busy || !permissions.length || (!allServers && !selected.length)
+              busy ||
+              runtimeAccess.loading ||
+              Boolean(runtimeAccess.error) ||
+              !permissions.length ||
+              (!allServers && !selected.length)
             }
           >
             Create credential

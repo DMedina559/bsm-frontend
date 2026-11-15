@@ -127,12 +127,24 @@ it("does not show a ports row for other users", () => {
 it("checks update and control capabilities independently", () => {
   const server = { name: "Test", status: "STOPPED" };
   const { rerender } = render(
-    <ServerCard server={server} canLifecycle={false} canUpdate={true} />,
+    <ServerCard
+      server={server}
+      canStart={false}
+      canStop={false}
+      canRestart={false}
+      canUpdate={true}
+    />,
   );
   expect(screen.getByRole("button", { name: "Update Test" })).toBeEnabled();
   expect(screen.getByRole("button", { name: "Start Test" })).toBeDisabled();
   rerender(
-    <ServerCard server={server} canLifecycle={true} canUpdate={false} />,
+    <ServerCard
+      server={server}
+      canStart={true}
+      canStop={true}
+      canRestart={true}
+      canUpdate={false}
+    />,
   );
   expect(screen.getByRole("button", { name: "Update Test" })).toBeDisabled();
   expect(screen.getByRole("button", { name: "Start Test" })).toBeEnabled();
