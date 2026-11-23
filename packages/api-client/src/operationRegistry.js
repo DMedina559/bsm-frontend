@@ -57,10 +57,16 @@ export function buildOperationRegistry(schema) {
         Object.entries(response.content ?? {}).some(
           ([type, value]) =>
             type === "application/octet-stream" ||
+            type.startsWith("image/") ||
             resolve(value.schema)?.format === "binary",
         ),
       );
       registry[operation.operationId] = {
+        security: operation.security ?? schema.security ?? [],
+        access: operation["x-bsm-access"] ?? {
+          classification: "unknown",
+          authentication: "unknown",
+        },
         method: method.toUpperCase(),
         path,
         parameters: [...parameters.values()],

@@ -143,12 +143,11 @@ export function createOperationRecoveryModule({
         .fetchQuery({
           queryKey: [...queryKeys.tasks(), { identity, generation }],
           queryFn: async ({ signal }) => {
-            const ticket = captureStateRequest(
-              AbortSignal.any([signal, controller.signal]),
-            );
+            const requestSignal = AbortSignal.any([signal, controller.signal]);
+            const ticket = captureStateRequest(requestSignal);
             discoveryTicket = ticket;
             const data = await callOperation("list_tasks", {
-              signal: AbortSignal.any([signal, controller.signal]),
+              signal: requestSignal,
             });
             return reconcileResourceSnapshot(
               "tasks",
@@ -218,11 +217,15 @@ export function createOperationRecoveryModule({
       void discover();
       void poll();
     };
+    const onVisible = () => {
+      if (platform.isVisible?.()) resume();
+    };
     const onConnected = () => {
       void discover();
     };
     platform.addEventListener("bsm:socket-connected", onConnected);
     platform.addEventListener("online", resume);
+    platform.addEventListener("visibilitychange", onVisible);
     const stop = () => {
       if (stopped) return;
       stopped = true;
@@ -232,6 +235,7 @@ export function createOperationRecoveryModule({
       unsubscribe();
       stopEpoch();
       platform.removeEventListener("online", resume);
+      platform.removeEventListener("visibilitychange", onVisible);
       platform.removeEventListener("bsm:socket-connected", onConnected);
       removeReset();
     };

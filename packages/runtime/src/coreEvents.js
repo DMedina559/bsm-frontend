@@ -19,6 +19,7 @@ export const mutationResources = {
     q.plugins(),
   ],
   after_set_server_setting: (name) => [
+    q.pluginSettings(),
     ...server(name, q.serverSettings),
     q.servers(),
   ],
@@ -32,9 +33,13 @@ export const mutationResources = {
   after_remove_server_ban: (name) => [q.access([name || null, "bans"])],
   after_players_add: () => [q.globalPlayers()],
   after_player_db_scan: () => [q.globalPlayers()],
+  backup_attention: (name) => server(name, q.serverBackups),
+  backup_activity: (name) => server(name, q.serverBackups),
   after_backup: (name) => server(name, q.serverBackups),
   after_prune_backups: (name) => server(name, q.serverBackups),
   after_restore: (name) => [
+    q.pluginSettings(),
+    q.serverSettings(name || null),
     q.server(name || null),
     q.serverMonitor(name || null),
     q.servers(),
@@ -49,7 +54,8 @@ export const mutationResources = {
     q.servers(),
   ],
   after_prune_download_cache: () => [q.downloads()],
-  after_plugin_settings_update: () => [
+  after_plugin_settings_update: (name) => [
+    ...(name ? [q.serverSettings(name)] : []),
     q.pluginSettings(),
     q.settings(),
     q.plugins(),

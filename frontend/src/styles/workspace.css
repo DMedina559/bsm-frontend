@@ -303,7 +303,7 @@ pre.monitor-output {
 .theme-swatch-yellow i:last-child {
   background: #edcf77;
 }
-.theme-swatch-custom {
+.theme-swatch-custom:not(.theme-swatch-preview) {
   background: repeating-linear-gradient(
     45deg,
     #6f7e75,
@@ -312,7 +312,7 @@ pre.monitor-output {
     #35433b 20px
   );
 }
-.theme-swatch-custom i {
+.theme-swatch-custom:not(.theme-swatch-preview) i {
   background: transparent !important;
 }
 .appearance-controls {

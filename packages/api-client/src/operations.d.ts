@@ -42,6 +42,9 @@ type Options<T> = UrlOptions<T> &
   (T extends { requestBody: unknown }
     ? { body: Body<T> }
     : { body?: Body<T> }) & {
+    onUploadProgress?: RequestOptions["onUploadProgress"];
+    onDownloadProgress?: RequestOptions["onDownloadProgress"];
+    downloadTo?: RequestOptions["downloadTo"];
     signal?: AbortSignal;
     session?: SessionSnapshot;
     timeout?: number;
@@ -75,6 +78,9 @@ type CreateOperationClient = (schema: OpenApiSchema) => {
       query?: Record<string, unknown>;
       header?: Record<string, string>;
       body?: unknown;
+      onUploadProgress?: RequestOptions["onUploadProgress"];
+      onDownloadProgress?: RequestOptions["onDownloadProgress"];
+      downloadTo?: RequestOptions["downloadTo"];
       signal?: AbortSignal;
       session?: SessionSnapshot;
       timeout?: number;
@@ -85,6 +91,9 @@ type CreateOperationClient = (schema: OpenApiSchema) => {
 type DiscoverOperationClient = (
   url?: string,
   options?: {
+    onUploadProgress?: RequestOptions["onUploadProgress"];
+    onDownloadProgress?: RequestOptions["onDownloadProgress"];
+    downloadTo?: RequestOptions["downloadTo"];
     signal?: AbortSignal;
     session?: SessionSnapshot;
     timeout?: number;

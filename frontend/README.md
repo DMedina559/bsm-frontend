@@ -90,6 +90,35 @@ remote connections do not inherit ambiguous values. Logging overrides remain
 device settings; the hidden-navigation flag lasts for the browser session.
 Credentials belong to the separate connection adapter.
 
+### Hidden API Explorer
+
+Open the app with `?hidden=true`, then choose **API Explorer** in Global navigation
+(or visit `/api-explorer` under the app base path). `?hidden=false` hides it again;
+the explorer route itself also requires hidden mode. This flag controls visibility,
+not API permissions: backend authorization still applies.
+
+Load the connected backend's OpenAPI document, upload a JSON file, or paste JSON.
+Search operations by ID, method, path, or tag, including plugin operations. Inspect
+models and follow local model references. The workspace separates Operations and
+Models; each operation has Request, Response, and Schema tabs. Schema-aware fields
+include boolean and enum choices, nested objects, required markers, and defaults.
+Switch to JSON for complex bodies. Responses display properties or tables, with
+filtering and pagination for large arrays. Headers and complete raw JSON remain
+available in separate views, with copy controls.
+
+Parameters and JSON bodies are validated
+against the selected contract before execution. Request fields and example values
+help build bodies; the JSON editor supports nested and union models. Execution
+currently supports JSON bodies and path, query, and header parameters; other body
+formats and cookie parameters are shown in the contract but are not executable.
+
+Requests perform real actions using the existing connection and session; imported
+`servers` URLs are ignored. Preview requests before executing, cancel pending work,
+and inspect response status, headers, body, and elapsed time. Binary responses show
+their media type and size. Contract JSON, request values, and responses remain in
+page memory and are not saved. These are runtime schema checks, not newly generated
+TypeScript types.
+
 Server snapshots, tasks, metrics and drafts are not persisted as browser truth.
 Background refreshes preserve dirty forms and display conflicts. Session changes
 invalidate pending saves and clear application-owned drafts and operations.
@@ -156,10 +185,10 @@ python -m pip install --force-reinstall --no-deps python/dist/*.whl
 npm run test:e2e:backend --workspace=bsm-frontend
 ```
 
-Use the backend commit in `packages/api-client/backend-source.json`. Set
-`BSM_BACKEND_PYTHON` if that installation uses a different Python executable.
-CI runs this smoke check and compares the supported backend's exported contract
-before publishing frontend distributions.
+Use backend `dev` for integration testing. Set `BSM_BACKEND_PYTHON` if that
+installation uses a different Python executable. CI runs the packaged-app check
+against backend `dev` before publishing frontend distributions. Generated API
+consistency, style and types are checked in the separate Lint and Types workflow.
 
 | Test directory            | Contents                                                    |
 | ------------------------- | ----------------------------------------------------------- |
@@ -216,6 +245,17 @@ memory if browser persistence is blocked. A compatibility notice compares the
 backend's advertised operation IDs to the UI's pinned contract; it does not
 infer compatibility from unrelated frontend and backend version numbers.
 
+The main login and saved-instance forms support username/password and API token
+sign-in. Embedded login keeps the usual password form first; **Other sign-in
+methods** reveals the token option. Tokens require `account:read`, are validated
+against the selected backend before saving, and default to **This tab only**.
+**Remember on this browser** explicitly opts into persistent storage. Token access
+shows the credential name, expiry and effective permissions. Signing out forgets
+the stored credential without revoking it; revoke it from the issuing account.
+The login connection dropdown also contains remote-server configuration and,
+when enabled, saved instances and **Manage Instances…**. **Default** selects the
+normal connection. Custom instance names retain their original capitalization.
+
 The `application` instance in `src/app/application.js` owns the runtime and cache
 lifecycle. Thin module adapters preserve convenient imports for React hooks.
 Use `application.reset()` at session boundaries and `application.dispose()` when
@@ -270,3 +310,168 @@ in memory; reset clears them. Long-session compaction runs every 250 accepted
 observations, drops expendable event payloads, and reduces old terminal tasks to
 identity/status. Revisions, arrival clocks, epoch tombstones and task terminal
 watermarks remain until session/epoch reset, preserving replay protection.
+
+### Dates, times, and shared styles
+
+Set the application timezone in BSM Settings → General. Account → Appearance →
+Dates and times can display the application timezone, your browser's timezone,
+or UTC. Timestamp details retain the UTC instant and original value. Raw logs
+remain UTC; schedules display their explicit scheduling timezone.
+
+Application code should use `Timestamp` for rendered instants and `useTimeFormat`
+for chart labels and date grouping. Numeric timestamps require explicit seconds
+when they come from metrics or diagnostics. Offset-free historical API timestamps
+are interpreted as UTC. Never convert stored timestamps into formatted strings.
+
+Use the shared `header`, `card`, `settings-panel`, `form-input`, `action-button`,
+and status classes. Theme colors come from semantic `--bsm-*` tokens, and geometry
+uses spacing, radius, and density tokens. Page styles should extend those rules
+without redefining common control heights or introducing undefined variables.
+
+### Frontend runtime diagnostics
+
+Open Application monitor → Diagnostics → Frontend runtime to record the browser's
+safe runtime observations. Recording and persistence are both off by default.
+Pausing keeps the current journal; Clear history removes it. Enable Keep history
+across reloads to retain up to 1,000 observations for seven days, scoped to the
+current backend and account. Disabling persistence removes the saved copy while
+keeping the current in-memory view. If browser storage is unavailable, recording
+continues in memory and the view reports the storage failure.
+
+A workspace indicator links back to the recording controls. Filters, 50-row
+pagination and an observation modal keep the journal readable. Download JSON
+exports safe metadata, with current/previous-session labels. Older observations
+never contribute to the live subscription/reference counters. Observation types,
+policy reasons and resource families use fixed allowlists; request bodies,
+credentials, account identities, resource names and payload values are excluded.
+Local history is a bounded, best-effort support journal, not an audit log.
+
+The selected monitor view and diagnostics category are reflected in the URL so
+links and reloads open the same category. Frontend history remains available even
+when the backend diagnostics endpoint is unavailable.
+
+The backup inspector separates restore selection, archive details, and management
+actions. Per-archive secondary actions use a keyboard-accessible three-dot menu
+rendered outside the scrolling table. Byte displays use the account's unit and
+precision preference. Page descriptions are owned by `utils/navigation.js`;
+Scheduler and Application monitor use the same navigation metadata as other pages.
+Plugin component styles are scoped to plugin views and plugin dialogs so opening
+a plugin cannot change native account badges, forms, or other page styles.
+
+### Updating an editable Python frontend install
+
+Install the frontend package once from this checkout with
+`python -m pip install -e ./python`, then run `npm run build:editable` from the
+repository root after frontend changes. This builds shared libraries and the web
+interface and copies assets to `python/src/bsm_frontend/static/` without building
+Python distributions. Refresh the browser to load the updated interface. The
+frontend package itself must be editable, even if the backend already is.
+
+### Hidden multi-instance workspace
+
+Enable `?hidden=true` and choose **Manage Instances…** in the connection dropdown, or open `/instances` under
+the app base path. The instance hub is available even when the default backend is
+signed out or unreachable. Save names and backend root URLs (including ingress
+prefixes), then sign in to each independently. **Save current connection** adds
+the existing backend and reuses its scoped token when available.
+
+Every signed-in instance has its own HTTP transport, session generation, query
+cache and socket manager. Where Web Locks and BroadcastChannel are supported,
+the hub shares a socket with workspaces for the same backend and account; otherwise
+each view uses an independent socket. Fleet cards stay connected concurrently, show
+combined availability counts, and offer per-server start/stop controls. Identical
+server names on different backends remain distinct. Lifecycle events refresh only
+their owning instance; adaptive polling refreshes visible-page snapshots when needed.
+An offline instance retains a marked last-known snapshot with actions disabled.
+Expired credentials stop periodic polling. Manual refresh or returning to the page
+can retry the connection; a successful recovery restarts polling.
+
+Search by instance, backend URL, or server name, and filter by server status or
+connection health. Cards show the last successful refresh and identify the instance
+beside each server and in action confirmations. Workspace notifications also carry
+the selected instance name.
+
+Accepted background actions register with the per-instance operation coordinator.
+Task updates arrive through socket subscriptions with HTTP recovery during refresh;
+actions remain pending until the task completes. Task history is bounded to 100
+records per backend/account in this tab's session storage and survives navigation
+and reload. Unavailable tasks remain marked unknown; inspect them in the full
+workspace before retrying. Status refreshes arriving during an older request queue
+another read, including after a command completes.
+
+Profile edits use independent storage records, so simultaneous changes to different
+instances do not overwrite one another. Concurrent changes to the same profile use
+the last saved value. Older profile lists are read without destructive migration.
+HTTP profiles remain saved when opening the frontend over HTTPS, with an explicit
+mixed-content restriction instead of disappearing.
+
+**Open workspace** selects an instance for the regular management pages in the
+current tab. The header switcher returns to other saved instances or the default
+connection; pending settings drafts require confirmation before switching.
+**New tab** opens a separate full workspace, passing only that instance's session
+token through same-origin session storage, never the URL. Changing the selected
+instance in one tab does not switch other tabs. Profile names/URLs are shared;
+login persistence follows the chosen session-only or remembered setting. Passwords
+are not saved. Removing a profile forgets its local credentials without stopping
+or deleting any remote servers.
+
+Remote instances must permit the frontend origin through their existing CORS
+configuration. Add the exact frontend origin (including its port) to
+`web.cors_origins` in each backend's Settings → Web, preserve existing entries,
+and restart that backend's web server. For example, a frontend at
+`http://localhost:11325` needs that exact origin; localhost ports 3000 or 5173 do
+not match it. Network error guidance includes both addresses, but browsers cannot
+reliably distinguish CORS failures from certificate or connectivity failures.
+HTTPS frontends require HTTPS backend URLs. The feature uses the
+existing BSM API and does not introduce a proxy, bulk actions or backend changes.
+`?hidden=false` returns to the normal default connection and hides these controls.
+
+#### Connection testing and profile tools
+
+**Test connection** makes credential-free, read-only requests to the candidate
+backend's setup and information endpoints, preserving proxy prefixes. It checks
+BSM response shapes and reports when sign-in is needed to inspect the version.
+This is an initial compatibility check; it does not prove account permissions or
+that every backend operation is available. **Open backend** opens the address in
+a separate tab for certificate and connectivity troubleshooting. TLS certificate
+validation is controlled by the browser; the frontend cannot disable it or read
+certificate expiry and issuer details. Browser network errors do not reliably
+identify CORS versus certificate failures.
+
+Connection options include editing the URL, group, color, and an optional
+instance name in the workspace tab title. A URL change disconnects the old
+connection, forgets its login, and requires authentication for the new address;
+credentials are never copied between addresses. Profiles with pending actions
+cannot be edited or paused until those actions are reconciled. **Pause** stops
+that profile's automatic hub requests and sockets without deleting it. Resuming
+reconnects it. Removing or pausing the active instance shows a connection recovery
+screen in affected workspaces; the frontend does not silently select the default
+backend. Choose another instance or explicitly choose the default connection.
+
+**Export profiles** saves a versioned JSON file containing only names, URLs,
+groups, colors, pause settings, and tab-title preferences. **Import profiles**
+validates the complete file before writing, creates new profile IDs, skips existing
+or duplicate URLs, and never imports credentials or task history. Imports are
+limited to 100 entries and 256 KB. Concurrent edits to different profiles remain
+independent; edits to the same profile use the last saved value.
+
+Healthy live connections refresh their HTTP snapshots every 60 seconds; fallback
+connections use 15 seconds, and pending actions use 5 seconds. Unavailable
+backends back off from 15 seconds to 120 seconds; a successful connection resets
+the delay. Hidden/offline pages defer periodic requests. Filtering cards does not
+pause their connections. Connection details show the backend, frontend origin,
+account, version, HTTP/socket status, last success, and next scheduled refresh.
+
+The hub saves a request intent before dispatching each server action. Leaving the
+page or reloading while the response is pending restores that intent as unknown,
+so an aborted browser request cannot silently unlock a duplicate action. A known
+backend task replaces the temporary intent; definite rejections are recorded as
+failed. Late responses from disposed connections cannot rewrite recovered history.
+
+A timeout or lost mutation response can mean the backend accepted the action.
+The hub records **Outcome unknown**, keeps further actions blocked, and does not
+automatically repeat writes. A fresh fleet read can confirm a Start/Stop target
+state. Otherwise inspect the server and use **I checked the server** to acknowledge
+the uncertain outcome. This unlocks controls without claiming to cancel or confirm
+the backend operation. Unknown outcomes survive reloads in the account's task
+history. Certificate checks, profile tests, and reconnection never retry mutations.

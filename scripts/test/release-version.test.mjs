@@ -1,103 +1,75 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { resolveRelease, resolveReleaseTag } from "../release-version.mjs";
-const libraries = ["api-client", "runtime", "storage"];
-for (const product of libraries) {
-  test(`${product} tags determine version and safe npm distribution channels`, () => {
-    assert.deepEqual(resolveReleaseTag(product, `${product}-v1.2.3`), {
-      version: "1.2.3",
-      distTag: "latest",
-    });
-    assert.deepEqual(resolveReleaseTag(product, `${product}-v1.3.0-beta.1`), {
-      version: "1.3.0-beta.1",
-      distTag: "next",
-    });
-    assert.equal(
-      resolveReleaseTag(product, `${product}-v1.2.3`, true).distTag,
-      "next",
+import { resolveRelease } from "../release-version.mjs";
+
+for (const [tag, npmVersion, pythonVersion, distTag] of [
+  ["1.4.0", "1.4.0", "1.4.0", "latest"],
+  ["1.4.0-alpha.0", "1.4.0-alpha.0", "1.4.0a0", "next"],
+  ["1.4.0-beta.3", "1.4.0-beta.3", "1.4.0b3", "next"],
+  ["1.4.0a0", "1.4.0-alpha.0", "1.4.0a0", "next"],
+  ["1.4.0b3", "1.4.0-beta.3", "1.4.0b3", "next"],
+  ["1.4.0rc1", "1.4.0-rc.1", "1.4.0rc1", "next"],
+  ["1.4.0-rc.1", "1.4.0-rc.1", "1.4.0rc1", "next"],
+]) {
+  test(`${tag} releases every package with one coordinated version`, () => {
+    const release = resolveRelease(tag);
+    assert.equal(release.npmVersion, npmVersion);
+    assert.equal(release.pythonVersion, pythonVersion);
+    assert.equal(release.distTag, distTag);
+    assert.deepEqual(
+      release.packages.map((pkg) => pkg.product),
+      ["api-client", "runtime", "storage", "frontend"],
     );
+    for (const pkg of release.packages) {
+      assert.equal(pkg.workspace, `@bedrock-server-manager/${pkg.product}`);
+      assert.equal(pkg.npmVersion, npmVersion);
+      assert.equal(
+        pkg.artifactName,
+        pkg.product === "frontend"
+          ? "frontend-distributions"
+          : "shared-packages",
+      );
+    }
   });
 }
-test("frontend tags share one Python and npm release with ecosystem-appropriate spelling", () => {
-  assert.deepEqual(resolveReleaseTag("frontend", "frontend-1.3.0b7"), {
-    version: "1.3.0b7",
-    npmVersion: "1.3.0-beta.7",
-    distTag: "next",
-  });
-  assert.equal(
-    resolveReleaseTag("frontend", "frontend-2.0.0rc1").npmVersion,
-    "2.0.0-rc.1",
-  );
-  assert.equal(
-    resolveReleaseTag("frontend", "frontend-2.0.0").distTag,
-    "latest",
-  );
-});
-test("invalid, ambiguous and cross-product tags are rejected", () => {
-  for (const product of libraries) {
-    for (const tag of [
-      "frontend-1.3.0b7",
-      `${product}-v01.2.3`,
-      `${product}-v1.2.3b4`,
-      `${product}-v1.2.3-beta.01`,
-      `${product}-v1.2.3-`,
-      `${product}-v1.2.3; echo bad`,
-      ...libraries
-        .filter((other) => other !== product)
-        .map((other) => `${other}-v1.2.3`),
-    ])
-      assert.throws(() => resolveReleaseTag(product, tag));
-  }
-  for (const tag of [
-    "1.3.0b7",
-    "frontend-v1.3.0",
-    "frontend-1.3.0b07",
-    ...libraries.map((product) => `${product}-v1.3.0`),
-  ])
-    assert.throws(() => resolveReleaseTag("frontend", tag));
-});
-test("unknown products cannot select a library publication", () => {
-  assert.throws(
-    () => resolveReleaseTag("unknown", "runtime-v1.2.3"),
-    /Unknown release product/,
-  );
+
+test("GitHub prerelease flag keeps stable-looking versions off latest", () => {
+  assert.equal(resolveRelease("1.4.0", true).distTag, "next");
 });
 
-test("release routing selects one package and its verified artifact", () => {
-  for (const product of libraries) {
-    assert.deepEqual(resolveRelease(`${product}-v1.2.3`), {
-      product,
-      workspace: `@bedrock-server-manager/${product}`,
-      version: "1.2.3",
-      npmVersion: "1.2.3",
-      distTag: "latest",
-      artifactName: "npm-package",
-    });
-    assert.equal(resolveRelease(`${product}-v1.2.3`, true).distTag, "next");
-    assert.equal(resolveRelease(`${product}-v1.3.0-beta.1`).distTag, "next");
-  }
-  assert.deepEqual(resolveRelease("frontend-1.3.0b9"), {
-    product: "frontend",
-    workspace: "@bedrock-server-manager/frontend",
-    version: "1.3.0b9",
-    npmVersion: "1.3.0-beta.9",
-    distTag: "next",
-    artifactName: "frontend-distributions",
-  });
-  assert.equal(resolveRelease("frontend-1.3.0").distTag, "latest");
-  assert.equal(resolveRelease("frontend-1.3.0", true).distTag, "next");
-});
-
-test("release routing rejects unsupported and malformed tags", () => {
+test("old individual tags, ambiguous versions, and unmappable Python prereleases are rejected", () => {
   for (const tag of [
-    "v1.2.3",
-    "1.2.3",
-    "unknown-v1.2.3",
-    "runtime-1.2.3",
-    "storage-v01.2.3",
-    "api-client-v1.2.3-beta.01",
-    "frontend-v1.3.0",
-    "frontend-1.3.0b09",
+    "api-client-v1.4.0",
+    "runtime-v1.4.0",
+    "storage-v1.4.0",
+    "frontend-1.4.0",
+    "frontend-1.4.0b1",
+    "v1.4.0",
+    "v1.4.0-beta.1",
+    "01.4.0",
+    "1.04.0",
+    "1.4.00",
+    "1.4.0b01",
+    "1.4.0a01",
+    "1.4.0rc01",
+    "1.4.0b",
+    "v1.4.0b3",
+    "1.4.0-beta.01",
+    "1.4.0-beta",
+    "1.4.0-preview.1",
+    "1.4.0+build.1",
+    "1.4.0; echo bad",
+    undefined,
   ])
     assert.throws(() => resolveRelease(tag));
+});
+
+test("Python-style and SemVer prerelease tags select the exact same release artifacts", () => {
+  for (const [python, semver] of [
+    ["1.4.0a0", "1.4.0-alpha.0"],
+    ["1.4.0b3", "1.4.0-beta.3"],
+    ["1.4.0rc1", "1.4.0-rc.1"],
+  ]) {
+    assert.deepEqual(resolveRelease(python), resolveRelease(semver));
+  }
 });

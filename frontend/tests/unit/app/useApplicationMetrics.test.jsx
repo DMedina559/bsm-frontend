@@ -36,3 +36,7 @@ it("releases live subscriptions and polling while paused, then resumes and clean
   view.unmount();
   expect(state.unsubscribe).toHaveBeenCalledTimes(2);
 });
+
+vi.mock("../../../src/app/useAccess", () => ({
+  useAccess: () => ({ can: (id) => id === "get_application_metrics" }),
+}));

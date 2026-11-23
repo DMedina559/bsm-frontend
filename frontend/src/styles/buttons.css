@@ -22,7 +22,7 @@
   line-height: 1.35;
   cursor: pointer;
   vertical-align: middle;
-  white-space: normal;
+  white-space: nowrap;
   transition:
     background-color 0.15s,
     border-color 0.15s,
@@ -38,6 +38,8 @@
 }
 .primary-button,
 .button-primary,
+.action-button.primary,
+.action-button.primary-button,
 .start-button,
 .nav-action-button:not(.danger-button) {
   background: var(--primary-button-background-color);
@@ -46,6 +48,8 @@
 }
 .primary-button:hover,
 .button-primary:hover,
+.action-button.primary:hover,
+.action-button.primary-button:hover,
 .start-button:hover {
   background: var(--primary-button-hover-background-color);
   border-color: var(--primary-button-hover-border-color);
@@ -64,6 +68,16 @@
   background: var(--danger-button-hover-background-color);
   border-color: var(--danger-button-hover-border-color);
   color: var(--danger-button-text-color);
+}
+.success-button,
+.action-button.success-button {
+  background: var(--bsm-success);
+  border-color: var(--bsm-success);
+  color: var(--text-color);
+}
+.success-button:hover,
+.action-button.success-button:hover {
+  filter: brightness(1.1);
 }
 .warning-button {
   background: var(--bsm-surface-raised);

@@ -1,5 +1,30 @@
 import { callOperation } from "../../src/api/operations";
 async function contracts() {
+  const schedules = await callOperation("list_schedules", {
+    query: { server_name: "example" },
+  });
+  schedules.schedules?.forEach((entry) =>
+    entry.configuration.task.toUpperCase(),
+  );
+  await callOperation("save_schedule", {
+    path: { schedule_id: "weekly" },
+    body: { task: "verify", server_name: "example", enabled: false },
+  });
+  await callOperation("delete_schedule", { path: { schedule_id: "weekly" } });
+  const globalActivity = await callOperation("get_diagnostic_activity", {
+    query: {
+      server_name: "example",
+      sequence_id: "sequence",
+      operation_id: "operation",
+      limit: 5,
+    },
+  });
+  globalActivity.operations?.recent?.forEach((operation) =>
+    operation.parent_operation_id?.toUpperCase(),
+  );
+  globalActivity.subscriptions?.items?.forEach((listener) =>
+    listener.listener_id.toUpperCase(),
+  );
   const diagnostic = await callOperation("get_application_diagnostics");
   diagnostic.summary.status.toUpperCase();
   await callOperation("get_diagnostic_history", {

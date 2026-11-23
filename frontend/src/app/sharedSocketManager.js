@@ -68,7 +68,10 @@ export function createSharedSocketManager({
   const pendingOperations = () =>
     runtime.operationCoordinator
       .list()
-      .filter((operation) => !operation.terminal && operation.kind)
+      .filter(
+        (operation) =>
+          !operation.terminal && !operation.uncertain && operation.kind,
+      )
       .map(({ id, kind, serverName, affectedKeys }) => ({
         id,
         kind,

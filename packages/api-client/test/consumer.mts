@@ -36,3 +36,12 @@ if (health) {
   const instance: string | null | undefined = health.instance_id;
   console.log(pid, version, instance);
 }
+
+// Generated backup metadata can be passed directly to the typed creation API.
+import { contractMetadata } from "@bedrock-server-manager/api-client/metadata";
+const contentBody: import("@bedrock-server-manager/api-client/contract").components["schemas"]["SnapshotCreatePayload"] =
+  {
+    mode: "selected",
+    components: [...contractMetadata.backupContents.defaults],
+  };
+void contentBody;

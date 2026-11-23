@@ -1,3 +1,5 @@
+import { fixtureResponse } from "../support/fixtures.js";
+import { accessSchema, accessUser } from "../support/accessFixtures.js";
 import { test, expect } from "@playwright/test";
 // Drive the shipped app and real browser transports against controlled backend snapshots.
 async function backend(context, role = "admin") {
@@ -28,16 +30,43 @@ async function backend(context, role = "admin") {
     async (route) => {
       const request = route.request();
       const path = new URL(request.url()).pathname;
-      const identity = request.headers().authorization?.replace("Bearer ", "");
-      let data = { status: "success" };
+      const requestHeaders = await request.allHeaders();
+      // WebKit's intercepted request headers omit HttpOnly cookies. Read the
+      // browser-managed jar for cookie-mode requests, scoped to this exact URL.
+      const sessionCookie =
+        requestHeaders["x-bsm-auth-mode"] === "cookie"
+          ? (await context.cookies(request.url())).find(
+              (cookie) => cookie.name === "access_token_cookie",
+            )?.value
+          : undefined;
+      const identity =
+        requestHeaders.authorization?.replace("Bearer ", "") ??
+        requestHeaders.cookie?.match(
+          /(?:^|;\s*)access_token_cookie=([^;]+)/,
+        )?.[1] ??
+        sessionCookie;
+      let data = fixtureResponse(new URL(request.url()));
       let status = 200;
-      if (path === "/api/setup/status") data = { needs_setup: false };
-      else if (path === "/auth/token")
+      const headers = {};
+      if (path === "/api/openapi.json") data = accessSchema;
+      else if (path === "/api/setup/status") data = { needs_setup: false };
+      else if (path === "/auth/token") {
+        const username = new URLSearchParams(request.postData()).get(
+          "username",
+        );
+        const cookieMode = requestHeaders["x-bsm-auth-mode"] === "cookie";
         data = {
-          access_token: new URLSearchParams(request.postData()).get("username"),
+          access_token: cookieMode ? "" : username,
           token_type: "bearer",
         };
-      else if (path === "/api/account") {
+        if (cookieMode) {
+          headers["Set-Cookie"] =
+            `access_token_cookie=${username}; Path=/; HttpOnly; SameSite=Lax`;
+        }
+      } else if (path === "/auth/logout") {
+        headers["Set-Cookie"] =
+          "access_token_cookie=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax";
+      } else if (path === "/api/account") {
         if (!identity) {
           status = 401;
           data = { detail: "Sign in" };
@@ -45,7 +74,7 @@ async function backend(context, role = "admin") {
           data = {
             id: identity,
             username: identity,
-            role,
+            ...accessUser(role),
             theme: "default",
           };
           state.accounts.push(identity);
@@ -102,12 +131,25 @@ async function backend(context, role = "admin") {
         };
       else if (path.includes("themes")) data = { themes: [] };
       else if (path.includes("plugins")) data = { plugins: {} };
-      await route.fulfill({ status, json: data });
+      await route.fulfill({ status, headers, json: data });
     },
   );
   return state;
 }
 async function login(page, name) {
+  const cookie = (await page.context().cookies()).find(
+    (item) => item.name === "access_token_cookie",
+  );
+  if (cookie?.value === name) {
+    await page.goto("./");
+    await expect(
+      page.getByRole("button", {
+        name: `Open ${name}-server monitor`,
+        exact: true,
+      }),
+    ).toBeVisible();
+    return;
+  }
   await page.goto("login");
   await page.getByLabel("Username", { exact: true }).fill(name);
   await page.getByLabel("Password", { exact: true }).fill("password");
@@ -137,8 +179,27 @@ test("installation survives navigation and reconnect then resumes setup", async 
   const state = await backend(context);
   await login(page, "alice");
   await page.getByRole("link", { name: /Install Server/ }).click();
-  await page.getByLabel("Server Name").fill("NewServer");
-  await page.getByRole("button", { name: /Install Server/ }).click();
+  const serverName = page.getByLabel("Server Name");
+  await serverName.fill("NewServer");
+  await expect(serverName).toHaveValue("NewServer");
+  // Commit the controlled input before WebKit submits the form.
+  await serverName.blur();
+  const installResponse = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === "/api/server/install" &&
+      response.request().method() === "POST",
+  );
+  await page
+    .getByRole("button", { name: "Install Server", exact: true })
+    .click();
+  const response = await installResponse;
+  expect(response.ok()).toBe(true);
+  expect(response.request().postDataJSON()).toMatchObject({
+    server_name: "NewServer",
+  });
+  await expect(response.json()).resolves.toMatchObject({
+    task_id: "install-task",
+  });
   await expect(
     page.getByRole("button", { name: "1 active operation. View operations" }),
   ).toBeVisible();
@@ -227,13 +288,24 @@ test("server cards open Monitor and offer settings shortcuts", async ({
     name: "alice-server server",
     exact: true,
   });
+  // Hover scrolls its target into view. Establish the baseline after that
+  // scrolling so WebKit viewport changes are not mistaken for hover movement.
+  await card.scrollIntoViewIfNeeded();
+  const documentBounds = () =>
+    card.evaluate((element) => {
+      const bounds = element.getBoundingClientRect();
+      return { x: bounds.x + window.scrollX, y: bounds.y + window.scrollY };
+    });
   // Hover feedback must keep the card's full-area hit target stationary.
-  const initialBounds = await card.boundingBox();
+  const initialBounds = await documentBounds();
   await card.hover({ position: { x: 12, y: 12 } });
   await expect
     .poll(async () => {
-      const hoveredBounds = await card.boundingBox();
-      return Math.abs(hoveredBounds.y - initialBounds.y);
+      const hoveredBounds = await documentBounds();
+      return Math.max(
+        Math.abs(hoveredBounds.x - initialBounds.x),
+        Math.abs(hoveredBounds.y - initialBounds.y),
+      );
     })
     .toBeLessThan(0.5);
   // Click card padding to exercise the full-card hit area rather than its title.
@@ -554,7 +626,7 @@ test("non-administrators cannot open diagnostics or fetch its endpoints", async 
   await login(page, "viewer");
   await page.goto("application-monitor");
   await expect(
-    page.getByRole("heading", { name: "Metrics", exact: true }),
+    page.getByRole("heading", { name: "Application Metrics", exact: true }),
   ).toBeVisible();
   await expect(page.getByRole("tab", { name: "Diagnostics" })).toHaveCount(0);
   expect(calls).toBe(0);
@@ -652,50 +724,65 @@ test("restores opt-in drafts after reload without persisting secrets or writing 
       json: {
         settings: {
           monitoring: { app_metrics_interval_sec: 3 },
-          web: { jwt_secret_key: "private-secret" },
+          web: { jwt_secret_key: "private-secret", jwt_key_initialized: true },
+          custom: { draft_probe: { api_token: "private-integration-token" } },
         },
       },
     });
   });
   await login(page, "alice");
-  await page.goto("account");
+  await page.goto("frontend-settings?tab=recovery");
   await page.getByLabel("Recover unsaved settings and properties").check();
   await page.goto("bsm-settings");
   await page
     .getByLabel("Application metrics interval", { exact: true })
     .fill("12");
-  await page
-    .getByLabel("jwt secret key", { exact: true })
-    .fill("changed-secret");
-  await expect
-    .poll(() =>
-      page.evaluate(async () => {
-        const db = await new Promise((resolve) => {
-          const request = indexedDB.open("bsm-view-state", 2);
-          request.onsuccess = () => resolve(request.result);
-        });
-        return new Promise((resolve) => {
-          const request = db
-            .transaction("records")
-            .objectStore("records")
-            .getAll();
-          request.onsuccess = () => {
-            db.close();
-            resolve(
-              JSON.stringify(
-                request.result.filter((record) => record.kind === "draft"),
-              ),
-            );
-          };
-        });
-      }),
-    )
-    .toContain('"value":12');
+  await page.getByRole("tab", { name: "Web & access", exact: true }).click();
+  await expect(page.getByLabel("jwt secret key", { exact: true })).toHaveCount(
+    0,
+  );
+  await expect(
+    page.getByLabel("jwt key initialized", { exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("tab", { name: "Advanced", exact: true }).click();
+  await page.getByLabel("api token", { exact: true }).fill("changed-secret");
+  const storedDrafts = () =>
+    page.evaluate(async () => {
+      const db = await new Promise((resolve) => {
+        const request = indexedDB.open("bsm-view-state", 2);
+        request.onsuccess = () => resolve(request.result);
+      });
+      return new Promise((resolve) => {
+        const request = db
+          .transaction("records")
+          .objectStore("records")
+          .getAll();
+        request.onsuccess = () => {
+          db.close();
+          resolve(
+            JSON.stringify(
+              request.result.filter((record) => record.kind === "draft"),
+            ),
+          );
+        };
+      });
+    });
+  await expect.poll(storedDrafts).toContain('"value":12');
+  const stored = await storedDrafts();
+  for (const secret of [
+    "private-secret",
+    "private-integration-token",
+    "changed-secret",
+    "jwt_secret_key",
+    "jwt_key_initialized",
+  ])
+    expect(stored).not.toContain(secret);
   page.once("dialog", (dialog) => dialog.accept());
   await page.reload();
   await expect(
     page.getByRole("button", { name: "Restore edits", exact: true }),
   ).toBeVisible();
+  await page.getByRole("tab", { name: "General", exact: true }).click();
   await expect(
     page.getByLabel("Application metrics interval", { exact: true }),
   ).toHaveValue("3");
@@ -705,8 +792,13 @@ test("restores opt-in drafts after reload without persisting secrets or writing 
   await expect(
     page.getByLabel("Application metrics interval", { exact: true }),
   ).toHaveValue("12");
-  await expect(page.getByLabel("jwt secret key", { exact: true })).toHaveValue(
-    "private-secret",
+  await page.getByRole("tab", { name: "Web & access", exact: true }).click();
+  await expect(page.getByLabel("jwt secret key", { exact: true })).toHaveCount(
+    0,
+  );
+  await page.getByRole("tab", { name: "Advanced", exact: true }).click();
+  await expect(page.getByLabel("api token", { exact: true })).toHaveValue(
+    "private-integration-token",
   );
   expect(saved).toBe(0);
 });
@@ -719,10 +811,15 @@ test("administrators can inspect bounded frontend rejection diagnostics without 
   await login(page, "alice");
   await page.goto("application-monitor");
   await page.getByRole("tab", { name: "Diagnostics", exact: true }).click();
-  await page.getByText("Frontend runtime diagnostics", { exact: true }).click();
+  await page
+    .getByRole("button", { name: "Frontend runtime", exact: true })
+    .click();
+  await page.goto("frontend-settings?tab=diagnostics");
   await page
     .getByLabel("Record frontend observations", { exact: true })
     .check();
+  await page.getByLabel("Keep history across reloads", { exact: true }).check();
+  await page.goto("application-monitor?view=diagnostics&category=frontend");
   await expect(page.getByLabel("WebSocket health")).toHaveText("Live");
   state.sockets.at(-1).send(
     JSON.stringify({
@@ -734,13 +831,29 @@ test("administrators can inspect bounded frontend rejection diagnostics without 
       },
     }),
   );
-  await expect(
-    page.getByRole("cell", { name: "invalid-task", exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole("cell", { name: /invalid-task/ })).toBeVisible();
   await expect(
     page.getByText("never-display", { exact: false }),
   ).not.toBeVisible();
+  // Flush on navigation and restore the sanitized journal in a new browser session.
+  await page.goto("application-monitor?view=diagnostics&category=frontend");
+  await expect(page.getByRole("cell", { name: /invalid-task/ })).toBeVisible();
+  await expect(
+    page
+      .getByRole("row")
+      .filter({ has: page.getByRole("cell", { name: /invalid-task/ }) })
+      .getByRole("cell", { name: "Previous session", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText("Recording", { exact: true })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
+  const recordingControl = page.getByRole("link", {
+    name: "Frontend diagnostics recording is enabled",
+    exact: true,
+  });
+  await expect(recordingControl).toBeVisible();
+  await expect
+    .poll(async () => (await recordingControl.boundingBox())?.width)
+    .toBe(44);
   await expect
     .poll(() =>
       page.evaluate(
@@ -749,10 +862,10 @@ test("administrators can inspect bounded frontend rejection diagnostics without 
     )
     .toBe(true);
   await page
-    .getByRole("button", { name: "Clear observations", exact: true })
+    .getByRole("button", { name: "Clear history", exact: true })
     .click();
   await expect(
-    page.getByText("No observations recorded.", { exact: true }),
+    page.getByText(/Waiting for frontend observations/),
   ).toBeVisible();
 });
 
@@ -821,4 +934,146 @@ test("saving one server setting sends only that writable field", async ({
         body: { key: "settings.target_version", value: "PREVIEW" },
       },
     ]);
+});
+
+test("administrators inspect global activity and follow operation traces", async ({
+  context,
+  page,
+}, testInfo) => {
+  await backend(context);
+  const operation = {
+    operation_id: "operation",
+    sequence_id: "sequence",
+    root_operation_id: "root",
+    parent_operation_id: "root",
+    correlation_id: "activity-trace",
+    name: "server.start",
+    server_name: "alpha",
+    status: "finished",
+    outcome: "started",
+  };
+  const requests = [];
+  await context.route("**/api/diagnostics**", async (route) => {
+    const url = new URL(route.request().url());
+    let data = diagnosticsSnapshot();
+    if (url.pathname.endsWith("/activity")) {
+      requests.push(url);
+      data = {
+        scope: "application",
+        events: { active: [], recent: [] },
+        operations: { active: [], recent: [operation] },
+        subscriptions: {
+          total: 1,
+          items: [
+            {
+              listener_id: "plugin:listener",
+              owner: "plugin:example",
+              name: "before_server_start",
+              priority: 100,
+              unresolved_after: ["other:missing"],
+            },
+          ],
+        },
+        truncated: true,
+      };
+    } else if (url.pathname.includes("/trace/"))
+      data = {
+        events: null,
+        events_available: false,
+        operations: { active: [], recent: [operation] },
+        operations_available: true,
+        tasks: [],
+        tasks_available: true,
+        history: { available: true, records: [] },
+        issues: [],
+      };
+    else if (url.pathname.endsWith("/history"))
+      data = { available: true, records: [], truncated: false };
+    else if (url.pathname.endsWith("/runs"))
+      data = { available: true, runs: [], truncated: false };
+    await route.fulfill({ json: data });
+  });
+  await login(page, "alice");
+  await page.goto("application-monitor");
+  await page.getByRole("tab", { name: "Diagnostics" }).click();
+  await page.getByRole("button", { name: "Activity", exact: true }).click();
+  await expect(page.getByText("server.start · alpha · finished")).toBeVisible();
+  await expect(page.getByText(/This view is partial/)).toBeVisible();
+  await page.getByLabel("Server", { exact: true }).fill("alpha");
+  await page.getByRole("button", { name: "Apply filters" }).click();
+  await expect
+    .poll(() => requests.at(-1)?.searchParams.get("server_name"))
+    .toBe("alpha");
+  await page.getByText("server.start · alpha · finished").click();
+  await expect(page.getByText("started", { exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    )
+    .toBe(true);
+  await page.screenshot({
+    path: testInfo.outputPath("global-activity-mobile.png"),
+    fullPage: true,
+  });
+  await page
+    .getByRole("button", { name: "Inspect trace", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Correlated trace" }),
+  ).toBeFocused();
+  await expect(page.getByText(/Operations: available/)).toBeVisible();
+});
+
+test("custom theme palettes are visible instead of the striped fallback", async ({
+  context,
+  page,
+}) => {
+  await backend(context);
+  await context.route("**/api/info/themes", (route) =>
+    route.fulfill({
+      json: { themes: ["palette_preview", "unreadable_theme"] },
+    }),
+  );
+  await context.route("**/themes/palette_preview.css", (route) =>
+    route.fulfill({
+      contentType: "text/css",
+      body: ':root[data-theme="palette_preview"][data-mode="dark"][data-density] { --bsm-page:#123456; --bsm-surface:#234567; --bsm-accent:#345678; }',
+    }),
+  );
+  await context.route("**/themes/unreadable_theme.css", (route) =>
+    route.fulfill({ status: 404, body: "Not found" }),
+  );
+  await login(page, "alice");
+  await page.goto("frontend-settings?tab=appearance");
+  const custom = page
+    .locator(".theme-card")
+    .filter({ has: page.getByText("palette preview", { exact: true }) });
+  await expect(custom).toBeVisible();
+  const swatch = custom.locator(".theme-swatch");
+  await expect(swatch).toHaveClass(/theme-swatch-preview/);
+  for (const [index, color] of [
+    "rgb(18, 52, 86)",
+    "rgb(35, 69, 103)",
+    "rgb(52, 86, 120)",
+  ].entries())
+    await expect(swatch.locator("i").nth(index)).toHaveCSS(
+      "background-color",
+      color,
+    );
+  const fallback = page
+    .locator(".theme-card")
+    .filter({ has: page.getByText("unreadable theme", { exact: true }) })
+    .locator(".theme-swatch");
+  await expect(fallback).not.toHaveClass(/theme-swatch-preview/);
+  await expect(fallback).toHaveCSS(
+    "background-image",
+    /repeating-linear-gradient/,
+  );
+  await expect(fallback.locator("i").first()).toHaveCSS(
+    "background-color",
+    "rgba(0, 0, 0, 0)",
+  );
 });

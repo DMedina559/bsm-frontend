@@ -1,49 +1,24 @@
-name: Build Lint Test
+name: Build and Test
 
 on:
   workflow_dispatch:
   workflow_call:
   pull_request:
-    paths:
-      - "python/**"
-      - "frontend/**"
-      - "packages/**"
-      - "scripts/**"
-      - "package*.json"
-      - "*config.js"
-      - "README.md"
-      - "LICENSE"
-      - ".pre-commit-config.yaml"
-      - ".github/workflows/build-test.yml"
-      - ".github/workflows/publish.yml"
+    branches: [dev]
   push:
-    branches: [dev, main]
-    paths:
-      - "README.md"
-      - "LICENSE"
-      - ".github/workflows/publish.yml"
-      - "python/**"
-      - "frontend/**"
-      - "packages/**"
-      - "package.json"
-      - "package-lock.json"
-      - "eslint.config.js"
-      - "prettier.config.js"
-      - ".pre-commit-config.yaml"
-      - "scripts/**"
-      - ".github/workflows/build-test.yml"
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    branches: [dev]
 
 permissions:
   contents: read
 
-jobs:
-  build-and-test:
-    runs-on: ubuntu-24.04
+concurrency:
+  group: build-test-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
 
+jobs:
+  build-and-unit:
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -54,71 +29,56 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: "22"
-          package-manager-cache: false
+          node-version: '24'
+          cache: npm
 
-      - name: Resolve frontend release identity
-        if: github.event_name == 'release' && startsWith(github.event.release.tag_name, 'frontend-')
+      - name: Set coordinated release versions
+        if: github.event_name == 'release'
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: |
-          node --input-type=module - <<'JS'
-          import { appendFileSync } from 'node:fs';
-          import { resolveReleaseTag } from './scripts/release-version.mjs';
-          const { version } = resolveReleaseTag('frontend', process.env.RELEASE_TAG);
-          appendFileSync(process.env.GITHUB_ENV, `SETUPTOOLS_SCM_PRETEND_VERSION=${version}\nBSM_FRONTEND_VERSION=${version}\n`);
-          appendFileSync(process.env.GITHUB_OUTPUT, `version=${version}\n`);
-          JS
+          IS_PRERELEASE: ${{ github.event.release.prerelease }}
+        run: npm run release:prepare
 
-      - uses: actions/setup-python@v7
+      - name: Set up Python
+        uses: actions/setup-python@v7
         with:
-          python-version: "3.14"
-
-      - name: Resolve supported backend
-        id: backend-source
-        run: node scripts/backend-source.mjs
-
-      - uses: actions/checkout@v7
-        with:
-          repository: DMedina559/bedrock-server-manager
-          ref: ${{ steps.backend-source.outputs.revision }}
-          path: backend
-          persist-credentials: false
+          python-version: '3.14'
+          cache: pip
+          cache-dependency-path: python/pyproject.toml
 
       - name: Install dependencies
         run: |
           npm ci
-          python -m pip install build setuptools-scm -e './backend' -e './python[dev]'
+          python -m pip install build setuptools-scm -e './python[dev]'
 
       - name: Build package
         run: |
           npm run build
           node scripts/build-python.mjs
 
-      - name: Lint and type checks
+      - name: Run unit tests and archive checks
         run: |
-          npm run api:check
-          npm run lint
-          npm run typecheck
-          python -m bedrock_server_manager.web.contract --check packages/api-client/src/generated/openapi.json
+          npm test
+          npm run check:archives
 
-      - name: Run tests
-        run: npm test
-
-      - name: Install browsers
-        working-directory: ./frontend
-        run: npx playwright install --with-deps chromium firefox webkit
-
-      - name: Run browser tests
-        run: |
-          npm run test:e2e --workspace=bsm-frontend
-          npm run test:e2e:backend --workspace=bsm-frontend
-
-      - name: Pack the same verified frontend for npm
+      - name: Pack verified frontend for npm
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name || '' }}
           IS_PRERELEASE: ${{ github.event.release.prerelease || false }}
         run: npm run pack:frontend
+
+      - name: Pack verified shared packages
+        run: |
+          mkdir -p build/npm-release
+          npm pack --workspace=@bedrock-server-manager/api-client --workspace=@bedrock-server-manager/runtime --workspace=@bedrock-server-manager/storage --pack-destination build/npm-release --ignore-scripts
+
+      - name: Upload verified shared packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: shared-packages
+          path: build/npm-release/*.tgz
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Upload verified frontend distributions
         uses: actions/upload-artifact@v7
@@ -130,12 +90,76 @@ jobs:
             python/dist/
           retention-days: 7
 
+  e2e-tests:
+    needs: build-and-unit
+    timeout-minutes: 25
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Checkout backend integration target
+        uses: actions/checkout@v7
+        with:
+          repository: DMedina559/bedrock-server-manager
+          ref: dev
+          path: backend
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.14'
+
+      - name: Allow candidate frontend in backend integration checkout
+        run: python scripts/override-backend-frontend-dep.py backend/pyproject.toml
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          python -m pip install build setuptools-scm -e './backend' -e './python[dev]'
+
+      - name: Build frontend and Python assets
+        run: |
+          npm run build
+          node scripts/build-python.mjs
+
+      - name: Install browsers
+        working-directory: ./frontend
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Run browser tests
+        run: |
+          npm run test:e2e --workspace=bsm-frontend
+          npm run test:e2e:backend --workspace=bsm-frontend
+
+      - name: Upload browser failure traces
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: browser-failure-traces
+          path: |
+            frontend/test-results/
+            frontend/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
+
   python-tests:
-    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.14"]
+        python-version: ['3.11', '3.14']
     steps:
       - uses: actions/checkout@v7
         with:
@@ -144,6 +168,8 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: python/pyproject.toml
       - name: Install dependencies
         run: python -m pip install -e './python[dev]'
       - name: Run tests

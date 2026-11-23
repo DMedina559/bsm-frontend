@@ -1,9 +1,11 @@
 import type { QueryKey, QueryFilters } from "./contracts.js";
 export const queryKeys: Readonly<{
+  schedules(serverName?: string): QueryKey;
   bootstrap(): QueryKey;
   applicationHealth(): QueryKey;
   applicationMetrics(): QueryKey;
   diagnostics(): QueryKey;
+  diagnosticActivity(filters: unknown): QueryKey;
   diagnosticHistory(filters: unknown): QueryKey;
   diagnosticRuns(): QueryKey;
   diagnosticTrace(correlation: string): QueryKey;

@@ -9,7 +9,7 @@ import Modal from "./Modal";
 import { useDialog } from "../contexts/DialogContext";
 const RemoteConfigModal = ({ isOpen, onClose }) => {
   const [remoteUrl, setRemoteUrl] = useState(
-    getApiBaseUrl() || import.meta.env.VITE_API_URL || "",
+    () => getApiBaseUrl() || import.meta.env.VITE_API_URL || "",
   );
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);

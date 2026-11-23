@@ -1,3 +1,5 @@
+import { navigationLabel } from "../utils/navigationLabel";
+import { useAccess } from "../app/useAccess";
 import { sessionSettings } from "../app/browserStorage";
 import { useResourceQuery } from "../app/resourceQueries";
 import { usePreference } from "../app/usePreference";
@@ -9,6 +11,12 @@ import { useToast } from "../contexts/ToastContext";
 import { resolveAppAssetUrl } from "../utils/basePath";
 import {
   LayoutDashboard,
+  Activity,
+  Monitor,
+  SlidersHorizontal,
+  Wrench,
+  Puzzle,
+  CalendarClock,
   Users,
   Settings,
   Database,
@@ -25,14 +33,15 @@ import {
   ChevronLeft,
   UserCheck,
   ChevronRight,
-  Palette,
+  Settings2,
   Code,
   Search,
 } from "lucide-react";
 import "../styles/sidebar.css";
 const Sidebar = ({ mobileOpen, setMobileOpen }) => {
   const location = useLocation();
-  const { logout, user } = useAuth();
+  const { can, loading: accessLoading, error: accessError } = useAccess();
+  const { logout } = useAuth();
   const { addToast } = useToast();
   const {
     servers,
@@ -41,7 +50,9 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
     refreshServers,
     loading,
   } = useServer();
-  const pluginQuery = useResourceQuery("pluginPages");
+  const pluginQuery = useResourceQuery("pluginPages", undefined, {
+    enabled: can("get_plugin_pages"),
+  });
   const infoQuery = useResourceQuery("applicationInfo");
   const pluginPages = pluginQuery.data ?? [];
   const [isCollapsed, setIsCollapsed] = usePreference(
@@ -72,10 +83,10 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
         },
         {
           path: "/application-monitor",
-          label: "Metrics",
-          icon: LayoutDashboard,
+          label: "Application Monitor",
+          icon: Activity,
         },
-        ...(user?.role === "admin"
+        ...(can("install_server")
           ? [
               {
                 path: "/server-install",
@@ -87,12 +98,12 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
       ],
     },
     {
-      label: "Selected server",
+      label: "Selected Server",
       items: [
         {
           path: "/monitor",
           label: "Monitor",
-          icon: LayoutDashboard,
+          icon: Monitor,
           server: true,
         },
         {
@@ -104,7 +115,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
         {
           path: "/server-config",
           label: "Settings",
-          icon: Settings,
+          icon: SlidersHorizontal,
           server: true,
         },
         {
@@ -146,20 +157,25 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
           label: "Settings",
           icon: Settings,
         },
-        ...(sessionSettings.getItem("show_hidden_flag") === "true"
-          ? [
-              {
-                path: "/playground",
-                label: "Playground",
-                icon: Code,
-              },
-            ]
-          : []),
       ],
     },
+    ...(sessionSettings.getItem("show_hidden_flag") === "true"
+      ? [
+          {
+            label: "Experimental",
+            items: [
+              { path: "/api-explorer", label: "API Explorer", icon: Code },
+              { path: "/playground", label: "Playground", icon: Code },
+            ],
+          },
+        ]
+      : []),
     {
       label: "Administration",
       items: [
+        ...(can("list_schedules")
+          ? [{ path: "/scheduler", label: "Scheduler", icon: CalendarClock }]
+          : []),
         {
           path: "/users",
           label: "Users",
@@ -167,7 +183,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
         },
         {
           path: "/audit-log",
-          label: "Logs & tasks",
+          label: "Logs & Tasks",
           icon: ScrollText,
         },
       ],
@@ -176,23 +192,58 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
       label: "Plugins",
       items: [
         { path: "/plugins", label: "Manage", icon: Plug },
-        { path: "/plugin-settings", label: "Settings", icon: Settings },
+        { path: "/plugin-settings", label: "Settings", icon: Wrench },
         ...pluginPages.map((page) => ({
           path: `/plugin-native-view?url=${encodeURIComponent(page.path)}`,
           label: page.name,
-          icon: Plug,
+          icon: Puzzle,
           pluginPath: page.path,
         })),
       ],
     },
-  ];
+  ].map((group) => ({
+    ...group,
+    label: navigationLabel(group.label),
+    items: group.items.map((item) => ({
+      ...item,
+      label: item.pluginPath ? item.label : navigationLabel(item.label),
+    })),
+  }));
+  const required = {
+    "/application-monitor": [
+      "get_application_metrics",
+      "get_application_diagnostics",
+    ],
+    "/server-install": "install_server",
+    "/monitor": "get_server_process_info",
+    "/online-players": "get_server_process_info",
+    "/server-config": "get_server_settings",
+    "/server-properties": "get_properties",
+    "/access-control": ["get_allowlist", "get_permissions", "get_server_bans"],
+    "/backups": "list_server_snapshots",
+    "/content": "list_available_worlds",
+    "/global-players": "list_players",
+    "/bsm-settings": "get_settings",
+    "/scheduler": "list_schedules",
+    "/users": "list_users",
+    "/audit-log": "list_audit_logs",
+    "/plugins": "list_plugins",
+    "/plugin-settings": "list_plugins",
+  };
   const filtered = groups
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) =>
-        `${group.label} ${item.label}`
-          .toLowerCase()
-          .includes(query.trim().toLowerCase()),
+      items: group.items.filter(
+        (item) =>
+          (!required[item.path] ||
+            [required[item.path]]
+              .flat()
+              .some((id) =>
+                can(id, item.server ? selectedServer : undefined),
+              )) &&
+          `${group.label} ${item.label}`
+            .toLowerCase()
+            .includes(query.trim().toLowerCase()),
       ),
     }))
     .filter((group) => group.items.length);
@@ -202,6 +253,13 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
       aria-label="Main navigation"
       className={`sidebar-nav ${effectiveCollapsed ? "collapsed" : ""} ${mobileOpen ? "mobile-open" : ""}`}
     >
+      {accessLoading && <p role="status">Loading access permissions…</p>}
+      {accessError && (
+        <p role="status">
+          Access permissions could not be loaded. Protected controls are
+          unavailable.
+        </p>
+      )}
       <header className="sidebar-header">
         <img
           className="sidebar-brand-icon"
@@ -342,16 +400,18 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
       </nav>
       <div className="footer-nav">
         <NavLink
-          to="/appearance"
+          to="/frontend-settings"
           className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
           onClick={handleNavClick}
-          title="Appearance"
+          title={navigationLabel("Frontend settings")}
         >
-          <Palette size={18} />
+          <Settings2 size={18} />
           {effectiveCollapsed ? (
-            <span className="sr-only">Appearance</span>
+            <span className="sr-only">
+              {navigationLabel("Frontend settings")}
+            </span>
           ) : (
-            <span>Appearance</span>
+            <span>{navigationLabel("Frontend settings")}</span>
           )}
         </NavLink>
         <NavLink

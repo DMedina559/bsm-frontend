@@ -8,6 +8,7 @@ vi.mock("../../../src/pages/DynamicPage", () => {
     default: ({ schemaJson }) => (
       <div data-testid="mock-dynamic-page">
         {schemaJson && <span>Mock Rendered</span>}
+        {schemaJson?.props?.title && <span>{schemaJson.props.title}</span>}
       </div>
     ),
   };
@@ -107,5 +108,37 @@ describe("Playground", () => {
     await waitFor(() => {
       expect(screen.getByText(/Invalid JSON or Object:/i)).toBeInTheDocument();
     });
+  });
+  it("keeps the raw draft and renders the latest input when switching tabs", () => {
+    render(<Playground />);
+    const draft = '{"type":"Card","props":{"title":"Tabbed preview"}}';
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: draft } });
+    fireEvent.click(screen.getByRole("tab", { name: "Rendered" }));
+    expect(screen.getByRole("tab", { name: "Rendered" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.getByText("Tabbed preview")).toBeVisible();
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: "Raw" }));
+    expect(screen.getByRole("textbox")).toHaveValue(draft);
+    expect(screen.queryByTestId("mock-dynamic-page")).not.toBeInTheDocument();
+  });
+
+  it("supports keyboard tab selection and keeps invalid changes in the raw editor", () => {
+    render(<Playground />);
+    const raw = screen.getByRole("tab", { name: "Raw" });
+    fireEvent.keyDown(raw, { key: "ArrowRight" });
+    const rendered = screen.getByRole("tab", { name: "Rendered" });
+    expect(rendered).toHaveFocus();
+    fireEvent.keyDown(rendered, { key: "Home" });
+    expect(raw).toHaveFocus();
+    fireEvent.change(screen.getByRole("textbox"), {
+      target: { value: "{ invalid json" },
+    });
+    fireEvent.click(rendered);
+    expect(raw).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("textbox")).toHaveValue("{ invalid json");
+    expect(screen.getByText(/Invalid JSON or Object:/)).toBeInTheDocument();
   });
 });

@@ -5,14 +5,14 @@ import { ComponentRegistry } from "./componentRegistry";
 // Append streams consume every frame, independently of React's render batching.
 function usePluginStream(topic, receive) {
   const { addMessageListener } = useWebSocket();
-  const receiver = useRef(receive);
+  const receiverRef = useRef(receive);
   useLayoutEffect(() => {
-    receiver.current = receive;
+    receiverRef.current = receive;
   });
   useEffect(() => {
     if (!topic) return;
     return addMessageListener((message) => {
-      if (message.topic === topic) receiver.current(message);
+      if (message.topic === topic) receiverRef.current(message);
     });
   }, [topic, addMessageListener]);
 }

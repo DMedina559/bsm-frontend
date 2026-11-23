@@ -1,3 +1,4 @@
+import { useAccess } from "../app/useAccess";
 import { useStableCallback } from "../app/useStableCallback";
 import { callOperation } from "../api/operations";
 import { useResourceMutation } from "../app/resourceQueries";
@@ -11,7 +12,6 @@ import OverviewFleetMetrics from "./OverviewFleetMetrics";
 import { useDialog } from "../contexts/DialogContext";
 import React, { useState } from "react";
 import { useServer } from "../contexts/ServerContext";
-import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { getApiProxyBasePath } from "../utils/basePath";
 import { useWebSocket } from "../contexts/WebSocketContext";
@@ -27,6 +27,7 @@ const LAYOUTS = [
 ];
 
 const Overview = () => {
+  const { can } = useAccess();
   const { confirmAction, promptAction } = useDialog();
   const {
     servers,
@@ -36,7 +37,6 @@ const Overview = () => {
     error,
     offlineSnapshot,
   } = useServer();
-  const { user } = useAuth();
   const { addToast } = useToast();
   const { isConnected, reconnect } = useWebSocket();
   const navigate = useNavigate();
@@ -221,7 +221,7 @@ const Overview = () => {
             to="/application-monitor"
             className="overview-monitor-link"
             aria-label="Open application monitor"
-            title="Application monitor"
+            title="Application Monitor"
           >
             <img
               src={`${getApiProxyBasePath()}/app/image/icon/web-app-manifest-512x512.png`}
@@ -230,7 +230,7 @@ const Overview = () => {
           </Link>
           <h2>Bedrock Server Manager</h2>
           <ApplicationHealth />
-          <ApplicationMetricsSummary />
+          {can("get_application_metrics") && <ApplicationMetricsSummary />}
         </section>
         <OverviewFleetMetrics servers={servers} unavailable={unavailable} />
       </div>
@@ -301,7 +301,7 @@ const Overview = () => {
       ) : error && servers.length === 0 ? null : servers.length === 0 ? (
         <div className="message-box message-info overview-empty">
           <h3>No servers found.</h3>
-          {user?.role === "admin" && (
+          {can("install_server") && (
             <p>
               Go to &quot;Install Server&quot; in the sidebar to create one.
             </p>
@@ -315,7 +315,6 @@ const Overview = () => {
             <ServerCard
               key={server.name}
               serverName={server.name}
-              isAdmin={user?.role === "admin"}
               busy={Boolean(offlineSnapshot) || isServerPending(server.name)}
               onOpen={handleServerClick}
               onAction={handleAction}

@@ -11,8 +11,9 @@ import { useDialog } from "../contexts/DialogContext";
 import React, { useMemo, useState } from "react";
 import { useServer } from "../contexts/ServerContext";
 import { useToast } from "../contexts/ToastContext";
-import { request, resolveApiUrl } from "../api/transport";
-import { resolveOperationUrl } from "../api/operations";
+import { request } from "../api/transport";
+import { triggerBlobDownload } from "../utils/download";
+import ResourceIcon from "../components/ResourceIcon";
 
 import {
   Upload,
@@ -23,6 +24,11 @@ import {
   RefreshCcw,
   Download,
   Settings,
+  HardDriveDownload,
+  Check,
+  XCircle,
+  CheckCircle2,
+  Save,
   X,
 } from "lucide-react";
 import DraggableList from "../components/DraggableList";
@@ -48,12 +54,7 @@ const Content = () => {
     type: activeTab,
   }));
   const loading = contentQuery.isFetching;
-  const pluginQuery = useResourceQuery("plugins");
-  const isUploadEnabled = Boolean(
-    pluginQuery.data?.find(
-      (plugin) => plugin.name === "content_uploader_plugin",
-    )?.enabled,
-  );
+  const isUploadEnabled = true;
   const [isAddonModalOpen, setIsAddonModalOpen] = useState(false);
   const [addonModalTab, setAddonModalTab] = useState("behavior");
   const addonsQuery = useResourceQuery("installedAddons", selectedServer, {
@@ -153,6 +154,42 @@ const Content = () => {
       addToast(`Installation of ${item.name} started.`, "success");
     } catch (error) {
       addToast(error.message || "Installation failed.", "error");
+    }
+  };
+  const handleDownloadContent = async (item) => {
+    try {
+      const blob = await callOperation("download_content_file", {
+        path: {
+          category: activeTab === "worlds" ? "worlds" : "addons",
+          filename: item.name,
+        },
+        responseType: "blob",
+      });
+      if (blob) {
+        triggerBlobDownload(blob, item.name);
+      }
+    } catch (error) {
+      addToast(error.message || "Download failed.", "error");
+    }
+  };
+  const handleDeleteContent = async (item) => {
+    if (
+      !(await confirmAction(
+        `Delete ${item.name} from ${activeTab}? This cannot be undone.`,
+      ))
+    )
+      return;
+
+    try {
+      await writeOperation("delete_content_file", {
+        path: {
+          category: activeTab === "worlds" ? "worlds" : "addons",
+          filename: item.name,
+        },
+      });
+      addToast(`Deleted ${item.name}.`, "success");
+    } catch (error) {
+      addToast(error.message || "Delete failed.", "error");
     }
   };
   const handleResetWorld = async () => {
@@ -337,24 +374,11 @@ const Content = () => {
           }}
         >
           {item.icon ? (
-            <img
-              src={resolveApiUrl(
-                resolveOperationUrl("get_server_addon_icon", {
-                  path: { server_name: selectedServer },
-                  query: { pack_type: packType, uuid: item.uuid },
-                }),
-              )}
-              alt={`${item.name} icon`}
-              style={{
-                width: "48px",
-                height: "48px",
-                objectFit: "cover",
-                borderRadius: "4px",
-                flexShrink: 0,
-              }}
-              onError={(e) => {
-                e.target.style.display = "none";
-              }}
+            <ResourceIcon
+              serverName={selectedServer}
+              packType={packType}
+              uuid={item.uuid}
+              name={item.name}
             />
           ) : (
             <div
@@ -397,7 +421,7 @@ const Content = () => {
 
             <div
               style={{
-                fontSize: "0.85em",
+                fontSize: "var(--bsm-small-size)",
                 color: "var(--text-color-secondary)",
                 display: "flex",
                 flexWrap: "wrap",
@@ -442,7 +466,7 @@ const Content = () => {
                     flex: 1,
                     padding:
                       "calc(2px * var(--bsm-spacing-scale)) calc(6px * var(--bsm-spacing-scale))",
-                    fontSize: "0.8em",
+                    fontSize: "var(--bsm-small-size)",
                     height: "24px",
                     maxWidth: "200px",
                   }}
@@ -467,13 +491,13 @@ const Content = () => {
         <div
           style={{
             padding: "calc(10px * var(--bsm-spacing-scale))",
-            background: "rgba(0,0,0,0.1)",
+            background: "var(--bsm-surface-raised)",
             borderLeft: "1px solid var(--border-color)",
             display: "flex",
             flexDirection: "column",
             gap: "calc(8px * var(--bsm-spacing-scale))",
             justifyContent: "center",
-            width: "90px",
+            width: "105px",
             flexShrink: 0,
           }}
         >
@@ -483,7 +507,7 @@ const Content = () => {
               style={{
                 padding:
                   "calc(6px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
-                fontSize: "0.85em",
+                fontSize: "var(--bsm-small-size)",
                 width: "100%",
                 justifyContent: "center",
               }}
@@ -491,7 +515,7 @@ const Content = () => {
               disabled={actionLoading}
               type="button"
             >
-              Disable
+              <XCircle size={14} /> Disable
             </button>
           ) : (
             <button
@@ -499,9 +523,7 @@ const Content = () => {
               style={{
                 padding:
                   "calc(6px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
-                fontSize: "0.85em",
-                background: "var(--bsm-success)",
-                color: "var(--text-color)",
+                fontSize: "var(--bsm-small-size)",
                 width: "100%",
                 justifyContent: "center",
               }}
@@ -509,7 +531,7 @@ const Content = () => {
               disabled={actionLoading}
               type="button"
             >
-              Enable
+              <CheckCircle2 size={14} /> Enable
             </button>
           )}
           <button
@@ -517,7 +539,7 @@ const Content = () => {
             style={{
               padding:
                 "calc(6px * var(--bsm-spacing-scale)) calc(8px * var(--bsm-spacing-scale))",
-              fontSize: "0.85em",
+              fontSize: "var(--bsm-small-size)",
               width: "100%",
               justifyContent: "center",
             }}
@@ -525,7 +547,7 @@ const Content = () => {
             disabled={actionLoading}
             type="button"
           >
-            Uninstall
+            <Trash2 size={14} /> Uninstall
           </button>
         </div>
       </div>
@@ -576,16 +598,7 @@ const Content = () => {
   return (
     <div className="container">
       <QueryStatus query={contentQuery} />
-      <div
-        className="header"
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "calc(10px * var(--bsm-spacing-scale))",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+      <div className="header">
         <h1
           style={{
             margin: 0,
@@ -606,29 +619,17 @@ const Content = () => {
             disabled={loading || actionLoading}
             type="button"
           >
-            <RefreshCw
-              size={16}
-              style={{
-                marginRight: "calc(5px * var(--bsm-spacing-scale))",
-              }}
-              className={loading ? "spin" : ""}
-            />{" "}
+            <RefreshCw size={16} className={loading ? "spin" : ""} />
             Refresh
           </button>
           {activeTab === "addons" && (
             <button
-              className="action-button primary"
+              className="action-button primary-button"
               onClick={handleOpenAddonModal}
               disabled={actionLoading}
               type="button"
             >
-              <Settings
-                size={16}
-                style={{
-                  marginRight: "calc(5px * var(--bsm-spacing-scale))",
-                }}
-              />{" "}
-              Manage Installed Addons
+              <Settings size={16} /> Manage Installed Addons
             </button>
           )}
           {activeTab === "worlds" && (
@@ -640,13 +641,7 @@ const Content = () => {
                 title="Export active world to content/worlds"
                 type="button"
               >
-                <Download
-                  size={16}
-                  style={{
-                    marginRight: "calc(5px * var(--bsm-spacing-scale))",
-                  }}
-                />{" "}
-                Export World
+                <Download size={16} /> Export World
               </button>
               <button
                 className="action-button danger-button"
@@ -655,13 +650,7 @@ const Content = () => {
                 title="Delete current world and generate new one"
                 type="button"
               >
-                <RefreshCcw
-                  size={16}
-                  style={{
-                    marginRight: "calc(5px * var(--bsm-spacing-scale))",
-                  }}
-                />{" "}
-                Reset World
+                <RefreshCcw size={16} /> Reset World
               </button>
             </>
           )}
@@ -696,17 +685,6 @@ const Content = () => {
           className="addon-dialog"
         >
           <QueryStatus query={addonsQuery} />
-          <div
-            className="dynamic-modal-header"
-            style={{
-              padding: "calc(15px * var(--bsm-spacing-scale))",
-              borderBottom: "1px solid var(--border-color)",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          ></div>
-
           <div
             style={{
               padding: "0 calc(15px * var(--bsm-spacing-scale))",
@@ -765,7 +743,7 @@ const Content = () => {
           </div>
 
           <div
-            className="dynamic-modal-body"
+            className="addon-dialog-body"
             style={{
               padding: "calc(15px * var(--bsm-spacing-scale))",
               overflowY: "auto",
@@ -775,13 +753,14 @@ const Content = () => {
             <DraftConflictNotice draft={addonDraft} />
             {addonsLoading ? (
               <div
+                role="status"
                 style={{
                   textAlign: "center",
                   padding: "calc(20px * var(--bsm-spacing-scale))",
                   color: "var(--text-color-secondary)",
                 }}
               >
-                Loading addons...
+                Loading addons…
               </div>
             ) : (
               <>
@@ -856,14 +835,16 @@ const Content = () => {
               }
               type="button"
             >
+              <RefreshCw size={14} className={addonsLoading ? "spin" : ""} />
               Reload add-ons
             </button>
             <button
-              className="action-button primary"
+              className="action-button primary-button"
               onClick={handleSaveAddonOrder}
               disabled={!orderChanged || actionLoading || addonDraft.conflicted}
               type="button"
             >
+              <Save size={14} />
               Save Order
             </button>
           </div>
@@ -884,8 +865,12 @@ const Content = () => {
             <h3
               style={{
                 marginTop: 0,
+                display: "flex",
+                alignItems: "center",
+                gap: "calc(8px * var(--bsm-spacing-scale))",
               }}
             >
+              <Upload size={18} />
               Upload{" "}
               {activeTab === "worlds"
                 ? "World (.mcworld)"
@@ -900,7 +885,7 @@ const Content = () => {
             />
             <p
               style={{
-                fontSize: "0.85em",
+                fontSize: "var(--bsm-small-size)",
                 color: "var(--text-color-secondary)",
                 marginTop: "calc(5px * var(--bsm-spacing-scale))",
               }}
@@ -918,7 +903,7 @@ const Content = () => {
               color: "var(--text-color-secondary)",
             }}
           >
-            <div className="spinner"></div> Loading available content...
+            <div className="spinner"></div> Loading available content…
           </div>
         ) : (
           <div className="table-responsive-wrapper">
@@ -932,8 +917,10 @@ const Content = () => {
                 <tr>
                   <th>File Name</th>
                   <th
+                    className="actions-column"
                     style={{
-                      width: "150px",
+                      textAlign: "right",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     Actions
@@ -942,20 +929,15 @@ const Content = () => {
               </thead>
               <tbody>
                 {items && items.length > 0 ? (
-                  items.map((item, idx) => (
-                    <tr key={idx}>
-                      <td
-                        style={{
-                          maxWidth: "200px",
-                          overflowX: "auto",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
+                  items.map((item) => (
+                    <tr key={item.uuid ?? item.name}>
+                      <td>
                         <div
                           style={{
                             display: "flex",
                             alignItems: "center",
                             gap: "calc(10px * var(--bsm-spacing-scale))",
+                            minWidth: 0,
                           }}
                         >
                           {activeTab === "worlds" ? (
@@ -973,31 +955,85 @@ const Content = () => {
                               }}
                             />
                           )}
-                          <span>{item.name}</span>
+                          <span
+                            title={item.name}
+                            style={{
+                              wordBreak: "break-all",
+                            }}
+                          >
+                            {item.name}
+                          </span>
                         </div>
                       </td>
-                      <td>
-                        <button
-                          className="action-button"
-                          onClick={() => handleInstall(item)}
-                          title={`Install to ${selectedServer}`}
+                      <td
+                        className="actions-column"
+                        style={{
+                          textAlign: "right",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        <div
+                          className="table-actions table-actions-right"
                           style={{
-                            padding:
-                              "calc(5px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
-                            fontSize: "0.9em",
+                            display: "inline-flex",
+                            gap: "calc(8px * var(--bsm-spacing-scale))",
+                            justifyContent: "flex-end",
+                            alignItems: "center",
                           }}
-                          disabled={actionLoading}
-                          type="button"
                         >
-                          Install
-                        </button>
+                          <button
+                            className="action-button primary-button"
+                            onClick={() => handleInstall(item)}
+                            title={`Install ${item.name} to ${selectedServer}`}
+                            aria-label={`Install ${item.name} to ${selectedServer}`}
+                            style={{
+                              padding:
+                                "calc(5px * var(--bsm-spacing-scale)) calc(12px * var(--bsm-spacing-scale))",
+                              fontSize: "var(--bsm-small-size)",
+                            }}
+                            disabled={actionLoading}
+                            type="button"
+                          >
+                            <HardDriveDownload size={14} /> Install
+                          </button>
+                          <button
+                            className="action-button secondary"
+                            onClick={() => handleDownloadContent(item)}
+                            title={`Download ${item.name}`}
+                            aria-label={`Download ${item.name}`}
+                            style={{
+                              padding:
+                                "calc(5px * var(--bsm-spacing-scale)) calc(12px * var(--bsm-spacing-scale))",
+                              fontSize: "var(--bsm-small-size)",
+                            }}
+                            disabled={actionLoading}
+                            type="button"
+                          >
+                            <Download size={14} /> Download
+                          </button>
+                          <button
+                            className="action-button danger-button"
+                            onClick={() => handleDeleteContent(item)}
+                            title={`Delete ${item.name}`}
+                            aria-label={`Delete ${item.name}`}
+                            style={{
+                              padding:
+                                "calc(5px * var(--bsm-spacing-scale)) calc(12px * var(--bsm-spacing-scale))",
+                              fontSize: "var(--bsm-small-size)",
+                            }}
+                            disabled={actionLoading}
+                            type="button"
+                          >
+                            <Trash2 size={14} /> Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr className="no-servers-row">
                     <td
-                      colSpan="3"
+                      colSpan="2"
                       className="no-servers"
                       style={{
                         textAlign: "center",

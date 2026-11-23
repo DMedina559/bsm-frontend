@@ -56,12 +56,16 @@ describe("Setup", () => {
     fireEvent.change(screen.getByLabelText(/Username/i), {
       target: { value: "admin" },
     });
+    expect(screen.getByLabelText(/^Password$/i)).toHaveAttribute(
+      "minlength",
+      "8",
+    );
     // Use precise regex for password
     fireEvent.change(screen.getByLabelText(/^Password$/i), {
-      target: { value: "password123" },
+      target: { value: "Otter42!" },
     });
     fireEvent.change(screen.getByLabelText(/^Confirm Password$/i), {
-      target: { value: "password123" },
+      target: { value: "Otter42!" },
     });
 
     const submitBtn = screen.getByRole("button", { name: /Create Account/i });

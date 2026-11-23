@@ -212,12 +212,15 @@
 .workspace-overview .overview-status-running {
   color: var(--bsm-success);
 }
-.workspace-overview .overview-status-stopped {
+.workspace-overview .overview-status-stopped,
+.workspace-overview .overview-status-error,
+.workspace-overview .overview-status-unhealthy {
   color: var(--bsm-danger);
 }
 .workspace-overview .overview-status-starting,
 .workspace-overview .overview-status-stopping,
-.workspace-overview .overview-status-restarting {
+.workspace-overview .overview-status-restarting,
+.workspace-overview .overview-status-degraded {
   color: var(--bsm-warning);
 }
 .workspace-overview .overview-card-body {

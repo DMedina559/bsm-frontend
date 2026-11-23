@@ -3,6 +3,18 @@ import { normalizeAppearance } from "../utils/theme";
 import { validatePalette } from "../utils/palettes";
 
 export const preferenceDefinitions = {
+  runtimeDiagnostics: {
+    version: 1,
+    validate: (value) =>
+      value &&
+      typeof value.recording === "boolean" &&
+      typeof value.persist === "boolean" &&
+      Object.keys(value).every((key) => ["recording", "persist"].includes(key)),
+  },
+  timeDisplay: {
+    version: 1,
+    validate: (value) => ["application", "local", "utc"].includes(value),
+  },
   draftRecovery: {
     version: 1,
     validate: (value) => typeof value === "boolean",

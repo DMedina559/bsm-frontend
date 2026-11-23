@@ -1,11 +1,14 @@
-import { useContext, useEffect, useSyncExternalStore } from "react";
+import { use, useEffect, useSyncExternalStore } from "react";
 import { UNSAFE_DataRouterContext, useBlocker } from "react-router-dom";
 import { useDialog } from "../contexts/DialogContext";
 import { draftRegistry } from "../app/draftRegistry";
+import { isSettingsTabChange } from "../utils/settingsNavigation";
+
 function RouterGuard({ dirty }) {
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
       dirty &&
+      !isSettingsTabChange(currentLocation, nextLocation) &&
       (currentLocation.pathname !== nextLocation.pathname ||
         currentLocation.search !== nextLocation.search),
   );
@@ -28,7 +31,7 @@ function RouterGuard({ dirty }) {
   return null;
 }
 export default function DraftNavigationGuard() {
-  const router = useContext(UNSAFE_DataRouterContext);
+  const router = use(UNSAFE_DataRouterContext);
   const dirty = useSyncExternalStore(
     draftRegistry.subscribe,
     draftRegistry.dirty,

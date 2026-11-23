@@ -1,6 +1,21 @@
 import {
+  readTrustedDevice,
+  rememberTrustedDevice,
+  forgetTrustedDevice,
+} from "../app/trustedDevices";
+import { getPasskeyAssertion } from "../app/passkeys";
+import { authenticateIntegrationToken } from "../features/instances/tokenAuthentication";
+import {
+  isInstanceProfileKey,
+  getInstanceIssue,
+} from "../app/instanceProfiles";
+import {
   getToken,
+  getAuthenticationMode,
+  getConnectionIdentity,
   setCredentials,
+  setTokenCredentials,
+  isTokenAuthentication,
   clearCredentials,
   isSessionStorageEvent,
 } from "../app/connection";
@@ -9,13 +24,7 @@ import { callOperation } from "../api/operations";
 import { sessionRuntime } from "../app/sessionRuntime";
 import { queryClient } from "../app/queryClient";
 import { operationCoordinator } from "../app/operationCoordinator";
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { createContext, use, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "../app/queryKeys";
 import { getBackendIdentity } from "../app/backendIdentity";
@@ -28,11 +37,17 @@ import { logger } from "../utils/logger";
 
 const AuthContext = createContext();
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => use(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const identityRef = useRef(null);
-  const checkGeneration = useRef(0);
+  const permissionRoleRef = useRef(null);
+  const policyRevisionRef = useRef(null);
+  const mfaEnrollmentRef = useRef(false);
+  const backendRef = useRef(getBackendIdentity());
+  const authenticationModeRef = useRef(getAuthenticationMode());
+  const instanceIssueRef = useRef(getInstanceIssue());
+  const checkGenerationRef = useRef(0);
   const [loading, setLoading] = useState(true);
   const [needsSetup, setNeedsSetup] = useState(false);
   const [sessionGeneration, setSessionGeneration] = useState(
@@ -41,7 +56,11 @@ export const AuthProvider = ({ children }) => {
   const [accountEnabled, setAccountEnabled] = useState(false);
   const accountKey = [
     ...queryKeys.account(),
-    { backend: getBackendIdentity(), generation: sessionGeneration },
+    {
+      backend: getBackendIdentity(),
+      generation: sessionGeneration,
+      authenticationMode: getAuthenticationMode(),
+    },
   ];
   const accountQuery = useQuery(
     {
@@ -65,6 +84,16 @@ export const AuthProvider = ({ children }) => {
     queryClient,
   );
   const user = accountQuery.data ?? null;
+  useEffect(() => {
+    const previous = permissionRoleRef.current;
+    const identity = JSON.stringify([
+      getBackendIdentity(),
+      user?.id ?? user?.username,
+    ]);
+    permissionRoleRef.current = user ? { identity, role: user.role } : null;
+    if (user && previous?.identity === identity && previous.role !== user.role)
+      void queryClient.invalidateQueries({ queryKey: queryKeys.account() });
+  }, [user?.id, user?.username, user?.role, user]);
   const setUser = (data) => {
     if (data === null) {
       setAccountEnabled(false);
@@ -76,6 +105,7 @@ export const AuthProvider = ({ children }) => {
         ...queryKeys.account(),
         {
           backend: getBackendIdentity(),
+          authenticationMode: getAuthenticationMode(),
           generation: sessionRuntime.capture().generation,
         },
       ],
@@ -98,9 +128,15 @@ export const AuthProvider = ({ children }) => {
   };
 
   const checkUser = async () => {
-    const check = ++checkGeneration.current;
+    const check = ++checkGenerationRef.current;
     await queryClient.cancelQueries({ queryKey: queryKeys.account() });
-    const current = () => check === checkGeneration.current;
+    const current = () => check === checkGenerationRef.current;
+    if (getInstanceIssue()) {
+      setUser(null);
+      setNeedsSetup(false);
+      setLoading(false);
+      return;
+    }
     // Always check setup status first if not logged in or to ensure correctness
     try {
       logger.debug("[Auth] Checking setup status");
@@ -124,6 +160,9 @@ export const AuthProvider = ({ children }) => {
       logger.debug("[Auth] Checking user status");
       // Check if we have a token in either storage (the transport handles retrieval)
       const ticket = captureStateRequest();
+      if (!getToken() && getAuthenticationMode() === "bearer") {
+        throw new Error("Sign in to this instance.");
+      }
       let userData = await callOperation("get_account");
       if (!current()) return;
       if (userData?.id == null && !userData?.username)
@@ -132,33 +171,20 @@ export const AuthProvider = ({ children }) => {
         userData,
       });
 
-      // If we authenticated successfully (likely via cookie in a new tab)
-      // but have no token in storage, grab a fresh token via reauth.
-      const hasToken = getToken();
-
-      if (!hasToken) {
-        logger.debug(
-          "[Auth] Authenticated via cookie but no token in storage. Fetching new token.",
-        );
-        try {
-          const reauthData = await callOperation("reauthenticate", {
-            query: { remember_me: false },
-          });
-          if (!current()) return;
-          if (reauthData.access_token) {
-            setCredentials(reauthData.access_token);
-            resetSession();
-          }
-        } catch (reauthError) {
-          logger.warn("[Auth] Failed to reauth token", { error: reauthError });
-        }
-      }
-
       if (!current()) return;
       // Clear session-owned state before publishing the authenticated identity.
       // Do not perform cache mutations inside a React state updater.
       const nextIdentity = userData?.id ?? userData?.username ?? null;
-      if (identityRef.current !== nextIdentity) {
+      const completingEnrollment =
+        identityRef.current === nextIdentity &&
+        mfaEnrollmentRef.current &&
+        !userData.mfa_enrollment_required;
+      if (
+        identityRef.current !== nextIdentity ||
+        (policyRevisionRef.current !== null &&
+          policyRevisionRef.current !== userData.policy_revision &&
+          !completingEnrollment)
+      ) {
         resetSession();
       } else if (stateReconciler.current(ticket)) {
         userData = reconcileResourceSnapshot(
@@ -168,6 +194,7 @@ export const AuthProvider = ({ children }) => {
             ...queryKeys.account(),
             {
               backend: getBackendIdentity(),
+              authenticationMode: getAuthenticationMode(),
               generation: sessionRuntime.capture().generation,
             },
           ],
@@ -176,6 +203,8 @@ export const AuthProvider = ({ children }) => {
         );
       }
       identityRef.current = nextIdentity;
+      policyRevisionRef.current = userData.policy_revision ?? null;
+      mfaEnrollmentRef.current = userData.mfa_enrollment_required === true;
       setUser(userData);
     } catch (error) {
       if (!current()) return;
@@ -210,7 +239,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     checkUser();
     return () => {
-      checkGeneration.current += 1;
+      checkGenerationRef.current += 1;
     };
     // The initial check runs once; subsequent checks are explicitly requested.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -219,6 +248,17 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const changed = (event) => {
       if (event.type === "storage" && !isSessionStorageEvent(event)) return;
+      if (
+        (isInstanceProfileKey(event.key) ||
+          event.type === "bsm:instances-changed") &&
+        backendRef.current === getBackendIdentity() &&
+        authenticationModeRef.current === getAuthenticationMode() &&
+        instanceIssueRef.current === getInstanceIssue()
+      )
+        return;
+      instanceIssueRef.current = getInstanceIssue();
+      backendRef.current = getBackendIdentity();
+      authenticationModeRef.current = getAuthenticationMode();
       if (event.key === "api_base_url") {
         // Credentials are backend-scoped. Discard ambiguous legacy tokens in this tab.
         try {
@@ -227,15 +267,45 @@ export const AuthProvider = ({ children }) => {
           /* Storage may be unavailable. */
         }
       }
-      checkGeneration.current += 1;
+      checkGenerationRef.current += 1;
+      setLoading(true);
       resetSession();
       identityRef.current = null;
       setUser(null);
       void checkUser();
     };
+    const accessChanged = (event) => {
+      if (
+        !event.detail?.backend ||
+        event.detail.backend === getBackendIdentity()
+      )
+        void checkUser();
+    };
+    const socketConnected = () => void checkUser();
+    const instanceCredentials = (event) => {
+      if (
+        getAuthenticationMode() === "bearer" &&
+        event.detail?.source !== "workspace" &&
+        event.detail?.url === getBackendIdentity()
+      )
+        changed(event);
+    };
+    window.addEventListener("bsm:access-changed", accessChanged);
+    window.addEventListener("bsm:credentials-changed", accessChanged);
+    window.addEventListener("bsm:socket-connected", socketConnected);
+    window.addEventListener("bsm:instance-credentials", instanceCredentials);
+    window.addEventListener("bsm:instances-changed", changed);
     window.addEventListener("storage", changed);
     window.addEventListener("bsm:connection-changed", changed);
     return () => {
+      window.removeEventListener("bsm:access-changed", accessChanged);
+      window.removeEventListener("bsm:credentials-changed", accessChanged);
+      window.removeEventListener("bsm:socket-connected", socketConnected);
+      window.removeEventListener(
+        "bsm:instance-credentials",
+        instanceCredentials,
+      );
+      window.removeEventListener("bsm:instances-changed", changed);
       window.removeEventListener("storage", changed);
       window.removeEventListener("bsm:connection-changed", changed);
     };
@@ -243,46 +313,142 @@ export const AuthProvider = ({ children }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const login = async (username, password, rememberMe = false) => {
-    checkGeneration.current += 1;
+  const login = async (
+    username,
+    password,
+    rememberMe = false,
+    otp = "",
+    signal,
+    rememberDevice = false,
+  ) => {
+    if (isTokenAuthentication()) clearCredentials();
+    checkGenerationRef.current += 1;
     resetSession();
     identityRef.current = null;
     setUser(null);
     logger.debug(`[Auth] Attempting login`, { username, rememberMe });
+    const backend = getConnectionIdentity();
+    const device =
+      getAuthenticationMode() === "bearer"
+        ? readTrustedDevice(username, backend)
+        : undefined;
     const formData = new URLSearchParams();
     formData.append("grant_type", "password");
     formData.append("username", username);
     formData.append("password", password);
     formData.append("remember_me", rememberMe);
+    if (otp) formData.append("otp", otp);
+    if (rememberDevice) formData.append("remember_device", "true");
+    if (device) formData.append("trusted_device_token", device);
 
-    const attempt = checkGeneration.current;
-    const data = await callOperation("login", { body: formData });
+    const attempt = checkGenerationRef.current;
+    let data;
+    try {
+      data = await callOperation("login", { body: formData, signal });
+    } catch (failure) {
+      if (
+        failure.mfaRequired &&
+        attempt === checkGenerationRef.current &&
+        device
+      )
+        forgetTrustedDevice(username, backend);
+      throw failure;
+    }
 
-    if (attempt !== checkGeneration.current) return data;
-    if (data.access_token) {
+    if (attempt !== checkGenerationRef.current) return data;
+    if (rememberDevice) rememberTrustedDevice(username, data, backend);
+    if (data.access_token || getAuthenticationMode() === "cookie-recovery") {
       logger.info(`[Auth] Login successful`, { username });
-      setCredentials(data.access_token, rememberMe);
+      if (getAuthenticationMode() === "bearer")
+        setCredentials(data.access_token, rememberMe);
+      else clearCredentials();
     } else {
-      logger.warn(`[Auth] Login failed or token missing`, { username, data });
+      logger.warn(`[Auth] Login failed or token missing`, { username });
     }
 
     await checkUser();
     return data;
   };
 
-  const logout = async () => {
-    checkGeneration.current += 1;
+  const loginWithToken = async (candidate, remember = false, signal) => {
+    const backend = getBackendIdentity();
+    const generation = sessionRuntime.capture().generation;
+    const result = await authenticateIntegrationToken(backend, candidate, {
+      signal,
+    });
+    if (
+      signal?.aborted ||
+      backend !== getBackendIdentity() ||
+      generation !== sessionRuntime.capture().generation
+    )
+      throw new DOMException("Connection changed", "AbortError");
+    checkGenerationRef.current += 1;
     resetSession();
     identityRef.current = null;
     setUser(null);
-    const attempt = checkGeneration.current;
+    setTokenCredentials(result.token, remember);
+    authenticationModeRef.current = getAuthenticationMode();
+    await checkUser();
+    return result.account;
+  };
+
+  const loginWithPasskey = async (
+    username = "",
+    rememberMe = false,
+    signal,
+  ) => {
+    if (isTokenAuthentication()) clearCredentials();
+    checkGenerationRef.current += 1;
+    resetSession();
+    identityRef.current = null;
+    setUser(null);
+    const trimmedUsername = username.trim() || null;
+    logger.debug("[Auth] Attempting passkey login", {
+      username: trimmedUsername,
+      rememberMe,
+    });
+    const attempt = checkGenerationRef.current;
+    const options = await callOperation("begin_passkey_login", {
+      body: { username: trimmedUsername },
+      signal,
+    });
+    if (attempt !== checkGenerationRef.current || signal?.aborted) return null;
+    const credential = await getPasskeyAssertion(options.public_key, signal);
+    if (attempt !== checkGenerationRef.current || signal?.aborted) return null;
+    const data = await callOperation("complete_passkey_login", {
+      body: {
+        challenge_id: options.challenge_id,
+        credential,
+        remember_me: rememberMe,
+      },
+      signal,
+    });
+    if (attempt !== checkGenerationRef.current) return data;
+    if (data.access_token || getAuthenticationMode() === "cookie-recovery") {
+      logger.info("[Auth] Passkey login successful");
+      if (getAuthenticationMode() === "bearer")
+        setCredentials(data.access_token, rememberMe);
+      else clearCredentials();
+    } else {
+      logger.warn("[Auth] Passkey login failed or token missing");
+    }
+    await checkUser();
+    return data;
+  };
+
+  const logout = async ({ server = true } = {}) => {
+    checkGenerationRef.current += 1;
+    identityRef.current = null;
+    setUser(null);
+    const attempt = checkGenerationRef.current;
     try {
       logger.info("[Auth] Logging out user", { username: user?.username });
-      await callOperation("logout");
+      if (server && !user?.credential_id) await callOperation("logout");
     } catch (e) {
       logger.warn("[Auth] Logout failed on server", { error: e });
     }
-    if (attempt !== checkGeneration.current) return;
+    if (attempt !== checkGenerationRef.current) return;
+    resetSession();
     clearCredentials();
     queryClient.clear();
     operationCoordinator.clear();
@@ -291,10 +457,12 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider
+    <AuthContext
       value={{
         user,
         login,
+        loginWithToken,
+        loginWithPasskey,
         logout,
         loading,
         checkUser,
@@ -309,6 +477,6 @@ export const AuthProvider = ({ children }) => {
       }}
     >
       {children}
-    </AuthContext.Provider>
+    </AuthContext>
   );
 };

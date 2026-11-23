@@ -12,7 +12,7 @@ import {
 import React, {
   createContext,
   useCallback,
-  useContext,
+  use,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -29,7 +29,7 @@ import { draftRegistry } from "../app/draftRegistry";
 import { useDialog } from "./DialogContext";
 
 const ServerContext = createContext(null);
-export const useServer = () => useContext(ServerContext);
+export const useServer = () => use(ServerContext);
 
 async function loadServers({ signal }) {
   const data = await callOperation("list_servers", {
@@ -54,20 +54,21 @@ export const ServerProvider = ({ children }) => {
   const identity = getPreferenceIdentity(user);
   const { confirmAction } = useDialog() ?? {};
 
-  const [selectedServer, setSelectedServerState] = useState(null);
+  const [selectedServerState, setSelectedServerState] = useState(null);
+  const selectedServer = selectedServerState;
   const selectedServerRef = useRef(selectedServer);
   const [selectionIdentity, setSelectionIdentity] = useState(null);
-  const selectionRequest = useRef(0);
-  const activeIdentity = useRef(identity);
+  const selectionRequestRef = useRef(0);
+  const activeIdentityRef = useRef(identity);
   useLayoutEffect(() => {
-    activeIdentity.current = identity;
+    activeIdentityRef.current = identity;
     return () => {
-      activeIdentity.current = null;
+      activeIdentityRef.current = null;
     };
   }, [identity]);
   const setSelectedServer = useCallback(
     async (name, { persist = true } = {}) => {
-      const request = ++selectionRequest.current;
+      const request = ++selectionRequestRef.current;
       if (selectedServerRef.current === name) return true;
       if (
         draftRegistry.dirty() &&
@@ -76,8 +77,8 @@ export const ServerProvider = ({ children }) => {
       )
         return false;
       if (
-        request !== selectionRequest.current ||
-        activeIdentity.current !== identity
+        request !== selectionRequestRef.current ||
+        activeIdentityRef.current !== identity
       )
         return false;
       selectedServerRef.current = name;
@@ -101,7 +102,7 @@ export const ServerProvider = ({ children }) => {
         (value) => typeof value === "string" && value.length > 0,
       );
       if (initial) {
-        selectionRequest.current++;
+        selectionRequestRef.current++;
         selectedServerRef.current = saved;
         setSelectedServerState(saved);
         setSelectionIdentity(identity);
@@ -193,7 +194,5 @@ export const ServerProvider = ({ children }) => {
     ],
   );
 
-  return (
-    <ServerContext.Provider value={value}>{children}</ServerContext.Provider>
-  );
+  return <ServerContext value={value}>{children}</ServerContext>;
 };

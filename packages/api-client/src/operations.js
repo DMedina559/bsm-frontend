@@ -53,7 +53,8 @@ export function createApiClient({ request }) {
         else value.forEach((item) => parameters.append(key, String(item)));
       } else parameters.set(key, String(value));
     });
-    if (parameters.size) url += `?${parameters}`;
+    const search = parameters.toString();
+    if (search) url += `?${search}`;
     return url;
   }
   function call(registry, id, options = {}) {
@@ -100,7 +101,15 @@ export function createApiClient({ request }) {
       Object.entries(body).forEach(([key, value]) => {
         if (value != null)
           for (const item of Array.isArray(value) ? value : [value])
-            form.append(key, item instanceof Blob ? item : String(item));
+            form.append(
+              key,
+              item instanceof Blob ||
+                (typeof item === "object" &&
+                  item !== null &&
+                  typeof item.uri === "string")
+                ? item
+                : String(item),
+            );
       });
       body = form;
     }
@@ -110,8 +119,15 @@ export function createApiClient({ request }) {
       headers,
       signal: options.signal,
       session: options.session,
-      timeout: options.timeout,
+      timeout:
+        options.timeout ??
+        (["start_server", "restart_server", "stop_server"].includes(id)
+          ? 0
+          : undefined),
       responseType: options.responseType ?? operation.responseType,
+      onUploadProgress: options.onUploadProgress,
+      onDownloadProgress: options.onDownloadProgress,
+      downloadTo: options.downloadTo,
     });
   }
   function resolveOperationUrl(id, options) {

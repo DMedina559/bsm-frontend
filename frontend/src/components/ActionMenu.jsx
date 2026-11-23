@@ -1,0 +1,192 @@
+import React, {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import { createPortal } from "react-dom";
+import { MoreVertical } from "lucide-react";
+import "../styles/action-menu.css";
+
+/** Compact actions in the top layer of the app, outside scrolling tables. */
+export default function ActionMenu({
+  label,
+  items,
+  disabled = false,
+  children,
+  triggerClassName = "",
+  menuClassName = "",
+}) {
+  const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const triggerRef = useRef(null);
+  const panelRef = useRef(null);
+  const anchorRef = useRef(null);
+  const id = useId();
+  const close = (focus = false) => {
+    setOpen(false);
+    if (focus) triggerRef.current?.focus({ preventScroll: true });
+  };
+  useLayoutEffect(() => {
+    if (!open) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const menu = panelRef.current.getBoundingClientRect();
+    anchorRef.current = rect;
+    setPosition({
+      left: Math.max(
+        8,
+        Math.min(rect.right - menu.width, window.innerWidth - menu.width - 8),
+      ),
+      top:
+        rect.bottom + menu.height + 8 <= window.innerHeight
+          ? rect.bottom + 4
+          : Math.max(8, rect.top - menu.height - 4),
+    });
+    panelRef.current
+      .querySelector("button:not(:disabled)")
+      ?.focus({ preventScroll: true });
+  }, [open]);
+  useEffect(() => {
+    if (!open) return;
+    const outside = (event) => {
+      if (
+        !triggerRef.current?.contains(event.target) &&
+        !panelRef.current?.contains(event.target)
+      )
+        setOpen(false);
+    };
+    const escape = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        close(true);
+      }
+    };
+    const dismiss = (event) => {
+      if (
+        event.target instanceof Node &&
+        panelRef.current?.contains(event.target)
+      )
+        return;
+      const rect = triggerRef.current?.getBoundingClientRect();
+      // A queued scroll from bringing the trigger into view must not close a
+      // newly opened menu. Dismiss only when its anchor actually moves.
+      if (
+        event.type === "resize" ||
+        !rect ||
+        !anchorRef.current ||
+        ["top", "left", "right", "bottom"].some(
+          (edge) => Math.abs(rect[edge] - anchorRef.current[edge]) > 0.5,
+        )
+      )
+        setOpen(false);
+    };
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", escape);
+    window.addEventListener("resize", dismiss);
+    window.addEventListener("scroll", dismiss, true);
+    return () => {
+      document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("keydown", escape);
+      window.removeEventListener("resize", dismiss);
+      window.removeEventListener("scroll", dismiss, true);
+    };
+  }, [open]);
+  const blur = (event) => {
+    if (
+      !panelRef.current?.contains(event.relatedTarget) &&
+      !triggerRef.current?.contains(event.relatedTarget)
+    )
+      setOpen(false);
+  };
+  return (
+    <>
+      <button
+        ref={triggerRef}
+        type="button"
+        className={`${children == null ? "icon-button " : ""}action-menu-trigger ${triggerClassName}`}
+        disabled={disabled}
+        aria-label={label}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls={open ? id : undefined}
+        onClick={() => setOpen(!open)}
+        onKeyDown={(event) => {
+          if (event.key === "ArrowDown") {
+            event.preventDefault();
+            setOpen(true);
+          }
+        }}
+        onBlur={blur}
+      >
+        {children ?? <MoreVertical size={20} aria-hidden="true" />}
+      </button>
+      {open &&
+        createPortal(
+          <div
+            ref={panelRef}
+            id={id}
+            role="menu"
+            aria-label={label}
+            className={`action-menu-panel ${menuClassName}`}
+            style={position}
+            onBlur={blur}
+            onKeyDown={(event) => {
+              const buttons = [
+                ...panelRef.current.querySelectorAll("button:not(:disabled)"),
+              ];
+              const index = buttons.indexOf(document.activeElement);
+              const next =
+                event.key === "Home"
+                  ? 0
+                  : event.key === "End"
+                    ? buttons.length - 1
+                    : event.key === "ArrowDown"
+                      ? (index + 1) % buttons.length
+                      : event.key === "ArrowUp"
+                        ? (index - 1 + buttons.length) % buttons.length
+                        : null;
+              if (next !== null) {
+                event.preventDefault();
+                buttons[next]?.focus();
+              }
+              if (event.key === "Tab") close(true);
+            }}
+          >
+            {items.map(
+              ({
+                id: itemId,
+                label: text,
+                content,
+                Icon,
+                checked,
+                separatorBefore,
+                disabled: unavailable,
+                onClick,
+              }) => (
+                <React.Fragment key={itemId ?? text}>
+                  {separatorBefore && (
+                    <div role="separator" className="action-menu-separator" />
+                  )}
+                  <button
+                    type="button"
+                    role={checked === undefined ? "menuitem" : "menuitemradio"}
+                    aria-checked={checked}
+                    disabled={unavailable || disabled}
+                    onClick={() => {
+                      close(true);
+                      onClick();
+                    }}
+                  >
+                    {Icon && <Icon size={16} aria-hidden="true" />}
+                    {content ?? text}
+                  </button>
+                </React.Fragment>
+              ),
+            )}
+          </div>,
+          document.body,
+        )}
+    </>
+  );
+}

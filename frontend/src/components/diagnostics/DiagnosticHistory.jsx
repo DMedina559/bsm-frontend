@@ -44,6 +44,7 @@ export default function DiagnosticHistory({
         <label>
           Subsystem
           <input
+            className="form-input"
             maxLength={80}
             value={draft.subsystem ?? ""}
             onChange={(e) => setDraft({ ...draft, subsystem: e.target.value })}
@@ -53,6 +54,7 @@ export default function DiagnosticHistory({
         <label>
           Outcome
           <select
+            className="form-input"
             value={draft.outcome ?? ""}
             onChange={(e) => setDraft({ ...draft, outcome: e.target.value })}
           >
@@ -65,6 +67,7 @@ export default function DiagnosticHistory({
         <label>
           Correlation ID
           <input
+            className="form-input"
             maxLength={160}
             value={draft.correlation_id ?? ""}
             onChange={(e) =>
@@ -80,6 +83,7 @@ export default function DiagnosticHistory({
           <label key={key}>
             {label}
             <input
+              className="form-input"
               maxLength={maximum}
               value={draft[key] ?? ""}
               onChange={(event) =>
@@ -91,6 +95,7 @@ export default function DiagnosticHistory({
         <label>
           Instance
           <select
+            className="form-input"
             value={draft.instance_id ?? ""}
             onChange={(e) =>
               setDraft({ ...draft, instance_id: e.target.value })

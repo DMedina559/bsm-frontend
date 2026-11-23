@@ -1,3 +1,4 @@
+import Timestamp from "./Timestamp";
 export default function DraftConflictNotice({ draft }) {
   return (
     <>
@@ -18,9 +19,8 @@ export default function DraftConflictNotice({ draft }) {
       {draft.recoverable && (
         <div role="status" className="message warning">
           <p>
-            Unsaved edits from{" "}
-            {new Date(draft.recoverable.savedAt).toLocaleString()} are
-            available. Sensitive and unrecognized fields were excluded.
+            Unsaved edits from {<Timestamp value={draft.recoverable.savedAt} />}{" "}
+            are available. Sensitive and unrecognized fields were excluded.
           </p>
           <button
             type="button"

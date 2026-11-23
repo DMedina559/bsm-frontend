@@ -112,9 +112,8 @@ npm run check --workspace=@bedrock-server-manager/runtime
 ```
 
 Installation prepares `dist/`; rebuild it after editing package source. `npm pack`
-builds the package for isolated consumer checks. GitHub releases tagged
-`runtime-v<SemVer>` publish this package independently; prereleases use npm's
-`next` distribution tag.
+builds the package for isolated consumer checks. This package releases with the other shared packages and frontend from one
+`<SemVer>` GitHub release tag; prereleases use npm's `next` distribution tag.
 
 Unavailable tasks have a local `availability` state. A 404 stops polling without
 fabricating a backend revision or replacing the last authoritative snapshot.
@@ -137,7 +136,7 @@ behavior. Cross-tab transport and IndexedDB remain frontend browser adapters.
 
 `runtime.diagnostics` exposes `getSnapshot`, `subscribe`, `setEnabled`, `clear`,
 and payload-free `record`/`subscriptions` methods. Recording is opt-in, capped at
-200 observations and cleared at session reset. Policy labels identify rejection
+1,000 observations and cleared at session reset. Policy labels identify rejection
 and refresh causes without storing query keys, values, URLs or identities.
 
 `stateReconciler.onObservation(listener)` observes accepted records; its cleanup
@@ -149,3 +148,30 @@ revisions, terminal identities/status, resource membership tombstones and retire
 epochs. Small replay watermarks intentionally grow with unique resource/task IDs
 until reset; compaction bounds large payload retention rather than weakening
 correctness with an arbitrary watermark eviction limit.
+
+Runtime diagnostics are opt-in and retain at most 1,000 in-memory observations by
+default. `setEnabled(false)` pauses recording without clearing observations; use
+`clear()` explicitly to remove them. Session reset disables recording, clears the
+current session's observations, and resets its counters. Durable history is owned
+by the embedding application, which must scope it by backend/account and retain
+only the documented safe policy metadata. The runtime remains browser-independent.
+
+## React Native hosts
+
+Map React Native AppState foreground transitions to `visibilitychange` and
+report foreground state through `isVisible()`. The runtime refreshes task discovery
+and pending task status on return to the foreground, including after timer
+suspension. Supply `online` and `offline` from the host's network monitor when
+available; AppState alone does not establish network reachability.
+
+Use a synchronous in-memory token accessor for WebSocket authentication. Hydrate
+credentials from the platform secure store before starting the runtime. HTTP
+transport credentials may be asynchronous. Account/backend changes must call
+`runtime.reset()` before reusing a cache or accepting work for the next identity.
+Call the returned owner `stop()` on unmount and `runtime.dispose()` when releasing
+the runtime. These cleanups are idempotent.
+
+Run root `npm run check:archives` to install all three shared package archives
+outside the workspace and verify their public exports, behavior, and consumer
+types. This checks packaging and host boundaries; device tests are still needed
+for OS suspension, native networking, and native file transfer behavior.

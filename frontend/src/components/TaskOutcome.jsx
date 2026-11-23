@@ -1,3 +1,4 @@
+import { keyedItems } from "../utils/keyedItems";
 import "../styles/task-outcome.css";
 
 function OutcomeValue({ value }) {
@@ -5,8 +6,8 @@ function OutcomeValue({ value }) {
   if (Array.isArray(value))
     return value.length ? (
       <ul className="task-value-list">
-        {value.map((item, index) => (
-          <li key={index}>
+        {keyedItems(value).map(({ item, key }) => (
+          <li key={key}>
             <OutcomeValue value={item} />
           </li>
         ))}

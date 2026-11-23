@@ -82,6 +82,59 @@ export function validateDiagnosticTrace(value) {
     !Array.isArray(value.tasks)
   )
     throw new Error("Invalid diagnostic trace response");
+  if (
+    value.operations != null &&
+    !activityRecords(value.operations, "operation_id")
+  )
+    throw new Error("Invalid diagnostic trace operations");
   validateDiagnosticHistory(value.history);
+  return value;
+}
+
+const activityRecords = (value, identity) =>
+  object(value) &&
+  [value.active, value.recent].every(
+    (records) =>
+      Array.isArray(records) &&
+      records.every(
+        (record) =>
+          object(record) &&
+          typeof record[identity] === "string" &&
+          typeof record.name === "string" &&
+          typeof record.correlation_id === "string" &&
+          typeof record.status === "string",
+      ),
+  );
+export function validateDiagnosticActivity(value) {
+  if (
+    !object(value) ||
+    value.scope !== "application" ||
+    !(value.events === null || activityRecords(value.events, "event_id")) ||
+    !(
+      value.operations === null ||
+      activityRecords(value.operations, "operation_id")
+    ) ||
+    !(
+      value.subscriptions === null ||
+      (object(value.subscriptions) &&
+        Number.isInteger(value.subscriptions.total) &&
+        value.subscriptions.total >= 0 &&
+        Array.isArray(value.subscriptions.items) &&
+        value.subscriptions.items.every(
+          (item) =>
+            object(item) &&
+            typeof item.listener_id === "string" &&
+            typeof item.owner === "string",
+        ))
+    ) ||
+    !(
+      value.issues == null ||
+      (Array.isArray(value.issues) &&
+        value.issues.every(
+          (issue) => object(issue) && typeof issue.message === "string",
+        ))
+    )
+  )
+    throw new Error("Invalid diagnostic activity response");
   return value;
 }

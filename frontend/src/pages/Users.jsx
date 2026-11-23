@@ -1,3 +1,8 @@
+import { useAccess } from "../app/useAccess";
+import Sessions from "../components/access/Sessions";
+import Passkeys from "../components/access/Passkeys";
+import ServerAccessEditor from "../components/access/ServerAccessEditor";
+import "../styles/access.css";
 import { callOperation } from "../api/operations";
 import QueryStatus from "../components/QueryStatus";
 import { queryKeys } from "../app/queryKeys";
@@ -22,6 +27,7 @@ import {
 import { useAuth } from "../contexts/AuthContext";
 import { logger } from "../utils/logger";
 const Users = () => {
+  const { can } = useAccess();
   const { confirmAction } = useDialog();
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -220,18 +226,11 @@ const Users = () => {
     setGeneratedLink(null);
     setInviteRole("user");
   };
-  const isAdmin = currentUser?.role === "admin";
+  const canManageUsers = can("update_user_role");
   return (
     <div className="container">
       <QueryStatus query={resourceQuery} />
-      <div
-        className="header"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+      <div className="header">
         <h1>User Management</h1>
         <div
           style={{
@@ -254,7 +253,7 @@ const Users = () => {
             />{" "}
             Refresh
           </button>
-          {isAdmin && (
+          {can("generate_registration_token") && (
             <button
               className="action-button"
               onClick={() => setShowInviteModal(true)}
@@ -280,7 +279,7 @@ const Users = () => {
             padding: "calc(40px * var(--bsm-spacing-scale))",
           }}
         >
-          <div className="spinner"></div> Loading users...
+          <div className="spinner"></div> Loading users…
         </div>
       ) : (
         <div className="table-responsive-wrapper">
@@ -295,13 +294,7 @@ const Users = () => {
                 <th>Username</th>
                 <th>Role</th>
                 <th>Status</th>
-                <th
-                  style={{
-                    width: "150px",
-                  }}
-                >
-                  Actions
-                </th>
+                <th className="actions-column">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -324,7 +317,7 @@ const Users = () => {
                       <span
                         style={{
                           marginLeft: "calc(5px * var(--bsm-spacing-scale))",
-                          fontSize: "0.8em",
+                          fontSize: "var(--bsm-small-size)",
                           color: "var(--primary-color)",
                         }}
                       >
@@ -368,14 +361,9 @@ const Users = () => {
                       </span>
                     )}
                   </td>
-                  <td>
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "calc(5px * var(--bsm-spacing-scale))",
-                      }}
-                    >
-                      {isAdmin && (
+                  <td className="actions-column">
+                    <div className="table-actions table-actions-right">
+                      {canManageUsers && (
                         <>
                           <button
                             className="action-button secondary"
@@ -383,7 +371,8 @@ const Users = () => {
                             title="Edit User"
                             style={{
                               padding:
-                                "calc(5px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
+                                "calc(5px * var(--bsm-spacing-scale)) calc(12px * var(--bsm-spacing-scale))",
+                              fontSize: "var(--bsm-small-size)",
                             }}
                             disabled={
                               actionLoading || user.id === currentUser?.id
@@ -391,7 +380,7 @@ const Users = () => {
                             type="button"
                             aria-label="Edit User"
                           >
-                            <UserCog size={14} />
+                            <UserCog size={14} /> Edit
                           </button>
                           <button
                             className="action-button danger-button"
@@ -399,7 +388,8 @@ const Users = () => {
                             title="Delete User"
                             style={{
                               padding:
-                                "calc(5px * var(--bsm-spacing-scale)) calc(10px * var(--bsm-spacing-scale))",
+                                "calc(5px * var(--bsm-spacing-scale)) calc(12px * var(--bsm-spacing-scale))",
+                              fontSize: "var(--bsm-small-size)",
                             }}
                             disabled={
                               actionLoading || user.id === currentUser?.id
@@ -407,7 +397,7 @@ const Users = () => {
                             type="button"
                             aria-label="Delete User"
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={14} /> Delete
                           </button>
                         </>
                       )}
@@ -576,6 +566,28 @@ const Users = () => {
           onClose={() => setShowEditModal(false)}
           closeDisabled={actionLoading}
         >
+          {can("list_account_login_sessions") &&
+            editingUser.id !== currentUser.id && (
+              <>
+                <Sessions
+                  key={`sessions-${editingUser.id}`}
+                  userId={editingUser.id}
+                />
+                <Passkeys
+                  key={`passkeys-${editingUser.id}`}
+                  userId={editingUser.id}
+                />
+              </>
+            )}
+          {can("get_account_server_access") &&
+            editingUser.role !== "admin" &&
+            editingUser.id !== currentUser.id && (
+              <ServerAccessEditor
+                key={editingUser.id}
+                userId={editingUser.id}
+                userRole={editingUser.role}
+              />
+            )}
           <div
             style={{
               marginBottom: "calc(20px * var(--bsm-spacing-scale))",

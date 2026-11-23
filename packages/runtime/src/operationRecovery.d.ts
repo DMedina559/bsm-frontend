@@ -26,7 +26,8 @@ export function createOperationRecoveryModule(
     platform: Pick<
       RuntimePlatform,
       "isOnline" | "addEventListener" | "removeEventListener"
-    >;
+    > &
+      Partial<Pick<RuntimePlatform, "isVisible">>;
     scheduler?: RuntimeScheduler;
   },
 ): RecoveryModule;

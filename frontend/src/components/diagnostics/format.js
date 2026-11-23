@@ -1,5 +1,8 @@
+import { createElement } from "react";
+import Timestamp from "../Timestamp";
 const labels = {
   pid: "Process ID",
+  process_id: "Process ID",
   uptime_seconds: "Uptime",
   ready: "Ready",
   phase: "Lifecycle",
@@ -10,6 +13,14 @@ const labels = {
   managed_tasks: "Managed tasks",
   max_pending_per_client: "Maximum pending per client",
 };
+export function isPidKey(key) {
+  return (
+    key === "pid" ||
+    key === "process_id" ||
+    (typeof key === "string" &&
+      (key.endsWith("_pid") || key.endsWith("_process_id")))
+  );
+}
 export function labelFor(key) {
   return (
     labels[key] ??
@@ -27,7 +38,11 @@ export function displayValue(value) {
 }
 export function dateValue(value) {
   return Number.isFinite(value) && value > 0
-    ? new Date(value * 1000).toLocaleString()
+    ? createElement(Timestamp, {
+        value,
+        unit: "seconds",
+        fallback: "Not recorded",
+      })
     : "Not recorded";
 }
 export function fieldValue(key, value) {
@@ -43,6 +58,7 @@ export function fieldValue(key, value) {
   }
   if (key === "status" && String(value).toUpperCase() === "UNKNOWN")
     return "Status not reported";
+  if (isPidKey(key)) return String(value);
   if (key.endsWith("_at") || key === "timestamp") return dateValue(value);
   if (typeof value === "number" && key.endsWith("_seconds"))
     return `${displayValue(value)} seconds`;

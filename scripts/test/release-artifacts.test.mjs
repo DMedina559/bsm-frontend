@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { createHash } from "node:crypto";
 import {
   mkdirSync,
   mkdtempSync,
@@ -11,75 +10,79 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { selectReleaseArchive } from "../release-artifacts.mjs";
+import { selectReleaseArchives } from "../release-artifacts.mjs";
 import { resolveRelease } from "../release-version.mjs";
 
-function fixture(t, release, patch = {}) {
+function fixture(t, patch = {}) {
   const directory = mkdtempSync(join(tmpdir(), "bsm-release-"));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
-  const contents = join(directory, "contents");
+  const release = resolveRelease("1.4.0b3");
   const artifacts = join(directory, "downloaded");
-  const nested = join(artifacts, "frontend", "build", "artifacts");
-  mkdirSync(join(contents, "package"), { recursive: true });
-  mkdirSync(nested, { recursive: true });
-  writeFileSync(
-    join(contents, "package", "package.json"),
-    JSON.stringify({
-      name: release.workspace,
-      version: release.npmVersion,
-      private: false,
-      publishConfig: { access: "public" },
-      ...patch,
-    }),
-  );
-  const archive = join(nested, "verified.tgz");
-  execFileSync("tar", ["-czf", archive, "-C", contents, "package"]);
-  return { artifacts, archive, nested };
-}
-
-for (const tag of [
-  "api-client-v1.2.3",
-  "runtime-v1.2.3-beta.1",
-  "storage-v2.0.0",
-  "frontend-1.3.0b9",
-]) {
-  test(`${tag} selects the matching archive without changing its bytes`, (t) => {
-    const release = resolveRelease(tag);
-    const { artifacts, archive } = fixture(t, release);
-    const hash = () =>
-      createHash("sha256").update(readFileSync(archive)).digest("hex");
-    const before = hash();
+  const paths = release.packages.map((pkg) => {
+    const contents = join(directory, pkg.product);
+    const nested = join(artifacts, pkg.artifactName);
+    mkdirSync(join(contents, "package"), { recursive: true });
+    mkdirSync(nested, { recursive: true });
     writeFileSync(
-      join(artifacts, "python-package.tar.gz"),
-      "unrelated Python archive",
+      join(contents, "package", "package.json"),
+      JSON.stringify({
+        name: pkg.workspace,
+        version: release.npmVersion,
+        private: false,
+        publishConfig: { access: "public" },
+        ...(pkg.product === "runtime" ? patch : {}),
+      }),
     );
-    assert.equal(selectReleaseArchive(artifacts, release), archive);
-    assert.equal(hash(), before);
+    const archive = join(nested, `${pkg.product}.tgz`);
+    execFileSync("tar", ["-czf", archive, "-C", contents, "package"]);
+    return archive;
   });
+  return { artifacts, release, paths };
 }
 
-test("missing and multiple npm archives cannot be published", (t) => {
-  const release = resolveRelease("runtime-v1.2.3");
-  const { artifacts, archive } = fixture(t, release);
-  writeFileSync(join(artifacts, "unexpected.tgz"), "another package");
-  assert.throws(() => selectReleaseArchive(artifacts, release), /exactly one/);
-  rmSync(join(artifacts, "unexpected.tgz"));
-  rmSync(archive);
-  assert.throws(() => selectReleaseArchive(artifacts, release), /exactly one/);
+test("selects all verified packages in publication order without changing bytes", (t) => {
+  const { artifacts, release, paths } = fixture(t);
+  const before = paths.map((path) => readFileSync(path));
+  writeFileSync(join(artifacts, "python.tar.gz"), "not an npm archive");
+  const selected = selectReleaseArchives(artifacts, release);
+  assert.deepEqual(
+    selected.map((pkg) => pkg.archive),
+    paths,
+  );
+  selected.forEach((pkg, index) => {
+    assert.match(pkg.integrity, /^sha512-/);
+    assert.deepEqual(readFileSync(pkg.archive), before[index]);
+  });
+});
+
+test("rejects missing or extra packages before publication", (t) => {
+  const { artifacts, release, paths } = fixture(t);
+  const extra = join(artifacts, "extra.tgz");
+  writeFileSync(extra, "unexpected");
+  assert.throws(
+    () => selectReleaseArchives(artifacts, release),
+    /exactly four/,
+  );
+  rmSync(extra);
+  rmSync(paths[0]);
+  assert.throws(
+    () => selectReleaseArchives(artifacts, release),
+    /exactly four/,
+  );
 });
 
 for (const patch of [
   { name: "@bedrock-server-manager/storage" },
-  { version: "1.2.4" },
+  { name: "other" },
+  { version: "1.4.0" },
   { private: true },
   { publishConfig: { access: "restricted" } },
 ]) {
-  test(`archive metadata mismatch is rejected: ${JSON.stringify(patch)}`, (t) => {
-    const release = resolveRelease("runtime-v1.2.3");
-    const { artifacts } = fixture(t, release, patch);
+  test(`rejects duplicate or invalid package metadata: ${JSON.stringify(patch)}`, (t) => {
+    const { artifacts, release } = fixture(t, patch);
     assert.throws(
-      () => selectReleaseArchive(artifacts, release),
-      /must contain public/,
+      () => selectReleaseArchives(artifacts, release),
+      /unique public release/,
     );
   });
 }

@@ -1,3 +1,4 @@
+import { keyedItems } from "../../utils/keyedItems";
 import { labelFor, displayValue, fieldValue } from "./format";
 
 export default function DiagnosticDetails({
@@ -11,11 +12,14 @@ export default function DiagnosticDetails({
     if (!value.length) return <p>No entries.</p>;
     return (
       <div className="diagnostic-entries">
-        {value.map((entry, index) =>
+        {keyedItems(value).map(({ item: entry, key }, index) =>
           typeof entry === "object" && entry !== null ? (
-            <details key={index}>
+            <details key={key}>
               <summary>
-                {entry.name ??
+                {(entry.listener_id
+                  ? `${entry.listener_id} · ${entry.owner}`
+                  : null) ??
+                  entry.name ??
                   entry.server_name ??
                   entry.operation ??
                   entry.id ??
@@ -26,7 +30,7 @@ export default function DiagnosticDetails({
               <DiagnosticDetails value={entry} depth={depth + 1} />
             </details>
           ) : (
-            <p key={index}>{displayValue(entry)}</p>
+            <p key={key}>{displayValue(entry)}</p>
           ),
         )}
       </div>

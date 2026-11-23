@@ -1,3 +1,6 @@
+import * as accessApi from "../../../src/api/access";
+import { accessSchema } from "../../support/accessFixtures";
+import { accessUser } from "../../support/accessFixtures";
 import { render, screen, waitFor, fireEvent, act } from "../../support/utils";
 import Sidebar from "../../../src/components/Sidebar";
 import { vi, describe, it, expect, beforeEach } from "vitest";
@@ -37,7 +40,7 @@ describe("Sidebar", () => {
     // Default mocks
     api.request.mockImplementation((url) => {
       if (url === "/api/account")
-        return Promise.resolve({ username: "testuser", role: "admin" });
+        return Promise.resolve(accessUser("admin", { username: "testuser" }));
       if (url === "/api/servers")
         return Promise.resolve({
           status: "success",
@@ -52,11 +55,13 @@ describe("Sidebar", () => {
       if (url === "/api/info")
         return Promise.resolve({
           status: "success",
-          info: { splash_text: "Splash!", app_version: "4.0.0b2.dev4" },
+          os_type: "Linux",
+          splash_text: "Splash!",
+          app_version: "4.0.0b2.dev4",
         });
       // Fallback for context calls if they use get
       if (url === "/api/account")
-        return Promise.resolve({ username: "testuser", role: "admin" });
+        return Promise.resolve(accessUser("admin", { username: "testuser" }));
       if (url === "/api/servers")
         return Promise.resolve({
           status: "success",
@@ -80,7 +85,7 @@ describe("Sidebar", () => {
     const group = (name) =>
       within(screen.getByRole("heading", { name }).closest(".nav-group"));
     expect(
-      group("Selected server").getByRole("link", { name: "Settings" }),
+      group("Selected Server").getByRole("link", { name: "Settings" }),
     ).toBeInTheDocument();
     expect(
       group("Global").getByRole("link", { name: "Settings" }),
@@ -98,14 +103,29 @@ describe("Sidebar", () => {
     expect(screen.getByText("Install Server")).toBeInTheDocument();
   });
 
-  it("keeps Appearance and Account navigation states separate", async () => {
-    window.history.replaceState({}, "", "/appearance");
+  it("uses distinct icons for built-in navigation pages", async () => {
     await act(async () => {
       render(<Sidebar />);
     });
-    const appearance = screen.getByRole("link", { name: "Appearance" });
+    await screen.findByText("Install Server");
+    const links = within(
+      screen.getByRole("navigation", { name: "Application pages" }),
+    ).getAllByRole("link");
+    const icons = links.map((link) =>
+      link.querySelector("svg")?.getAttribute("class"),
+    );
+    expect(icons.every(Boolean)).toBe(true);
+    expect(new Set(icons).size).toBe(icons.length);
+  });
+
+  it("keeps Frontend settings and Account navigation states separate", async () => {
+    window.history.replaceState({}, "", "/frontend-settings");
+    await act(async () => {
+      render(<Sidebar />);
+    });
+    const appearance = screen.getByRole("link", { name: "Frontend Settings" });
     const account = screen.getByRole("link", { name: "Account" });
-    expect(appearance).toHaveAttribute("href", "/appearance");
+    expect(appearance).toHaveAttribute("href", "/frontend-settings");
     expect(appearance).toHaveAttribute("aria-current", "page");
     expect(account).not.toHaveAttribute("aria-current");
     fireEvent.click(account);
@@ -123,7 +143,9 @@ describe("Sidebar", () => {
     );
     expect(screen.queryByText("Version 4.0")).not.toBeInTheDocument();
     expect(screen.queryByText("Backend 4.0.0b2.dev4")).not.toBeInTheDocument();
-    expect(screen.getByText(/Frontend/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Frontend/, { selector: ".sidebar-version span" }),
+    ).toBeInTheDocument();
   });
   it("displays splash text", async () => {
     await act(async () => {
@@ -202,7 +224,7 @@ describe("Sidebar", () => {
     const api = await import("../../../src/api/transport");
     expect(api.request).toHaveBeenCalledWith(
       "/auth/logout",
-      expect.objectContaining({ method: "GET" }),
+      expect.objectContaining({ method: "POST" }),
     );
   });
 
@@ -221,10 +243,12 @@ describe("Sidebar", () => {
       if (url === "/api/info")
         return Promise.resolve({
           status: "success",
-          info: { splash_text: "Splash!", app_version: "4.0.0b2.dev4" },
+          os_type: "Linux",
+          splash_text: "Splash!",
+          app_version: "4.0.0b2.dev4",
         });
       if (url === "/api/account")
-        return Promise.resolve({ username: "testuser", role: "admin" });
+        return Promise.resolve(accessUser("admin", { username: "testuser" }));
       if (url === "/api/servers")
         return Promise.resolve({
           status: "success",
@@ -253,4 +277,43 @@ describe("Sidebar", () => {
     const linkB = screen.getByText("Plugin B").closest("a");
     expect(linkB).not.toHaveClass("active");
   });
+});
+
+it("uses the settings operation's runtime scope rather than the process-read scope for navigation", async () => {
+  const schema = structuredClone(accessSchema);
+  for (const item of Object.values(schema.paths)) {
+    for (const operation of Object.values(item)) {
+      if (operation?.operationId === "get_server_settings")
+        operation["x-bsm-access"].required_permissions = ["future:settings"];
+    }
+  }
+  const discovery = vi
+    .spyOn(accessApi, "loadAccessSchema")
+    .mockResolvedValue(schema);
+  api.request.mockImplementation(async (url) =>
+    url === "/api/account"
+      ? accessUser("admin", {
+          username: "testuser",
+          permissions: ["account:read", "future:settings"],
+        })
+      : url === "/api/servers"
+        ? {
+            status: "success",
+            servers: [{ name: "TestServer", status: "stopped" }],
+          }
+        : {},
+  );
+  try {
+    render(<Sidebar />);
+    await waitFor(() =>
+      expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute(
+        "href",
+        "/server-config",
+      ),
+    );
+    expect(screen.queryByRole("link", { name: "Monitor" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Install Server" })).toBeNull();
+  } finally {
+    discovery.mockRestore();
+  }
 });

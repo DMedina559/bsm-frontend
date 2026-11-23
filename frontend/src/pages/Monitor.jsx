@@ -1,3 +1,5 @@
+import { useAccess } from "../app/useAccess";
+import { useTimeFormat } from "../app/useTimeFormat";
 import { useMetricFormat } from "../app/useMetricFormat";
 import { callOperation } from "../api/operations";
 import LogViewer from "../components/LogViewer";
@@ -30,6 +32,8 @@ import {
 } from "lucide-react";
 import { logger } from "../utils/logger";
 const Monitor = () => {
+  const { can } = useAccess();
+  const { format } = useTimeFormat();
   const { memory, number, scale, units } = useMetricFormat();
   const {
     isConnected,
@@ -73,7 +77,7 @@ const Monitor = () => {
       [
         ...previous,
         {
-          time: new Date().toLocaleTimeString(),
+          time: Date.now(),
           cpu: processInfo.cpu_percent || 0,
           memory: processInfo.memory_mb || 0,
         },
@@ -112,7 +116,7 @@ const Monitor = () => {
         if (info) {
           setUsageHistory((prev) => {
             const newPoint = {
-              time: new Date().toLocaleTimeString(),
+              time: Date.now(),
               cpu: info.cpu_percent || 0,
               memory: info.memory_mb || 0,
             };
@@ -246,7 +250,20 @@ const Monitor = () => {
           <h1>Server Monitor: {selectedServer}</h1>
           <div className="monitor-state">
             <span
-              className={`status-indicator ${isRunning ? "status-running" : "status-stopped"}`}
+              className={`status-indicator ${
+                isRunning
+                  ? "status-running"
+                  : status === "ERROR" || status === "UNHEALTHY"
+                    ? "status-error"
+                    : [
+                          "STARTING",
+                          "STOPPING",
+                          "RESTARTING",
+                          "DEGRADED",
+                        ].includes(status)
+                      ? "status-starting"
+                      : "status-stopped"
+              }`}
             >
               {status}
             </span>
@@ -264,7 +281,9 @@ const Monitor = () => {
             type="button"
             className="action-button start-button"
             onClick={() => sendAction("start")}
-            disabled={loadingAction || isRunning}
+            disabled={
+              loadingAction || isRunning || !can("start_server", selectedServer)
+            }
           >
             <Play size={16} aria-hidden="true" /> Start
           </button>
@@ -272,7 +291,9 @@ const Monitor = () => {
             type="button"
             className="action-button danger-button"
             onClick={() => sendAction("stop")}
-            disabled={loadingAction || !isRunning}
+            disabled={
+              loadingAction || !isRunning || !can("stop_server", selectedServer)
+            }
           >
             <Square size={16} aria-hidden="true" /> Stop
           </button>
@@ -280,7 +301,7 @@ const Monitor = () => {
             type="button"
             className="action-button warning-button"
             onClick={() => sendAction("restart")}
-            disabled={loadingAction}
+            disabled={loadingAction || !can("restart_server", selectedServer)}
           >
             <RotateCcw size={16} aria-hidden="true" /> Restart
           </button>
@@ -369,6 +390,7 @@ const Monitor = () => {
                     width={40}
                   />
                   <Tooltip
+                    labelFormatter={(value) => format(value)}
                     formatter={(value, label) => [
                       label === "CPU %"
                         ? number(value, "%")
@@ -413,7 +435,7 @@ const Monitor = () => {
                   color: "var(--text-color-secondary)",
                 }}
               >
-                Waiting for resource data...
+                Waiting for resource data…
               </div>
             )}
           </div>
@@ -435,7 +457,7 @@ const Monitor = () => {
             label="Server log output"
             style={{
               height: "360px",
-              fontSize: "0.85rem",
+              fontSize: "var(--bsm-small-size)",
               borderRadius: "8px",
             }}
           />
@@ -453,13 +475,22 @@ const Monitor = () => {
                     : "Start the server to send commands"
                 }
                 aria-label="Console command"
-                disabled={loadingAction || !isRunning}
+                disabled={
+                  loadingAction ||
+                  !isRunning ||
+                  !can("send_command", selectedServer)
+                }
               />
             </div>
             <button
               type="submit"
               className="action-button"
-              disabled={loadingAction || !command.trim() || !isRunning}
+              disabled={
+                loadingAction ||
+                !command.trim() ||
+                !isRunning ||
+                !can("send_command", selectedServer)
+              }
             >
               Send
             </button>

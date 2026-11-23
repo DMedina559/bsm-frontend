@@ -1,3 +1,4 @@
+import { accessSchema, accessUser } from "./accessFixtures.js";
 export const servers = [
   {
     name: "Survival",
@@ -18,6 +19,7 @@ export const servers = [
   },
 ];
 export const user = {
+  ...accessUser("admin"),
   username: "admin",
   id: 1,
   role: "admin",
@@ -25,7 +27,29 @@ export const user = {
   is_active: true,
 };
 export function fixtureResponse(url) {
+  if (url.pathname === "/api/account/security/devices") return [];
+
   const p = url.pathname;
+  if (
+    [
+      "/api/account/sessions",
+      "/api/account/tokens",
+      "/api/account/passkeys",
+      "/api/account/security/activity",
+    ].includes(p)
+  )
+    return [];
+  if (p === "/api/access/policy")
+    return {
+      revision: "fixture",
+      permissions: Object.fromEntries(
+        user.permissions.map((scope) => [scope, scope]),
+      ),
+      token_permissions: user.permissions,
+      server_permissions: [],
+      role_permissions: { admin: user.permissions },
+    };
+  if (p === "/api/openapi.json") return accessSchema;
   if (p === "/api/setup/status") return { needs_setup: false };
   if (p === "/api/account") return user;
   if (p === "/auth/reauth")
@@ -34,10 +58,10 @@ export function fixtureResponse(url) {
   if (p === "/api/info")
     return {
       status: "success",
-      info: {
-        app_version: "4.0.0",
-        splash_text: "Your worlds. Your infrastructure.",
-      },
+      os_type: "Linux",
+      app_version: "4.0.0",
+      splash_text: "Your worlds. Your infrastructure.",
+      timezone: "UTC",
     };
   if (p === "/api/info/themes")
     return { status: "success", themes: ["default", "light", "blue"] };

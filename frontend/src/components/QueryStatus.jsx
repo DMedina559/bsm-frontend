@@ -9,6 +9,7 @@ export default function QueryStatus({ query }) {
       </span>{" "}
       <button
         type="button"
+        className="action-button secondary"
         onClick={() => query.refetch()}
         disabled={query.isFetching}
       >

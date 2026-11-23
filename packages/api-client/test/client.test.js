@@ -153,3 +153,212 @@ test("health preserves runtime identity and degraded observations with user auth
     );
   }
 });
+
+test("global diagnostic activity serializes cross-chain filters", async () => {
+  const calls = [];
+  const client = createApiClient({
+    request: async (...args) => {
+      calls.push(args);
+      return {
+        scope: "application",
+        events: null,
+        operations: null,
+        subscriptions: null,
+      };
+    },
+  });
+  await client.callOperation("get_diagnostic_activity", {
+    query: {
+      server_name: "alpha beta",
+      sequence_id: "sequence",
+      operation_id: "operation",
+      limit: 5,
+    },
+  });
+  assert.match(calls[0][0], /\/api\/diagnostics\/activity\?/);
+  const url = new URL(calls[0][0], "http://backend");
+  assert.equal(url.searchParams.get("server_name"), "alpha beta");
+  assert.equal(url.searchParams.get("sequence_id"), "sequence");
+  assert.equal(url.searchParams.get("operation_id"), "operation");
+});
+
+test("lifecycle requests allow long pre-start hooks and retain explicit timeouts", async () => {
+  const seen = [];
+  const client = createApiClient({
+    request: async (url, options) => {
+      seen.push({ url, options });
+      return {};
+    },
+  });
+  for (const id of ["start_server", "restart_server", "stop_server"]) {
+    await client.callOperation(id, { path: { server_name: "alpha" } });
+    assert.equal(seen.at(-1).options.timeout, 0);
+  }
+  await client.callOperation("start_server", {
+    path: { server_name: "alpha" },
+    timeout: 1000,
+  });
+  assert.equal(seen.at(-1).options.timeout, 1000);
+});
+
+test("scheduler operations serialize server filters and configuration", async () => {
+  const seen = [];
+  const client = createApiClient({
+    request: async (url, options) => {
+      seen.push({ url, options });
+      return {};
+    },
+  });
+  await client.callOperation("list_schedules", {
+    query: { server_name: "alpha" },
+  });
+  assert.equal(seen.at(-1).url, "/api/scheduler/schedules?server_name=alpha");
+  const body = { task: "verify", server_name: "alpha", enabled: false };
+  await client.callOperation("save_schedule", {
+    path: { schedule_id: "weekly" },
+    body,
+  });
+  assert.equal(seen.at(-1).options.method, "PUT");
+  assert.deepEqual(seen.at(-1).options.body, body);
+  await client.callOperation("delete_schedule", {
+    path: { schedule_id: "weekly" },
+  });
+  assert.equal(seen.at(-1).options.method, "DELETE");
+});
+
+test("cookie-free uploads use fetch rather than same-origin XHR", async () => {
+  const previous = globalThis.XMLHttpRequest;
+  globalThis.XMLHttpRequest = class {
+    constructor() {
+      throw Error("XHR would send same-origin cookies");
+    }
+  };
+  try {
+    const transport = createHttpTransport({
+      baseUrl: "https://bsm.example",
+      fetch: async (_url, config) => {
+        assert.equal(config.credentials, "omit");
+        return Response.json({ ok: true });
+      },
+    });
+    assert.deepEqual(
+      await transport.request("/upload", {
+        method: "POST",
+        body: new FormData(),
+        credentials: "omit",
+        onUploadProgress() {},
+      }),
+      { ok: true },
+    );
+  } finally {
+    globalThis.XMLHttpRequest = previous;
+  }
+});
+
+test("operation discovery preserves security and access metadata with an unknown fallback", async () => {
+  const { buildOperationRegistry } =
+    await import("@bedrock-server-manager/api-client/operationRegistry");
+  const security = [{ bearer: ["servers:lifecycle"] }, { cookie: [] }];
+  const access = {
+    version: 1,
+    classification: "permission",
+    authentication: "required",
+    required_permissions: ["servers:lifecycle"],
+    allowed_roles: ["moderator", "admin"],
+    additional_checks: [],
+  };
+  const registry = buildOperationRegistry({
+    paths: {
+      "/one": {
+        post: { operationId: "one", security, "x-bsm-access": access },
+      },
+      "/old": { get: { operationId: "old" } },
+    },
+  });
+  assert.deepEqual(registry.one.security, security);
+  assert.deepEqual(registry.one.access, access);
+  assert.equal(registry.old.access.classification, "unknown");
+});
+
+test("query serialization works without the optional URLSearchParams size property", () => {
+  const descriptor = Object.getOwnPropertyDescriptor(
+    URLSearchParams.prototype,
+    "size",
+  );
+  try {
+    delete URLSearchParams.prototype.size;
+    const client = createApiClient({ request: async () => null });
+    const dynamic = client.createOperationClient({
+      openapi: "3.1.0",
+      paths: {
+        "/api/example": {
+          get: {
+            operationId: "example",
+            parameters: [
+              { name: "name", in: "query", schema: { type: "string" } },
+            ],
+            responses: { 200: { description: "OK" } },
+          },
+        },
+      },
+    });
+    assert.equal(
+      dynamic.resolveOperationUrl("example", { query: { name: "A B" } }),
+      "/api/example?name=A+B",
+    );
+  } finally {
+    if (descriptor)
+      Object.defineProperty(URLSearchParams.prototype, "size", descriptor);
+  }
+});
+
+test("multipart serialization preserves React Native URI files and prebuilt FormData", async () => {
+  const original = globalThis.FormData;
+  class NativeFormData {
+    parts = [];
+    append(key, value) {
+      this.parts.push([key, value]);
+    }
+  }
+  globalThis.FormData = NativeFormData;
+  try {
+    let sent;
+    const client = createApiClient({
+      request: async (_url, options) => {
+        sent = options.body;
+      },
+    });
+    const dynamic = client.createOperationClient({
+      openapi: "3.1.0",
+      paths: {
+        "/api/upload": {
+          post: {
+            operationId: "upload",
+            requestBody: {
+              content: {
+                "multipart/form-data": { schema: { type: "object" } },
+              },
+            },
+            responses: { 200: { description: "OK" } },
+          },
+        },
+      },
+    });
+    const file = {
+      uri: "file:///cache/world.zip",
+      name: "world.zip",
+      type: "application/zip",
+    };
+    await dynamic.callOperation("upload", { body: { file, enabled: false } });
+    assert.deepEqual(sent.parts, [
+      ["file", file],
+      ["enabled", "false"],
+    ]);
+    const form = new NativeFormData();
+    form.append("file", file);
+    await dynamic.callOperation("upload", { body: form });
+    assert.equal(sent, form);
+  } finally {
+    globalThis.FormData = original;
+  }
+});

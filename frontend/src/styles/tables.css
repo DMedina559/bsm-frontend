@@ -39,6 +39,24 @@
 .server-table .form-input {
   min-width: 140px;
 }
+.table-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(8px * var(--bsm-spacing-scale));
+  white-space: nowrap;
+  flex-wrap: nowrap;
+}
+.table-actions-right {
+  justify-content: flex-end;
+}
+.server-table th.actions-column,
+.server-table td.actions-column,
+.data-table th.actions-column,
+.data-table td.actions-column {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
 .scrollable-field {
   max-width: 240px;
   overflow: auto;

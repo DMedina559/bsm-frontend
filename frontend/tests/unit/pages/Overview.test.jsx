@@ -1,3 +1,4 @@
+import { accessUser } from "../../support/accessFixtures";
 import { useServer } from "../../../src/contexts/ServerContext";
 import { assertApiResponse } from "../../support/apiContract";
 import { getPreferenceIdentity } from "../../../src/app/backendIdentity";
@@ -43,7 +44,7 @@ describe("Overview", () => {
         });
       }
       if (url === "/api/account")
-        return Promise.resolve({ username: "admin", role: "admin" });
+        return Promise.resolve(accessUser("admin", { username: "admin" }));
       return Promise.resolve({});
     });
 

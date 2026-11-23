@@ -1,62 +1,31 @@
-/** Release tags identify products; registry versions never include the prefix. */
-export function resolveReleaseTag(product, tag, prerelease = false) {
-  if (["api-client", "runtime", "storage"].includes(product)) {
-    const prefix = `${product}-v`;
-    const version = tag.startsWith(prefix) ? tag.slice(prefix.length) : "";
-    const match = /^(\d+\.\d+\.\d+)(?:-([0-9A-Za-z.-]+))?$/.exec(version);
-    if (
-      !match ||
-      match[1]
-        .split(".")
-        .some((part) => part.length > 1 && part.startsWith("0")) ||
-      match[2]
-        ?.split(".")
-        .some(
-          (part) =>
-            !part ||
-            (/^\d+$/.test(part) && part.length > 1 && part.startsWith("0")),
-        )
-    )
-      throw new Error(`Expected a canonical ${product}-v<SemVer> release tag.`);
-    return {
-      version,
-      distTag: match[2] || prerelease ? "next" : "latest",
-    };
-  }
-  if (product === "frontend") {
-    const match =
-      /^frontend-((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))(?:((?:a|b|rc))(0|[1-9]\d*))?$/.exec(
-        tag,
-      );
-    if (!match)
-      throw new Error(
-        "Expected frontend-<version>, for example frontend-1.3.0b7 or frontend-1.3.0.",
-      );
-    const suffix = match[2]
-      ? `-${{ a: "alpha", b: "beta", rc: "rc" }[match[2]]}.${match[3]}`
-      : "";
-    return {
-      version: tag.slice("frontend-".length),
-      npmVersion: match[1] + suffix,
-      distTag: suffix || prerelease ? "next" : "latest",
-    };
-  }
-  throw new Error("Unknown release product");
-}
+export const releaseProducts = ["api-client", "runtime", "storage", "frontend"];
 
+/** One canonical release identity for the coordinated npm and Python distributions. */
 export function resolveRelease(tag, prerelease = false) {
-  const product = ["api-client", "runtime", "storage", "frontend"].find(
-    (name) => tag.startsWith(name === "frontend" ? "frontend-" : `${name}-v`),
-  );
-  if (!product) throw new Error("Unsupported release tag");
-  const release = resolveReleaseTag(product, tag, prerelease);
+  const match =
+    /^((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))(?:-(alpha|beta|rc)\.(0|[1-9]\d*)|(a|b|rc)(0|[1-9]\d*))?$/.exec(
+      tag,
+    );
+  if (!match)
+    throw new Error(
+      "Expected an unprefixed version such as 1.4.0, 1.4.0b3, or 1.4.0-beta.3.",
+    );
+  const stage = match[2] ?? { a: "alpha", b: "beta", rc: "rc" }[match[4]];
+  const number = match[3] ?? match[5];
+  const npmVersion = match[1] + (stage ? `-${stage}.${number}` : "");
+  const pythonVersion =
+    match[1] +
+    (stage ? `${{ alpha: "a", beta: "b", rc: "rc" }[stage]}${number}` : "");
   return {
-    product,
-    workspace: `@bedrock-server-manager/${product}`,
-    version: release.version,
-    npmVersion: release.npmVersion ?? release.version,
-    distTag: release.distTag,
-    artifactName:
-      product === "frontend" ? "frontend-distributions" : "npm-package",
+    npmVersion,
+    pythonVersion,
+    distTag: stage || prerelease ? "next" : "latest",
+    packages: releaseProducts.map((product) => ({
+      product,
+      workspace: `@bedrock-server-manager/${product}`,
+      npmVersion,
+      artifactName:
+        product === "frontend" ? "frontend-distributions" : "shared-packages",
+    })),
   };
 }

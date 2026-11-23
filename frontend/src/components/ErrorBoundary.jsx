@@ -15,7 +15,7 @@ export default class ErrorBoundary extends React.Component {
           <h1>This workspace could not be opened</h1>
           <p>
             Reload the interface to try again. If the problem continues, review
-            the server logs.
+            the manager logs.
           </p>
           <button
             className="action-button primary-button"

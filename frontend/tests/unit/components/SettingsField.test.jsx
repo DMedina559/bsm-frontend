@@ -85,3 +85,25 @@ it("edits CORS origins without dropping separators and explains restart behavior
   fireEvent.change(input, { target: { value: "" } });
   expect(input).toHaveValue("");
 });
+
+it("hides migrated signing credentials from grouped settings even on older responses", async () => {
+  const { default: SettingsGroups } =
+    await import("../../../src/components/SettingsGroups");
+  render(
+    <SettingsGroups
+      settings={{
+        web: {
+          jwt_secret_key: "synthetic-secret",
+          jwt_key_initialized: true,
+          port: 11325,
+        },
+      }}
+      onChange={vi.fn()}
+    />,
+  );
+  expect(screen.queryByLabelText("jwt secret key", { exact: true })).toBeNull();
+  expect(
+    screen.queryByLabelText("jwt key initialized", { exact: true }),
+  ).toBeNull();
+  expect(screen.getByLabelText("port", { exact: true })).toHaveValue(11325);
+});

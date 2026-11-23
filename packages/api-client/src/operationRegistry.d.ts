@@ -3,7 +3,17 @@ export interface OpenApiSchema {
   components?: Record<string, unknown>;
   [key: string]: unknown;
 }
+export interface AccessMetadata {
+  version?: number;
+  classification: string;
+  authentication: string;
+  required_permissions?: string[];
+  allowed_roles?: string[];
+  additional_checks?: string[];
+}
 export interface OperationDefinition {
+  security: Array<Record<string, string[]>>;
+  access: AccessMetadata;
   method: string;
   path: string;
   parameters: Array<{

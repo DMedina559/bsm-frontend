@@ -1,8 +1,9 @@
+import { getActiveInstance } from "../app/instanceProfiles";
 import { sessionRuntime } from "../app/sessionRuntime";
 import React, {
   createContext,
   useCallback,
-  useContext,
+  use,
   useEffect,
   useRef,
   useState,
@@ -16,9 +17,27 @@ import {
   clearStoredHistory,
   HISTORY_LIMIT,
 } from "../utils/notificationHistory";
+const SECURITY_MESSAGES = {
+  trusted_device_remembered:
+    "A device was remembered for second-factor verification.",
+  trusted_devices_revoked: "Remembered-device access was removed.",
+  login: "A new login was created for your account.",
+  recovery_code_used: "A recovery code was used to verify your account.",
+  mfa_enabled: "Two-factor authentication was enabled.",
+  mfa_disabled: "Two-factor authentication was disabled.",
+  recovery_codes_rotated: "Your recovery codes were replaced.",
+  password_changed: "Your password was changed.",
+  password_reset: "Your password was reset.",
+  local_mfa_reset: "A local administrator reset your MFA.",
+  integration_credential_created: "An integration credential was created.",
+  integration_credential_rotated: "An integration credential was rotated.",
+  integration_credential_revoked: "An integration credential was revoked.",
+  all_integration_credentials_revoked:
+    "All integration credentials were revoked.",
+};
 const VISIBLE_LIMIT = 8;
 const ToastContext = createContext();
-export const useToast = () => useContext(ToastContext);
+export const useToast = () => use(ToastContext);
 export const ToastProvider = ({ children }) => {
   const { user } = useAuth() || {};
   const generation = sessionRuntime.capture().generation;
@@ -31,24 +50,28 @@ export const ToastProvider = ({ children }) => {
     entries: readHistory(scope),
   }));
   const history = record.scope === scope ? record.entries : [];
-  const previousScope = useRef(scope);
+  const previousScopeRef = useRef(scope);
   const [toasts, setToasts] = useState([]);
-  const counter = useRef(0);
-  const timers = useRef(new Map());
-  const visible = useRef([]);
+  const counterRef = useRef(0);
+  const timersRef = useRef(new Map());
+  const visibleRef = useRef([]);
   const removeToast = useCallback((id) => {
-    clearTimeout(timers.current.get(id));
-    timers.current.delete(id);
-    visible.current = visible.current.filter((toast) => toast.id !== id);
-    setToasts(visible.current);
+    clearTimeout(timersRef.current.get(id));
+    timersRef.current.delete(id);
+    visibleRef.current = visibleRef.current.filter((toast) => toast.id !== id);
+    setToasts(visibleRef.current);
   }, []);
   const addToast = useCallback(
-    (message, type = "info") => {
+    (message, type = "info", eventId = null) => {
       if (sessionRuntime.capture().generation !== generation) return;
-      const id = ++counter.current;
+      const instance = getActiveInstance();
+      if (instance) message = `${instance.name}: ${message}`;
+      const id = ++counterRef.current;
       const entry = {
         id:
-          globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`,
+          eventId ||
+          globalThis.crypto?.randomUUID?.() ||
+          `${Date.now()}-${Math.random()}`,
         message: String(message),
         type: ["info", "success", "warning", "error"].includes(type)
           ? type
@@ -70,14 +93,14 @@ export const ToastProvider = ({ children }) => {
           )
           .slice(0, HISTORY_LIMIT),
       }));
-      visible.current.push({ id, message, type });
-      while (visible.current.length > VISIBLE_LIMIT) {
-        const evicted = visible.current.shift();
-        clearTimeout(timers.current.get(evicted.id));
-        timers.current.delete(evicted.id);
+      visibleRef.current.push({ id, message, type });
+      while (visibleRef.current.length > VISIBLE_LIMIT) {
+        const evicted = visibleRef.current.shift();
+        clearTimeout(timersRef.current.get(evicted.id));
+        timersRef.current.delete(evicted.id);
       }
-      setToasts([...visible.current]);
-      timers.current.set(
+      setToasts([...visibleRef.current]);
+      timersRef.current.set(
         id,
         setTimeout(() => removeToast(id), type === "error" ? 10000 : 6000),
       );
@@ -85,7 +108,28 @@ export const ToastProvider = ({ children }) => {
     [removeToast, scope, generation],
   );
   useEffect(() => {
-    const current = timers.current;
+    const notice = (event) => {
+      const detail = event.detail;
+      if (
+        !scope ||
+        detail?.backend !== backend ||
+        detail.generation !== sessionRuntime.capture().generation ||
+        !SECURITY_MESSAGES[detail.action]
+      )
+        return;
+      addToast(
+        SECURITY_MESSAGES[detail.action],
+        "info",
+        /^[a-f0-9]{32}$/.test(detail.eventId)
+          ? `security:${detail.eventId}`
+          : null,
+      );
+    };
+    window.addEventListener("bsm:security-notice", notice);
+    return () => window.removeEventListener("bsm:security-notice", notice);
+  }, [scope, backend, addToast]);
+  useEffect(() => {
+    const current = timersRef.current;
     return () => {
       current.forEach(clearTimeout);
       current.clear();
@@ -97,12 +141,12 @@ export const ToastProvider = ({ children }) => {
         ? previous
         : { scope, entries: readHistory(scope) },
     );
-    if (previousScope.current !== scope) {
-      timers.current.forEach(clearTimeout);
-      timers.current.clear();
-      visible.current = [];
+    if (previousScopeRef.current !== scope) {
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current.clear();
+      visibleRef.current = [];
       setToasts([]);
-      previousScope.current = scope;
+      previousScopeRef.current = scope;
     }
   }, [scope]);
   useEffect(() => {
@@ -132,19 +176,19 @@ export const ToastProvider = ({ children }) => {
     setRecord({ scope, entries: entries.slice(0, HISTORY_LIMIT) });
   };
   const pause = (id) => {
-    clearTimeout(timers.current.get(id));
-    timers.current.delete(id);
+    clearTimeout(timersRef.current.get(id));
+    timersRef.current.delete(id);
   };
   const resume = (id) => {
-    if (!visible.current.some((toast) => toast.id === id)) return;
-    if (!timers.current.has(id))
-      timers.current.set(
+    if (!visibleRef.current.some((toast) => toast.id === id)) return;
+    if (!timersRef.current.has(id))
+      timersRef.current.set(
         id,
         setTimeout(() => removeToast(id), 6000),
       );
   };
   return (
-    <ToastContext.Provider
+    <ToastContext
       value={{
         addToast,
         history,
@@ -185,6 +229,6 @@ export const ToastProvider = ({ children }) => {
           );
         })}
       </div>
-    </ToastContext.Provider>
+    </ToastContext>
   );
 };

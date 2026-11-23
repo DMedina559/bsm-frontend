@@ -2,9 +2,20 @@ import js from "@eslint/js";
 import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
-import react from "eslint-plugin-react";
+import eslintReact from "@eslint-react/eslint-plugin";
 import prettierPlugin from "eslint-plugin-prettier";
 import prettierConfig from "eslint-config-prettier";
+
+// Keep the official Hooks plugin authoritative for overlapping rules.
+const reactRules = Object.fromEntries(
+  Object.entries(eslintReact.configs.recommended.rules).filter(
+    ([name]) =>
+      !Object.hasOwn(
+        reactHooks.configs.recommended.rules,
+        name.replace("@eslint-react/", "react-hooks/"),
+      ),
+  ),
+);
 
 const testImports = {
   group: [
@@ -43,29 +54,27 @@ export default [
       },
     },
     plugins: {
-      react,
+      ...eslintReact.configs.recommended.plugins,
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
       prettier: prettierPlugin,
     },
     rules: {
       ...js.configs.recommended.rules,
-      ...react.configs.recommended.rules,
-      ...react.configs["jsx-runtime"].rules,
+      ...reactRules,
+      // Preserve checks from the previous React recommended configuration.
+      "@eslint-react/no-duplicate-key": "error",
+      "@eslint-react/no-missing-component-display-name": "error",
+      "@eslint-react/dom-no-unknown-property": "error",
+      "@eslint-react/dom-no-unsafe-target-blank": "error",
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": [
         "warn",
         { allowConstantExport: true },
       ],
       "prettier/prettier": "error",
-      "react/prop-types": "off",
       "no-unused-vars": ["error", { varsIgnorePattern: "^[A-Z_]" }],
       "react-hooks/set-state-in-effect": "off",
-    },
-    settings: {
-      react: {
-        version: "18.3",
-      },
     },
   },
   {

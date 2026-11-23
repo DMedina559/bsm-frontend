@@ -36,7 +36,17 @@ export interface DiagnosticRuns extends Data {
   available: boolean;
   runs: (Data & { instance_id: string })[];
 }
+export interface DiagnosticActivity extends Data {
+  scope: "application";
+  events: (Data & { active: Data[]; recent: Data[] }) | null;
+  operations: (Data & { active: Data[]; recent: Data[] }) | null;
+  subscriptions: (Data & { items: Data[] }) | null;
+  issues?: DiagnosticIssue[];
+  truncated?: boolean;
+}
 export interface DiagnosticTrace extends Data {
+  operations?: DiagnosticActivity["operations"];
+  operations_available?: boolean;
   events_available: boolean;
   tasks_available: boolean;
   tasks: unknown[];
@@ -47,3 +57,5 @@ export function validateDiagnosticSnapshot(value: unknown): DiagnosticSnapshot;
 export function validateDiagnosticHistory(value: unknown): DiagnosticHistory;
 export function validateDiagnosticRuns(value: unknown): DiagnosticRuns;
 export function validateDiagnosticTrace(value: unknown): DiagnosticTrace;
+
+export function validateDiagnosticActivity(value: unknown): DiagnosticActivity;

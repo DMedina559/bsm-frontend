@@ -1,0 +1,319 @@
+import { test, expect } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+
+test("login asks for MFA after credentials and accepts a recovery code", async ({
+  page,
+  context,
+  browser,
+}) => {
+  test.setTimeout(60000);
+  const origin = "http://127.0.0.1:4180";
+  const request = context.request;
+  const schema = await (await request.get(`${origin}/api/openapi.json`)).json();
+  test.skip(
+    !schema.paths?.["/api/account/security/mfa/enroll"],
+    "Backend predates MFA",
+  );
+  const form = {
+    username: "smoke-admin",
+    password: "temporary-smoke-password",
+  };
+  const setup = await (await request.get(`${origin}/api/setup/status`)).json();
+  if (setup.needs_setup)
+    expect(
+      (
+        await request.post(`${origin}/api/setup/create-first-user`, {
+          data: form,
+        })
+      ).ok(),
+    ).toBe(true);
+  const login = await request.post(`${origin}/auth/token`, {
+    form,
+    headers: { "X-BSM-Auth-Mode": "cookie" },
+  });
+  expect(login.ok()).toBe(true);
+  const headers = { "X-CSRF-Token": login.headers()["x-bsm-csrf-token"] };
+  const enrollment = await request.post(
+    `${origin}/api/account/security/mfa/enroll`,
+    { headers },
+  );
+  expect(enrollment.ok()).toBe(true);
+  const secret = (await enrollment.json()).secret;
+  const code = execFileSync(
+    "python",
+    ["-c", "import pyotp,sys; print(pyotp.TOTP(sys.stdin.read()).now())"],
+    { input: secret, encoding: "utf8" },
+  ).trim();
+  const confirmed = await request.post(
+    `${origin}/api/account/security/mfa/confirm`,
+    { headers, data: { code } },
+  );
+  expect(confirmed.ok()).toBe(true);
+  const recoveryCodes = (await confirmed.json()).recovery_codes;
+  const recovery = recoveryCodes[0];
+  await context.clearCookies();
+  await page.goto(`${origin}/app/login`);
+  await expect(page.getByLabel("Username", { exact: true })).toBeVisible();
+  await expect(
+    page.getByLabel("Authenticator or recovery code", { exact: true }),
+  ).toHaveCount(0);
+  await page.getByLabel("Username", { exact: true }).fill(form.username);
+  await page.getByLabel("Password", { exact: true }).fill(form.password);
+  await page.getByRole("button", { name: "Sign In", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Verify your sign-in" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Password", { exact: true })).toHaveCount(0);
+  await page
+    .getByLabel("Authenticator or recovery code", { exact: true })
+    .fill(recovery);
+  await page.getByLabel("Remember this device for 30 days").check();
+  await page
+    .getByRole("button", { name: "Verify and sign in", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Logout", exact: true }),
+  ).toBeVisible();
+  // Trust survives logout, remains HttpOnly and skips OTP on the next password login.
+  const rememberedCookie = (await context.cookies()).find((cookie) =>
+    cookie.name.startsWith("bsm_trusted_device_"),
+  );
+  expect(rememberedCookie.httpOnly).toBe(true);
+  expect(await page.evaluate(() => document.cookie)).not.toContain(
+    rememberedCookie.value,
+  );
+  await page.getByRole("button", { name: "Logout", exact: true }).click();
+  await expect(page.getByLabel("Username", { exact: true })).toBeVisible();
+  await page.getByLabel("Username", { exact: true }).fill(form.username);
+  await page.getByLabel("Password", { exact: true }).fill(form.password);
+  await page.getByRole("button", { name: "Sign In", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Logout", exact: true }),
+  ).toBeVisible();
+  await page.goto(`${origin}/app/account`);
+  await expect(
+    page.getByRole("heading", { name: "Remembered devices", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Verify password" }).click();
+  await expect(page.getByText(/This device is remembered until/)).toBeVisible();
+  await expect(
+    page.getByLabel("Authenticator or recovery code", { exact: true }),
+  ).toHaveCount(0);
+  await page.getByLabel("Current password").fill(form.password);
+  await page.getByRole("button", { name: "Verify identity" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  // A deliberate fresh factor can renew trust; remembered trust alone never does.
+  await page.getByRole("button", { name: "Verify password" }).click();
+  await page
+    .getByRole("button", { name: "Use an authenticator instead" })
+    .click();
+  await page.getByLabel("Current password").fill(form.password);
+  await page
+    .getByLabel("Authenticator or recovery code", { exact: true })
+    .fill(recoveryCodes[2]);
+  await page.getByLabel("Remember this device for 30 days").check();
+  await page.getByRole("button", { name: "Verify identity" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  const renewed = (await context.cookies()).find(
+    (cookie) => cookie.name === rememberedCookie.name,
+  );
+  expect(renewed.value).not.toBe(rememberedCookie.value);
+  // The same account can sign in to a saved connection using its second factor.
+  const primaryCookie = (await context.cookies()).find(
+    (cookie) => cookie.name === "access_token_cookie",
+  ).value;
+  await page.goto(`${origin}/app/instances?hidden=true`);
+  await page.getByRole("button", { name: "Add instance", exact: true }).click();
+  await page
+    .getByLabel("Display name", { exact: true })
+    .fill("MFA saved connection");
+  await page.getByLabel("Backend URL", { exact: true }).fill(origin);
+  await page
+    .getByRole("button", { name: "Save instance", exact: true })
+    .click();
+  const card = page.getByRole("article", {
+    name: "MFA saved connection",
+    exact: true,
+  });
+  await card.getByLabel("Username", { exact: true }).fill(form.username);
+  await card.getByLabel("Password", { exact: true }).fill(form.password);
+  await card.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(
+    card.getByLabel("Authenticator or recovery code", { exact: true }),
+  ).toBeVisible();
+  await card
+    .getByLabel("Authenticator or recovery code", { exact: true })
+    .fill(recoveryCodes[1]);
+  await card
+    .getByRole("button", { name: "Verify and sign in", exact: true })
+    .click();
+  await expect(card.getByText(form.username, { exact: true })).toBeVisible();
+  expect(
+    (await context.cookies()).find(
+      (cookie) => cookie.name === "access_token_cookie",
+    ).value,
+  ).toBe(primaryCookie);
+  const stored = await page.evaluate(() =>
+    [...Object.values(localStorage), ...Object.values(sessionStorage)].join(
+      " ",
+    ),
+  );
+  expect(stored).not.toContain(recoveryCodes[1]);
+  expect(stored).not.toContain(form.password);
+
+  // Require MFA for administrators and test the enrollment-only browser flow.
+  const primary = await request.get(`${origin}/api/account`);
+  const csrf = primary.headers()["x-bsm-csrf-token"];
+  const invitation = await request.post(
+    `${origin}/api/register/generate-token`,
+    { headers: { "X-CSRF-Token": csrf }, data: { role: "admin" } },
+  );
+  expect(invitation.ok()).toBe(true);
+  const inviteToken = new URL(
+    (await invitation.json()).registration_url,
+  ).pathname
+    .split("/")
+    .at(-1);
+  const newAdmin = {
+    username: "enrollment-admin",
+    password: "a strong enrollment passphrase",
+  };
+  expect(
+    (
+      await request.post(`${origin}/api/register/${inviteToken}`, {
+        headers: { "X-CSRF-Token": csrf },
+        data: newAdmin,
+      })
+    ).ok(),
+  ).toBe(true);
+  expect(
+    (
+      await request.post(`${origin}/api/settings/set`, {
+        headers: { "X-CSRF-Token": csrf },
+        data: { key: "security.require_admin_mfa", value: true },
+      })
+    ).ok(),
+  ).toBe(true);
+  const fresh = await browser.newContext();
+  try {
+    const enrollmentPage = await fresh.newPage();
+    await enrollmentPage.goto(`${origin}/app/login`);
+    await enrollmentPage
+      .getByLabel("Username", { exact: true })
+      .fill(newAdmin.username);
+    await enrollmentPage
+      .getByLabel("Password", { exact: true })
+      .fill(newAdmin.password);
+    await enrollmentPage
+      .getByRole("button", { name: "Sign In", exact: true })
+      .click();
+    await expect(enrollmentPage).toHaveURL(/\/account$/);
+    await expect(
+      enrollmentPage.getByText("Your administrator requires MFA.", {
+        exact: false,
+      }),
+    ).toBeVisible();
+    await enrollmentPage
+      .getByRole("button", { name: "Set up authenticator", exact: true })
+      .click();
+    const setupKey = await enrollmentPage
+      .getByLabel("Setup key", { exact: true })
+      .inputValue();
+    const confirmationCode = execFileSync(
+      "python",
+      ["-c", "import pyotp,sys; print(pyotp.TOTP(sys.stdin.read()).now())"],
+      { input: setupKey, encoding: "utf8" },
+    ).trim();
+    await enrollmentPage
+      .getByLabel("Six-digit authenticator code", { exact: true })
+      .fill(confirmationCode);
+    await enrollmentPage
+      .getByRole("button", {
+        name: "Enable two-factor authentication",
+        exact: true,
+      })
+      .click();
+    await expect(
+      enrollmentPage.getByRole("heading", {
+        name: "Save your recovery codes",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      enrollmentPage.getByRole("button", {
+        name: "I saved my codes",
+        exact: true,
+      }),
+    ).toBeVisible();
+    const displayedCodes = await enrollmentPage
+      .locator(".security-recovery li code")
+      .allTextContents();
+    await enrollmentPage
+      .context()
+      .grantPermissions(["clipboard-read", "clipboard-write"], { origin });
+    await enrollmentPage
+      .getByRole("button", { name: "Copy recovery codes", exact: true })
+      .click();
+    await expect(
+      enrollmentPage.getByText("Recovery codes copied.", { exact: true }),
+    ).toBeVisible();
+    const copied = await enrollmentPage.evaluate(() =>
+      navigator.clipboard.readText(),
+    );
+    for (const code of displayedCodes) expect(copied).toContain(code);
+    // Direct writes are exercised with a fake handle; CI cannot operate an OS dialog.
+    await enrollmentPage.evaluate(() => {
+      window.__savedRecovery = "";
+      window.showSaveFilePicker = async () => ({
+        createWritable: async () => ({
+          write: async (text) => {
+            window.__savedRecovery = text;
+          },
+          close: async () => {},
+          abort: async () => {},
+        }),
+      });
+    });
+    await enrollmentPage
+      .getByRole("button", { name: "Download recovery codes", exact: true })
+      .click();
+    await expect(
+      enrollmentPage.getByText("Recovery codes saved.", { exact: true }),
+    ).toBeVisible();
+    const directSave = await enrollmentPage.evaluate(
+      () => window.__savedRecovery,
+    );
+    for (const recoveryCode of displayedCodes)
+      expect(directSave).toContain(recoveryCode);
+    await enrollmentPage.evaluate(() => {
+      window.showSaveFilePicker = undefined;
+      delete window.__savedRecovery;
+    });
+    const downloaded = enrollmentPage.waitForEvent("download");
+    await enrollmentPage
+      .getByRole("button", { name: "Download recovery codes", exact: true })
+      .click();
+    const download = await downloaded;
+    expect(download.suggestedFilename()).toBe("bsm-recovery-codes.txt");
+    expect(await download.failure()).toBeNull();
+    const downloadedCodes = readFileSync(await download.path(), "utf8");
+    expect(displayedCodes).toHaveLength(10);
+    for (const recoveryCode of displayedCodes)
+      expect(downloadedCodes).toContain(recoveryCode);
+    await expect(enrollmentPage.getByText(/Download requested/)).toBeVisible();
+
+    await enrollmentPage
+      .getByRole("button", { name: "I saved my codes", exact: true })
+      .click();
+    await enrollmentPage.goto(`${origin}/app/bsm-settings`);
+    await expect(
+      enrollmentPage.getByRole("heading", {
+        name: "Global Settings",
+        exact: true,
+      }),
+    ).toBeVisible();
+  } finally {
+    await fresh.close();
+  }
+});

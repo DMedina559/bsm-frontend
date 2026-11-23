@@ -1,3 +1,4 @@
+import { useServerAccess } from "../../app/useAccess";
 import { memo } from "react";
 import { useOnline } from "../../app/useOnline";
 import { useServerSnapshot } from "../../app/useServerSnapshot";
@@ -12,8 +13,7 @@ import {
   Download,
   Terminal,
 } from "lucide-react";
-import { resolveApiUrl } from "../../api/transport";
-import { resolveOperationUrl } from "../../api/operations";
+import ResourceIcon from "../ResourceIcon";
 import { getApiProxyBasePath, resolveAppAssetUrl } from "../../utils/basePath";
 
 const actionDefinitions = {
@@ -52,6 +52,11 @@ const actionDefinitions = {
 function ServerCard({
   server,
   isAdmin = false,
+  canStart = true,
+  canStop = true,
+  canRestart = true,
+  canCommand = true,
+  canUpdate = true,
   busy,
   onOpen,
   onAction,
@@ -106,20 +111,13 @@ function ServerCard({
         aria-label={`Open ${server.name} monitor`}
       />
       <div className="card-header overview-card-header">
-        <img
+        <ResourceIcon
+          world
+          serverName={server.name}
           className="overview-world-icon"
-          src={resolveApiUrl(
-            resolveOperationUrl("get_world_icon", {
-              path: { server_name: server.name },
-            }),
+          fallback={resolveAppAssetUrl(
+            `${getApiProxyBasePath()}/app/image/icon/web-app-manifest-192x192.png`,
           )}
-          alt=""
-          onError={(event) => {
-            event.currentTarget.onerror = null;
-            event.currentTarget.src = resolveAppAssetUrl(
-              `${getApiProxyBasePath()}/app/image/icon/web-app-manifest-192x192.png`,
-            );
-          }}
         />
         <div className="overview-server-identity">
           <h3>{server.name}</h3>
@@ -175,11 +173,18 @@ function ServerCard({
       >
         {actions.map((action) => {
           const { Icon, label, title, className } = actionDefinitions[action];
+          const lifecycleAllowed = {
+            start: canStart,
+            stop: canStop,
+            restart: canRestart,
+          };
           const disabled =
             !online ||
             busy ||
-            (action === "update" && !stable) ||
-            (action === "command" && !running);
+            (Object.hasOwn(lifecycleAllowed, action) &&
+              !lifecycleAllowed[action]) ||
+            (action === "command" && (!canCommand || !running)) ||
+            (action === "update" && (!canUpdate || !stable));
           return (
             <button
               key={action}
@@ -209,6 +214,25 @@ export const ConnectedServerCard = memo(function ConnectedServerCard({
   ...props
 }) {
   const server = useServerSnapshot(serverName);
-  return server ? <MemoServerCard server={server} {...props} /> : null;
+  const {
+    canStart,
+    canStop,
+    canRestart,
+    canCommand,
+    canUpdate,
+    canReadProperties,
+  } = useServerAccess(serverName);
+  return server ? (
+    <MemoServerCard
+      server={server}
+      {...props}
+      isAdmin={canReadProperties}
+      canStart={canStart}
+      canStop={canStop}
+      canRestart={canRestart}
+      canCommand={canCommand}
+      canUpdate={canUpdate}
+    />
+  ) : null;
 });
 export default MemoServerCard;

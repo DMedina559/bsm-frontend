@@ -1,3 +1,4 @@
+import { accessUser } from "./accessFixtures.js";
 import { createServer, request as proxyRequest } from "node:http";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -32,7 +33,7 @@ for (const port of [4176, 4177]) {
     res.setHeader("Vary", "Origin");
     res.setHeader(
       "Access-Control-Allow-Headers",
-      "authorization, content-type, cache-control, pragma",
+      "authorization, content-type, cache-control, pragma, x-bsm-auth-mode, x-csrf-token",
     );
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     if (req.method === "OPTIONS") {
@@ -62,7 +63,7 @@ for (const port of [4176, 4177]) {
         data = {
           id: token,
           username: token.slice(5),
-          role: "admin",
+          ...accessUser("admin"),
           theme: "default",
         };
     } else if (path === "/api/servers")

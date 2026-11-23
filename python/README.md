@@ -83,14 +83,14 @@ that configuration explicitly when invoking it from another directory.
 
 ## Releases
 
-Publish a GitHub release with a tag such as `frontend-1.3.0b8`. The frontend distribution workflow
-publishes `python/dist/` to PyPI after shared validation, using `1.3.0b8` as the
-distribution version. Version discovery recognizes prefixed frontend tags and
-historical unprefixed or `v`-prefixed tags in the parent repository and ignores
-SDK tags. Only `frontend-` releases trigger new Python publications. The same release also
-publishes the verified static assets as `@bedrock-server-manager/frontend` on npm,
-using SemVer prerelease spelling. Both archives use the same compiled web build.
-The GitHub workflow uses the existing `release` environment and PyPI
-trusted publisher. See the
-[workspace release guide](https://github.com/DMedina559/bsm-frontend#releases)
-for the independent SDK release process.
+Publish a GitHub release tagged `1.4.0` or `1.4.0b1`. The coordinated
+workflow publishes all four npm packages and this Python distribution only after
+shared validation passes. npm uses `1.4.0-beta.1`; Python uses the equivalent
+`1.4.0b1`. Both frontend archives contain the same compiled web assets.
+
+Version discovery still recognizes historical frontend and unprefixed tags in
+the parent repository and ignores former SDK-only tags. New publications require
+a unified unprefixed version tag. The workflow uses the existing `release` environment
+and PyPI trusted publisher; retries skip files already published.
+See the [workspace release guide](https://github.com/DMedina559/bsm-frontend#releases)
+for the full release process and npm trusted publishing setup.

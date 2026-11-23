@@ -62,3 +62,37 @@ describe("AuditLog", () => {
     expect(screen.getByText("Backup file is unavailable.")).toBeInTheDocument();
   });
 });
+
+it("pages through bounded audit requests and returns to the newest page", async () => {
+  api.get.mockImplementation((url) => {
+    const parsed = new URL(url, "http://bsm.test");
+    if (parsed.pathname === "/audit-log/list") {
+      const offset = Number(parsed.searchParams.get("offset") ?? 0);
+      const length = offset === 0 ? 101 : 2;
+      return Promise.resolve(
+        Array.from({ length }, (_, index) => ({
+          id: 1000 - offset - index,
+          action: `event-${offset + index}`,
+          user_id: 1,
+          timestamp: "2026-10-31T12:00:00Z",
+          details: {},
+        })),
+      );
+    }
+    return Promise.resolve(fixtureResponse(parsed));
+  });
+  render(<AuditLog />);
+  await screen.findByText("event-0");
+  expect(screen.queryByText("event-100")).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Newer events" })).toBeDisabled();
+  fireEvent.click(screen.getByRole("button", { name: "Older events" }));
+  await screen.findByText("event-100");
+  expect(screen.queryByText("event-0")).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Older events" })).toBeDisabled();
+  expect(api.get).toHaveBeenCalledWith(
+    "/audit-log/list?limit=101&offset=100",
+    expect.anything(),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Newer events" }));
+  await screen.findByText("event-0");
+});

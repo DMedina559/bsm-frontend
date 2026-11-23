@@ -1,3 +1,10 @@
+import TokenAccessNotice from "../components/auth/TokenAccessNotice";
+import { getActiveInstance, subscribeInstances } from "../app/instanceProfiles";
+import InstanceSwitcher from "../components/InstanceSwitcher";
+import "../styles/instances.css";
+import RuntimeRecordingIndicator from "../components/diagnostics/RuntimeRecordingIndicator";
+import { useTimeFormat } from "../app/useTimeFormat";
+import BackupAlerts from "../components/BackupAlerts";
 import { useOnline } from "../app/useOnline";
 import BackendCompatibility from "../components/BackendCompatibility";
 import OperationsStatus from "../components/OperationsStatus";
@@ -14,6 +21,15 @@ import { PAGE_INFO } from "../utils/navigation";
 import { useFocusTrap } from "../utils/useFocusTrap";
 
 const Layout = () => {
+  const instanceTitle = React.useSyncExternalStore(
+    subscribeInstances,
+    () => {
+      const profile = getActiveInstance();
+      return profile?.titleInTab ? profile.name : "";
+    },
+    () => "",
+  );
+  const { format } = useTimeFormat();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(
     () => window.matchMedia?.("(max-width: 768px)").matches ?? false,
@@ -41,21 +57,22 @@ const Layout = () => {
   const mainRef = useRef(null);
   const navigationRef = useRef(null);
   const menuRef = useRef(null);
-  const wasMobileOpen = useRef(false);
+  const wasMobileOpenRef = useRef(false);
   useFocusTrap(navigationRef, mobileOpen, () => setMobileOpen(false));
   useEffect(() => {
-    if (wasMobileOpen.current && !mobileOpen && isMobile) {
+    if (wasMobileOpenRef.current && !mobileOpen && isMobile) {
       menuRef.current?.focus({ preventScroll: true });
     }
-    wasMobileOpen.current = mobileOpen;
+    wasMobileOpenRef.current = mobileOpen;
   }, [mobileOpen, isMobile]);
   useEffect(() => {
-    document.title = `${title} · Bedrock Server Manager`;
+    document.title = `${instanceTitle ? `${instanceTitle} · ` : ""}${title} · Bedrock Server Manager`;
     mainRef.current?.focus({ preventScroll: true });
-  }, [pathname, title]);
+  }, [pathname, title, instanceTitle]);
 
   return (
     <div className="page-layout">
+      <BackupAlerts />
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
@@ -93,6 +110,7 @@ const Layout = () => {
             <span aria-current="page">{title}</span>
           </nav>
           <div className="workspace-indicators">
+            <InstanceSwitcher />
             <span
               className={`connection-indicator ${isConnected ? "connected" : "degraded"}`}
               role="status"
@@ -109,6 +127,7 @@ const Layout = () => {
               {isConnected ? "Live" : "Offline"}
             </span>
             <OperationsStatus />
+            <RuntimeRecordingIndicator />
             <NotificationHistory />
             <Link className="account-chip" to="/account">
               <span className="avatar">
@@ -124,7 +143,8 @@ const Layout = () => {
           ref={mainRef}
           tabIndex={-1}
         >
-          {pathname !== "/" && (
+          <TokenAccessNotice account={user} />
+          {!["/", "/account", "/frontend-settings"].includes(pathname) && (
             <div className="page-context">
               <span>{description}</span>
               {group === "Selected server" && (
@@ -137,7 +157,7 @@ const Layout = () => {
           {(!online || offlineSnapshot) && (
             <div className="message-box message-info" role="status">
               {offlineSnapshot
-                ? `Viewing a stale fleet snapshot from ${new Date(offlineSnapshot.savedAt).toLocaleString()}.`
+                ? `Viewing a stale fleet snapshot from ${format(offlineSnapshot.savedAt)}.`
                 : "You are offline. Displayed information may be out of date."}{" "}
               Changes require a connection; requests are never queued for later.
             </div>

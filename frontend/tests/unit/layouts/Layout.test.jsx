@@ -12,6 +12,9 @@ vi.mock("../../../src/contexts/ServerContext", () => ({
 vi.mock("../../../src/contexts/WebSocketContext", () => ({
   useWebSocket: () => ({ isConnected: true, isFallback: false }),
 }));
+vi.mock("../../../src/components/BackupAlerts", () => ({
+  default: () => null,
+}));
 vi.mock("../../../src/components/OperationsStatus", () => ({
   default: () => null,
 }));

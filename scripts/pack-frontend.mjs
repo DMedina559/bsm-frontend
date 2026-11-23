@@ -10,14 +10,13 @@ import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
-import { resolveReleaseTag } from "./release-version.mjs";
+import { resolveRelease } from "./release-version.mjs";
 const root = fileURLToPath(new URL("../", import.meta.url));
 const target = join(root, "packages/frontend");
 const source = join(root, "frontend/dist");
 const pkg = JSON.parse(readFileSync(join(target, "package.json"), "utf8"));
 if (process.env.RELEASE_TAG)
-  pkg.version = resolveReleaseTag(
-    "frontend",
+  pkg.version = resolveRelease(
     process.env.RELEASE_TAG,
     process.env.IS_PRERELEASE === "true",
   ).npmVersion;

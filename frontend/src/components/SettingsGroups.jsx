@@ -1,5 +1,9 @@
 import SettingsField from "./SettingsField";
-import { settingGroups, settingGroupHelp } from "../utils/settingsFields";
+import {
+  settingGroups,
+  settingGroupHelp,
+  settingField,
+} from "../utils/settingsFields";
 export default function SettingsGroups({
   settings,
   onChange,
@@ -8,7 +12,8 @@ export default function SettingsGroups({
   function render(data, prefix = "") {
     return Object.entries(data).map(([key, value]) => {
       const path = prefix ? `${prefix}.${key}` : key;
-      if (key === "config_schema_version") return null;
+      if (key === "config_schema_version" || settingField(path).hidden)
+        return null;
       if (value !== null && typeof value === "object" && !Array.isArray(value))
         return (
           <section key={path} className="settings-group">

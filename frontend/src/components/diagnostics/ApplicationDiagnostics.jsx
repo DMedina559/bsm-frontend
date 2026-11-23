@@ -1,3 +1,5 @@
+import { keyedItems } from "../../utils/keyedItems";
+import { useSearchParams } from "react-router-dom";
 import RuntimeDiagnostics from "./RuntimeDiagnostics";
 import { useEffect, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
@@ -6,11 +8,15 @@ import { callOperation } from "../../api/operations";
 import { useResourceQuery } from "../../app/resourceQueries";
 import { validateDiagnosticSnapshot } from "../../app/diagnostics";
 import { sessionRuntime } from "../../app/sessionRuntime";
+import { triggerBlobDownload } from "../../utils/download";
+import { useWebSocket } from "../../contexts/WebSocketContext";
+import { useAccess } from "../../app/useAccess";
 import QueryStatus from "../QueryStatus";
 import DiagnosticDetails from "./DiagnosticDetails";
 import { dateValue, displayValue, labelFor } from "./format";
 import Status from "./Status";
 import DiagnosticHistory from "./DiagnosticHistory";
+import DiagnosticActivity from "./DiagnosticActivity";
 import DiagnosticSubsystem from "./DiagnosticSubsystem";
 import { subsystemDescriptions } from "./subsystems";
 import MonitorNavigation from "../metrics/MonitorNavigation";
@@ -25,8 +31,27 @@ const actions = {
   check_configuration: "Review the application configuration.",
 };
 export default function ApplicationDiagnostics() {
-  const [view, setView] = useState("overview");
-  const [historyVisited, setHistoryVisited] = useState(false);
+  const [params, setParams] = useSearchParams();
+  const categories = [
+    "overview",
+    "subsystems",
+    "activity",
+    "history",
+    "advanced",
+    "frontend",
+  ];
+  const view = categories.includes(params.get("category"))
+    ? params.get("category")
+    : "overview";
+  const setView = (value) =>
+    setParams((previous) => {
+      const next = new URLSearchParams(previous);
+      next.set("category", value);
+      return next;
+    });
+  const [historyVisited, setHistoryVisited] = useState(
+    () => params.get("category") === "history",
+  );
   const [automatic, setAutomatic] = useState(false);
   const [section, setSection] = useState("all");
   const [baseline, setBaseline] = useState(
@@ -36,27 +61,45 @@ export default function ApplicationDiagnostics() {
   );
   const [traceDraft, setTraceDraft] = useState("");
   const [correlation, setCorrelation] = useState("");
-  const traceHeading = useRef(null);
-  const controller = useRef(/** @type {AbortController | null} */ (null));
+  const traceHeadingRef = useRef(null);
+  const controllerRef = useRef(/** @type {AbortController | null} */ (null));
   useEffect(() => {
-    controller.current = new AbortController();
-    return () => controller.current.abort();
+    controllerRef.current = new AbortController();
+    return () => controllerRef.current.abort();
   }, []);
+  const { isConnected, subscribe, unsubscribe } = useWebSocket({
+    optional: true,
+  });
+  const { can } = useAccess();
+  const canDiagnostics = can("get_application_diagnostics");
+
+  useEffect(() => {
+    if (!canDiagnostics || view === "frontend" || !isConnected) return;
+    subscribe("diagnostics");
+    return () => unsubscribe("diagnostics");
+  }, [canDiagnostics, view, isConnected, subscribe, unsubscribe]);
+
   const query = useResourceQuery("diagnostics", undefined, {
+    enabled: view !== "frontend",
     retry: false,
-    refetchInterval: automatic ? 15000 : false,
-    refetchIntervalInBackground: false,
+    refetchInterval:
+      automatic && view !== "frontend" ? (isConnected ? 60000 : 15000) : false,
+    refetchIntervalInBackground: true,
   });
   const trace = useResourceQuery("diagnosticTrace", correlation, {
     enabled: view === "history" && !!correlation,
     retry: false,
   });
+  useEffect(() => {
+    if (view === "history" && correlation)
+      traceHeadingRef.current?.focus({ preventScroll: true });
+  }, [view, correlation]);
   const snapshot = query.data;
   const report = useMutation({
     gcTime: 0,
     mutationFn: async () => {
       const session = sessionRuntime.capture();
-      const signal = controller.current?.signal;
+      const signal = controllerRef.current?.signal;
       if (!signal) throw new DOMException("View closed", "AbortError");
       const data = await callOperation("get_diagnostic_report", { signal });
       if (!sessionRuntime.isCurrent(session) || signal.aborted)
@@ -64,26 +107,19 @@ export default function ApplicationDiagnostics() {
       if (!data?.snapshot || typeof data.report_id !== "string")
         throw new Error("The backend returned an invalid support report.");
       validateDiagnosticSnapshot(data.snapshot);
-      const revoke = URL.revokeObjectURL.bind(URL);
-      const url = URL.createObjectURL(
+      triggerBlobDownload(
         new Blob([JSON.stringify(data, null, 2) + "\n"], {
           type: "application/json",
         }),
+        `bsm-diagnostics-${data.report_id.replace(/[^a-zA-Z0-9_-]/g, "")}.json`,
       );
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = `bsm-diagnostics-${data.report_id.replace(/[^a-zA-Z0-9_-]/g, "")}.json`;
-      document.body.append(anchor);
-      anchor.click();
-      anchor.remove();
-      setTimeout(() => revoke(url), 1000);
     },
   });
   const compare = useMutation({
     gcTime: 0,
     mutationFn: async () => {
       const session = sessionRuntime.capture();
-      const signal = controller.current?.signal;
+      const signal = controllerRef.current?.signal;
       if (!signal || !baseline || !snapshot)
         throw new Error("Save a baseline and collect observations first.");
       const result = await callOperation("compare_diagnostic_snapshots", {
@@ -101,42 +137,47 @@ export default function ApplicationDiagnostics() {
     },
   });
   const inspectTrace = (id) => {
+    setView("history");
+    setHistoryVisited(true);
     setTraceDraft(id);
-    traceHeading.current?.scrollIntoView?.({
+    traceHeadingRef.current?.scrollIntoView?.({
       block: "start",
       behavior: "smooth",
     });
-    traceHeading.current?.focus({ preventScroll: true });
+    traceHeadingRef.current?.focus({ preventScroll: true });
     if (correlation === id) void trace.refetch();
     else setCorrelation(id);
   };
   return (
     <div className="diagnostics-view">
-      <RuntimeDiagnostics />
       <div className="application-monitor-heading">
         <div>
           <h2 className="monitor-view-title">Diagnostics</h2>
           <p>Runtime observations and retained history</p>
         </div>
-        <div className="diagnostic-actions">
-          <button
-            type="button"
-            className="action-button secondary"
-            disabled={query.isFetching}
-            onClick={() => query.refetch()}
-          >
-            <RefreshCw size={16} aria-hidden="true" /> Refresh observations
-          </button>
-          <button
-            type="button"
-            className="action-button secondary"
-            disabled={report.isPending}
-            onClick={() => report.mutate()}
-          >
-            <Download size={16} aria-hidden="true" />{" "}
-            {report.isPending ? "Preparing report…" : "Download support report"}
-          </button>
-        </div>
+        {view !== "frontend" && (
+          <div className="diagnostic-actions">
+            <button
+              type="button"
+              className="action-button secondary"
+              disabled={query.isFetching}
+              onClick={() => query.refetch()}
+            >
+              <RefreshCw size={16} aria-hidden="true" /> Refresh observations
+            </button>
+            <button
+              type="button"
+              className="action-button secondary"
+              disabled={report.isPending}
+              onClick={() => report.mutate()}
+            >
+              <Download size={16} aria-hidden="true" />{" "}
+              {report.isPending
+                ? "Preparing report…"
+                : "Download support report"}
+            </button>
+          </div>
+        )}
       </div>
       <MonitorNavigation
         label="Diagnostic categories"
@@ -148,28 +189,35 @@ export default function ApplicationDiagnostics() {
         items={[
           ["overview", "Overview"],
           ["subsystems", "Subsystems"],
+          ["activity", "Activity"],
           ["history", "History"],
           ["advanced", "Advanced"],
+          ["frontend", "Frontend runtime"],
         ]}
       />
-      <label className="diagnostic-refresh">
-        <input
-          type="checkbox"
-          checked={automatic}
-          onChange={(e) => setAutomatic(e.target.checked)}
-        />{" "}
-        Auto-refresh every 15 seconds
-      </label>
-      <QueryStatus query={query} />
-      {query.error?.status === 404 && (
-        <p>
-          This backend does not expose diagnostics. Update the backend to use
-          this view.
-        </p>
+      {view === "frontend" && <RuntimeDiagnostics />}
+      {view !== "frontend" && (
+        <>
+          <label className="diagnostic-refresh">
+            <input
+              type="checkbox"
+              checked={automatic}
+              onChange={(e) => setAutomatic(e.target.checked)}
+            />{" "}
+            Auto-refresh every 15 seconds
+          </label>
+          <QueryStatus query={query} />
+          {query.error?.status === 404 && (
+            <p>
+              This backend does not expose diagnostics. Update the backend to
+              use this view.
+            </p>
+          )}
+          {query.isPending && <p role="status">Collecting observations…</p>}
+          {report.error && <p role="alert">{report.error.message}</p>}
+        </>
       )}
-      {query.isPending && <p role="status">Collecting observations…</p>}
-      {report.error && <p role="alert">{report.error.message}</p>}
-      {snapshot && (
+      {snapshot && view !== "frontend" && (
         <>
           <dl className="application-metric-grid diagnostic-summary">
             <div>
@@ -212,18 +260,18 @@ export default function ApplicationDiagnostics() {
                   aria-label="Diagnostic findings"
                 >
                   <h2>Needs attention</h2>
-                  {snapshot.summary.findings.map((finding, index) => (
-                    <article
-                      key={`${finding.subsystem}:${finding.issue.code}:${index}`}
-                    >
-                      <strong>{labelFor(finding.subsystem)}</strong>
-                      <p>{finding.issue.message}</p>
-                      <small>
-                        {actions[finding.issue.action] ??
-                          "Inspect this subsystem's observations."}
-                      </small>
-                    </article>
-                  ))}
+                  {keyedItems(snapshot.summary.findings).map(
+                    ({ item: finding, key }) => (
+                      <article key={key}>
+                        <strong>{labelFor(finding.subsystem)}</strong>
+                        <p>{finding.issue.message}</p>
+                        <small>
+                          {actions[finding.issue.action] ??
+                            "Inspect this subsystem's observations."}
+                        </small>
+                      </article>
+                    ),
+                  )}
                 </section>
               )}
               {snapshot.summary.truncated && (
@@ -327,6 +375,7 @@ export default function ApplicationDiagnostics() {
               <label className="diagnostic-section-picker">
                 Subsystem
                 <select
+                  className="form-input"
                   value={section}
                   onChange={(e) => setSection(e.target.value)}
                 >
@@ -373,13 +422,20 @@ export default function ApplicationDiagnostics() {
           )}
         </>
       )}
+      {view === "activity" && (
+        <DiagnosticActivity onTrace={inspectTrace} automatic={automatic} />
+      )}
       {historyVisited && (
         <div hidden={view !== "history"}>
           <section
             className="diagnostic-trace"
             aria-labelledby="diagnostic-trace-heading"
           >
-            <h2 id="diagnostic-trace-heading" ref={traceHeading} tabIndex={-1}>
+            <h2
+              id="diagnostic-trace-heading"
+              ref={traceHeadingRef}
+              tabIndex={-1}
+            >
               Correlated trace
             </h2>
             <form
@@ -393,6 +449,7 @@ export default function ApplicationDiagnostics() {
               <label>
                 Trace correlation ID
                 <input
+                  className="form-input"
                   value={traceDraft}
                   maxLength={160}
                   onChange={(e) => setTraceDraft(e.target.value)}
@@ -417,6 +474,12 @@ export default function ApplicationDiagnostics() {
                       {trace.data.events_available
                         ? "available"
                         : "unavailable"}{" "}
+                      · Operations:{" "}
+                      {trace.data.operations_available === undefined
+                        ? "not supported"
+                        : trace.data.operations_available
+                          ? "available"
+                          : "unavailable"}{" "}
                       · Tasks:{" "}
                       {trace.data.tasks_available ? "available" : "unavailable"}{" "}
                       · History:{" "}
@@ -430,6 +493,7 @@ export default function ApplicationDiagnostics() {
                     <DiagnosticDetails
                       value={{
                         events: trace.data.events,
+                        operations: trace.data.operations,
                         tasks: trace.data.tasks,
                         history: trace.data.history,
                       }}

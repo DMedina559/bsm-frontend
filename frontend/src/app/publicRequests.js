@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { getBackendIdentity } from "./backendIdentity";
 import { queryClient } from "./queryClient";
@@ -36,10 +36,10 @@ export function usePublicQuery(key, load, options = {}) {
 
 /** Scope changes and unmounts prevent a completed write from updating another page. */
 export function useScopedMutation(scope, run) {
-  const current = useRef(null);
+  const currentRef = useRef(null);
   useEffect(() => {
     const controller = new AbortController();
-    current.current = controller;
+    currentRef.current = controller;
     return () => controller.abort();
   }, [scope]);
   const mutation = useMutation(
@@ -84,8 +84,49 @@ export function useScopedMutation(scope, run) {
         variables,
         session: sessionRuntime.capture(),
         backend: getBackendIdentity(),
-        controller: current.current,
+        controller: currentRef.current,
         execute: run,
       }),
+  };
+}
+
+/** Keep passwords and one-time secrets out of the shared mutation cache. */
+export function useSensitiveMutation(scope, run) {
+  const currentRef = useRef(null);
+  const [pending, setPending] = useState(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    currentRef.current = controller;
+    return () => controller.abort();
+  }, [scope]);
+  return {
+    isPending: pending === scope,
+    mutateAsync: async (variables) => {
+      const controller = currentRef.current;
+      const session = sessionRuntime.capture();
+      const backend = getBackendIdentity();
+      const signal = AbortSignal.any([session.signal, controller.signal]);
+      const assertCurrent = () => {
+        signal.throwIfAborted();
+        if (
+          !sessionRuntime.isCurrent(session) ||
+          backend !== getBackendIdentity()
+        )
+          throw new DOMException("Session changed", "AbortError");
+      };
+      assertCurrent();
+      setPending(scope);
+      try {
+        const result = await run(variables, {
+          session: { ...session, signal },
+          signal,
+          assertCurrent,
+        });
+        assertCurrent();
+        return result;
+      } finally {
+        if (!controller.signal.aborted) setPending(null);
+      }
+    },
   };
 }

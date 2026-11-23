@@ -66,7 +66,7 @@ export const layoutComponents = {
       isOpen={isOpen}
       onClose={onClose}
       title={title}
-      className={className}
+      className={`plugin-native-modal ${className}`}
     >
       {children}
     </Modal>
@@ -82,7 +82,7 @@ export const layoutComponents = {
     }, [activeTab]);
 
     // If children is not an array, make it one
-    const childArray = React.Children.toArray(children);
+    const childArray = [children].flat(Infinity).filter(React.isValidElement);
     const tabHeaders = childArray.map((child, index) => {
       return {
         id: child.props.id || index,

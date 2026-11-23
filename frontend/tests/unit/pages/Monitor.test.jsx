@@ -1,3 +1,4 @@
+import { accessUser } from "../../support/accessFixtures";
 import { render, screen, waitFor } from "../../support/utils";
 import { fireEvent } from "@testing-library/react";
 import Monitor from "../../../src/pages/Monitor";
@@ -39,7 +40,7 @@ describe("Monitor", () => {
         });
       }
       if (url === "/api/account")
-        return Promise.resolve({ username: "admin", role: "admin" });
+        return Promise.resolve(accessUser("admin", { username: "admin" }));
       return Promise.resolve({});
     });
 

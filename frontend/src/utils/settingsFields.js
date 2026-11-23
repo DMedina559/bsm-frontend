@@ -7,6 +7,8 @@ const number = (description, min = 0, max, step = 1, unit) => ({
   unit,
 });
 export const settingGroups = {
+  scheduler: "Scheduler",
+  general: "Time and regional settings",
   paths: "Storage locations",
   retention: "Retention",
   monitoring: "Monitoring",
@@ -18,6 +20,8 @@ export const settingGroups = {
   plugin_settings: "Plugin settings",
 };
 export const settingGroupHelp = {
+  general:
+    "Default timezone for display and new schedules. Recorded timestamps stay in UTC; existing schedules keep their timezone.",
   paths: "Directories used for servers, backups, downloads, and extensions.",
   retention: "Previous files to keep. Zero disables automatic cleanup.",
   monitoring: "Metrics interval changes apply on the next monitoring cycle.",
@@ -30,6 +34,24 @@ export const settingGroupHelp = {
   custom: "Additional settings used by your extensions.",
 };
 const fields = {
+  "scheduler.max_concurrent_servers": number(
+    "Maximum server workers. Takes effect after restarting BSM.",
+    1,
+    32,
+  ),
+  "scheduler.poll_interval_seconds": number(
+    "Scheduler polling interval. Controls wake the scheduler immediately. Takes effect after restarting BSM.",
+    1,
+    60,
+    1,
+    "seconds",
+  ),
+  "general.timezone": {
+    type: "timezone",
+    label: "Application timezone",
+    description:
+      "Use an IANA region such as America/Los_Angeles. Applies immediately to display defaults and new schedules.",
+  },
   "web.cors_origins": {
     label: "Allowed CORS origins",
     description:
@@ -82,10 +104,8 @@ const fields = {
     1,
     "weeks",
   ),
-  "web.jwt_secret_key": {
-    type: "password",
-    description: "Signing secret. Changing it invalidates existing tokens.",
-  },
+  "web.jwt_secret_key": { type: "password", readOnly: true, hidden: true },
+  "web.jwt_key_initialized": { readOnly: true, hidden: true },
   "server_info.status": { readOnly: true },
   "server_info.installed_version": { readOnly: true },
   "server_info.server_name": { readOnly: true },

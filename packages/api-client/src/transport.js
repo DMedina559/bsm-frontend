@@ -33,12 +33,74 @@ export class ApiError extends Error {
 
 function abortable(value, signal) {
   return new Promise((resolve, reject) => {
-    const aborted = () => reject(signal.reason);
-    if (signal.aborted) return aborted();
+    const aborted = () => {
+      signal.removeEventListener("abort", aborted);
+      reject(signal.reason);
+    };
     signal.addEventListener("abort", aborted, { once: true });
-    Promise.resolve(value)
-      .then(resolve, reject)
-      .finally(() => signal.removeEventListener("abort", aborted));
+    const settle = (callback, result) => {
+      signal.removeEventListener("abort", aborted);
+      callback(result);
+    };
+    Promise.resolve(value).then(
+      (result) => settle(resolve, result),
+      (error) => settle(reject, error),
+    );
+    if (signal.aborted) aborted();
+  });
+}
+
+/** Upload through the browser's multipart engine while retaining request cancellation. */
+function uploadRequest(url, config, onProgress, signal) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    const cleanup = () => signal.removeEventListener("abort", cancel);
+    const cancel = () => {
+      xhr.abort();
+      cleanup();
+      reject(signal.reason);
+    };
+    xhr.open(config.method, url);
+    xhr.responseType = "blob";
+    xhr.withCredentials = config.credentials === "include";
+    Object.entries(config.headers).forEach(([key, value]) =>
+      xhr.setRequestHeader(key, value),
+    );
+    xhr.upload.onprogress = (event) => {
+      if (!signal.aborted)
+        onProgress(event.loaded, event.lengthComputable ? event.total : null);
+    };
+    xhr.onerror = () => {
+      cleanup();
+      reject(new TypeError("Upload connection failed"));
+    };
+    xhr.onabort = () => {
+      cleanup();
+      reject(signal.reason ?? new DOMException("Cancelled", "AbortError"));
+    };
+    xhr.onload = () => {
+      cleanup();
+      const headers = new Headers();
+      xhr
+        .getAllResponseHeaders()
+        .trim()
+        .split(/[\r\n]+/)
+        .filter(Boolean)
+        .forEach((line) => {
+          const index = line.indexOf(":");
+          if (index > 0)
+            headers.append(line.slice(0, index), line.slice(index + 1).trim());
+        });
+      resolve(
+        new Response(xhr.status === 204 ? null : xhr.response, {
+          status: xhr.status,
+          headers,
+        }),
+      );
+    };
+    signal.addEventListener("abort", cancel, { once: true });
+    if (signal.aborted) cancel();
+    else xhr.send(config.body);
   });
 }
 
@@ -65,12 +127,15 @@ export function createHttpTransport({
       timeout = 30000,
       responseType = "json",
       session = captureSession(),
+      onUploadProgress,
+      onResponseMetadata,
+      onDownloadProgress,
+      downloadTo,
       ...restOptions
     } = options;
-    const timeoutSignal = AbortSignal.timeout(timeout);
     const signal = AbortSignal.any([
       session.signal,
-      timeoutSignal,
+      ...(timeout === 0 ? [] : [AbortSignal.timeout(timeout)]),
       ...(restOptions.signal ? [restOptions.signal] : []),
     ]);
     const assertCurrent = prepareRequest({ session, signal });
@@ -151,8 +216,18 @@ export function createHttpTransport({
         },
       });
 
-      const response = await fetcher(finalUrl, config);
+      const response =
+        onUploadProgress &&
+        config.credentials !== "omit" &&
+        typeof XMLHttpRequest !== "undefined"
+          ? await uploadRequest(finalUrl, config, onUploadProgress, signal)
+          : await abortable(fetcher(finalUrl, config), signal);
       assertCurrent();
+
+      onResponseMetadata?.({
+        status: response.status,
+        headers: Object.fromEntries(response.headers),
+      });
 
       if (response.status === 204) {
         logger.debug(`[API] Response (No Content)`, {
@@ -168,10 +243,83 @@ export function createHttpTransport({
       if (response.ok && responseType === "blob") {
         if (contentType?.includes("text/html"))
           throw new ApiError("Session expired (Redirected to App)", 401, null);
-        data = await response.blob();
+        if (downloadTo || onDownloadProgress) {
+          if (!response.body) {
+            if (!downloadTo && typeof response.blob === "function") {
+              data = await abortable(response.blob(), signal);
+              assertCurrent();
+              onDownloadProgress?.(data.size, data.size || null);
+            } else {
+              throw new ApiError(
+                "Download body is unavailable",
+                response.status,
+                null,
+              );
+            }
+          } else {
+            const reader = response.body.getReader();
+            const writer = downloadTo?.getWriter();
+            const chunks = [];
+            let loaded = 0;
+            let lastProgressAt = 0;
+            const total =
+              Number(response.headers.get("content-length")) || null;
+            try {
+              for (;;) {
+                assertCurrent();
+                const { done, value } = await abortable(reader.read(), signal);
+                if (done) break;
+                assertCurrent();
+                if (writer) await abortable(writer.write(value), signal);
+                else chunks.push(value);
+                loaded += value.byteLength;
+                const now = Date.now();
+                if (
+                  onDownloadProgress &&
+                  (lastProgressAt === 0 ||
+                    now - lastProgressAt >= 150 ||
+                    (total && loaded >= total))
+                ) {
+                  lastProgressAt = now;
+                  onDownloadProgress(loaded, total);
+                }
+              }
+              assertCurrent();
+              if (onDownloadProgress && loaded > 0) {
+                onDownloadProgress(loaded, total);
+              }
+              if (writer) {
+                await abortable(writer.close(), signal);
+                data = null;
+              } else if (chunks.length <= 1) {
+                data = new Blob(chunks, {
+                  type: contentType ?? "application/octet-stream",
+                });
+              } else {
+                const merged = new Uint8Array(loaded);
+                let offset = 0;
+                for (const chunk of chunks) {
+                  merged.set(chunk, offset);
+                  offset += chunk.byteLength;
+                }
+                chunks.length = 0;
+                data = new Blob([merged], {
+                  type: contentType ?? "application/octet-stream",
+                });
+              }
+            } catch (error) {
+              await reader.cancel(error).catch(() => {});
+              await writer?.abort(error).catch(() => {});
+              throw error;
+            } finally {
+              reader.releaseLock();
+              writer?.releaseLock();
+            }
+          }
+        } else data = await abortable(response.blob(), signal);
       } else if (contentType && contentType.includes("application/json")) {
         try {
-          data = await response.json();
+          data = await abortable(response.json(), signal);
         } catch (err) {
           signal.throwIfAborted();
           if (err.name === "AbortError" || err.name === "TimeoutError")
@@ -190,7 +338,7 @@ export function createHttpTransport({
         }
       } else {
         // If not JSON, treat as text (could be HTML error page, plain text, etc.)
-        const text = await response.text();
+        const text = await abortable(response.text(), signal);
 
         // If we expected JSON (based on Accept header) but got HTML (e.g. 404 page, 500 error page, or Login page redirect)
         // we should probably treat it as an error unless the caller explicitly handles it.
@@ -282,6 +430,7 @@ export function createHttpTransport({
       onResponse({ url, body, method: config.method, data });
       return data;
     } catch (error) {
+      if (signal.aborted) throw signal.reason;
       if (error.name === "AbortError" || error.name === "TimeoutError")
         throw error;
       if (error instanceof ApiError) {

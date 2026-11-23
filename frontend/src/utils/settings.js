@@ -32,6 +32,8 @@ export function flattenSettings(object, prefix = "") {
   return Object.entries(object).reduce((result, [key, value]) => {
     if (UNSAFE_KEYS.has(key)) return result;
     const path = prefix ? `${prefix}.${key}` : key;
+    if (["web.jwt_secret_key", "web.jwt_key_initialized"].includes(path))
+      return result;
     if (value && typeof value === "object" && !Array.isArray(value))
       Object.assign(result, flattenSettings(value, path));
     else result[path] = value;

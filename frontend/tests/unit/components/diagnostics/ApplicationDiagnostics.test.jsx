@@ -1,3 +1,8 @@
+import { accessSchema, accessUser } from "../../../support/accessFixtures";
+vi.mock("../../../../src/api/access", () => ({
+  loadAccessSchema: vi.fn(async () => accessSchema),
+}));
+import { MemoryRouter } from "react-router-dom";
 import {
   act,
   fireEvent,
@@ -24,10 +29,28 @@ vi.mock("../../../../src/app/useApplicationMetrics", () => ({
 vi.mock("../../../../src/api/operations", () => ({
   callOperation: vi.fn(async (id, options) => {
     fixtures.calls.push([id, options]);
+    if (id === "get_access_policy") return { server_permissions: [] };
     if (id === "get_application_diagnostics") {
       if (fixtures.failure) throw new Error("Backend unreachable");
       return snapshot();
     }
+    if (id === "get_diagnostic_activity")
+      return {
+        scope: "application",
+        events: {
+          active: [],
+          recent: [
+            {
+              event_id: "global",
+              name: "sample",
+              status: "completed",
+              correlation_id: "global-trace",
+            },
+          ],
+        },
+        operations: { active: [], recent: [] },
+        subscriptions: { total: 0, items: [] },
+      };
     if (id === "get_diagnostic_runs")
       return { available: true, runs: [], truncated: false };
     if (id === "get_diagnostic_history")
@@ -94,7 +117,7 @@ function snapshot() {
   };
 }
 beforeEach(() => {
-  fixtures.user = { username: "admin", role: "admin" };
+  fixtures.user = accessUser("admin", { username: "admin" });
   fixtures.calls = [];
   fixtures.failure = false;
 });
@@ -104,7 +127,9 @@ function mount() {
   });
   return render(
     <QueryClientProvider client={client}>
-      <ApplicationMonitor />
+      <MemoryRouter>
+        <ApplicationMonitor />
+      </MemoryRouter>
     </QueryClientProvider>,
   );
 }
@@ -112,10 +137,15 @@ async function open() {
   fireEvent.click(screen.getByRole("tab", { name: "Diagnostics" }));
   await screen.findByText("Ready");
 }
-it("mounts diagnostics only for admins and supports keyboard tab navigation", async () => {
+it("mounts diagnostics only with the runtime permission and supports keyboard tab navigation", async () => {
   const view = mount();
-  expect(fixtures.calls).toHaveLength(0);
-  const metricTab = screen.getByRole("tab", { name: "Metrics", exact: true });
+  expect(
+    fixtures.calls.some(([id]) => id === "get_application_diagnostics"),
+  ).toBe(false);
+  const metricTab = await screen.findByRole("tab", {
+    name: "Metrics",
+    exact: true,
+  });
   metricTab.focus();
   fireEvent.keyDown(metricTab, { key: "ArrowRight" });
   await screen.findByText("Ready");
@@ -126,10 +156,12 @@ it("mounts diagnostics only for admins and supports keyboard tab navigation", as
   expect(
     screen.getByRole("region", { name: "Events diagnostics" }),
   ).toHaveTextContent("Stale reading");
-  fixtures.user = { username: "admin", role: "user" };
+  fixtures.user = accessUser("user", { username: "admin" });
   view.rerender(
     <QueryClientProvider client={new QueryClient()}>
-      <ApplicationMonitor />
+      <MemoryRouter>
+        <ApplicationMonitor />
+      </MemoryRouter>
     </QueryClientProvider>,
   );
   expect(
@@ -218,4 +250,32 @@ it("drops an in-flight report after the session changes", async () => {
   await act(async () => resolve({ report_id: "old", snapshot: snapshot() }));
   expect(click).not.toHaveBeenCalled();
   click.mockRestore();
+});
+
+it("loads global activity only when visited and navigates to its trace", async () => {
+  mount();
+  await open();
+  expect(fixtures.calls.some(([id]) => id === "get_diagnostic_activity")).toBe(
+    false,
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Activity", exact: true }),
+  );
+  await screen.findByText(/sample · Application · completed/);
+  expect(
+    fixtures.calls.find(([id]) => id === "get_diagnostic_activity")[1].query,
+  ).toEqual({ limit: 100 });
+  fireEvent.click(screen.getAllByRole("button", { name: "Inspect trace" })[0]);
+  await waitFor(() =>
+    expect(
+      fixtures.calls.some(
+        ([id, options]) =>
+          id === "get_diagnostic_trace" &&
+          options.path.correlation_id === "global-trace",
+      ),
+    ).toBe(true),
+  );
+  expect(
+    screen.getByRole("heading", { name: "Correlated trace" }),
+  ).toHaveFocus();
 });

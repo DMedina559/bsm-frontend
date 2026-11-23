@@ -115,7 +115,9 @@ it("bound session transport refuses later requests after logout before fetch", a
   expect(fetch).not.toHaveBeenCalled();
 });
 it("serializes explicit JSON objects and scalar zero without losing the request body", async () => {
-  globalThis.fetch = vi.fn().mockResolvedValue({ status: 204 });
+  globalThis.fetch = vi
+    .fn()
+    .mockResolvedValue(new Response(null, { status: 204 }));
   await request("/api/example", {
     method: "POST",
     body: { value: 1 },
@@ -154,7 +156,7 @@ it.each([400, 403, 404, 409, 422, 500])(
   },
 );
 
-it("uses the generated login and reauthentication contracts through the authenticated transport", async () => {
+it("keeps embedded login and reauthentication cookie-only", async () => {
   const { callOperation } = await import("../../../src/api/operations");
   globalThis.fetch = vi.fn().mockResolvedValue({
     ok: true,
@@ -177,7 +179,10 @@ it("uses the generated login and reauthentication contracts through the authenti
   const [reauthUrl, reauthRequest] = fetch.mock.calls[1];
   expect(reauthUrl).toBe("/auth/reauth?remember_me=false");
   expect(reauthRequest.body).toBeUndefined();
-  expect(reauthRequest.headers.Authorization).toBe("Bearer current-token");
+  expect(reauthRequest.headers.Authorization).toBeUndefined();
+  expect(new Headers(reauthRequest.headers).get("X-BSM-Auth-Mode")).toBe(
+    "cookie",
+  );
 });
 
 it("encodes server parameters and preserves task tracking for generated backup calls", async () => {
@@ -191,18 +196,18 @@ it("encodes server parameters and preserves task tracking for generated backup c
     headers: new Headers({ "content-type": "application/json" }),
     json: async () => ({ status: "accepted", task_id: "backup-123" }),
   });
-  const body = { backup_type: "world" };
-  await callOperation("create_backup", {
+  const body = { mode: "world" };
+  await callOperation("create_server_snapshot", {
     path: { server_name: "my server/one" },
     body,
   });
   const [url, options] = fetch.mock.calls[0];
-  expect(url).toBe("/api/server/my%20server%2Fone/backup/action");
+  expect(url).toBe("/api/server/my%20server%2Fone/backups");
   expect(options.method).toBe("POST");
   expect(JSON.parse(options.body)).toEqual(body);
   expect(operationCoordinator.get("backup-123")).toMatchObject({
     serverName: "my server/one",
-    kind: "create_backup",
+    kind: "create_server_snapshot",
     status: "pending",
   });
   operationCoordinator.clear();
@@ -222,9 +227,9 @@ it("does not register an old mutation task after the backend restarts", async ()
       }),
   );
   const { callOperation } = await import("../../../src/api/operations");
-  const pending = callOperation("create_backup", {
+  const pending = callOperation("create_server_snapshot", {
     path: { server_name: "alpha" },
-    body: { backup_type: "world" },
+    body: { mode: "world" },
   });
   stateReconciler.accept(
     ["monitor"],
@@ -263,4 +268,258 @@ it("classifies service outages separately from network failures", () => {
   });
   expect(error.category).toBe("unavailable");
   expect(error.code).toBe("unavailable");
+});
+
+it("omits cookies on configured connections even on the same origin", async () => {
+  localStorage.clear();
+  sessionStorage.clear();
+  setApiBaseUrl(window.location.origin);
+  globalThis.fetch = vi.fn().mockResolvedValue(Response.json({}));
+  await request("/api/account", { credentials: "include" });
+  expect(fetch.mock.calls[0][1].credentials).toBe("omit");
+  setApiBaseUrl("");
+});
+
+it("accepts caller-captured sessions while retaining authentication mode checks", async () => {
+  const { sessionRuntime } = await import("../../../src/app/sessionRuntime");
+  globalThis.fetch = vi.fn().mockResolvedValue(Response.json({}));
+  await request("/api/account", { session: sessionRuntime.capture() });
+  expect(fetch).toHaveBeenCalledOnce();
+});
+
+it("publishes policy revision changes after the response has been delivered", async () => {
+  const { sessionRuntime } = await import("../../../src/app/sessionRuntime");
+  sessionRuntime.reset();
+  let received;
+  const changed = vi.fn(() => expect(received).toEqual({ value: 2 }));
+  window.addEventListener("bsm:access-changed", changed);
+  try {
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json(
+          { value: 1 },
+          { headers: { "X-BSM-Policy-Revision": "first" } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        Response.json(
+          { value: 2 },
+          { headers: { "X-BSM-Policy-Revision": "second" } },
+        ),
+      );
+    await request("/api/example");
+    received = await request("/api/example");
+    await vi.waitFor(() => expect(changed).toHaveBeenCalledOnce());
+  } finally {
+    window.removeEventListener("bsm:access-changed", changed);
+  }
+});
+
+it("adds a session-bound CSRF header only to embedded cookie requests", async () => {
+  localStorage.clear();
+  sessionStorage.clear();
+  globalThis.fetch = vi
+    .fn()
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ id: 1 }), {
+        status: 200,
+        headers: {
+          "content-type": "application/json",
+          "X-BSM-CSRF-Token": "proof-for-cookie-session",
+        },
+      }),
+    )
+    .mockImplementation(
+      async () =>
+        new Response(JSON.stringify({ status: "success" }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+    );
+  await request("/api/account");
+  await request("/api/account/theme", {
+    method: "POST",
+    body: { theme: "default" },
+  });
+  expect(new Headers(fetch.mock.calls[1][1].headers).get("X-CSRF-Token")).toBe(
+    "proof-for-cookie-session",
+  );
+  expect(fetch.mock.calls[1][1].headers.Authorization).toBeUndefined();
+  setApiBaseUrl("https://remote.example");
+  setCredentials("explicit-bearer");
+  await request("/api/account/theme", {
+    method: "POST",
+    body: { theme: "default" },
+  });
+  expect(fetch.mock.calls[2][1].headers.Authorization).toBe(
+    "Bearer explicit-bearer",
+  );
+  expect(
+    new Headers(fetch.mock.calls[2][1].headers).get("X-CSRF-Token"),
+  ).toBeNull();
+});
+
+it.each([true, false])(
+  "only requests step-up for an explicit recent-auth challenge (%s)",
+  async (required) => {
+    setApiBaseUrl("");
+    setCredentials("test-session-token", false);
+    const prompt = vi.fn();
+    window.addEventListener("bsm:security-verification-required", prompt);
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          detail: required
+            ? "Verify your password and second factor to continue"
+            : "Permission denied",
+        }),
+        {
+          status: 403,
+          headers: {
+            "Content-Type": "application/json",
+            ...(required ? { "X-BSM-Recent-Auth": "required" } : {}),
+          },
+        },
+      ),
+    );
+    try {
+      await expect(
+        request("/api/account/security/mfa/enroll", { method: "POST" }),
+      ).rejects.toMatchObject({ status: 403 });
+      expect(prompt).toHaveBeenCalledTimes(required ? 1 : 0);
+    } finally {
+      window.removeEventListener("bsm:security-verification-required", prompt);
+    }
+  },
+);
+
+it("continues the original sensitive action once after verification with refreshed CSRF headers", async () => {
+  setApiBaseUrl("");
+  setCredentials("session", false);
+  const challenge = new Response(
+    JSON.stringify({ detail: "Verify identity" }),
+    {
+      status: 403,
+      headers: {
+        "Content-Type": "application/json",
+        "X-BSM-Recent-Auth": "required",
+      },
+    },
+  );
+  globalThis.fetch = vi
+    .fn()
+    .mockResolvedValueOnce(challenge)
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ verified_until: 999 }), {
+        headers: {
+          "Content-Type": "application/json",
+          "X-BSM-CSRF-Token": "fresh-proof",
+        },
+      }),
+    )
+    .mockResolvedValueOnce(Response.json({ recovery_codes: ["new-code"] }));
+  let pending;
+  const prompt = (event) => {
+    event.preventDefault();
+    pending = event.detail;
+  };
+  window.addEventListener("bsm:security-verification-required", prompt);
+  try {
+    const body = { otp: "123456" };
+    const result = request("/api/account/security/recovery-codes", {
+      method: "POST",
+      body,
+    });
+    await vi.waitFor(() => expect(pending).toBeDefined());
+    expect(fetch).toHaveBeenCalledTimes(1);
+    await request("/api/account/security/verify", {
+      method: "POST",
+      body: { password: "proof" },
+    });
+    pending.resume();
+    await expect(result).resolves.toEqual({ recovery_codes: ["new-code"] });
+    expect(fetch).toHaveBeenCalledTimes(3);
+    expect(fetch.mock.calls[2][0]).toBe(fetch.mock.calls[0][0]);
+    expect(fetch.mock.calls[2][1].body).toBe(fetch.mock.calls[0][1].body);
+    expect(
+      new Headers(fetch.mock.calls[2][1].headers).get("X-CSRF-Token"),
+    ).toBe("fresh-proof");
+  } finally {
+    window.removeEventListener("bsm:security-verification-required", prompt);
+  }
+});
+
+it.each(["dismiss", "abort", "logout", "backend"])(
+  "does not continue a challenged action after %s",
+  async (reason) => {
+    const { sessionRuntime } = await import("../../../src/app/sessionRuntime");
+    setApiBaseUrl("");
+    setCredentials("session", false);
+    globalThis.fetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ detail: "Verify" }), {
+        status: 403,
+        headers: {
+          "Content-Type": "application/json",
+          "X-BSM-Recent-Auth": "required",
+        },
+      }),
+    );
+    let pending;
+    const prompt = (event) => {
+      event.preventDefault();
+      pending = event.detail;
+    };
+    const controller = new AbortController();
+    window.addEventListener("bsm:security-verification-required", prompt);
+    try {
+      const result = request("/api/sensitive", {
+        method: "DELETE",
+        signal: controller.signal,
+      });
+      const rejected = expect(result).rejects.toMatchObject({
+        name: "AbortError",
+      });
+      await vi.waitFor(() => expect(pending).toBeDefined());
+      if (reason === "dismiss") pending.cancel();
+      if (reason === "abort") controller.abort();
+      if (reason === "logout") sessionRuntime.reset();
+      if (reason === "backend") setApiBaseUrl("https://other.example");
+      pending.resume();
+      await rejected;
+      expect(fetch).toHaveBeenCalledTimes(1);
+    } finally {
+      window.removeEventListener("bsm:security-verification-required", prompt);
+      setApiBaseUrl("");
+    }
+  },
+);
+
+it("does not loop verification when the retried action is challenged again", async () => {
+  setApiBaseUrl("");
+  setCredentials("session", false);
+  globalThis.fetch = vi.fn().mockImplementation(
+    async () =>
+      new Response(JSON.stringify({ detail: "Verify" }), {
+        status: 403,
+        headers: {
+          "Content-Type": "application/json",
+          "X-BSM-Recent-Auth": "required",
+        },
+      }),
+  );
+  const prompt = vi.fn((event) => {
+    event.preventDefault();
+    event.detail.resume();
+  });
+  window.addEventListener("bsm:security-verification-required", prompt);
+  try {
+    await expect(
+      request("/api/sensitive", { method: "POST" }),
+    ).rejects.toMatchObject({ status: 403 });
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(prompt).toHaveBeenCalledTimes(1);
+  } finally {
+    window.removeEventListener("bsm:security-verification-required", prompt);
+  }
 });

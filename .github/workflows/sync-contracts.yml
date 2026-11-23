@@ -1,0 +1,41 @@
+name: Sync Contracts
+
+on:
+  repository_dispatch:
+    types: [bsm-contract-updated]
+  workflow_dispatch:
+    inputs:
+      backend_sha:
+        description: Exact bedrock-server-manager commit SHA or ref
+        required: false
+        default: dev
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    uses: DMedina559/.github/.github/workflows/reusable-sync-contracts.yml@main
+    with:
+      target-branch: dev
+      backend-ref: ${{ inputs.backend_sha || github.event.client_payload.backend_sha || 'dev' }}
+      contract-hash: ${{ github.event.client_payload.contract_hash || '' }}
+      setup-node: true
+      install-command: npm ci
+      openapi-output: packages/api-client/src/generated/openapi.json
+      generate-command: npm run api:generate
+      verify-command: |
+        npm run api:check
+        npm run lint
+        npm run typecheck
+        npm test
+      pr-title: 'feat(api): sync generated OpenAPI types from bedrock-server-manager'
+    secrets:
+      SYNC_APP_ID: ${{ secrets.SYNC_APP_ID }}
+      SYNC_APP_PRIVATE_KEY: ${{ secrets.SYNC_APP_PRIVATE_KEY }}
+      CROSS_REPO_TOKEN: ${{ secrets.CROSS_REPO_TOKEN }}

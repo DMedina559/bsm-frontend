@@ -37,3 +37,15 @@ describe("settings utilities", () => {
     expect({}.polluted).toBeUndefined();
   });
 });
+
+it("omits signing credentials and their storage marker from settings forms", () => {
+  const flat = flattenSettings({
+    web: {
+      jwt_secret_key: "synthetic-private-key",
+      jwt_key_initialized: true,
+      port: 11325,
+    },
+    custom: { plugin: { enabled: true } },
+  });
+  expect(flat).toEqual({ "web.port": 11325, "custom.plugin.enabled": true });
+});

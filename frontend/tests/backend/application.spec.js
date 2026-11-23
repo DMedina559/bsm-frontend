@@ -38,7 +38,10 @@ test("the packaged app completes setup, authentication, socket connection, setti
   await expect.poll(() => authenticated).toBe(true);
   await expect.poll(() => taskListRead).toBe(true);
   await page.locator('a[href="/app/bsm-settings"]').click();
-  const backups = page.locator('[id="setting-retention.backups"]');
+  await page.getByRole("tab", { name: "Backups", exact: true }).click();
+  const backups = page.getByRole("spinbutton", {
+    name: /Recent recovery points/,
+  });
   await expect(backups).toBeVisible();
   const value = String(Number(await backups.inputValue()) + 1);
   await backups.fill(value);

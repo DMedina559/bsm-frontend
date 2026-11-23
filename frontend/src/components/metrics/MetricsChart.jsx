@@ -1,3 +1,4 @@
+import { useTimeFormat } from "../../app/useTimeFormat";
 import {
   AreaChart,
   Area,
@@ -15,6 +16,7 @@ export default function MetricsChart({
   unit,
   percent = false,
 }) {
+  const { format } = useTimeFormat();
   const { number, scale, units } = useMetricFormat();
   const bytesPerUnit =
     unit === "MB" ? 1024 ** 2 : unit === "KiB/s" ? 1024 : null;
@@ -69,7 +71,7 @@ export default function MetricsChart({
               <XAxis
                 dataKey="timestamp"
                 tickFormatter={(value) =>
-                  new Date(value * 1000).toLocaleTimeString()
+                  format(value * 1000, { kind: "time" })
                 }
                 minTickGap={40}
                 tick={{ fontSize: 13, fill: "var(--text-color-secondary)" }}
@@ -84,7 +86,7 @@ export default function MetricsChart({
               />
               <Tooltip
                 labelFormatter={(value) =>
-                  new Date(value * 1000).toLocaleTimeString()
+                  format(value * 1000, { kind: "time" })
                 }
                 formatter={(value, label) => [
                   number(displayValue(value), ` ${displayUnit}`, digits),

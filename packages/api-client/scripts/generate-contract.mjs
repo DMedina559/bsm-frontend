@@ -9,8 +9,27 @@ const { default: openapiTS, astToString } = require("openapi-typescript");
 const source = new URL("../src/generated/openapi.json", import.meta.url);
 const schema = JSON.parse(await fs.readFile(source, "utf8"));
 const operations = buildOperationRegistry(schema);
+const contents =
+  schema.components.schemas.SnapshotCreatePayload.properties.components;
+const componentArray =
+  contents.anyOf?.find((item) => item.type === "array") ?? contents;
+const componentNames = componentArray.items?.enum;
+if (
+  !Array.isArray(componentNames) ||
+  !componentArray["x-bsm-choice-labels"] ||
+  !componentArray["x-bsm-default-components"]
+)
+  throw new Error("Backend backup content schema is missing component choices");
+const backupContents = {
+  components: componentNames.map((id) => ({
+    id,
+    label: componentArray["x-bsm-choice-labels"][id] ?? id,
+  })),
+  defaults: componentArray["x-bsm-default-components"],
+};
 const files = {
   "metadata.json": JSON.stringify({
+    backupContents,
     schemaHash: createHash("sha256")
       .update(JSON.stringify(schema))
       .digest("hex"),

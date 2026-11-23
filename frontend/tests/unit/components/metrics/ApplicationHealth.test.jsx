@@ -31,3 +31,19 @@ it("opens individual health checks, refreshes, and closes with Escape", () => {
   expect(summary.closest("details").open).toBe(false);
   expect(summary).toHaveFocus();
 });
+
+it("renders unhealthy status when health is unhealthy", () => {
+  query.data = {
+    health: "unhealthy",
+    checked_at: 100,
+    checks: {
+      database: { healthy: false, message: "Database down" },
+    },
+  };
+  render(<ApplicationHealth />);
+  expect(
+    screen.getByLabelText("Connection and application health: Unhealthy"),
+  ).toBeInTheDocument();
+  expect(screen.getByText("Connected · Unhealthy")).toBeInTheDocument();
+  expect(screen.getByText("Unhealthy")).toBeInTheDocument();
+});

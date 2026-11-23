@@ -1,0 +1,35 @@
+name: Lint and Types
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [dev]
+  push:
+    branches: [dev]
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lint-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Style, types and generated API
+        run: |
+          npm run lint
+          npm run typecheck
+          npm run api:check

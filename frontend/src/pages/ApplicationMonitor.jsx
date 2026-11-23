@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useAccess } from "../app/useAccess";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { getPreferenceIdentity } from "../app/backendIdentity";
 import ApplicationMetrics from "../components/metrics/ApplicationMetrics";
@@ -7,17 +8,30 @@ import "../styles/application-monitor.css";
 
 export default function ApplicationMonitor() {
   const { user, sessionGeneration } = useAuth() || {};
-  const [selected, setSelected] = useState("metrics");
-  const admin = user?.role === "admin";
-  const active = admin ? selected : "metrics";
+  const [params, setParams] = useSearchParams();
+  const selected =
+    params.get("view") === "diagnostics" ? "diagnostics" : "metrics";
+  const setSelected = (value) =>
+    setParams((previous) => {
+      const next = new URLSearchParams(previous);
+      next.set("view", value);
+      return next;
+    });
+  const { can } = useAccess();
+  const diagnostics = can("get_application_diagnostics");
+  const active = diagnostics ? selected : "metrics";
   const tabs = ["metrics", "diagnostics"];
   return (
     <div className="container application-monitor">
       <header className="monitor-page-heading">
-        <h1>Application monitor</h1>
-        <p>Performance and system health</p>
+        <h1>Application Monitor</h1>
+        <p>
+          {diagnostics
+            ? "Application health, metrics and diagnostics."
+            : "Application and server process metrics."}
+        </p>
       </header>
-      {admin && (
+      {diagnostics && (
         <div className="monitor-tabs" role="tablist" aria-label="Metrics views">
           {tabs.map((tab, index) => (
             <button
@@ -56,8 +70,8 @@ export default function ApplicationMonitor() {
       )}
       <section
         id={`monitor-${active}-panel`}
-        role={admin ? "tabpanel" : undefined}
-        aria-labelledby={admin ? `monitor-${active}-tab` : undefined}
+        role={diagnostics ? "tabpanel" : undefined}
+        aria-labelledby={diagnostics ? `monitor-${active}-tab` : undefined}
       >
         {active === "diagnostics" ? (
           <ApplicationDiagnostics

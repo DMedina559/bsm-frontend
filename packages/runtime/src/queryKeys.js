@@ -1,9 +1,11 @@
 /** Central query keys for the BSM application data layer. */
 export const queryKeys = Object.freeze({
+  schedules: (serverName) => ["schedules", serverName],
   bootstrap: () => ["bootstrap"],
   applicationHealth: () => ["application-health"],
   applicationMetrics: () => ["application-metrics"],
   diagnostics: () => ["diagnostics"],
+  diagnosticActivity: (filters) => ["diagnostic-activity", filters],
   diagnosticHistory: (filters) => ["diagnostic-history", filters],
   diagnosticRuns: () => ["diagnostic-runs"],
   diagnosticTrace: (correlation) => ["diagnostic-trace", correlation],
@@ -28,7 +30,8 @@ export const queryKeys = Object.freeze({
   tasks: () => ["tasks"],
   task: (id) => ["tasks", id],
   globalPlayers: () => ["players"],
-  audit: () => ["audit"],
+  /** @param {{limit: number, offset: number}} [page] */
+  audit: (page) => (page === undefined ? ["audit"] : ["audit", page]),
   serverAddons: (name) => ["servers", name, "addons"],
   serverSettings: (name) => ["servers", name, "settings"],
   access: ([name, kind]) => ["servers", name, kind],

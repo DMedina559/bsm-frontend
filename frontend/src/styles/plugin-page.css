@@ -1,7 +1,7 @@
 /* DynamicPage Component Styles */
 
 /* --- Switch (Toggle) --- */
-.switch {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .switch {
   position: relative;
   display: inline-block;
   width: 50px;
@@ -10,13 +10,13 @@
   vertical-align: middle;
 }
 
-.switch input {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .switch input {
   opacity: 0;
   width: 0;
   height: 0;
 }
 
-.slider {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .slider {
   position: absolute;
   cursor: pointer;
   top: 0;
@@ -28,7 +28,7 @@
   border-radius: 24px;
 }
 
-.slider:before {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .slider:before {
   position: absolute;
   content: "";
   height: 16px;
@@ -40,25 +40,27 @@
   border-radius: 50%;
 }
 
-input:checked + .slider {
+:where(.dynamic-page-wrapper, .plugin-native-modal) input:checked + .slider {
   background-color: var(--toggle-switch-on-background-color, #2196f3);
 }
 
-input:focus + .slider {
+:where(.dynamic-page-wrapper, .plugin-native-modal) input:focus + .slider {
   box-shadow: 0 0 1px var(--toggle-switch-on-background-color, #2196f3);
 }
 
-input:checked + .slider:before {
+:where(.dynamic-page-wrapper, .plugin-native-modal)
+  input:checked
+  + .slider:before {
   transform: translateX(26px);
 }
 
-.switch-label-text {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .switch-label-text {
   vertical-align: middle;
   margin-left: calc(8px * var(--bsm-spacing-scale));
   font-weight: 500;
 }
 
-.switch-wrapper {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .switch-wrapper {
   display: flex;
   align-items: center;
   margin-bottom: calc(10px * var(--bsm-spacing-scale));
@@ -66,7 +68,7 @@ input:checked + .slider:before {
 
 /* --- Modal --- */
 /* Reusing/Extending base.css .modal if present, but defining specific dynamic-page modal styles to ensure isolation */
-.dynamic-modal-overlay {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .dynamic-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -77,10 +79,10 @@ input:checked + .slider:before {
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  animation: fadeIn 0.2s ease-in-out;
+  animation: plugin-fadeIn 0.2s ease-in-out;
 }
 
-.dynamic-modal-content {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .dynamic-modal-content {
   background-color: var(--container-background-color, #333);
   padding: 0;
   border: 1px solid var(--border-color, #555);
@@ -91,10 +93,10 @@ input:checked + .slider:before {
   display: flex;
   flex-direction: column;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-  animation: slideUp 0.2s ease-in-out;
+  animation: plugin-slideUp 0.2s ease-in-out;
 }
 
-.dynamic-modal-header {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .dynamic-modal-header {
   padding: calc(15px * var(--bsm-spacing-scale))
     calc(20px * var(--bsm-spacing-scale));
   border-bottom: 1px solid var(--border-color, #555);
@@ -106,13 +108,13 @@ input:checked + .slider:before {
   border-top-right-radius: 8px;
 }
 
-.dynamic-modal-header h3 {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .dynamic-modal-header h3 {
   margin: 0;
   font-size: 1.25rem;
   color: var(--header-text-color, #eee);
 }
 
-.dynamic-modal-close {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .dynamic-modal-close {
   background: none;
   border: none;
   color: var(--text-color, #ccc);
@@ -124,18 +126,18 @@ input:checked + .slider:before {
   border-radius: 4px;
 }
 
-.dynamic-modal-close:hover {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .dynamic-modal-close:hover {
   background-color: var(--bsm-surface-raised);
   color: var(--text-color);
 }
 
-.dynamic-modal-body {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .dynamic-modal-body {
   padding: calc(20px * var(--bsm-spacing-scale));
   overflow-y: auto;
   flex: 1;
 }
 
-@keyframes fadeIn {
+@keyframes plugin-fadeIn {
   from {
     opacity: 0;
   }
@@ -144,7 +146,7 @@ input:checked + .slider:before {
   }
 }
 
-@keyframes slideUp {
+@keyframes plugin-slideUp {
   from {
     transform: translateY(20px);
     opacity: 0;
@@ -156,7 +158,7 @@ input:checked + .slider:before {
 }
 
 /* --- Accordion --- */
-.accordion {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .accordion {
   border: 1px solid var(--border-color, #555);
   border-radius: 4px;
   margin-bottom: calc(10px * var(--bsm-spacing-scale));
@@ -164,7 +166,7 @@ input:checked + .slider:before {
   overflow: hidden;
 }
 
-.accordion-header {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .accordion-header {
   padding: calc(12px * var(--bsm-spacing-scale))
     calc(15px * var(--bsm-spacing-scale));
   cursor: pointer;
@@ -177,18 +179,18 @@ input:checked + .slider:before {
   user-select: none;
 }
 
-.accordion-header:hover {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .accordion-header:hover {
   background-color: var(--bsm-surface-raised);
 }
 
-.accordion-body {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .accordion-body {
   padding: calc(15px * var(--bsm-spacing-scale));
   border-top: 1px solid var(--border-color, #555);
   background-color: transparent;
 }
 
 /* --- Badge --- */
-.badge {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .badge {
   display: inline-flex;
   align-items: center;
   padding: calc(4px * var(--bsm-spacing-scale))
@@ -201,31 +203,35 @@ input:checked + .slider:before {
   color: var(--text-color);
 }
 
-.badge.primary {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .badge.primary {
   background-color: var(--primary-button-background-color, #4caf50);
+  color: var(--bsm-on-accent);
 }
-.badge.secondary {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .badge.secondary {
   background-color: var(--bsm-surface-raised);
 }
-.badge.success {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .badge.success {
   background-color: var(--bsm-success);
+  color: var(--bsm-page);
 }
-.badge.danger {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .badge.danger {
   background-color: var(--bsm-danger);
+  color: var(--bsm-page);
 }
-.badge.warning {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .badge.warning {
   background-color: var(--bsm-warning);
-  color: var(--text-color);
+  color: var(--bsm-page);
 }
-.badge.info {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .badge.info {
   background-color: var(--bsm-info);
+  color: var(--bsm-page);
 }
-.badge.dark {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .badge.dark {
   background-color: var(--bsm-surface-raised);
 }
 
 /* --- CodeBlock --- */
-.code-block {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .code-block {
   background-color: var(--bsm-console);
   color: var(--bsm-console-text);
   padding: calc(15px * var(--bsm-spacing-scale));
@@ -239,7 +245,7 @@ input:checked + .slider:before {
   position: relative;
 }
 
-.code-block-header {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .code-block-header {
   display: flex;
   justify-content: flex-end;
   margin-bottom: calc(5px * var(--bsm-spacing-scale));
@@ -248,7 +254,7 @@ input:checked + .slider:before {
 }
 
 /* --- Image --- */
-.dynamic-image {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .dynamic-image {
   max-width: 100%;
   height: auto;
   border-radius: 4px;
@@ -256,14 +262,14 @@ input:checked + .slider:before {
 }
 
 /* --- Divider --- */
-.divider {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .divider {
   border: 0;
   border-top: 1px solid var(--border-color, #555);
   margin: calc(20px * var(--bsm-spacing-scale)) 0;
 }
 
 /* --- iframe --- */
-.dynamic-iframe {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .dynamic-iframe {
   width: 100%;
   border: 1px solid var(--border-color, #555);
   border-radius: 4px;
@@ -271,14 +277,16 @@ input:checked + .slider:before {
 }
 
 /* --- Checkbox Wrapper --- */
-.checkbox-wrapper {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .checkbox-wrapper {
   display: flex;
   align-items: center;
   margin-bottom: calc(10px * var(--bsm-spacing-scale));
   cursor: pointer;
 }
 
-.checkbox-wrapper input[type="checkbox"] {
+:where(.dynamic-page-wrapper, .plugin-native-modal)
+  .checkbox-wrapper
+  input[type="checkbox"] {
   margin-right: calc(10px * var(--bsm-spacing-scale));
   cursor: pointer;
   width: 18px;
@@ -286,13 +294,13 @@ input:checked + .slider:before {
 }
 
 /* --- Chart --- */
-.chart-container {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .chart-container {
   margin-bottom: calc(20px * var(--bsm-spacing-scale));
   min-height: 200px;
 }
 
 /* --- LogViewer --- */
-.log-viewer {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .log-viewer {
   background: var(--bsm-console);
   color: var(--bsm-console-text);
   padding: calc(10px * var(--bsm-spacing-scale));
@@ -305,11 +313,11 @@ input:checked + .slider:before {
   margin-bottom: calc(10px * var(--bsm-spacing-scale));
 }
 
-.log-line {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .log-line {
   min-height: 1.2em;
 }
 
-.log-placeholder {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .log-placeholder {
   color: var(--text-color-secondary);
   font-style: italic;
   text-align: center;
@@ -317,7 +325,7 @@ input:checked + .slider:before {
 }
 
 /* --- StatCard --- */
-.stat-card {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .stat-card {
   background-color: var(--server-card-background-color, #444);
   padding: calc(15px * var(--bsm-spacing-scale));
   border: 1px solid var(--border-color, #555);
@@ -329,7 +337,7 @@ input:checked + .slider:before {
   min-width: 200px;
 }
 
-.stat-icon {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .stat-icon {
   background-color: var(--bsm-surface-raised);
   padding: calc(10px * var(--bsm-spacing-scale));
   border-radius: 50%;
@@ -338,18 +346,18 @@ input:checked + .slider:before {
   justify-content: center;
 }
 
-.stat-content {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .stat-content {
   display: flex;
   flex-direction: column;
 }
 
-.stat-label {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .stat-label {
   font-size: 0.9em;
   color: var(--text-color, #ccc);
   opacity: 0.8;
 }
 
-.stat-value {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .stat-value {
   font-size: 1.5em;
   font-weight: bold;
   color: var(--header-text-color, #eee);
@@ -358,44 +366,50 @@ input:checked + .slider:before {
   gap: calc(5px * var(--bsm-spacing-scale));
 }
 
-.stat-trend {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .stat-trend {
   font-size: 0.8em;
   margin-left: calc(5px * var(--bsm-spacing-scale));
 }
 
-.trend-up {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .trend-up {
   color: var(--bsm-success);
 }
-.trend-down {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .trend-down {
   color: var(--bsm-danger);
 }
 
 /* --- StatusIndicator --- */
-.status-indicator {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .status-indicator {
   display: inline-flex;
   align-items: center;
   font-weight: bold;
   font-size: 0.95em;
 }
 
-.status-dot {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .status-dot {
   font-size: 1.2em;
   margin-right: calc(5px * var(--bsm-spacing-scale));
   line-height: 1;
 }
 
-.status-running .status-dot {
+:where(.dynamic-page-wrapper, .plugin-native-modal)
+  .status-running
+  .status-dot {
   color: var(--bsm-success);
 }
-.status-stopped .status-dot {
+:where(.dynamic-page-wrapper, .plugin-native-modal)
+  .status-stopped
+  .status-dot {
   color: var(--bsm-danger);
 }
-.status-warning .status-dot {
+:where(.dynamic-page-wrapper, .plugin-native-modal)
+  .status-warning
+  .status-dot {
   color: var(--bsm-warning);
 }
 
 /* --- Alert Box --- */
-.alert-box {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .alert-box {
   display: flex;
   align-items: flex-start;
   gap: calc(12px * var(--bsm-spacing-scale));
@@ -406,73 +420,76 @@ input:checked + .slider:before {
   border: 1px solid transparent;
 }
 
-.alert-box .alert-icon {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .alert-box .alert-icon {
   display: flex;
   align-items: center;
   margin-top: calc(2px * var(--bsm-spacing-scale));
 }
 
-.alert-box .alert-content {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .alert-box .alert-content {
   display: flex;
   flex-direction: column;
   gap: calc(4px * var(--bsm-spacing-scale));
 }
 
-.alert-box .alert-title {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .alert-box .alert-title {
   font-weight: 600;
   font-size: 0.95rem;
 }
 
-.alert-box .alert-message {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .alert-box .alert-message {
   font-size: 0.875rem;
   opacity: 0.9;
 }
 
-.alert-info {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .alert-info {
   background-color: rgba(23, 162, 184, 0.15);
   border-color: rgba(23, 162, 184, 0.4);
   color: var(--bsm-info);
 }
 
-.alert-success {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .alert-success {
   background-color: rgba(40, 167, 69, 0.15);
   border-color: rgba(40, 167, 69, 0.4);
   color: var(--bsm-success);
 }
 
-.alert-warning {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .alert-warning {
   background-color: rgba(255, 193, 7, 0.15);
   border-color: rgba(255, 193, 7, 0.4);
   color: var(--bsm-warning);
 }
 
-.alert-danger,
-.alert-error {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .alert-danger,
+:where(.dynamic-page-wrapper, .plugin-native-modal) .alert-error {
   background-color: rgba(220, 53, 69, 0.15);
   border-color: rgba(220, 53, 69, 0.4);
   color: var(--bsm-danger);
 }
 
-.switch input:focus-visible + .slider {
+:where(.dynamic-page-wrapper, .plugin-native-modal)
+  .switch
+  input:focus-visible
+  + .slider {
   outline: 2px solid var(--bsm-focus);
   outline-offset: 3px;
 }
-.alert-info {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .alert-info {
   color: var(--bsm-info);
   background: color-mix(in srgb, var(--bsm-info) 8%, var(--bsm-surface));
   border-color: var(--border-color);
 }
-.alert-success {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .alert-success {
   color: var(--bsm-success);
   background: color-mix(in srgb, var(--bsm-success) 8%, var(--bsm-surface));
   border-color: var(--border-color);
 }
-.alert-warning {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .alert-warning {
   color: var(--bsm-warning);
   background: color-mix(in srgb, var(--bsm-warning) 8%, var(--bsm-surface));
   border-color: var(--border-color);
 }
-.alert-danger {
+:where(.dynamic-page-wrapper, .plugin-native-modal) .alert-danger {
   color: var(--bsm-danger);
   background: color-mix(in srgb, var(--bsm-danger) 8%, var(--bsm-surface));
   border-color: var(--border-color);

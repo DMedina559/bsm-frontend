@@ -80,6 +80,15 @@ npm run check --workspace=@bedrock-server-manager/storage
 ```
 
 Installation prepares `dist/`; rebuild it after changing source. The package owns
-its tests, lint, and consumer type checks. GitHub releases tagged
-`storage-v<SemVer>` publish this package independently; prereleases use npm's
-`next` distribution tag.
+its tests, lint, and consumer type checks. This package releases with the other shared packages and frontend from one
+`<SemVer>` GitHub release tag; prereleases use npm's `next` distribution tag.
+
+## React Native persistence
+
+AsyncStorage is asynchronous and cannot be passed directly as this store's
+synchronous adapter. Hydrate a memory cache before rendering preferences, expose
+synchronous reads/writes against that cache, and persist updates asynchronously
+in the host. Handle persistence failures there: a successful `write()` reports
+acceptance, not confirmation that asynchronous disk storage completed. Serialize
+writes per key so an older write cannot replace a newer value. Keep tokens in
+platform secure storage rather than in this preference cache.

@@ -12,6 +12,7 @@
 @import "./tokens.css";
 @import "./workspace.css";
 @import "./density.css";
+@import "./scopes.css";
 
 body {
   margin: 0;

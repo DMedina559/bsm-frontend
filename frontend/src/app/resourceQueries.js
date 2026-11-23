@@ -1,6 +1,7 @@
 import { application } from "./application";
 import {
   validateDiagnosticSnapshot,
+  validateDiagnosticActivity,
   validateDiagnosticHistory,
   validateDiagnosticRuns,
   validateDiagnosticTrace,
@@ -33,11 +34,28 @@ const object = (value, resource) => {
 };
 const diagnosticResources = new Set([
   "diagnostics",
+  "schedules",
+  "diagnosticActivity",
   "diagnosticHistory",
   "diagnosticRuns",
   "diagnosticTrace",
 ]);
 const resources = {
+  schedules: {
+    key: queryKeys.schedules,
+    load: (serverName, options) =>
+      callOperation("list_schedules", {
+        query: { server_name: serverName },
+        ...options,
+      }),
+    select: (data) => object(data, "schedules"),
+  },
+  diagnosticActivity: {
+    key: queryKeys.diagnosticActivity,
+    load: (filters, options) =>
+      callOperation("get_diagnostic_activity", { query: filters, ...options }),
+    select: validateDiagnosticActivity,
+  },
   diagnostics: {
     key: queryKeys.diagnostics,
     load: (_target, options) =>
@@ -72,7 +90,7 @@ const resources = {
       const health = object(data, "application health");
       const checks = object(health.checks, "health checks");
       if (
-        !["healthy", "degraded"].includes(health.health) ||
+        !["healthy", "degraded", "unhealthy"].includes(health.health) ||
         !["starting", "ready", "stopping", "stopped", "failed"].includes(
           health.lifecycle,
         ) ||
@@ -97,7 +115,7 @@ const resources = {
   applicationInfo: {
     key: queryKeys.applicationInfo,
     load: (_target, options) => callOperation("get_system_info", options),
-    select: (data) => object(data?.info, "application info"),
+    select: (data) => object(data, "application info"),
   },
   themes: {
     key: queryKeys.themes,
@@ -132,8 +150,11 @@ const resources = {
   },
   audit: {
     key: queryKeys.audit,
-    load: (_target, options) =>
-      callOperation("list_audit_logs", { ...options }),
+    load: (page, options) =>
+      callOperation("list_audit_logs", {
+        ...(page ? { query: page } : {}),
+        ...options,
+      }),
     select: (data) => array(data, "list"),
   },
   tasks: {
@@ -202,6 +223,26 @@ const resources = {
       settings_schema: data?.settings_schema ?? null,
     }),
   },
+  scopedPluginSettings: {
+    key: (target) => [
+      ...queryKeys.pluginSettings(target.name),
+      target.scope,
+      target.serverName ?? "",
+    ],
+    load: (target, options) =>
+      callOperation("get_plugin_settings", {
+        path: { plugin_name: target.name },
+        query: {
+          scope: target.scope,
+          ...(target.serverName ? { server_name: target.serverName } : {}),
+        },
+        ...options,
+      }),
+    select: (data) => ({
+      settings: object(data?.settings, "plugin settings"),
+      settings_schema: data?.settings_schema ?? null,
+    }),
+  },
   pluginPages: {
     key: queryKeys.pluginPages,
     load: (_target, options) => callOperation("get_plugin_pages", options),
@@ -222,6 +263,33 @@ const resources = {
       if (!Array.isArray(data)) throw new Error("Invalid users response");
       return data;
     },
+  },
+  backupHealth: {
+    key: (name) => [...queryKeys.serverBackups(name), "health"],
+    load: (name, options) =>
+      callOperation("get_backup_health", {
+        path: { server_name: name },
+        ...options,
+      }),
+    select: (data) => object(data?.health, "backup health"),
+  },
+  backupRecovery: {
+    key: (name) => [...queryKeys.serverBackups(name), "recovery"],
+    load: (name, options) =>
+      callOperation("get_restore_recovery", {
+        path: { server_name: name },
+        ...options,
+      }),
+    select: (data) => object(data?.recovery, "restore recovery"),
+  },
+  snapshots: {
+    key: (name) => [...queryKeys.serverBackups(name), "snapshots"],
+    load: (name, options) =>
+      callOperation("list_server_snapshots", {
+        path: { server_name: name },
+        ...options,
+      }),
+    select: (data) => array(data?.backups, "server snapshots"),
   },
   backups: {
     key: queryKeys.serverBackups,
@@ -313,6 +381,9 @@ export function useResourceQuery(resource, target, options = {}) {
       identity !== null &&
       (!(
         resource === "backups" ||
+        resource === "snapshots" ||
+        resource === "backupRecovery" ||
+        resource === "backupHealth" ||
         resource === "properties" ||
         resource === "rawProperties" ||
         resource === "monitor" ||

@@ -1,4 +1,6 @@
+import { sessionRuntime } from "../app/sessionRuntime";
 import { createSharedSocketManager } from "../app/sharedSocketManager";
+import { getBackendIdentity } from "../app/backendIdentity";
 import { getPreferenceIdentity } from "../app/backendIdentity";
 import { coreEventTopics } from "../app/coreEvents";
 import { startResourceRecovery } from "../app/resourceRecovery";
@@ -8,7 +10,7 @@ import { reconcileSocketMessage } from "../app/applicationState";
 import { operationCoordinator } from "../app/operationCoordinator";
 import React, {
   createContext,
-  useContext,
+  use,
   useEffect,
   useState,
   useCallback,
@@ -18,13 +20,25 @@ import { useAuth } from "./AuthContext";
 import { createWebSocketManager } from "../app/webSocketManager";
 import { logger } from "../utils/logger";
 
+const defaultSocketContext = Object.freeze({
+  isConnected: false,
+  isFallback: false,
+  connectionState: "disconnected",
+  subscribe: () => {},
+  unsubscribe: () => {},
+  manager: null,
+});
+
 const WebSocketContext = createContext(null);
-export const useWebSocket = () => {
-  const context = useContext(WebSocketContext);
-  if (!context)
+export const useWebSocket = (options = {}) => {
+  const context = use(WebSocketContext);
+  if (!context) {
+    if (options?.optional) return defaultSocketContext;
     throw new Error("useWebSocket must be used within a WebSocketProvider");
+  }
   return context;
 };
+export const useOptionalWebSocket = () => useWebSocket({ optional: true });
 export const WebSocketProvider = ({ children }) => {
   const { user, sessionGeneration } = useAuth();
   const identity = user?.id ?? user?.username ?? null;
@@ -43,6 +57,35 @@ export const WebSocketProvider = ({ children }) => {
         setConnectionState(state.connectionState);
       },
       onMessage: (message, ticket) => {
+        if (message.type === "security_event") {
+          window.dispatchEvent(
+            new CustomEvent("bsm:security-notice", {
+              detail: {
+                backend: getBackendIdentity(),
+                action: message.action,
+                eventId: message.event_id,
+                generation: sessionRuntime.capture().generation,
+              },
+            }),
+          );
+          return;
+        }
+
+        if (
+          ["access_changed", "policy_changed", "credentials_changed"].includes(
+            message.type,
+          )
+        ) {
+          window.dispatchEvent(
+            new CustomEvent(
+              message.type === "credentials_changed"
+                ? "bsm:credentials-changed"
+                : "bsm:access-changed",
+              { detail: { backend: getBackendIdentity() } },
+            ),
+          );
+          return;
+        }
         if (!reconcileSocketMessage(message, ticket)) return;
         listeners.forEach((listener) => {
           try {
@@ -140,9 +183,5 @@ export const WebSocketProvider = ({ children }) => {
       addMessageListener,
     ],
   );
-  return (
-    <WebSocketContext.Provider value={value}>
-      {children}
-    </WebSocketContext.Provider>
-  );
+  return <WebSocketContext value={value}>{children}</WebSocketContext>;
 };

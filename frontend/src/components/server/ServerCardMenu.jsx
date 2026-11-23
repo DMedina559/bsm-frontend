@@ -11,18 +11,18 @@ const shortcuts = [
 export default function ServerCardMenu({ serverName, onNavigate }) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
-  const container = useRef(null);
-  const trigger = useRef(null);
+  const containerRef = useRef(null);
+  const triggerRef = useRef(null);
   useEffect(() => {
     if (!open) return;
     const dismiss = (event) => {
-      if (!container.current?.contains(event.target)) setOpen(false);
+      if (!containerRef.current?.contains(event.target)) setOpen(false);
     };
     const escape = (event) => {
       if (event.key !== "Escape") return;
       event.preventDefault();
       setOpen(false);
-      trigger.current?.focus();
+      triggerRef.current?.focus();
     };
     document.addEventListener("pointerdown", dismiss);
     document.addEventListener("keydown", escape);
@@ -35,13 +35,13 @@ export default function ServerCardMenu({ serverName, onNavigate }) {
   return (
     <div
       className="server-card-menu"
-      ref={container}
+      ref={containerRef}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
       }}
     >
       <button
-        ref={trigger}
+        ref={triggerRef}
         type="button"
         className="icon-button server-card-menu-trigger"
         aria-label={`More options for ${serverName}`}

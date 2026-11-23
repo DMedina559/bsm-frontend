@@ -31,12 +31,12 @@ export function useEditableDraft(resource, data, empty) {
   const recoveryKey = JSON.stringify([scope, resource]);
   const [recovery, setRecovery] = useState(null);
   const [persistence, setPersistence] = useState(null);
-  const pendingPersistence = useRef(null);
-  const persistenceScope = useRef({ scope, enabled: recoveryEnabled });
+  const pendingPersistenceRef = useRef(null);
+  const persistenceScopeRef = useRef({ scope, enabled: recoveryEnabled });
   useLayoutEffect(() => {
-    persistenceScope.current = { scope, enabled: recoveryEnabled };
+    persistenceScopeRef.current = { scope, enabled: recoveryEnabled };
   }, [scope, recoveryEnabled]);
-  const editedRecovery = useRef(null);
+  const editedRecoveryRef = useRef(null);
   const { generation, signal } = sessionRuntime.capture();
   const identity = `${backend}:${user?.id ?? user?.username ?? ""}:${sessionGeneration ?? 0}:${resource}`;
   const [state, setState] = useState(() => ({
@@ -70,8 +70,8 @@ export function useEditableDraft(resource, data, empty) {
   // Flush the latest edit when leaving a resource; typing only resets its timer.
   useEffect(
     () => () => {
-      const job = pendingPersistence.current;
-      pendingPersistence.current = null;
+      const job = pendingPersistenceRef.current;
+      pendingPersistenceRef.current = null;
       job?.();
     },
     [recoveryKey],
@@ -103,7 +103,7 @@ export function useEditableDraft(resource, data, empty) {
   }, [identity, data, empty]);
   const setValue = useCallback(
     (update) => {
-      editedRecovery.current = recoveryKey;
+      editedRecoveryRef.current = recoveryKey;
       setRecovery(null);
       setState((previous) => {
         const value =
@@ -121,7 +121,7 @@ export function useEditableDraft(resource, data, empty) {
   const markSaved = useCallback(
     (submitted) => {
       if (!isCurrent()) return;
-      editedRecovery.current = recoveryKey;
+      editedRecoveryRef.current = recoveryKey;
       setRecovery(null);
       setState((previous) =>
         previous.identity === identity
@@ -152,7 +152,7 @@ export function useEditableDraft(resource, data, empty) {
         if (
           active &&
           isCurrent() &&
-          editedRecovery.current !== recoveryKey &&
+          editedRecoveryRef.current !== recoveryKey &&
           validDraftPatch(resource, record?.value)
         )
           setRecovery({ key: recoveryKey, record });
@@ -178,11 +178,11 @@ export function useEditableDraft(resource, data, empty) {
     );
     let active = true;
     const persist = () => {
-      if (pendingPersistence.current === persist)
-        pendingPersistence.current = null;
+      if (pendingPersistenceRef.current === persist)
+        pendingPersistenceRef.current = null;
       if (
-        !persistenceScope.current.enabled ||
-        persistenceScope.current.scope !== scope ||
+        !persistenceScopeRef.current.enabled ||
+        persistenceScopeRef.current.scope !== scope ||
         !sessionRuntime.isCurrent({ generation, signal }) ||
         getBackendIdentity() !== backend
       )
@@ -211,7 +211,7 @@ export function useEditableDraft(resource, data, empty) {
           });
       });
     };
-    pendingPersistence.current = persist;
+    pendingPersistenceRef.current = persist;
     setPersistence({ key: recoveryKey, status: "pending" });
     const timer = dirty && patch.length ? setTimeout(persist, 400) : null;
     if (timer === null) persist();
@@ -262,7 +262,7 @@ export function useEditableDraft(resource, data, empty) {
     const before = serialize(current.value);
     const result = await refetch();
     if (!isCurrent() || result.error) return false;
-    editedRecovery.current = recoveryKey;
+    editedRecoveryRef.current = recoveryKey;
     setRecovery(null);
     setState((previous) =>
       previous.identity === identity && serialize(previous.value) === before

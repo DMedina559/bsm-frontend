@@ -10,8 +10,8 @@ development uses Node.js 22.12 or later.
 
 ## Use the client
 
-This package is built within the workspace and is configured for npm publication.
-Registry installation requires an SDK release. To test an unreleased checkout,
+Install a published version with `npm install @bedrock-server-manager/api-client`.
+To test an unreleased checkout,
 run root `npm ci`, then `npm pack --workspace=@bedrock-server-manager/api-client`.
 Install the resulting archive in the consuming project with `npm install` and
 its archive path. The archive contains the built SDK and needs no Python tooling.
@@ -62,7 +62,7 @@ console.log(result.properties);
 ```
 
 Call `controller.abort()` to cancel pending work. Timeouts default to 30 seconds.
-Abort and timeout errors propagate separately from `ApiError`.
+Abort and timeout errors propagate separately from `ApiError`. Set `timeout: 0` for long archive transfers without a deadline; session and explicit cancellation still apply.
 
 The transport encodes JSON, form, and multipart bodies according to the operation
 metadata. `responseType: "blob"` requests a binary response. Saving or sharing the
@@ -113,23 +113,19 @@ schema. `npm pack` rebuilds this output before creating an archive.
 
 ## Releases
 
-SDK versions use SemVer independently of frontend releases. A GitHub release tag
-must be `api-client-v<version>`, such as `api-client-v0.1.1` or
-`api-client-v0.2.0-beta.1`. The npm workflow derives the published package version
-from that tag, updates the manifest and lockfile in its temporary checkout, and
-checks the SDK and isolated consumer before publication. No manual package
-version update or version commit is needed. Mark beta releases as GitHub
-prereleases for clarity. SemVer prerelease versions automatically use npm's
-`next` tag even if the GitHub flag is omitted. See the
-[release guide](https://github.com/DMedina559/bsm-frontend#releases) for credentials
-and prerelease tags.
+This SDK, runtime, storage, frontend assets, and Python frontend distribution
+release together from one GitHub tag such as `1.4.0` or `1.4.0b1`.
+All npm packages use the same version; prereleases publish to `next`.
+The workflow sets versions in its disposable checkout and publishes verified
+archives after all validation passes. No manual manifest version commit is needed.
+See the [release guide](https://github.com/DMedina559/bsm-frontend#releases)
+for publishing setup, Python version mapping, and retry behavior.
 
 ## Contract compatibility
 
-`backend-source.json` pins the supported backend commit used by release validation
-and the packaged application's integration smoke test. Update it alongside reviewed
-contract changes. The separate backend-contract workflow also compares against
-backend `dev` to detect upstream drift.
+CI builds and tests against backend `dev`. Generated SDK types remain bundled
+with this package and are checked for reproducibility in the Lint and Types
+workflow; integration tests exercise the current backend independently.
 
 `@bedrock-server-manager/api-client/metadata` exports `contractMetadata` with the
 canonical schema fingerprint, exporter provenance, and operation IDs.
@@ -143,3 +139,39 @@ Request timeouts and cancellation cover asynchronous credentials and response
 body decoding. Header names are case insensitive. The default URL resolver
 rejects traversal and requests outside the configured backend's origin and path
 prefix. A custom resolver remains responsible for its own destination policy.
+
+Archive transfers support native browser progress through `onUploadProgress`
+(multipart XMLHttpRequest) and `onDownloadProgress`. For large downloads, pass a
+`WritableStream<Uint8Array>` as `downloadTo` with `responseType: "blob"`; the
+transport writes with backpressure, closes on success, and aborts partial output
+on cancellation or failure. Without a destination it returns a Blob. These
+options share the normal bearer authentication, backend URL resolution, session
+guards, and abort signals. A timeout of zero disables only the deadline.
+
+Backup pickers can read `contractMetadata.backupContents` from `@bedrock-server-manager/api-client/metadata`. Its component IDs, labels and defaults are generated from the backend Pydantic creation schema, shared with plugin settings. Full-directory capture uses `mode: "full"`; it is not an individual component choice.
+
+## React Native integration
+
+The client has no React or DOM dependency. Supply native `fetch` (or an adapter)
+and your secure credential provider to `createHttpTransport`; keep credentials
+out of persisted preference storage. The host must provide the standard URL,
+Headers, FormData, Blob, AbortController, AbortSignal.any/timeout, and DOMException
+APIs. Older runtimes need compatible polyfills before use. Query serialization
+does not require URLSearchParams.size.
+
+For native uploads, prefer building FormData in the app using its file picker
+result (`{ uri, name, type }`) and passing that FormData as the operation body.
+When constructing multipart data from an object, the client also preserves URI
+file descriptors and converts ordinary scalar fields to strings. File access,
+permissions, and the lifetime of temporary URIs remain the app's responsibility.
+
+Streaming downloads require a fetch adapter exposing response.body.getReader().
+Without a readable body, blob downloads and final progress reporting still work;
+`downloadTo` requires stream support. Use a native file-transfer adapter for large
+files if the platform only offers buffered responses. Cancellation and deadlines
+reject pending credential, fetch, and decoder promises even if an adapter ignores
+the signal; the adapter must honor cancellation to stop its underlying native I/O.
+
+Use root `npm run check:archives` to validate the publishable packages in a clean
+consumer directory before release. A successful Metro export validates bundling,
+not installation or on-device execution.

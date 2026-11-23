@@ -40,6 +40,10 @@ describe("Register", () => {
       ).toBeInTheDocument();
     });
     expect(screen.getByLabelText("Username")).toBeInTheDocument();
+    expect(screen.getByLabelText("Password", { exact: true })).toHaveAttribute(
+      "minlength",
+      "8",
+    );
   });
 
   it("shows error for invalid token", async () => {
