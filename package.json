@@ -33,7 +33,7 @@
     "node": "^22.13.0 || >=24"
   },
   "devDependencies": {
-    "@eslint-react/eslint-plugin": "^5.28.8",
+    "@eslint-react/eslint-plugin": "^5.30.5",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.65.0",
     "@testing-library/dom": "^10.4.2",
